@@ -1,0 +1,41 @@
+# Plastic
+ignore.conf
+
+# Unity generated
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# IDE
+.vs/
+.idea/
+.vscode/
+.plastic/
+*.csproj
+*.sln
+*.slnx
+*.csproj
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Crash reports
+sysinfo.txt
+
+Assets/SceneDependencyCache/
+Assets/SceneDependencyCache.meta
+
+Assets/_Recovery/
+Assets/_Recovery.meta

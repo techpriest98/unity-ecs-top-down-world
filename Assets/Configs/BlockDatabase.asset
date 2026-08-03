@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bb209c7bdf364c4da1e7c8a1fe7319e, type: 3}
+  m_Name: BlockDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::Game.World.Blocks.BlockDatabase
+  blocks:
+  - BlockId: 1
+    AtlasColumn: 0
+    AtlasRow: 0
+    maxDurability: 12
+  - BlockId: 2
+    AtlasColumn: 1
+    AtlasRow: 0
+    maxDurability: 10
+  - BlockId: 3
+    AtlasColumn: 2
+    AtlasRow: 0
+    maxDurability: 20
+  - BlockId: 4
+    AtlasColumn: 3
+    AtlasRow: 0
+    maxDurability: 8
+  - BlockId: 5
+    AtlasColumn: 0
+    AtlasRow: 1
+    maxDurability: 5
