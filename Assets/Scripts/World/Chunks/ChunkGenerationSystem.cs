@@ -3,76 +3,110 @@ using Game.World.Rendering;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace Game.World.Chunks
 {
     [BurstCompile]
     public partial struct ChunkGenerationSystem : ISystem
     {
-        private const byte MaxDurability = byte.MaxValue;
+        private const byte MaxDurability =
+            byte.MaxValue;
 
-        public void OnCreate(ref SystemState state)
+        public void OnCreate(
+            ref SystemState state)
         {
             state.RequireForUpdate<ChunkComponent>();
         }
 
         [BurstCompile]
-        public void OnUpdate(ref SystemState state)
+        public void OnUpdate(
+            ref SystemState state)
         {
-            var ecb = new EntityCommandBuffer(Allocator.Temp);
+            var ecb =
+                new EntityCommandBuffer(
+                    Allocator.Temp);
 
-            foreach (var (blocks, entity) in
-                     SystemAPI.Query<DynamicBuffer<BlockData>>()
-                         .WithAll<ChunkComponent>()
-                         .WithNone<ChunkGenerated>()
-                         .WithEntityAccess())
+            foreach (var (
+                        chunk,
+                        blocks,
+                        entity)
+                    in SystemAPI.Query<
+                            RefRO<ChunkComponent>,
+                            DynamicBuffer<BlockData>>()
+                        .WithNone<ChunkGenerated>()
+                        .WithEntityAccess())
             {
-                GenerateChunk(blocks);
+                GenerateChunk(
+                    blocks,
+                    chunk.ValueRO.Coordinate);
 
-                ecb.AddComponent<ChunkGenerated>(entity);
-                ecb.SetComponentEnabled<ChunkNeedsProjection>(entity, true);
+                ecb.AddComponent<ChunkGenerated>(
+                    entity);
+
+                ecb.SetComponentEnabled<
+                    ChunkNeedsProjection>(
+                    entity,
+                    true);
             }
 
-            ecb.Playback(state.EntityManager);
+            ecb.Playback(
+                state.EntityManager);
+
             ecb.Dispose();
         }
 
         private static void GenerateChunk(
-            DynamicBuffer<BlockData> blocks)
+            DynamicBuffer<BlockData> blocks,
+            int2 chunkCoordinate)
         {
-            BlockData air = new(
-                BlockId.Air,
-                0);
+            BlockData air =
+                new(
+                    BlockId.Air,
+                    0);
 
-            BlockData grass = new(
-                BlockId.Grass,
-                MaxDurability);
+            BlockData grass =
+                new(
+                    BlockId.Grass,
+                    MaxDurability);
 
-            BlockData dirt = new(
-                BlockId.Dirt,
-                MaxDurability);
+            BlockData dirt =
+                new(
+                    BlockId.Dirt,
+                    MaxDurability);
 
-            BlockData stone = new(
-                BlockId.Stone,
-                MaxDurability);
+            BlockData stone =
+                new(
+                    BlockId.Stone,
+                    MaxDurability);
 
-            BlockData sand = new(
-                BlockId.Sand,
-                MaxDurability);
-
-            BlockData highGrass = new(
-                BlockId.HighGrass,
-                MaxDurability);
-
-            for (int y = 0; y < ChunkSettings.SizeY; y++)
+            for (int z = 0;
+                 z < ChunkSettings.SizeZ;
+                 z++)
             {
-                for (int z = 0; z < ChunkSettings.SizeZ; z++)
+                for (int x = 0;
+                     x < ChunkSettings.SizeX;
+                     x++)
                 {
-                    for (int x = 0; x < ChunkSettings.SizeX; x++)
-                    {
-                        int terrainHeight =
-                            GetTerrainHeight(x, z);
+                    int globalX =
+                        chunkCoordinate.x *
+                        ChunkSettings.SizeX +
+                        x;
 
+                    int globalZ =
+                        chunkCoordinate.y *
+                        ChunkSettings.SizeZ +
+                        z;
+
+                    int terrainHeight =
+                        GetTerrainHeight(
+                            globalX,
+                            globalZ);
+
+                    for (int y = 0;
+                         y < ChunkSettings.SizeY;
+                         y++)
+                    {
                         BlockData block;
 
                         if (y >= terrainHeight)
@@ -83,20 +117,13 @@ namespace Game.World.Chunks
                         {
                             block = grass;
                         }
-                        else if (y >= terrainHeight - 2)
+                        else if (y >= terrainHeight - 4)
                         {
                             block = dirt;
                         }
                         else
                         {
                             block = stone;
-                        }
-
-                        if (x == 2 &&
-                            z == 2 &&
-                            y == terrainHeight)
-                        {
-                            block = highGrass;
                         }
 
                         ChunkUtility.SetBlock(
@@ -111,33 +138,45 @@ namespace Game.World.Chunks
         }
 
         private static int GetTerrainHeight(
-            int x,
-            int z)
+            int globalX,
+            int globalZ)
         {
-            return (x, z) switch
-            {
-                (0, 0) => 4,
-                (1, 0) => 5,
-                (2, 0) => 5,
-                (3, 0) => 4,
+            const float baseHeight = 36f;
 
-                (0, 1) => 3,
-                (1, 1) => 3,
-                (2, 1) => 1,
-                (3, 1) => 3,
+            const float xFrequency = 0.08f;
+            const float zFrequency = 0.06f;
 
-                (0, 2) => 2,
-                (1, 2) => 1,
-                (2, 2) => 1,
-                (3, 2) => 3,
+            const float xAmplitude = 14f;
+            const float zAmplitude = 10f;
 
-                (0, 3) => 1,
-                (1, 3) => 1,
-                (2, 3) => 1,
-                (3, 3) => 1,
+            float xWave =
+                math.sin(
+                    globalX *
+                    xFrequency) *
+                xAmplitude;
 
-                _ => 0
-            };
+            float zWave =
+                math.cos(
+                    globalZ *
+                    zFrequency) *
+                zAmplitude;
+
+            float diagonalWave =
+                math.sin(
+                    (globalX + globalZ) *
+                    0.035f) *
+                6f;
+
+            float height =
+                baseHeight +
+                xWave +
+                zWave +
+                diagonalWave;
+
+            return math.clamp(
+                (int)math.round(height),
+                1,
+                ChunkSettings.SizeY - 1);
         }
     }
 }

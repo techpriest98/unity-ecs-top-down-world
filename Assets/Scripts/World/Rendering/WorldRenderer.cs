@@ -2,7 +2,6 @@ using System.Runtime.InteropServices;
 using Game.World.Blocks;
 using Unity.Collections;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Game.World.Rendering
 {
@@ -15,9 +14,6 @@ namespace Game.World.Rendering
         private ComputeShader computeShader;
 
         [SerializeField]
-        private RawImage outputImage;
-
-        [SerializeField]
         private Texture2D blockAtlas;
 
         [SerializeField]
@@ -26,17 +22,14 @@ namespace Game.World.Rendering
         private GraphicsBuffer projectedCellsBuffer;
         private GraphicsBuffer blockDatabaseBuffer;
 
-        private RenderTexture renderTexture;
-
         private int kernel;
         private int projectedCellsCapacity;
         private int blockDatabaseCount;
 
-        public RenderTexture Result => renderTexture;
-
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            if (Instance != null &&
+                Instance != this)
             {
                 Debug.LogError(
                     "У сцені вже існує інший WorldRenderer.",
@@ -54,7 +47,9 @@ namespace Game.World.Rendering
                 return;
             }
 
-            kernel = computeShader.FindKernel("CSMain");
+            kernel =
+                computeShader.FindKernel(
+                    "CSMain");
 
             CreateBlockDatabaseBuffer();
         }
@@ -70,14 +65,21 @@ namespace Game.World.Rendering
         }
 
         public void Render(
-            NativeArray<ProjectedCellGpuData> cells,
-            int projectionWidth,
-            int projectionHeight)
+            NativeArray<ProjectedCellData> cells,
+            RenderTexture target)
         {
             if (!enabled)
             {
                 return;
             }
+
+            if (!ValidateTarget(target))
+            {
+                return;
+            }
+
+            ClearRenderTexture(
+                target);
 
             if (!cells.IsCreated ||
                 cells.Length == 0)
@@ -94,24 +96,11 @@ namespace Game.World.Rendering
                 return;
             }
 
-            int textureWidth =
-                projectionWidth *
-                BlockAtlasSettings.TileWidth;
-
-            int textureHeight =
-                projectionHeight *
-                BlockAtlasSettings.TileHeight;
-
             EnsureProjectedCellsBuffer(
                 cells.Length);
 
-            EnsureRenderTexture(
-                textureWidth,
-                textureHeight);
-
-            ClearRenderTexture();
-
-            projectedCellsBuffer.SetData(cells);
+            projectedCellsBuffer.SetData(
+                cells);
 
             computeShader.SetInt(
                 "_ProjectedCellCount",
@@ -134,7 +123,7 @@ namespace Game.World.Rendering
             computeShader.SetTexture(
                 kernel,
                 "_Result",
-                renderTexture);
+                target);
 
             computeShader.SetTexture(
                 kernel,
@@ -184,6 +173,40 @@ namespace Game.World.Rendering
             return true;
         }
 
+        private bool ValidateTarget(
+            RenderTexture target)
+        {
+            if (target == null)
+            {
+                Debug.LogError(
+                    "Цільова RenderTexture не призначена.",
+                    this);
+
+                return false;
+            }
+
+            if (!target.IsCreated())
+            {
+                Debug.LogError(
+                    $"RenderTexture '{target.name}' не створена.",
+                    target);
+
+                return false;
+            }
+
+            if (!target.enableRandomWrite)
+            {
+                Debug.LogError(
+                    $"RenderTexture '{target.name}' " +
+                    "не має enableRandomWrite.",
+                    target);
+
+                return false;
+            }
+
+            return true;
+        }
+
         private void CreateBlockDatabaseBuffer()
         {
             BlockGpuData[] gpuData =
@@ -226,63 +249,25 @@ namespace Game.World.Rendering
             ReleaseProjectedCellsBuffer();
 
             projectedCellsCapacity =
-                Mathf.Max(requiredCount, 1);
+                Mathf.Max(
+                    requiredCount,
+                    1);
 
             projectedCellsBuffer =
                 new GraphicsBuffer(
                     GraphicsBuffer.Target.Structured,
                     projectedCellsCapacity,
-                    Marshal.SizeOf<ProjectedCellGpuData>());
+                    Marshal.SizeOf<ProjectedCellData>());
         }
 
-        private void EnsureRenderTexture(
-            int width,
-            int height)
-        {
-            width = Mathf.Max(width, 1);
-            height = Mathf.Max(height, 1);
-
-            if (renderTexture != null &&
-                renderTexture.width == width &&
-                renderTexture.height == height)
-            {
-                return;
-            }
-
-            ReleaseRenderTexture();
-
-            renderTexture =
-                new RenderTexture(
-                    width,
-                    height,
-                    0,
-                    RenderTextureFormat.ARGB32,
-                    RenderTextureReadWrite.Linear)
-                {
-                    name = "World Render Texture",
-                    enableRandomWrite = true,
-                    filterMode = FilterMode.Point,
-                    wrapMode = TextureWrapMode.Clamp,
-                    useMipMap = false,
-                    autoGenerateMips = false
-                };
-
-            renderTexture.Create();
-
-            if (outputImage != null)
-            {
-                outputImage.texture =
-                    renderTexture;
-            }
-        }
-
-        private void ClearRenderTexture()
+        private static void ClearRenderTexture(
+            RenderTexture target)
         {
             RenderTexture previous =
                 RenderTexture.active;
 
             RenderTexture.active =
-                renderTexture;
+                target;
 
             GL.Clear(
                 clearDepth: false,
@@ -297,7 +282,6 @@ namespace Game.World.Rendering
         {
             ReleaseProjectedCellsBuffer();
             ReleaseBlockDatabaseBuffer();
-            ReleaseRenderTexture();
         }
 
         private void ReleaseProjectedCellsBuffer()
@@ -314,25 +298,6 @@ namespace Game.World.Rendering
 
             blockDatabaseBuffer = null;
             blockDatabaseCount = 0;
-        }
-
-        private void ReleaseRenderTexture()
-        {
-            if (outputImage != null &&
-                outputImage.texture == renderTexture)
-            {
-                outputImage.texture = null;
-            }
-
-            if (renderTexture == null)
-            {
-                return;
-            }
-
-            renderTexture.Release();
-            Destroy(renderTexture);
-
-            renderTexture = null;
         }
     }
 }

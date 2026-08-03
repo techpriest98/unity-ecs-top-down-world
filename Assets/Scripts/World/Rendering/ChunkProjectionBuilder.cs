@@ -9,6 +9,8 @@ namespace Game.World.Rendering
     {
         public static void Build(
             DynamicBuffer<BlockData> blocks,
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
             ProjectionWriter writer,
             ViewDirection direction)
         {
@@ -31,9 +33,6 @@ namespace Game.World.Rendering
                     int heightFromTop =
                         bounds.Height - 1 - h;
 
-                    // Важливо:
-                    // більший V розташований ближче до камери,
-                    // тому ближні клітинки обробляємо першими.
                     for (int v = bounds.Depth - 1;
                          v >= 0;
                          v--)
@@ -55,6 +54,8 @@ namespace Game.World.Rendering
 
                         ProcessCell(
                             blocks,
+                            chunkCoordinate,
+                            blockAccessor,
                             writer,
                             view,
                             world,
@@ -69,6 +70,8 @@ namespace Game.World.Rendering
 
         private static void ProcessCell(
             DynamicBuffer<BlockData> blocks,
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
             ProjectionWriter writer,
             ViewCoordinate view,
             int3 world,
@@ -80,6 +83,8 @@ namespace Game.World.Rendering
             BlockId currentBlockId =
                 GetBlockIdOrAir(
                     blocks,
+                    chunkCoordinate,
+                    blockAccessor,
                     world);
 
             if (BlockUtility.IsSolid(currentBlockId))
@@ -88,16 +93,18 @@ namespace Game.World.Rendering
             }
 
             TryEmitSide(
-                blocks,
+                chunkCoordinate,
+                blockAccessor,
                 writer,
-                view,
-                chunkSizeXZ,
+                world,
                 direction,
                 projectionX,
                 projectionY);
 
             TryEmitTop(
                 blocks,
+                chunkCoordinate,
+                blockAccessor,
                 writer,
                 world,
                 projectionX,
@@ -106,6 +113,8 @@ namespace Game.World.Rendering
 
         private static void TryEmitTop(
             DynamicBuffer<BlockData> blocks,
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
             ProjectionWriter writer,
             int3 airWorld,
             ushort projectionX,
@@ -123,110 +132,83 @@ namespace Game.World.Rendering
                 return;
             }
 
-            int belowIndex =
-                ChunkUtility.ToIndex(
-                    belowWorld);
-
-            BlockId belowBlockId =
-                blocks[belowIndex].BlockId;
+            BlockData belowBlock =
+                blockAccessor.GetBlockOrAir(
+                    chunkCoordinate,
+                    belowWorld.x,
+                    belowWorld.y,
+                    belowWorld.z);
 
             if (!BlockUtility.IsSolid(
-                    belowBlockId))
+                    belowBlock.BlockId))
             {
                 return;
             }
 
             writer.TryAddTop(
-                checked((ushort)belowIndex),
+                belowBlock,
                 projectionX,
                 projectionY);
         }
 
         private static void TryEmitSide(
-            DynamicBuffer<BlockData> blocks,
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
             ProjectionWriter writer,
-            ViewCoordinate airView,
-            int2 chunkSizeXZ,
+            int3 airWorld,
             ViewDirection direction,
             ushort projectionX,
             ushort projectionY)
         {
-            // Поточна клітинка — повітря перед блоком.
-            // Твердий блок шукаємо на один крок далі
-            // від камери, тобто V - 1.
-            ViewCoordinate blockView =
-                new ViewCoordinate(
-                    airView.U,
-                    airView.V - 1,
-                    airView.H);
-
-            if (blockView.V < 0)
+            if (projectionY < 2)
             {
-                // TODO:
-                // Тут пізніше буде перевірка
-                // сусіднього чанка далі від камери.
                 return;
             }
 
             int3 blockWorld =
-                ViewCoordinateUtility.ViewToWorld(
-                    blockView,
-                    chunkSizeXZ,
-                    direction);
+                airWorld +
+                ViewDirectionUtility
+                    .GetAwayFromCameraOffset(
+                        direction);
 
-            if (!ChunkUtility.IsInside(
+            BlockData block =
+                blockAccessor.GetBlockOrAir(
+                    chunkCoordinate,
                     blockWorld.x,
                     blockWorld.y,
-                    blockWorld.z))
+                    blockWorld.z);
+
+            if (!BlockUtility.IsSolid(
+                    block.BlockId))
             {
                 return;
             }
-
-            int blockIndex =
-                ChunkUtility.ToIndex(
-                    blockWorld);
-
-            BlockId blockId =
-                blocks[blockIndex].BlockId;
-
-            if (!BlockUtility.IsSolid(blockId))
-            {
-                return;
-            }
-
-            ushort chunkIndex =
-                checked((ushort)blockIndex);
 
             writer.TryAddSideUpper(
-                chunkIndex,
+                block,
                 projectionX,
                 checked((ushort)(projectionY - 2)));
 
             writer.TryAddSideLower(
-                chunkIndex,
+                block,
                 projectionX,
                 checked((ushort)(projectionY - 1)));
         }
 
         private static BlockId GetBlockIdOrAir(
             DynamicBuffer<BlockData> blocks,
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
             int3 world)
         {
-            if (!ChunkUtility.IsInside(
+            BlockData block =
+                blockAccessor.GetBlockOrAir(
+                    chunkCoordinate,
                     world.x,
                     world.y,
-                    world.z))
-            {
-                return BlockId.Air;
-            }
+                    world.z);
 
-            return ChunkUtility
-                .GetBlock(
-                    blocks,
-                    world.x,
-                    world.y,
-                    world.z)
-                .BlockId;
+            return block.BlockId;
         }
     }
 }

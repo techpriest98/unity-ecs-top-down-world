@@ -1,3 +1,4 @@
+using Game.World.Blocks;
 using Unity.Entities;
 
 namespace Game.World.Rendering
@@ -16,7 +17,7 @@ namespace Game.World.Rendering
         }
 
         public bool TryAddTop(
-            ushort blockIndex,
+            BlockData block,
             ushort x,
             ushort y)
         {
@@ -24,8 +25,9 @@ namespace Game.World.Rendering
                 return false;
 
             _result.Add(new ProjectedCellData(
+                block,
                 ProjectedFaceType.Top,
-                blockIndex,
+                byte.MaxValue,
                 x,
                 y));
 
@@ -33,7 +35,7 @@ namespace Game.World.Rendering
         }
 
         public bool TryAddSideUpper(
-            ushort blockIndex,
+            BlockData block,
             ushort x,
             ushort y)
         {
@@ -41,8 +43,9 @@ namespace Game.World.Rendering
                 return false;
 
             _result.Add(new ProjectedCellData(
+                block,
                 ProjectedFaceType.SideUpper,
-                blockIndex,
+                byte.MaxValue,
                 x,
                 y));
 
@@ -50,7 +53,7 @@ namespace Game.World.Rendering
         }
 
         public bool TryAddSideLower(
-            ushort blockIndex,
+            BlockData block,
             ushort x,
             ushort y)
         {
@@ -58,8 +61,9 @@ namespace Game.World.Rendering
                 return false;
 
             _result.Add(new ProjectedCellData(
+                block,
                 ProjectedFaceType.SideLower,
-                blockIndex,
+                byte.MaxValue,
                 x,
                 y));
 

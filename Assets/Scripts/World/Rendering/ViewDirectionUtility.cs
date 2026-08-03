@@ -51,5 +51,27 @@ namespace Game.World.Rendering
         {
             return (ViewDirection)(((int)direction + 3) % 4);
         }
+
+        public static int3 GetAwayFromCameraOffset(
+            ViewDirection direction)
+        {
+            return direction switch
+            {
+                ViewDirection.Front =>
+                    new int3(0, 0, -1),
+
+                ViewDirection.Back =>
+                    new int3(0, 0, 1),
+
+                ViewDirection.Right =>
+                    new int3(1, 0, 0),
+
+                ViewDirection.Left =>
+                    new int3(-1, 0, 0),
+
+                _ =>
+                    int3.zero
+            };
+        }
     }
 }

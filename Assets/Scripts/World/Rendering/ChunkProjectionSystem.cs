@@ -3,6 +3,7 @@ using Game.World.Chunks;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace Game.World.Rendering
 {
@@ -12,6 +13,7 @@ namespace Game.World.Rendering
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<ChunkNeedsProjection>();
+            state.RequireForUpdate<ViewDirectionComponent>();
         }
 
         [BurstCompile]
@@ -26,12 +28,52 @@ namespace Game.World.Rendering
                     capacity: ChunkSettings.BlockCount,
                     allocator: Allocator.Temp);
 
-            foreach (var (blocks, projectedCells, entity) in
+            int chunkCount =
+                SystemAPI.QueryBuilder()
+                    .WithAll<ChunkComponent>()
+                    .Build()
+                    .CalculateEntityCount();
+
+            var chunkEntities =
+                new NativeParallelHashMap<int2, Entity>(
+                    math.max(chunkCount, 1),
+                    Allocator.Temp);
+
+            foreach (var (chunk, entity) in
                      SystemAPI.Query<
-                             DynamicBuffer<BlockData>,
-                             DynamicBuffer<ProjectedCellData>>()
-                         .WithAll<ChunkNeedsProjection>()
+                             RefRO<ChunkComponent>>()
                          .WithEntityAccess())
+            {
+                chunkEntities.TryAdd(
+                    chunk.ValueRO.Coordinate,
+                    entity);
+            }
+
+            BufferLookup<BlockData> blockLookup =
+                SystemAPI.GetBufferLookup<BlockData>(
+                    isReadOnly: true);
+
+            var blockAccessor =
+                new ChunkBlockAccessor(
+                    chunkEntities,
+                    blockLookup);
+
+            ViewDirection direction =
+                SystemAPI
+                    .GetSingleton<ViewDirectionComponent>()
+                    .Value;
+
+            foreach (var (
+                        chunk,
+                        blocks,
+                        projectedCells,
+                        entity)
+                    in SystemAPI.Query<
+                            RefRO<ChunkComponent>,
+                            DynamicBuffer<BlockData>,
+                            DynamicBuffer<ProjectedCellData>>()
+                        .WithAll<ChunkNeedsProjection>()
+                        .WithEntityAccess())
             {
                 projectedCells.Clear();
                 occupancy.Clear();
@@ -41,13 +83,10 @@ namespace Game.World.Rendering
                         occupancy,
                         projectedCells);
 
-                ViewDirection direction =
-                    SystemAPI
-                        .GetSingleton<ViewDirectionComponent>()
-                        .Value;
-
                 ChunkProjectionBuilder.Build(
                     blocks,
+                    chunk.ValueRO.Coordinate,
+                    blockAccessor,
                     writer,
                     direction);
 
@@ -60,6 +99,7 @@ namespace Game.World.Rendering
                     true);
             }
 
+            chunkEntities.Dispose();
             occupancy.Dispose();
 
             ecb.Playback(

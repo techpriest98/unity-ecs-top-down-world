@@ -14,12 +14,12 @@ namespace Game.World.Rendering
         {
             state.RequireForUpdate<ViewDirectionComponent>();
 
-            chunksQuery = new EntityQueryBuilder(
-                    Allocator.Temp)
-                .WithAll<ChunkNeedsProjection>()
-                .WithOptions(
-                    EntityQueryOptions.IgnoreComponentEnabledState)
-                .Build(ref state);
+            chunksQuery =
+                new EntityQueryBuilder(Allocator.Temp)
+                    .WithAll<ChunkNeedsProjection>()
+                    .WithOptions(
+                        EntityQueryOptions.IgnoreComponentEnabledState)
+                    .Build(ref state);
         }
 
         public void OnUpdate(ref SystemState state)
@@ -33,10 +33,12 @@ namespace Game.World.Rendering
             }
 
             bool rotateClockwise =
-                keyboard.rightArrowKey.wasPressedThisFrame;
+                keyboard.rightArrowKey
+                    .wasPressedThisFrame;
 
             bool rotateCounterClockwise =
-                keyboard.leftArrowKey.wasPressedThisFrame;
+                keyboard.leftArrowKey
+                    .wasPressedThisFrame;
 
             if (rotateClockwise ==
                 rotateCounterClockwise)
@@ -45,25 +47,30 @@ namespace Game.World.Rendering
             }
 
             RefRW<ViewDirectionComponent> viewDirection =
-                SystemAPI.GetSingletonRW<ViewDirectionComponent>();
+                SystemAPI.GetSingletonRW<
+                    ViewDirectionComponent>();
 
-            if (rotateClockwise)
-            {
-                viewDirection.ValueRW.Value =
-                    ViewDirectionUtility.RotateClockwise(
-                        viewDirection.ValueRO.Value);
-            }
-            else
-            {
-                viewDirection.ValueRW.Value =
-                    ViewDirectionUtility.RotateCounterClockwise(
-                        viewDirection.ValueRO.Value);
-            }
+            ViewDirection currentDirection =
+                viewDirection.ValueRO.Value;
+
+            ViewDirection newDirection =
+                rotateClockwise
+                    ? ViewDirectionUtility.RotateClockwise(
+                        currentDirection)
+                    : ViewDirectionUtility.RotateCounterClockwise(
+                        currentDirection);
+
+            viewDirection.ValueRW.Value =
+                newDirection;
 
             state.EntityManager
                 .SetComponentEnabled<ChunkNeedsProjection>(
                     chunksQuery,
                     true);
+
+            ChunkRenderManager.Instance?
+                .SetViewDirection(
+                    newDirection);
         }
     }
 }

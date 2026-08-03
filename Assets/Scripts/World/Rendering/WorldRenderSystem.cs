@@ -1,49 +1,85 @@
-using Game.World.Blocks;
+using Game.World.Chunks;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace Game.World.Rendering
 {
     public partial class WorldRenderSystem : SystemBase
     {
+        protected override void OnCreate()
+        {
+            RequireForUpdate<ChunkNeedsRender>();
+        }
+        
         protected override void OnUpdate()
         {
-            WorldRenderer renderer = WorldRenderer.Instance;
+            WorldRenderer worldRenderer =
+                WorldRenderer.Instance;
 
-            if (renderer == null)
+            ChunkRenderManager chunkRenderManager =
+                ChunkRenderManager.Instance;
+
+            if (worldRenderer == null ||
+                chunkRenderManager == null)
             {
                 return;
             }
 
-            var ecb = new EntityCommandBuffer(
-                Unity.Collections.Allocator.Temp);
+            int projectionWidth =
+                ChunkSettings.SizeX;
+
+            int projectionHeight =
+                ChunkSettings.SizeY * 2 +
+                ChunkSettings.SizeZ;
+
+            int textureWidth =
+                projectionWidth *
+                BlockAtlasSettings.TileWidth;
+
+            int textureHeight =
+                projectionHeight *
+                BlockAtlasSettings.TileHeight;
+
+            var ecb =
+                new EntityCommandBuffer(
+                    Allocator.Temp);
 
             foreach (var (
+                        chunk,
                         projectedCells,
-                        blocks,
                         entity)
                     in SystemAPI
                         .Query<
-                            DynamicBuffer<ProjectedCellData>,
-                            DynamicBuffer<BlockData>>()
+                            RefRO<ChunkComponent>,
+                            DynamicBuffer<ProjectedCellData>>()
                         .WithAll<ChunkNeedsRender>()
                         .WithEntityAccess())
             {
-                using NativeArray<ProjectedCellGpuData> gpuData =
-                    ProjectedCellGpuBuilder.Build(
-                        projectedCells,
-                        blocks,
-                        Allocator.Temp);
+                int2 chunkCoordinate =
+                    chunk.ValueRO.Coordinate;
 
-                renderer.Render(
-                    gpuData,
-                    projectionWidth: 4,
-                    projectionHeight: 24);
+                ChunkRenderObject renderObject =
+                    chunkRenderManager.GetOrCreate(
+                        chunkCoordinate,
+                        textureWidth,
+                        textureHeight);
 
-                ecb.SetComponentEnabled<ChunkNeedsRender>(entity, false);
+                NativeArray<ProjectedCellData> cells =
+                    projectedCells.AsNativeArray();
+
+                worldRenderer.Render(
+                    cells,
+                    renderObject.RenderTexture);
+
+                ecb.SetComponentEnabled<ChunkNeedsRender>(
+                    entity,
+                    false);
             }
 
-            ecb.Playback(EntityManager);
+            ecb.Playback(
+                EntityManager);
+
             ecb.Dispose();
         }
     }
