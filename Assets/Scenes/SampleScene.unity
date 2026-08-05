@@ -250,7 +250,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 10, z: -10}
+  m_LocalPosition: {x: 0, y: 50, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -371,7 +371,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1610426521}
   - component: {fileID: 1610426520}
-  - component: {fileID: 1610426522}
   m_Layer: 0
   m_Name: WorldRenderer
   m_TagString: Untagged
@@ -394,6 +393,8 @@ MonoBehaviour:
   computeShader: {fileID: 7200000, guid: e9aeb4fe76622442f88cd9949d99fbba, type: 3}
   blockAtlas: {fileID: 2800000, guid: 103e50935f1894ab99cf7d29e7e8cc31, type: 3}
   blockDatabase: {fileID: 11400000, guid: 4fb11d0e05fb84bf0a6c7d04dd2f682a, type: 2}
+  chunkMaterial: {fileID: 2100000, guid: ad24464cd27cc46719e1200070067bff, type: 2}
+  textureSliceCapacity: 16
 --- !u!4 &1610426521
 Transform:
   m_ObjectHideFlags: 0
@@ -409,21 +410,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1610426522
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1610426519}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0b9fc5476adbe415ca8d8ff052487938, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.World.Rendering.ChunkRenderManager
-  chunkMaterial: {fileID: 2100000, guid: ad24464cd27cc46719e1200070067bff, type: 2}
-  pixelsPerUnit: 16
-  chunksRoot: {fileID: 0}
 --- !u!1 &1761595481
 GameObject:
   m_ObjectHideFlags: 0

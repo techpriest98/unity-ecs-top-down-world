@@ -1,46 +1,51 @@
-using Game.World.Blocks;
-using Game.World.Rendering;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
 namespace Game.World.Chunks
 {
-    public sealed class ChunkAuthoring : MonoBehaviour
+    public sealed class ChunkAuthoring :
+        MonoBehaviour
     {
-        public int2 Coordinate;
+        [SerializeField]
+        [Min(0)]
+        private int chunkRadius = 1;
 
-        public BlockId DefaultBlockId = BlockId.Air;
-        public byte DefaultDurability = byte.MaxValue;
+        [SerializeField]
+        private Vector2Int initialCenterChunk =
+            Vector2Int.zero;
 
-        private sealed class Baker : Baker<ChunkAuthoring>
+        private sealed class Baker :
+            Baker<ChunkAuthoring>
         {
-            public override void Bake(ChunkAuthoring authoring)
+            public override void Bake(
+                ChunkAuthoring authoring)
             {
-                Entity entity = GetEntity(TransformUsageFlags.None);
+                Entity entity =
+                    GetEntity(
+                        TransformUsageFlags.None);
 
-                AddComponent(entity, new ChunkComponent
-                {
-                    Coordinate = authoring.Coordinate
-                });
-                AddComponent<ChunkNeedsProjection>(entity);
-                AddComponent<ChunkNeedsRender>(entity);
+                AddComponent(
+                    entity,
+                    new ChunkStreamingSettings
+                    {
+                        LoadRadius =
+                            authoring.chunkRadius
+                    });
 
-
-                DynamicBuffer<BlockData> blocks = AddBuffer<BlockData>(entity);
-                AddBuffer<ProjectedCellData>(entity);
-
-                blocks.ResizeUninitialized(ChunkSettings.BlockCount);
-
-                BlockData defaultBlock = new BlockData(
-                    authoring.DefaultBlockId,
-                    authoring.DefaultDurability
-                );
-
-                for (int i = 0; i < ChunkSettings.BlockCount; i++)
-                {
-                    blocks[i] = defaultBlock;
-                }
+                AddComponent(
+                    entity,
+                    new ChunkStreamingCenter
+                    {
+                        Coordinate =
+                            new int2(
+                                authoring
+                                    .initialCenterChunk
+                                    .x,
+                                authoring
+                                    .initialCenterChunk
+                                    .y)
+                    });
             }
         }
     }

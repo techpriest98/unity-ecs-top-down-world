@@ -24,10 +24,11 @@ StructuredBuffer<ProjectedCellGpuData> _ProjectedCells;
 StructuredBuffer<BlockGpuData> _BlockDatabase;
 
 Texture2D<float4> _BlockAtlas;
-RWTexture2D<float4> _Result;
+RWTexture2DArray<float4> _ChunkTextures;
 
 int _ProjectedCellCount;
 int _BlockDatabaseCount;
+int _ChunkTextureSlice;
 
 
 // ============================================================
@@ -176,10 +177,18 @@ void CSMain(
 
     uint textureWidth;
     uint textureHeight;
+    uint textureSliceCount;
 
-    _Result.GetDimensions(
+    _ChunkTextures.GetDimensions(
         textureWidth,
-        textureHeight);
+        textureHeight,
+        textureSliceCount);
+
+    if (_ChunkTextureSlice < 0 ||
+        (uint)_ChunkTextureSlice >= textureSliceCount)
+    {
+        return;
+    }
 
     uint startX =
         cellPosition.x *
@@ -249,12 +258,15 @@ void CSMain(
             color.rgb *=
                 faceBrightness;
 
+            // Поки зберігаємо стару поведінку.
             color.a = 1.0;
 
-            _Result[
-                int2(
+            _ChunkTextures[
+                int3(
                     outputX,
-                    outputY)] = color;
+                    outputY,
+                    _ChunkTextureSlice)] =
+                color;
         }
     }
 }

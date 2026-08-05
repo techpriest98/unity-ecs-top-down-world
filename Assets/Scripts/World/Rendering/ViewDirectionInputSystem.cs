@@ -67,10 +67,6 @@ namespace Game.World.Rendering
                 .SetComponentEnabled<ChunkNeedsProjection>(
                     chunksQuery,
                     true);
-
-            ChunkRenderManager.Instance?
-                .SetViewDirection(
-                    newDirection);
         }
     }
 }

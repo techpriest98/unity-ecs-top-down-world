@@ -1,15 +1,25 @@
 using System.Runtime.InteropServices;
 using Game.World.Blocks;
+using Game.World.Chunks;
 using Unity.Collections;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Game.World.Rendering
 {
-    public sealed class WorldRenderer : MonoBehaviour
+    public sealed class ChunkComputeRenderer : MonoBehaviour
     {
-        public static WorldRenderer Instance { get; private set; }
+        public static ChunkComputeRenderer Instance
+        {
+            get;
+            private set;
+        }
 
-        [Header("Rendering")]
+        private static readonly int ChunkTexturesPropertyId =
+            Shader.PropertyToID(
+                "_ChunkTextures");
+
+        [Header("Compute Rendering")]
         [SerializeField]
         private ComputeShader computeShader;
 
@@ -19,12 +29,28 @@ namespace Game.World.Rendering
         [SerializeField]
         private BlockDatabase blockDatabase;
 
+        [Header("Entity Graphics")]
+        [SerializeField]
+        private Material chunkMaterial;
+
+        [SerializeField]
+        [Min(1)]
+        private int textureSliceCapacity = 16;
+
         private GraphicsBuffer projectedCellsBuffer;
         private GraphicsBuffer blockDatabaseBuffer;
+
+        private RenderTexture chunkTextures;
 
         private int kernel;
         private int projectedCellsCapacity;
         private int blockDatabaseCount;
+
+        public RenderTexture ChunkTextures =>
+            chunkTextures;
+
+        public int TextureSliceCapacity =>
+            textureSliceCapacity;
 
         private void Awake()
         {
@@ -32,7 +58,8 @@ namespace Game.World.Rendering
                 Instance != this)
             {
                 Debug.LogError(
-                    "У сцені вже існує інший WorldRenderer.",
+                    "У сцені вже існує інший " +
+                    "ChunkComputeRenderer.",
                     this);
 
                 Destroy(gameObject);
@@ -52,6 +79,7 @@ namespace Game.World.Rendering
                     "CSMain");
 
             CreateBlockDatabaseBuffer();
+            CreateChunkTextureArray();
         }
 
         private void OnDestroy()
@@ -66,20 +94,23 @@ namespace Game.World.Rendering
 
         public void Render(
             NativeArray<ProjectedCellData> cells,
-            RenderTexture target)
+            int textureSlice)
         {
             if (!enabled)
             {
                 return;
             }
 
-            if (!ValidateTarget(target))
+            if (!ValidateTextureSlice(
+                    textureSlice))
             {
                 return;
             }
 
-            ClearRenderTexture(
-                target);
+            // Очищаємо навіть порожню проєкцію,
+            // щоб у шарі не залишались старі дані.
+            ClearTextureSlice(
+                textureSlice);
 
             if (!cells.IsCreated ||
                 cells.Length == 0)
@@ -90,7 +121,8 @@ namespace Game.World.Rendering
             if (blockDatabaseBuffer == null)
             {
                 Debug.LogError(
-                    "Block Database GPU buffer не створений.",
+                    "Block Database GPU buffer " +
+                    "не створений.",
                     this);
 
                 return;
@@ -110,6 +142,10 @@ namespace Game.World.Rendering
                 "_BlockDatabaseCount",
                 blockDatabaseCount);
 
+            computeShader.SetInt(
+                "_ChunkTextureSlice",
+                textureSlice);
+
             computeShader.SetBuffer(
                 kernel,
                 "_ProjectedCells",
@@ -122,8 +158,8 @@ namespace Game.World.Rendering
 
             computeShader.SetTexture(
                 kernel,
-                "_Result",
-                target);
+                "_ChunkTextures",
+                chunkTextures);
 
             computeShader.SetTexture(
                 kernel,
@@ -146,7 +182,8 @@ namespace Game.World.Rendering
             if (computeShader == null)
             {
                 Debug.LogError(
-                    "Compute Shader не призначений у WorldRenderer.",
+                    "Compute Shader не призначений " +
+                    "у ChunkComputeRenderer.",
                     this);
 
                 return false;
@@ -155,7 +192,8 @@ namespace Game.World.Rendering
             if (blockAtlas == null)
             {
                 Debug.LogError(
-                    "Block Atlas не призначений у WorldRenderer.",
+                    "Block Atlas не призначений " +
+                    "у ChunkComputeRenderer.",
                     this);
 
                 return false;
@@ -164,7 +202,57 @@ namespace Game.World.Rendering
             if (blockDatabase == null)
             {
                 Debug.LogError(
-                    "Block Database не призначена у WorldRenderer.",
+                    "Block Database не призначена " +
+                    "у ChunkComputeRenderer.",
+                    this);
+
+                return false;
+            }
+
+            if (chunkMaterial == null)
+            {
+                Debug.LogError(
+                    "Chunk Material не призначений " +
+                    "у ChunkComputeRenderer.",
+                    this);
+
+                return false;
+            }
+
+            if (!chunkMaterial.HasProperty(
+                    ChunkTexturesPropertyId))
+            {
+                Debug.LogError(
+                    "Chunk Material не має властивості " +
+                    "_ChunkTextures.",
+                    chunkMaterial);
+
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool ValidateTextureSlice(
+            int textureSlice)
+        {
+            if (chunkTextures == null ||
+                !chunkTextures.IsCreated())
+            {
+                Debug.LogError(
+                    "Масив текстур чанків не створений.",
+                    this);
+
+                return false;
+            }
+
+            if (textureSlice < 0 ||
+                textureSlice >= textureSliceCapacity)
+            {
+                Debug.LogError(
+                    $"Texture slice {textureSlice} " +
+                    $"поза діапазоном " +
+                    $"0..{textureSliceCapacity - 1}.",
                     this);
 
                 return false;
@@ -173,38 +261,73 @@ namespace Game.World.Rendering
             return true;
         }
 
-        private bool ValidateTarget(
-            RenderTexture target)
+        private void CreateChunkTextureArray()
         {
-            if (target == null)
+            int projectionWidth =
+                ChunkSettings.SizeX;
+
+            int projectionHeight =
+                ChunkSettings.SizeY * 2 +
+                ChunkSettings.SizeZ;
+
+            int textureWidth =
+                projectionWidth *
+                BlockAtlasSettings.TileWidth;
+
+            int textureHeight =
+                projectionHeight *
+                BlockAtlasSettings.TileHeight;
+
+            ReleaseChunkTextureArray();
+
+            chunkTextures =
+                new RenderTexture(
+                    textureWidth,
+                    textureHeight,
+                    0,
+                    RenderTextureFormat.ARGB32,
+                    RenderTextureReadWrite.Linear)
+                {
+                    name =
+                        "Chunk Projection Texture Array",
+
+                    dimension =
+                        TextureDimension.Tex2DArray,
+
+                    volumeDepth =
+                        textureSliceCapacity,
+
+                    enableRandomWrite =
+                        true,
+
+                    filterMode =
+                        FilterMode.Point,
+
+                    wrapMode =
+                        TextureWrapMode.Clamp,
+
+                    useMipMap =
+                        false,
+
+                    autoGenerateMips =
+                        false
+                };
+
+            chunkTextures.Create();
+
+            if (!chunkTextures.IsCreated())
             {
                 Debug.LogError(
-                    "Цільова RenderTexture не призначена.",
+                    "Не вдалося створити масив " +
+                    "RenderTexture для чанків.",
                     this);
 
-                return false;
+                return;
             }
 
-            if (!target.IsCreated())
-            {
-                Debug.LogError(
-                    $"RenderTexture '{target.name}' не створена.",
-                    target);
-
-                return false;
-            }
-
-            if (!target.enableRandomWrite)
-            {
-                Debug.LogError(
-                    $"RenderTexture '{target.name}' " +
-                    "не має enableRandomWrite.",
-                    target);
-
-                return false;
-            }
-
-            return true;
+            chunkMaterial.SetTexture(
+                ChunkTexturesPropertyId,
+                chunkTextures);
         }
 
         private void CreateBlockDatabaseBuffer()
@@ -216,7 +339,8 @@ namespace Game.World.Rendering
                 gpuData.Length == 0)
             {
                 Debug.LogError(
-                    "Block Database не створила GPU-дані.",
+                    "Block Database не створила " +
+                    "GPU-дані.",
                     blockDatabase);
 
                 return;
@@ -260,14 +384,19 @@ namespace Game.World.Rendering
                     Marshal.SizeOf<ProjectedCellData>());
         }
 
-        private static void ClearRenderTexture(
-            RenderTexture target)
+        private void ClearTextureSlice(
+            int textureSlice)
         {
             RenderTexture previous =
                 RenderTexture.active;
 
-            RenderTexture.active =
-                target;
+            Graphics.SetRenderTarget(
+                chunkTextures,
+                mipLevel: 0,
+                face:
+                    CubemapFace.Unknown,
+                depthSlice:
+                    textureSlice);
 
             GL.Clear(
                 clearDepth: false,
@@ -282,6 +411,7 @@ namespace Game.World.Rendering
         {
             ReleaseProjectedCellsBuffer();
             ReleaseBlockDatabaseBuffer();
+            ReleaseChunkTextureArray();
         }
 
         private void ReleaseProjectedCellsBuffer()
@@ -298,6 +428,30 @@ namespace Game.World.Rendering
 
             blockDatabaseBuffer = null;
             blockDatabaseCount = 0;
+        }
+
+        private void ReleaseChunkTextureArray()
+        {
+            if (chunkMaterial != null &&
+                chunkTextures != null &&
+                chunkMaterial.GetTexture(
+                    ChunkTexturesPropertyId) ==
+                chunkTextures)
+            {
+                chunkMaterial.SetTexture(
+                    ChunkTexturesPropertyId,
+                    null);
+            }
+
+            if (chunkTextures == null)
+            {
+                return;
+            }
+
+            chunkTextures.Release();
+            Destroy(chunkTextures);
+
+            chunkTextures = null;
         }
     }
 }
