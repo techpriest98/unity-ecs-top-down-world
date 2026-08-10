@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 519420031}
   - component: {fileID: 519420029}
   - component: {fileID: 519420030}
+  - component: {fileID: 519420033}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -225,7 +226,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 20
+  orthographic size: 15
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -250,12 +251,26 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 50, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: -2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &519420033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519420028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02137aace34a14ebe869be42dcd3d08b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Player.PlayerCameraFollow
+  screenOffset: {x: 0, y: 50}
+  cameraDepth: 10
 --- !u!1 &619394800
 GameObject:
   m_ObjectHideFlags: 0
@@ -361,7 +376,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1610426519
+--- !u!1 &1238157588
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -369,39 +384,37 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1610426521}
-  - component: {fileID: 1610426520}
+  - component: {fileID: 1238157590}
+  - component: {fileID: 1238157589}
   m_Layer: 0
-  m_Name: WorldRenderer
+  m_Name: ChunkRenderer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1610426520
+--- !u!114 &1238157589
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1610426519}
+  m_GameObject: {fileID: 1238157588}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ccad6f45c0724a9e956919a5ac07dbd, type: 3}
+  m_Script: {fileID: 11500000, guid: 0fc087742498944499b3d049914edf66, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.World.Rendering.WorldRenderer
-  computeShader: {fileID: 7200000, guid: e9aeb4fe76622442f88cd9949d99fbba, type: 3}
+  m_EditorClassIdentifier: Assembly-CSharp::Game.World.Rendering.ChunkProceduralRenderer
+  material: {fileID: 2100000, guid: aaf6d3886463549bd88f181df4b19b92, type: 2}
   blockAtlas: {fileID: 2800000, guid: 103e50935f1894ab99cf7d29e7e8cc31, type: 3}
   blockDatabase: {fileID: 11400000, guid: 4fb11d0e05fb84bf0a6c7d04dd2f682a, type: 2}
-  chunkMaterial: {fileID: 2100000, guid: ad24464cd27cc46719e1200070067bff, type: 2}
-  textureSliceCapacity: 16
---- !u!4 &1610426521
+--- !u!4 &1238157590
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1610426519}
+  m_GameObject: {fileID: 1238157588}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -548,6 +561,6 @@ SceneRoots:
   m_Roots:
   - {fileID: 519420032}
   - {fileID: 619394802}
-  - {fileID: 1610426521}
   - {fileID: 1967237499}
   - {fileID: 1761595484}
+  - {fileID: 1238157590}

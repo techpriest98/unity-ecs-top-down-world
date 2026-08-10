@@ -8,8 +8,6 @@ namespace Game.World.Chunks
 {
     [UpdateInGroup(
         typeof(InitializationSystemGroup))]
-    [UpdateBefore(
-        typeof(ChunkEntityGraphicsSetupSystem))]
     public partial struct ChunkStreamingSystem :
         ISystem
     {
