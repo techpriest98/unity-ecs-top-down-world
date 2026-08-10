@@ -8,40 +8,132 @@ using Unity.Mathematics;
 namespace Game.World.Rendering
 {
     [BurstCompile]
-    public partial struct ChunkProjectionSystem : ISystem
+    [UpdateAfter(
+        typeof(ViewDirectionInputSystem))]
+    public partial struct ChunkProjectionSystem :
+        ISystem
     {
-        public void OnCreate(ref SystemState state)
+        private const int
+            MaxChunksProjectedPerFrame = 2;
+
+        private EntityQuery
+            generatedChunksQuery;
+
+        private EntityQuery
+            chunksNeedingProjectionQuery;
+
+
+        public void OnCreate(
+            ref SystemState state)
         {
-            state.RequireForUpdate<ChunkNeedsProjection>();
-            state.RequireForUpdate<ViewDirectionComponent>();
+            state.RequireForUpdate<
+                ChunkComponent>();
+
+            state.RequireForUpdate<
+                ViewDirectionComponent>();
+
+
+            generatedChunksQuery =
+                new EntityQueryBuilder(
+                        Allocator.Temp)
+                    .WithAll<
+                        ChunkComponent,
+                        ChunkGenerated>()
+                    .Build(
+                        ref state);
+                        
+            chunksNeedingProjectionQuery =
+                new EntityQueryBuilder(
+                        Allocator.Temp)
+                    .WithAll<
+                        ChunkComponent,
+                        ChunkGenerated,
+                        ChunkNeedsProjection>()
+                    .Build(
+                        ref state);
         }
 
+
         [BurstCompile]
-        public void OnUpdate(ref SystemState state)
+        public void OnUpdate(
+            ref SystemState state)
         {
-            var ecb =
-                new EntityCommandBuffer(
-                    Allocator.Temp);
+            // Немає роботи —
+            // не створюємо навіть тимчасові
+            // Native containers.
+            if (chunksNeedingProjectionQuery
+                    .CalculateEntityCount() == 0)
+            {
+                return;
+            }
 
-            var occupancy =
-                new ProjectionOccupancy(
-                    capacity: ChunkSettings.BlockCount,
-                    allocator: Allocator.Temp);
 
-            int chunkCount =
-                SystemAPI.QueryBuilder()
-                    .WithAll<ChunkComponent>()
-                    .Build()
+            // ============================================================
+            // Direction
+            // ============================================================
+
+            ViewDirection activeDirection =
+                SystemAPI
+                    .GetSingleton<
+                        ViewDirectionComponent>()
+                    .Value;
+
+
+            ViewDirection projectionDirection =
+                activeDirection;
+
+
+            bool transitionActive =
+                false;
+
+
+            if (SystemAPI.TryGetSingleton<
+                    ViewDirectionTransitionComponent>(
+                    out ViewDirectionTransitionComponent
+                        transition))
+            {
+                transitionActive =
+                    transition.IsActive;
+
+
+                if (transitionActive)
+                {
+                    // Під час rotation будуємо вже
+                    // нову projection,
+                    // але Active ViewDirection
+                    // поки залишається старим.
+                    projectionDirection =
+                        transition.TargetDirection;
+                }
+            }
+
+
+            // ============================================================
+            // Generated chunk lookup
+            // ============================================================
+
+            int generatedChunkCount =
+                generatedChunksQuery
                     .CalculateEntityCount();
 
+
             var chunkEntities =
-                new NativeParallelHashMap<int2, Entity>(
-                    math.max(chunkCount, 1),
+                new NativeParallelHashMap<
+                    int2,
+                    Entity>(
+                    math.max(
+                        generatedChunkCount,
+                        1),
                     Allocator.Temp);
 
-            foreach (var (chunk, entity) in
-                     SystemAPI.Query<
+
+            foreach (var (
+                         chunk,
+                         entity)
+                     in SystemAPI.Query<
                              RefRO<ChunkComponent>>()
+                         .WithAll<
+                             ChunkGenerated>()
                          .WithEntityAccess())
             {
                 chunkEntities.TryAdd(
@@ -49,33 +141,72 @@ namespace Game.World.Rendering
                     entity);
             }
 
-            BufferLookup<BlockData> blockLookup =
-                SystemAPI.GetBufferLookup<BlockData>(
-                    isReadOnly: true);
+
+            // ============================================================
+            // Block accessor
+            // ============================================================
+
+            BufferLookup<BlockData>
+                blockLookup =
+                    SystemAPI
+                        .GetBufferLookup<
+                            BlockData>(
+                            isReadOnly: true);
+
 
             var blockAccessor =
                 new ChunkBlockAccessor(
                     chunkEntities,
                     blockLookup);
 
-            ViewDirection direction =
-                SystemAPI
-                    .GetSingleton<ViewDirectionComponent>()
-                    .Value;
+
+            // ============================================================
+            // Temporary projection data
+            // ============================================================
+
+            var occupancy =
+                new ProjectionOccupancy(
+                    capacity:
+                        ChunkSettings.BlockCount,
+                    allocator:
+                        Allocator.Temp);
+
+
+            var ecb =
+                new EntityCommandBuffer(
+                    Allocator.Temp);
+
+
+            int projectedCount = 0;
+
+
+            // ============================================================
+            // Budgeted projection
+            // ============================================================
 
             foreach (var (
-                        chunk,
-                        blocks,
-                        projectedCells,
-                        entity)
-                    in SystemAPI.Query<
-                            RefRO<ChunkComponent>,
-                            DynamicBuffer<BlockData>,
-                            DynamicBuffer<ProjectedCellData>>()
-                        .WithAll<ChunkNeedsProjection>()
-                        .WithEntityAccess())
+                         chunk,
+                         blocks,
+                         projectedCells,
+                         entity)
+                     in SystemAPI.Query<
+                             RefRO<ChunkComponent>,
+                             DynamicBuffer<BlockData>,
+                             DynamicBuffer<ProjectedCellData>>()
+                         .WithAll<
+                             ChunkGenerated,
+                             ChunkNeedsProjection>()
+                         .WithEntityAccess())
             {
+                if (projectedCount >=
+                    MaxChunksProjectedPerFrame)
+                {
+                    break;
+                }
+
+
                 projectedCells.Clear();
+
                 occupancy.Clear();
 
                 var writer =
@@ -83,29 +214,37 @@ namespace Game.World.Rendering
                         occupancy,
                         projectedCells);
 
+
                 ChunkProjectionBuilder.Build(
                     blocks,
                     chunk.ValueRO.Coordinate,
                     blockAccessor,
                     writer,
-                    direction);
+                    projectionDirection);
 
-                ecb.SetComponentEnabled<ChunkNeedsProjection>(
+                ecb.SetComponentEnabled<
+                    ChunkNeedsProjection>(
                     entity,
                     false);
 
-                ecb.SetComponentEnabled<ChunkNeedsRender>(
+                ecb.SetComponentEnabled<
+                    ChunkNeedsRender>(
                     entity,
                     true);
+
+                projectedCount++;
             }
 
-            chunkEntities.Dispose();
-            occupancy.Dispose();
 
             ecb.Playback(
                 state.EntityManager);
 
+
             ecb.Dispose();
+
+            occupancy.Dispose();
+
+            chunkEntities.Dispose();
         }
     }
 }

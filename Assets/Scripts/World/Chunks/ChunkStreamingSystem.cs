@@ -11,8 +11,25 @@ namespace Game.World.Chunks
     public partial struct ChunkStreamingSystem :
         ISystem
     {
-        private EntityArchetype chunkArchetype;
-        private EntityQuery chunkQuery;
+        private const int
+            MaxChunksCreatedPerFrame = 2;
+
+        private const int
+            MaxChunksDestroyedPerFrame = 4;
+
+        private const int
+            PreloadMargin = 1;
+
+        private const int
+            UnloadMargin = 2;
+
+
+        private EntityArchetype
+            chunkArchetype;
+
+        private EntityQuery
+            chunkQuery;
+
 
         public void OnCreate(
             ref SystemState state)
@@ -23,6 +40,7 @@ namespace Game.World.Chunks
             state.RequireForUpdate<
                 ChunkStreamingCenter>();
 
+
             chunkArchetype =
                 state.EntityManager
                     .CreateArchetype(
@@ -32,12 +50,14 @@ namespace Game.World.Chunks
                         typeof(ChunkNeedsProjection),
                         typeof(ChunkNeedsRender));
 
+
             chunkQuery =
                 state.EntityManager
                     .CreateEntityQuery(
                         ComponentType.ReadOnly<
                             ChunkComponent>());
         }
+
 
         public void OnUpdate(
             ref SystemState state)
@@ -46,29 +66,48 @@ namespace Game.World.Chunks
                 SystemAPI.GetSingleton<
                     ChunkStreamingSettings>();
 
+
             ChunkStreamingCenter center =
                 SystemAPI.GetSingleton<
                     ChunkStreamingCenter>();
+
 
             int loadRadius =
                 math.max(
                     settings.LoadRadius,
                     0);
 
-            int diameter =
-                loadRadius * 2 + 1;
+
+            int preloadRadius =
+                loadRadius +
+                PreloadMargin;
+
+
+            int unloadRadius =
+                loadRadius +
+                UnloadMargin;
+
+
+            int preloadDiameter =
+                preloadRadius * 2 + 1;
+
 
             int desiredChunkCount =
-                diameter * diameter;
+                preloadDiameter *
+                preloadDiameter;
+
 
             int existingChunkCount =
-                chunkQuery.CalculateEntityCount();
+                chunkQuery
+                    .CalculateEntityCount();
+
 
             int mapCapacity =
                 math.max(
                     existingChunkCount +
                     desiredChunkCount,
                     1);
+
 
             var loadedChunks =
                 new NativeParallelHashMap<
@@ -77,9 +116,12 @@ namespace Game.World.Chunks
                     mapCapacity,
                     Allocator.Temp);
 
+
             var chunksToDestroy =
-                new NativeList<Entity>(
+                new NativeList<
+                    ChunkRemovalCandidate>(
                     Allocator.Temp);
+
 
             var removedCoordinates =
                 new NativeList<int2>(
@@ -88,14 +130,14 @@ namespace Game.World.Chunks
             CollectLoadedChunks(
                 ref state,
                 center.Coordinate,
-                loadRadius,
+                unloadRadius,
                 ref loadedChunks,
-                ref chunksToDestroy,
-                ref removedCoordinates);
+                ref chunksToDestroy);
 
             DestroyDistantChunks(
                 ref state,
-                chunksToDestroy);
+                chunksToDestroy,
+                ref removedCoordinates);
 
             MarkNeighboursAfterRemoval(
                 ref state,
@@ -105,83 +147,128 @@ namespace Game.World.Chunks
             CreateMissingChunks(
                 ref state,
                 center.Coordinate,
-                loadRadius,
+                preloadRadius,
                 ref loadedChunks);
+
 
             removedCoordinates.Dispose();
             chunksToDestroy.Dispose();
             loadedChunks.Dispose();
         }
 
+
+        // ================================================================
+        // Collect existing chunks
+        // ================================================================
+
         private void CollectLoadedChunks(
             ref SystemState state,
             int2 centerCoordinate,
-            int loadRadius,
+            int unloadRadius,
             ref NativeParallelHashMap<
                 int2,
                 Entity> loadedChunks,
-            ref NativeList<Entity> chunksToDestroy,
-            ref NativeList<int2> removedCoordinates)
+            ref NativeList<
+                ChunkRemovalCandidate>
+                chunksToDestroy)
         {
             foreach (var (
-                        chunk,
-                        entity)
-                    in SystemAPI
-                        .Query<
-                            RefRO<ChunkComponent>>()
-                        .WithEntityAccess())
+                    chunk,
+                    entity)
+                in SystemAPI
+                    .Query<
+                        RefRO<ChunkComponent>>()
+                    .WithEntityAccess())
             {
                 int2 coordinate =
                     chunk.ValueRO.Coordinate;
+
 
                 int2 difference =
                     math.abs(
                         coordinate -
                         centerCoordinate);
 
-                bool insideLoadArea =
-                    difference.x <= loadRadius &&
-                    difference.y <= loadRadius;
 
-                if (insideLoadArea)
+                bool insideUnloadArea =
+                    difference.x <=
+                        unloadRadius &&
+                    difference.y <=
+                        unloadRadius;
+
+
+                if (insideUnloadArea)
                 {
                     loadedChunks.TryAdd(
                         coordinate,
                         entity);
-                }
-                else
-                {
-                    chunksToDestroy.Add(
-                        entity);
 
-                    removedCoordinates.Add(
-                        coordinate);
+                    continue;
                 }
+
+
+                chunksToDestroy.Add(
+                    new ChunkRemovalCandidate
+                    {
+                        Entity = entity,
+
+                        Coordinate =
+                            coordinate
+                    });
             }
         }
+
+
+        // ================================================================
+        // Destroy
+        // ================================================================
 
         private static void DestroyDistantChunks(
             ref SystemState state,
-            NativeList<Entity> chunksToDestroy)
+            NativeList<
+                ChunkRemovalCandidate>
+                chunksToDestroy,
+            ref NativeList<int2>
+                removedCoordinates)
         {
+            int destroyCount =
+                math.min(
+                    chunksToDestroy.Length,
+                    MaxChunksDestroyedPerFrame);
+
             for (int index = 0;
-                 index < chunksToDestroy.Length;
+                 index < destroyCount;
                  index++)
             {
-                state.EntityManager.DestroyEntity(
-                    chunksToDestroy[index]);
+                ChunkRemovalCandidate candidate =
+                    chunksToDestroy[index];
+
+                state.EntityManager
+                    .DestroyEntity(
+                        candidate.Entity);
+
+                removedCoordinates.Add(
+                    candidate.Coordinate);
             }
         }
 
-        private static void MarkNeighboursAfterRemoval(
-            ref SystemState state,
-            NativeParallelHashMap<
-                int2,
-                Entity> loadedChunks,
-            NativeList<int2> removedCoordinates)
+
+        // ================================================================
+        // Removal invalidation
+        // ================================================================
+
+        private static void
+            MarkNeighboursAfterRemoval(
+                ref SystemState state,
+                NativeParallelHashMap<
+                    int2,
+                    Entity> loadedChunks,
+                NativeList<int2>
+                    removedCoordinates)
         {
             for (int index = 0;
-                 index < removedCoordinates.Length;
+                 index <
+                 removedCoordinates.Length;
                  index++)
             {
                 MarkAdjacentChunksForProjection(
@@ -191,74 +278,105 @@ namespace Game.World.Chunks
             }
         }
 
+
+        // ================================================================
+        // Creation
+        // ================================================================
+
         private void CreateMissingChunks(
             ref SystemState state,
             int2 centerCoordinate,
-            int loadRadius,
+            int preloadRadius,
             ref NativeParallelHashMap<
                 int2,
                 Entity> loadedChunks)
         {
-            for (int chunkZ = -loadRadius;
-                 chunkZ <= loadRadius;
-                 chunkZ++)
+            int createdCount = 0;
+
+            for (int distance = 0;
+                 distance <= preloadRadius;
+                 distance++)
             {
-                for (int chunkX = -loadRadius;
-                     chunkX <= loadRadius;
-                     chunkX++)
+                for (int chunkZ = -distance;
+                     chunkZ <= distance;
+                     chunkZ++)
                 {
-                    int2 coordinate =
-                        centerCoordinate +
-                        new int2(
-                            chunkX,
-                            chunkZ);
-
-                    if (loadedChunks.ContainsKey(
-                            coordinate))
+                    for (int chunkX = -distance;
+                         chunkX <= distance;
+                         chunkX++)
                     {
-                        continue;
+                        if (createdCount >=
+                            MaxChunksCreatedPerFrame)
+                        {
+                            return;
+                        }
+
+
+                        int ringDistance =
+                            math.max(
+                                math.abs(
+                                    chunkX),
+                                math.abs(
+                                    chunkZ));
+
+                        if (ringDistance != distance)
+                        {
+                            continue;
+                        }
+
+
+                        int2 coordinate =
+                            centerCoordinate +
+                            new int2(
+                                chunkX,
+                                chunkZ);
+
+
+                        if (loadedChunks.ContainsKey(coordinate))
+                        {
+                            continue;
+                        }
+
+                        Entity chunkEntity =
+                            CreateChunk(
+                                ref state,
+                                coordinate);
+
+                        loadedChunks.TryAdd(
+                            coordinate,
+                            chunkEntity);
+
+                        createdCount++;
                     }
-
-                    Entity chunkEntity =
-                        CreateChunk(
-                            ref state,
-                            coordinate);
-
-                    loadedChunks.TryAdd(
-                        coordinate,
-                        chunkEntity);
-
-                    // Уже згенеровані сусіди повинні
-                    // перестворити проєкцію, оскільки
-                    // поруч з'явився новий чанк.
-                    MarkAdjacentChunksForProjection(
-                        ref state,
-                        loadedChunks,
-                        coordinate);
                 }
             }
         }
 
-        private Entity CreateChunk(
-            ref SystemState state,
-            int2 coordinate)
+
+        // ================================================================
+        // Create one chunk
+        // ================================================================
+
+        private Entity CreateChunk(ref SystemState state, int2 coordinate)
         {
             Entity entity =
-                state.EntityManager.CreateEntity(
-                    chunkArchetype);
+                state.EntityManager
+                    .CreateEntity(
+                        chunkArchetype);
 
-            state.EntityManager.SetComponentData(
-                entity,
-                new ChunkComponent
-                {
-                    Coordinate =
-                        coordinate
-                });
+            state.EntityManager
+                .SetComponentData(
+                    entity,
+                    new ChunkComponent
+                    {
+                        Coordinate =
+                            coordinate
+                    });
 
             DynamicBuffer<BlockData> blocks =
-                state.EntityManager.GetBuffer<
-                    BlockData>(
-                    entity);
+                state.EntityManager
+                    .GetBuffer<BlockData>(
+                        entity);
 
             blocks.ResizeUninitialized(
                 ChunkSettings.BlockCount);
@@ -278,38 +396,54 @@ namespace Game.World.Chunks
             return entity;
         }
 
-        private static void
-            MarkAdjacentChunksForProjection(
-                ref SystemState state,
-                NativeParallelHashMap<
-                    int2,
-                    Entity> loadedChunks,
-                int2 centerCoordinate)
+
+        // ================================================================
+        // Projection invalidation
+        // ================================================================
+
+        private static void MarkAdjacentChunksForProjection(
+            ref SystemState state,
+            NativeParallelHashMap<
+                int2,
+                Entity> loadedChunks,
+            int2 centerCoordinate)
         {
             MarkChunkForProjection(
                 ref state,
                 loadedChunks,
                 centerCoordinate +
-                new int2(1, 0));
+                new int2(
+                    1,
+                    0));
+
 
             MarkChunkForProjection(
                 ref state,
                 loadedChunks,
                 centerCoordinate +
-                new int2(-1, 0));
+                new int2(
+                    -1,
+                    0));
+
 
             MarkChunkForProjection(
                 ref state,
                 loadedChunks,
                 centerCoordinate +
-                new int2(0, 1));
+                new int2(
+                    0,
+                    1));
+
 
             MarkChunkForProjection(
                 ref state,
                 loadedChunks,
                 centerCoordinate +
-                new int2(0, -1));
+                new int2(
+                    0,
+                    -1));
         }
+
 
         private static void MarkChunkForProjection(
             ref SystemState state,
@@ -325,9 +459,7 @@ namespace Game.World.Chunks
                 return;
             }
 
-            // Незгенерований чанк не позначаємо:
-            // ChunkGenerationSystem сама активує
-            // ChunkNeedsProjection після генерації.
+
             if (!state.EntityManager
                     .HasComponent<
                         ChunkGenerated>(
@@ -341,6 +473,17 @@ namespace Game.World.Chunks
                     ChunkNeedsProjection>(
                     entity,
                     true);
+        }
+
+
+        // ================================================================
+        // Internal data
+        // ================================================================
+
+        private struct ChunkRemovalCandidate
+        {
+            public Entity Entity;
+            public int2 Coordinate;
         }
     }
 }
