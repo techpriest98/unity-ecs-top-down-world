@@ -2,9 +2,7 @@ Shader "Game/World/ChunkProcedural"
 {
     Properties
     {
-        _BlockAtlas(
-            "Block Atlas",
-            2D) = "white" {}
+        _BlockAtlas("Block Atlas", 2D) = "white" {}
     }
 
     SubShader
@@ -32,20 +30,17 @@ Shader "Game/World/ChunkProcedural"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-
             // ============================================================
             // Constants
             // ============================================================
 
-            static const uint TILE_WIDTH =
-                16;
+            static const uint TILE_WIDTH = 16;
+            static const uint TILE_HEIGHT = 8;
+            static const uint FACE_COUNT = 3;
 
-            static const uint TILE_HEIGHT =
-                8;
-
-            static const uint FACE_COUNT =
-                3;
-
+            // Temporary simple lighting
+            static const float TOP_LIGHT = 1.0;
+            static const float SIDE_LIGHT = 0.72;
 
             // ============================================================
             // GPU data
@@ -68,14 +63,10 @@ Shader "Game/World/ChunkProcedural"
                 uint Flags;
             };
 
-            StructuredBuffer<ProjectedCellRenderData>
-                _ProjectedCells;
-
-            StructuredBuffer<BlockGpuData>
-                _BlockDatabase;
+            StructuredBuffer<ProjectedCellRenderData> _ProjectedCells;
+            StructuredBuffer<BlockGpuData> _BlockDatabase;
 
             int _BlockDatabaseCount;
-
 
             // ============================================================
             // Atlas
@@ -86,9 +77,8 @@ Shader "Game/World/ChunkProcedural"
 
             float4 _BlockAtlas_TexelSize;
 
-
             // ============================================================
-            // Projection settings
+            // Projection
             // ============================================================
 
             float _CellWidth;
@@ -97,128 +87,73 @@ Shader "Game/World/ChunkProcedural"
             float _ChunkWidth;
             float _ProjectionHeight;
 
-
             // ============================================================
-            // Packed ProjectedCellData
+            // Packed data
             // ============================================================
 
-            uint2 UnpackPosition(
-                uint packedPosition)
+            uint2 UnpackPosition(uint packedPosition)
             {
                 return uint2(
-                    packedPosition &
-                        0xFFFF,
-
-                    (packedPosition >> 16) &
-                        0xFFFF);
+                    packedPosition & 0xFFFF,
+                    (packedPosition >> 16) & 0xFFFF);
             }
 
-            uint GetBlockId(
-                uint packedBlockData)
+            uint GetBlockId(uint packedBlockData)
             {
-                return
-                    packedBlockData &
-                    0xFF;
+                return packedBlockData & 0xFF;
             }
 
-            uint GetFaceType(
-                uint packedBlockData)
+            uint GetFaceType(uint packedBlockData)
             {
-                return
-                    (packedBlockData >> 8) &
-                    0xFF;
+                return (packedBlockData >> 8) & 0xFF;
             }
 
-
-            // ============================================================
-            // BlockGpuData
-            // ============================================================
-
-            uint2 UnpackAtlasPosition(
-                uint atlasPosition)
+            uint2 UnpackAtlasPosition(uint atlasPosition)
             {
-                uint column =
-                    atlasPosition &
-                    0xFF;
+                uint column = atlasPosition & 0xFF;
+                uint row = (atlasPosition >> 8) & 0xFF;
 
-                uint row =
-                    (atlasPosition >> 8) &
-                    0xFF;
-
-                return uint2(
-                    column,
-                    row);
+                return uint2(column, row);
             }
-
 
             // ============================================================
             // Faces
             // ============================================================
 
-            uint GetFaceIndex(
-                uint faceType)
+            uint GetFaceIndex(uint faceType)
             {
                 switch (faceType)
                 {
-                    case 1:
-                        // Top
-                        return 0;
-
-                    case 2:
-                        // SideUpper
-                        return 1;
-
-                    case 3:
-                        // SideLower
-                        return 2;
-
-                    default:
-                        return 0;
+                    case 1: return 0; // Top
+                    case 2: return 1; // SideUpper
+                    case 3: return 2; // SideLower
+                    default: return 0;
                 }
             }
 
+            float GetFaceLighting(uint faceIndex)
+            {
+                return faceIndex == 0
+                    ? TOP_LIGHT
+                    : SIDE_LIGHT;
+            }
 
             // ============================================================
             // Quad
             // ============================================================
 
-            float2 GetQuadCorner(
-                uint vertexId)
+            float2 GetQuadCorner(uint vertexId)
             {
                 switch (vertexId)
                 {
-                    case 0:
-                        return float2(
-                            0.0,
-                            0.0);
-
-                    case 1:
-                        return float2(
-                            0.0,
-                            1.0);
-
-                    case 2:
-                        return float2(
-                            1.0,
-                            1.0);
-
-                    case 3:
-                        return float2(
-                            0.0,
-                            0.0);
-
-                    case 4:
-                        return float2(
-                            1.0,
-                            1.0);
-
-                    default:
-                        return float2(
-                            1.0,
-                            0.0);
+                    case 0: return float2(0.0, 0.0);
+                    case 1: return float2(0.0, 1.0);
+                    case 2: return float2(1.0, 1.0);
+                    case 3: return float2(0.0, 0.0);
+                    case 4: return float2(1.0, 1.0);
+                    default: return float2(1.0, 0.0);
                 }
             }
-
 
             // ============================================================
             // Vertex output
@@ -226,190 +161,104 @@ Shader "Game/World/ChunkProcedural"
 
             struct Varyings
             {
-                float4 PositionCS :
-                    SV_POSITION;
+                float4 PositionCS : SV_POSITION;
+                float2 LocalUv : TEXCOORD0;
 
-                float2 LocalUv :
-                    TEXCOORD0;
-
-                nointerpolation uint BlockId :
-                    TEXCOORD1;
-
-                nointerpolation uint FaceIndex :
-                    TEXCOORD2;
+                nointerpolation uint BlockId : TEXCOORD1;
+                nointerpolation uint FaceIndex : TEXCOORD2;
             };
-
 
             // ============================================================
             // Vertex
             // ============================================================
 
             Varyings Vert(
-                uint vertexId :
-                    SV_VertexID,
-
-                uint instanceId :
-                    SV_InstanceID)
+                uint vertexId : SV_VertexID,
+                uint instanceId : SV_InstanceID)
             {
-                ProjectedCellRenderData cell =
-                    _ProjectedCells[
-                        instanceId];
+                ProjectedCellRenderData cell = _ProjectedCells[instanceId];
 
-                uint2 cellPosition =
-                    UnpackPosition(
-                        cell.Position);
-
-                float2 corner =
-                    GetQuadCorner(
-                        vertexId);
-
-
-                // --------------------------------------------------------
-                // X
-                // --------------------------------------------------------
+                uint2 cellPosition = UnpackPosition(cell.Position);
+                float2 corner = GetQuadCorner(vertexId);
 
                 float chunkLeft =
-                    cell.ChunkPosition.x -
-                    _ChunkWidth * 0.5;
+                    cell.ChunkPosition.x - _ChunkWidth * 0.5;
 
                 float cellLeft =
-                    chunkLeft +
-                    cellPosition.x *
-                    _CellWidth;
-
-
-                // --------------------------------------------------------
-                // Y
-                // --------------------------------------------------------
+                    chunkLeft + cellPosition.x * _CellWidth;
 
                 float chunkTop =
-                    cell.ChunkPosition.y +
-                    _ProjectionHeight;
+                    cell.ChunkPosition.y + _ProjectionHeight;
 
                 float cellBottom =
-                    chunkTop -
-                    (
-                        cellPosition.y +
-                        1
-                    ) *
-                    _CellHeight;
+                    chunkTop - (cellPosition.y + 1) * _CellHeight;
 
-
-                // --------------------------------------------------------
-                // Position
-                // --------------------------------------------------------
-
-                float3 worldPosition =
-                    float3(
-                        cellLeft +
-                        corner.x *
-                        _CellWidth,
-
-                        cellBottom +
-                        corner.y *
-                        _CellHeight,
-
-                        cell.ChunkPosition.z);
-
+                float3 worldPosition = float3(
+                    cellLeft + corner.x * _CellWidth,
+                    cellBottom + corner.y * _CellHeight,
+                    cell.ChunkPosition.z);
 
                 Varyings output;
 
-                output.PositionCS =
-                    TransformWorldToHClip(
-                        worldPosition);
-
-                output.LocalUv =
-                    corner;
-
-                output.BlockId =
-                    GetBlockId(
-                        cell.BlockData);
-
-                output.FaceIndex =
-                    GetFaceIndex(
-                        GetFaceType(
-                            cell.BlockData));
+                output.PositionCS = TransformWorldToHClip(worldPosition);
+                output.LocalUv = corner;
+                output.BlockId = GetBlockId(cell.BlockData);
+                output.FaceIndex = GetFaceIndex(GetFaceType(cell.BlockData));
 
                 return output;
             }
-
 
             // ============================================================
             // Fragment
             // ============================================================
 
-            float4 Frag(
-                Varyings input) :
-                SV_Target
+            float4 Frag(Varyings input) : SV_Target
             {
                 if (input.BlockId == 0 ||
-                    input.BlockId >=
-                    (uint)_BlockDatabaseCount)
+                    input.BlockId >= (uint)_BlockDatabaseCount)
                 {
-                    return float4(
-                        1.0,
-                        0.0,
-                        1.0,
-                        1.0);
+                    return float4(1.0, 0.0, 1.0, 1.0);
                 }
 
-                BlockGpuData block =
-                    _BlockDatabase[
-                        input.BlockId];
+                BlockGpuData block = _BlockDatabase[input.BlockId];
+                uint2 atlasPosition = UnpackAtlasPosition(block.AtlasPosition);
 
-                uint2 atlasPosition =
-                    UnpackAtlasPosition(
-                        block.AtlasPosition);
+                float2 localUv = saturate(input.LocalUv);
 
-                float2 localUv =
-                    saturate(
-                        input.LocalUv);
+                uint localX = min(
+                    (uint)(localUv.x * TILE_WIDTH),
+                    TILE_WIDTH - 1);
 
-                uint localX =
-                    min(
-                        (uint)(
-                            localUv.x *
-                            TILE_WIDTH),
-
-                        TILE_WIDTH - 1);
-
-                uint localY =
-                    min(
-                        (uint)(
-                            localUv.y *
-                            TILE_HEIGHT),
-
-                        TILE_HEIGHT - 1);
+                uint localY = min(
+                    (uint)(localUv.y * TILE_HEIGHT),
+                    TILE_HEIGHT - 1);
 
                 uint atlasPixelX =
-                    atlasPosition.x *
-                    TILE_WIDTH +
+                    atlasPosition.x * TILE_WIDTH +
                     localX;
 
                 uint blockGroupHeight =
-                    TILE_HEIGHT *
-                    FACE_COUNT;
+                    TILE_HEIGHT * FACE_COUNT;
 
                 uint atlasFaceRow =
-                    (FACE_COUNT - 1) -
-                    input.FaceIndex;
+                    (FACE_COUNT - 1) - input.FaceIndex;
 
                 uint atlasPixelY =
-                    atlasPosition.y *
-                    blockGroupHeight +
-                    atlasFaceRow *
-                    TILE_HEIGHT +
+                    atlasPosition.y * blockGroupHeight +
+                    atlasFaceRow * TILE_HEIGHT +
                     localY;
 
-                float4 color =
-                    _BlockAtlas.Load(
-                        int3(
-                            atlasPixelX,
-                            atlasPixelY,
-                            0));
+                float4 color = _BlockAtlas.Load(
+                    int3(atlasPixelX, atlasPixelY, 0));
 
-                color.a =
-                    1.0;
+                // ========================================================
+                // Temporary face lighting
+                // ========================================================
+
+                float light = GetFaceLighting(input.FaceIndex);
+                color.rgb *= light;
+
+                color.a = 1.0;
 
                 return color;
             }

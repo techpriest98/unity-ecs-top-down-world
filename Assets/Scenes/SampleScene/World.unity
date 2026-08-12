@@ -119,6 +119,95 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &443306936
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 443306938}
+  - component: {fileID: 443306937}
+  - component: {fileID: 443306939}
+  - component: {fileID: 443306940}
+  m_Layer: 0
+  m_Name: Settings
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &443306937
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 443306936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de0ba869206c14deabb15b58839f44d5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.World.Generation.WorldGenerationSettingsAuthoring
+  heightMapResolution: 129
+  macroCellSize: 128
+  diamondSquareRoughness: 0.5
+  deepOceanHeight: 8
+  seaLevelHeight: 56
+  highLandHeight: 140
+  macroSeaLevel: 0.5
+--- !u!4 &443306938
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 443306936}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &443306939
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 443306936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac67053ceac734b478b858284b33f628, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.World.Generation.WorldSeedAuthoring
+  seed: 12345
+--- !u!114 &443306940
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 443306936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b61243b051c8f485f82fce33a2621c19, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.World.Generation.Biomes.RockyShore.RockyShoreSettingsAuthoring
+  beachWidth: 0.02
+  beachHeightAboveSea: 2
+  cliffWidth: 20
+  cliffMinHeight: 8
+  cliffMaxHeight: 24
+  cliffSharpness: 3
+  cliffNoiseScale: 0.02
+  grassDepth: 3
+  rampNoiseScale: 0.008
+  rampThreshold: 0.65
+  rampStrength: 0.8
 --- !u!1 &470164823
 GameObject:
   m_ObjectHideFlags: 0
@@ -163,7 +252,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad16fe5f55b604056994fbd9c5618018, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.World.Chunks.WorldAuthoring
-  chunkRadius: 5
+  chunkRadius: 10
   initialCenterChunk: {x: 0, y: 0}
 --- !u!1 &1124811526
 GameObject:
@@ -194,7 +283,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f39652e944a2a40c39a1dbbf14a862c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.PlayerAuthoring
-  moveSpeed: 5
+  moveSpeed: 25
 --- !u!4 &1124811528
 Transform:
   m_ObjectHideFlags: 0
@@ -262,3 +351,4 @@ SceneRoots:
   - {fileID: 470164825}
   - {fileID: 1677043486}
   - {fileID: 1124811528}
+  - {fileID: 443306938}

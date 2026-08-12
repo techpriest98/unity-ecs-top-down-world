@@ -13,23 +13,43 @@ MonoBehaviour:
   m_Name: BlockDatabase
   m_EditorClassIdentifier: Assembly-CSharp::Game.World.Blocks.BlockDatabase
   blocks:
-  - BlockId: 1
+  - BlockId: 9
     AtlasColumn: 0
     AtlasRow: 0
     maxDurability: 12
-  - BlockId: 2
+  - BlockId: 1
     AtlasColumn: 1
     AtlasRow: 0
     maxDurability: 10
-  - BlockId: 3
+  - BlockId: 2
     AtlasColumn: 2
     AtlasRow: 0
     maxDurability: 20
-  - BlockId: 4
+  - BlockId: 3
     AtlasColumn: 3
     AtlasRow: 0
     maxDurability: 8
-  - BlockId: 5
+  - BlockId: 10
+    AtlasColumn: 4
+    AtlasRow: 0
+    maxDurability: 5
+  - BlockId: 7
     AtlasColumn: 0
     AtlasRow: 1
-    maxDurability: 5
+    maxDurability: 12
+  - BlockId: 11
+    AtlasColumn: 0
+    AtlasRow: 2
+    maxDurability: 12
+  - BlockId: 6
+    AtlasColumn: 0
+    AtlasRow: 3
+    maxDurability: 6
+  - BlockId: 4
+    AtlasColumn: 0
+    AtlasRow: 4
+    maxDurability: 1
+  - BlockId: 5
+    AtlasColumn: 1
+    AtlasRow: 4
+    maxDurability: 1
