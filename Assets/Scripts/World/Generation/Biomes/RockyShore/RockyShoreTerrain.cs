@@ -8,7 +8,8 @@ namespace Game.World.Generation.Biomes.RockyShore
     {
         Cliff = 0,
         Ramp = 1,
-        GrassTop = 2
+        GrassTop = 2,
+        Beach = 3
     }
 
     public struct RockyShoreTerrainSample
@@ -32,20 +33,12 @@ namespace Game.World.Generation.Biomes.RockyShore
             biomeInfluence = math.saturate(
                 biomeInfluence);
 
-            // ============================================================
-            // Rocky Shore впливає тільки на сушу.
-            //
-            // Водяні колонки поки просто повертаємо без змін.
-            // Пізніше взагалі перестанемо передавати їх сюди
-            // з ChunkGenerationSystem.
-            // ============================================================
-
             if (shoreDistance <= 0f)
             {
                 return new RockyShoreTerrainSample
                 {
                     Height = baseHeight,
-                    Zone = RockyShoreZone.GrassTop
+                    Zone = RockyShoreZone.Beach
                 };
             }
 
@@ -91,18 +84,27 @@ namespace Game.World.Generation.Biomes.RockyShore
                     settings.CliffMaxHeight,
                     cliffNoise);
 
-            // Скеля росте від приблизного рівня берега.
-            //
-            // Water у нас зараз на SeaLevel - 2,
-            // тому SeaLevel добре працює як підніжжя скелі.
             float cliffBaseHeight =
                 worldSettings.SeaLevelHeight;
 
+            float naturalCliffTopHeight =
+                cliffBaseHeight +
+                cliffHeight;
+
+            // Дозволяємо базовому рельєфу виступати
+            // максимум на 3 блоки над основною висотою скелі.
+            const float MaxTopRelief = 3f;
+
+            float trimmedBaseHeight =
+                math.min(
+                    baseHeight,
+                    naturalCliffTopHeight +
+                    MaxTopRelief);
+
             float cliffTopHeight =
                 math.max(
-                    baseHeight,
-                    cliffBaseHeight +
-                    cliffHeight);
+                    trimmedBaseHeight,
+                    naturalCliffTopHeight);
 
             // ============================================================
             // Ramp mask
@@ -111,15 +113,21 @@ namespace Game.World.Generation.Biomes.RockyShore
             float rampNoise =
                 noise.snoise(
                     (worldPosition +
-                     seedOffset * 1.731f +
-                     new float2(
-                         -683.41f,
-                         219.37f)) *
+                    seedOffset * 1.731f +
+                    new float2(
+                        -683.41f,
+                        219.37f)) *
                     settings.RampNoiseScale);
 
+            // snoise: -1..1
+            // rampNoise: 0..1
+            rampNoise =
+                rampNoise * 0.5f + 0.5f;
+
             float rampThreshold =
-                math.min(
+                math.clamp(
                     settings.RampThreshold,
+                    0f,
                     0.999f);
 
             float rampMask =
@@ -179,18 +187,10 @@ namespace Game.World.Generation.Biomes.RockyShore
                         cliffTopHeight,
                         heightProfile);
 
-                // Rocky Shore може підняти terrain,
-                // але не зрізає існуючий base terrain.
-                float targetHeight =
-                    math.max(
-                        baseHeight,
-                        shapedHeight);
-
-                int height =
-                    BlendHeight(
-                        baseHeight,
-                        targetHeight,
-                        biomeInfluence);
+                int height = BlendHeight(
+                    baseHeight,
+                    shapedHeight,
+                    biomeInfluence);
 
                 RockyShoreZone zone;
 
@@ -217,13 +217,7 @@ namespace Game.World.Generation.Biomes.RockyShore
                 };
             }
 
-            // ============================================================
-            // Inland blend
-            //
-            // Скеля закінчилась.
-            // Плавно повертаємось до звичайного terrain.
-            // ============================================================
-
+          
             float inlandDistance =
                 shoreDistance -
                 cliffEnd;
@@ -242,7 +236,7 @@ namespace Game.World.Generation.Biomes.RockyShore
                     baseHeight,
                     cliffTopHeight);
 
-            float inlandTargetHeight =
+            float targetHeight =
                 math.lerp(
                     raisedHeight,
                     baseHeight,
@@ -251,7 +245,7 @@ namespace Game.World.Generation.Biomes.RockyShore
             int blendedHeight =
                 BlendHeight(
                     baseHeight,
-                    inlandTargetHeight,
+                    targetHeight,
                     biomeInfluence);
 
             return new RockyShoreTerrainSample
@@ -274,10 +268,20 @@ namespace Game.World.Generation.Biomes.RockyShore
         {
             switch (zone)
             {
+                case RockyShoreZone.Beach:
+                    if (depth == 0)
+                        return BlockId.Sand;
+
+                    return BlockId.Stone;
+
                 case RockyShoreZone.Cliff:
                     return BlockId.Stone;
 
                 case RockyShoreZone.Ramp:
+                    if (depth == 0)
+                        return BlockId.PlainsGrass;
+                    return BlockId.Stone;
+
                 case RockyShoreZone.GrassTop:
                     if (depth == 0)
                         return BlockId.PlainsGrass;

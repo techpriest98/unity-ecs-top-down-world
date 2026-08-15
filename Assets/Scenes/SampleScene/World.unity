@@ -197,17 +197,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b61243b051c8f485f82fce33a2621c19, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.World.Generation.Biomes.RockyShore.RockyShoreSettingsAuthoring
-  beachWidth: 0.02
-  beachHeightAboveSea: 2
-  cliffWidth: 20
+  beachHeightAboveSea: 1
+  cliffWidth: 30
   cliffMinHeight: 8
   cliffMaxHeight: 24
-  cliffSharpness: 3
+  cliffSharpness: 4.94
   cliffNoiseScale: 0.02
   grassDepth: 3
   rampNoiseScale: 0.008
   rampThreshold: 0.65
-  rampStrength: 0.8
+  rampStrength: 1
 --- !u!1 &470164823
 GameObject:
   m_ObjectHideFlags: 0
@@ -328,7 +327,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: afa872e17509b48c29942b8ba4066cb3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.World.Rendering.ViewDirectionAuthoring
-  initialDirection: 0
+  initialDirection: 1
 --- !u!4 &1677043486
 Transform:
   m_ObjectHideFlags: 0

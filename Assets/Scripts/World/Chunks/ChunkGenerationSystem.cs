@@ -18,7 +18,7 @@ namespace Game.World.Chunks
         private const byte MaxDurability = byte.MaxValue;
         private const int MaxChunksGeneratedPerFrame = 2;
 
-        private const bool ShowOceanWater = false;
+        private const bool ShowOceanWater = true;
 
         private WorldHeightMap worldHeightMap;
         private CoastDistanceMap coastDistanceMap;

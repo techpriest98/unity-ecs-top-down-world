@@ -5,7 +5,6 @@ namespace Game.World.Generation.Biomes.RockyShore
     public struct RockyShoreSettingsComponent : IComponentData
     {
         // Beach
-        public float BeachWidth;
         public int BeachHeightAboveSea;
 
         // Cliffs

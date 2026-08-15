@@ -6,9 +6,6 @@ namespace Game.World.Generation.Biomes.RockyShore
     public sealed class RockyShoreSettingsAuthoring : MonoBehaviour
     {
         [Header("Beach")]
-        [SerializeField, Min(0f)]
-        private float beachWidth = 5f;
-
         [SerializeField, Min(0)]
         private int beachHeightAboveSea = 1;
 
@@ -56,7 +53,6 @@ namespace Game.World.Generation.Biomes.RockyShore
                     entity,
                     new RockyShoreSettingsComponent
                     {
-                        BeachWidth = authoring.beachWidth,
                         BeachHeightAboveSea = authoring.beachHeightAboveSea,
 
                         CliffWidth = authoring.cliffWidth,
