@@ -201,8 +201,7 @@ namespace Game.World.Chunks
                 landmassMap,
                 biomeSamplingContext,
                 worldSeed,
-                worldSettings,
-                rockyShoreSettings);
+                worldSettings);
 
             // Spawn point approximately in the center of chunk (0,0).
             macroSampleOrigin = spawnPosition - new int2(
@@ -251,8 +250,7 @@ namespace Game.World.Chunks
             LandmassMap landmassMap,
             WorldBiomeSamplingContext biomeContext,
             uint worldSeed,
-            in WorldGenerationSettingsComponent worldSettings,
-            in RockyShoreSettingsComponent rockyShoreSettings)
+            in WorldGenerationSettingsComponent worldSettings)
         {
             int searchRadius = worldSettings.MacroCellSize * 2;
             const int searchStep = 2;
