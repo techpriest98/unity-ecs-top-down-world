@@ -31,7 +31,6 @@ namespace Game.World.Chunks
 
         private uint loadedSeed;
         private WorldGenerationSettingsComponent loadedWorldSettings;
-        private RockyShoreSettingsComponent loadedRockyShoreSettings;
         private bool hasLoadedWorld;
 
         public void OnCreate(ref SystemState state)
@@ -51,7 +50,6 @@ namespace Game.World.Chunks
 
             loadedSeed = 0;
             loadedWorldSettings = default;
-            loadedRockyShoreSettings = default;
             hasLoadedWorld = false;
         }
 
@@ -71,10 +69,7 @@ namespace Game.World.Chunks
             RockyShoreSettingsComponent rockyShoreSettings =
                 SystemAPI.GetSingleton<RockyShoreSettingsComponent>();
 
-            EnsureWorldData(
-                worldSeed,
-                worldSettings,
-                rockyShoreSettings);
+            EnsureWorldData(worldSeed, worldSettings);
 
             int chunkCount = SystemAPI.QueryBuilder()
                 .WithAll<ChunkComponent>()
@@ -146,8 +141,7 @@ namespace Game.World.Chunks
 
         private void EnsureWorldData(
             uint worldSeed,
-            in WorldGenerationSettingsComponent worldSettings,
-            in RockyShoreSettingsComponent rockyShoreSettings)
+            in WorldGenerationSettingsComponent worldSettings)
         {
             bool sameWorld =
                 hasLoadedWorld &&
@@ -210,7 +204,6 @@ namespace Game.World.Chunks
 
             loadedSeed = worldSeed;
             loadedWorldSettings = worldSettings;
-            loadedRockyShoreSettings = rockyShoreSettings;
             hasLoadedWorld = true;
         }
 
@@ -235,7 +228,6 @@ namespace Game.World.Chunks
 
             loadedSeed = 0;
             loadedWorldSettings = default;
-            loadedRockyShoreSettings = default;
             hasLoadedWorld = false;
         }
 
