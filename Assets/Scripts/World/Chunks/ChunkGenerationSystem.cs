@@ -335,12 +335,7 @@ namespace Game.World.Chunks
                         math.length(new float2(dx, dz)) /
                         math.max(1f, searchRadius);
 
-                    float targetHeight =
-                        worldSettings.SeaLevelHeight +
-                        rockyShoreSettings.BeachHeightAboveSea;
-
-                    float heightScore =
-                        math.abs(baseHeight - targetHeight);
+                    float heightScore = math.abs(baseHeight - worldSettings.SeaLevelHeight);
 
                     float score =
                         coastDistance * 3f +
