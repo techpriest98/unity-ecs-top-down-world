@@ -2,18 +2,22 @@ using Game.World.Blocks;
 
 namespace Game.World.Generation.Biomes.Ocean
 {
-    public static class OceanTerrain
+    public readonly struct OceanTerrain
     {
-        public static BlockId GetBlock(
-            int y,
-            int terrainHeight,
-            int waterLevel)
+        private readonly OceanSettingsComponent settings;
+
+        public OceanTerrain(in OceanSettingsComponent settings)
+        {
+            this.settings = settings;
+        }
+
+        public BlockId GetBlock(int y, int terrainHeight, int waterLevel)
         {
             if (y < terrainHeight)
             {
                 int depth = terrainHeight - 1 - y;
 
-                return depth <= 3
+                return depth <= settings.SandDepth
                     ? BlockId.Sand
                     : BlockId.Stone;
             }

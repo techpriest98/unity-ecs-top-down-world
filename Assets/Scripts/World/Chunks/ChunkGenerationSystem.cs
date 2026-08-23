@@ -1,5 +1,6 @@
 using Game.World.Blocks;
 using Game.World.Generation;
+using Game.World.Generation.Biomes;
 using Game.World.Generation.Biomes.RockyShore;
 using Game.World.Generation.Biomes.Ocean;
 using Game.World.Generation.Terrain;
@@ -40,6 +41,7 @@ namespace Game.World.Chunks
             state.RequireForUpdate<WorldSeedComponent>();
             state.RequireForUpdate<WorldGenerationSettingsComponent>();
             state.RequireForUpdate<RockyShoreSettingsComponent>();
+            state.RequireForUpdate<BiomeTerrainResolver>();
 
             worldHeightMap = default;
             coastDistanceMap = default;
@@ -69,6 +71,9 @@ namespace Game.World.Chunks
 
             RockyShoreSettingsComponent rockyShoreSettings =
                 SystemAPI.GetSingleton<RockyShoreSettingsComponent>();
+
+            BiomeTerrainResolver biomeTerrainResolver =
+                SystemAPI.GetSingleton<BiomeTerrainResolver>();
 
             EnsureWorldData(worldSeed, worldSettings);
 
@@ -115,7 +120,8 @@ namespace Game.World.Chunks
                     macroSampleOrigin,
                     worldSeed,
                     worldSettings,
-                    rockyShoreSettings);
+                    rockyShoreSettings,
+                    biomeTerrainResolver);
 
                 ecb.AddComponent<ChunkGenerated>(entity);
                 ecb.SetComponentEnabled<ChunkNeedsProjection>(
@@ -420,7 +426,8 @@ namespace Game.World.Chunks
             int2 macroOrigin,
             uint worldSeed,
             in WorldGenerationSettingsComponent worldSettings,
-            in RockyShoreSettingsComponent rockyShoreSettings)
+            in RockyShoreSettingsComponent rockyShoreSettings,
+            in BiomeTerrainResolver biomeTerrainResolver)
         {
             BlockData air = new(BlockId.Air, 0);
             BlockData dirt = new(BlockId.Dirt, MaxDurability);
@@ -577,14 +584,14 @@ namespace Game.World.Chunks
 
                         if (hasWater)
                         {
-                            BlockId blockId = OceanTerrain.GetBlock(
+                            BlockId blockId = biomeTerrainResolver.GetOceanBlock(
                                 y,
                                 terrainHeight,
                                 waterLevel);
 
-                            block = new BlockData(
-                                blockId,
-                                MaxDurability);
+                            block = blockId == BlockId.Air
+                                ? air
+                                : new BlockData(blockId, MaxDurability);
                         }
                         else if (y >= terrainHeight)
                         {
