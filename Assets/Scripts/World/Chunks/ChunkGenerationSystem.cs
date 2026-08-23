@@ -304,7 +304,6 @@ namespace Game.World.Chunks
                         uv,
                         biomeElevation,
                         coastDistance,
-                        coastDistance,
                         isMainland,
                         biomeContext);
 
@@ -508,7 +507,6 @@ namespace Game.World.Chunks
                     WorldBiome biome = WorldBiomeSampler.Sample(
                         uv,
                         biomeElevation,
-                        coastDistance,
                         coastDistance,
                         isMainland,
                         biomeContext);

@@ -111,7 +111,6 @@ namespace Game.World.Generation
             float2 uv,
             float elevation,
             float coastDistance,
-            float progression,
             bool isMainland,
             WorldBiomeSamplingContext context)
         {
@@ -175,7 +174,7 @@ namespace Game.World.Generation
 
             float warpedProgression =
                 math.saturate(
-                    progression +
+                    coastDistance +
                     progressionWarp *
                     ProgressionWarpStrength);
 

@@ -44,7 +44,6 @@ namespace Game.World.Generation
 
                     float elevation = heightMap.Get(x, z);
                     float coastDistance = coastDistanceMap.Get(x, z);
-                    float progression = progressionMap.Get(x, z);
                     bool isMainland = landmassMap.IsMainland(x, z);
 
                     float2 uv = MapToUv(x, z, resolution);
@@ -53,7 +52,6 @@ namespace Game.World.Generation
                         uv,
                         elevation,
                         coastDistance,
-                        progression,
                         isMainland,
                         context);
 
