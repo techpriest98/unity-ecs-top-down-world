@@ -245,39 +245,42 @@ namespace Game.World.Generation.Biomes.RockyShore
 
         public BlockId GetBlock(int y, RockyShoreZone zone, int terrainHeight, int waterLevel)
         {
-            if (y >= terrainHeight)
+            if (y < terrainHeight)
             {
-                return BlockId.Air;
+                int depth = terrainHeight - 1 - y;
+
+                switch (zone)
+                {
+                    case RockyShoreZone.Beach:
+                        return BlockId.Stone;
+
+                    case RockyShoreZone.Cliff:
+                        return BlockId.Stone;
+
+                    case RockyShoreZone.Ramp:
+                        if (depth == 0)
+                            return BlockId.PlainsGrass;
+
+                        return BlockId.Stone;
+
+                    case RockyShoreZone.GrassTop:
+                        if (depth == 0)
+                            return BlockId.PlainsGrass;
+
+                        if (depth <= settings.GrassDepth)
+                            return BlockId.Dirt;
+
+                        return BlockId.Stone;
+
+                    default:
+                        return BlockId.Stone;
+                }
             }
 
-            int depth = terrainHeight - 1 - y;
-        
-            switch (zone)
-            {
-                case RockyShoreZone.Beach:
-                    return BlockId.Stone;
+            if (y < waterLevel)
+                return BlockId.OceanWater;
 
-                case RockyShoreZone.Cliff:
-                    return BlockId.Stone;
-
-                case RockyShoreZone.Ramp:
-                    if (depth == 0)
-                        return BlockId.PlainsGrass;
-
-                    return BlockId.Stone;
-
-                case RockyShoreZone.GrassTop:
-                    if (depth == 0)
-                        return BlockId.PlainsGrass;
-
-                    if (depth <= settings.GrassDepth)
-                        return BlockId.Dirt;
-
-                    return BlockId.Stone;
-
-                default:
-                    return BlockId.Stone;
-            }
+            return BlockId.Air;
         }
 
         // ================================================================

@@ -508,7 +508,7 @@ namespace Game.World.Chunks
                     // Biome terrain shaping
                     // ====================================================
 
-                    BiomeTerrainSample terrainSample = new(baseHeight);
+                    BiomeTerrainSample terrainSample = biomeTerrainResolver.Sample(biome, baseHeight);
                     bool hasRockyShoreInfluence = rockyInfluence > 0f;
 
                     if (hasRockyShoreInfluence)
