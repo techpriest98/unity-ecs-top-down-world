@@ -1,6 +1,7 @@
 using Game.World.Blocks;
 using Game.World.Generation;
 using Game.World.Generation.Biomes.RockyShore;
+using Game.World.Generation.Biomes.Ocean;
 using Game.World.Generation.Terrain;
 using Game.World.Rendering;
 using Unity.Burst;
@@ -18,7 +19,7 @@ namespace Game.World.Chunks
         private const byte MaxDurability = byte.MaxValue;
         private const int MaxChunksGeneratedPerFrame = 2;
 
-        private const bool ShowOceanWater = true;
+        private const bool ShowOceanWater = false;
 
         private WorldHeightMap worldHeightMap;
         private CoastDistanceMap coastDistanceMap;
@@ -576,22 +577,14 @@ namespace Game.World.Chunks
 
                         if (hasWater)
                         {
-                            if (y < terrainHeight)
-                            {
-                                int depth = terrainHeight - 1 - y;
+                            BlockId blockId = OceanTerrain.GetBlock(
+                                y,
+                                terrainHeight,
+                                waterLevel);
 
-                                block = depth <= 3
-                                    ? sand
-                                    : stone;
-                            }
-                            else if (y < waterLevel && ShowOceanWater)
-                            {
-                                block = oceanWater;
-                            }
-                            else
-                            {
-                                block = air;
-                            }
+                            block = new BlockData(
+                                blockId,
+                                MaxDurability);
                         }
                         else if (y >= terrainHeight)
                         {
