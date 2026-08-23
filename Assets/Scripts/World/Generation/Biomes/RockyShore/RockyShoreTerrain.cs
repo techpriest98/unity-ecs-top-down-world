@@ -18,17 +18,23 @@ namespace Game.World.Generation.Biomes.RockyShore
         public RockyShoreZone Zone;
     }
 
-    public static class RockyShoreTerrain
+    public readonly struct RockyShoreTerrain
     {
-        public static RockyShoreTerrainSample Sample(
+        private readonly RockyShoreSettingsComponent settings;
+
+        public RockyShoreTerrain(in RockyShoreSettingsComponent settings)
+        {
+            this.settings = settings;
+        }
+
+        public RockyShoreTerrainSample Sample(
             int worldX,
             int worldZ,
             int baseHeight,
             float shoreDistance,
             float biomeInfluence,
             uint worldSeed,
-            in WorldGenerationSettingsComponent worldSettings,
-            in RockyShoreSettingsComponent settings)
+            in WorldGenerationSettingsComponent worldSettings)
         {
             biomeInfluence = math.saturate(biomeInfluence);
 
@@ -41,7 +47,10 @@ namespace Game.World.Generation.Biomes.RockyShore
                 };
             }
 
-            float2 worldPosition = new float2(worldX, worldZ);
+            float2 worldPosition = new float2(
+                worldX,
+                worldZ);
+
             float2 seedOffset = GetSeedOffset(worldSeed);
 
             // ============================================================
@@ -49,19 +58,29 @@ namespace Game.World.Generation.Biomes.RockyShore
             // ============================================================
 
             float widthNoise = noise.snoise(
-                (worldPosition + seedOffset * 0.913f + new float2(-317.43f, 711.19f)) *
+                (worldPosition +
+                 seedOffset * 0.913f +
+                 new float2(-317.43f, 711.19f)) *
                 settings.CliffWidthNoiseScale);
 
             widthNoise = widthNoise * 0.5f + 0.5f;
 
-            float baseCliffWidth = math.max(1f, settings.CliffWidth);
-            float widthVariation = math.saturate(settings.CliffWidthVariation);
+            float baseCliffWidth = math.max(
+                1f,
+                settings.CliffWidth);
+
+            float widthVariation = math.saturate(
+                settings.CliffWidthVariation);
+
             float cliffWidth = baseCliffWidth * math.lerp(
                 1f - widthVariation,
                 1f + widthVariation,
                 widthNoise);
 
-            float inlandBlendWidth = math.max(6f, cliffWidth * 0.75f);
+            float inlandBlendWidth = math.max(
+                6f,
+                cliffWidth * 0.75f);
+
             float cliffEnd = cliffWidth;
 
             // ============================================================
@@ -69,7 +88,9 @@ namespace Game.World.Generation.Biomes.RockyShore
             // ============================================================
 
             float cliffNoise = noise.snoise(
-                (worldPosition + seedOffset + new float2(137.17f, -491.73f)) *
+                (worldPosition +
+                 seedOffset +
+                 new float2(137.17f, -491.73f)) *
                 settings.CliffNoiseScale);
 
             cliffNoise = cliffNoise * 0.5f + 0.5f;
@@ -79,8 +100,11 @@ namespace Game.World.Generation.Biomes.RockyShore
                 settings.CliffMaxHeight,
                 cliffNoise);
 
-            float cliffBaseHeight = worldSettings.SeaLevelHeight;
-            float naturalCliffTopHeight = cliffBaseHeight + cliffHeight;
+            float cliffBaseHeight =
+                worldSettings.SeaLevelHeight;
+
+            float naturalCliffTopHeight =
+                cliffBaseHeight + cliffHeight;
 
             // Дозволяємо базовому рельєфу виступати максимум
             // на 3 блоки над основною висотою скелі.
@@ -99,7 +123,9 @@ namespace Game.World.Generation.Biomes.RockyShore
             // ============================================================
 
             float rampNoise = noise.snoise(
-                (worldPosition + seedOffset * 1.731f + new float2(-683.41f, 219.37f)) *
+                (worldPosition +
+                 seedOffset * 1.731f +
+                 new float2(-683.41f, 219.37f)) *
                 settings.RampNoiseScale);
 
             rampNoise = rampNoise * 0.5f + 0.5f;
@@ -114,7 +140,8 @@ namespace Game.World.Generation.Biomes.RockyShore
                 1f,
                 rampNoise);
 
-            rampMask = math.saturate(rampMask * settings.RampStrength);
+            rampMask = math.saturate(
+                rampMask * settings.RampStrength);
 
             // ============================================================
             // Cliff / Ramp
@@ -122,14 +149,20 @@ namespace Game.World.Generation.Biomes.RockyShore
 
             if (shoreDistance <= cliffEnd)
             {
-                float cliffProgress = math.saturate(shoreDistance / cliffWidth);
-                float sharpness = math.max(0.1f, settings.CliffSharpness);
+                float cliffProgress = math.saturate(
+                    shoreDistance / cliffWidth);
+
+                float sharpness = math.max(
+                    0.1f,
+                    settings.CliffSharpness);
 
                 float cliffProfile = 1f - math.pow(
                     1f - cliffProgress,
                     sharpness);
 
-                float rampProfile = Smooth01(cliffProgress);
+                float rampProfile = Smooth01(
+                    cliffProgress);
+
                 float heightProfile = math.lerp(
                     cliffProfile,
                     rampProfile,
@@ -148,11 +181,17 @@ namespace Game.World.Generation.Biomes.RockyShore
                 RockyShoreZone zone;
 
                 if (rampMask > 0.30f)
+                {
                     zone = RockyShoreZone.Ramp;
+                }
                 else if (heightProfile < 0.82f)
+                {
                     zone = RockyShoreZone.Cliff;
+                }
                 else
+                {
                     zone = RockyShoreZone.GrassTop;
+                }
 
                 return new RockyShoreTerrainSample
                 {
@@ -192,14 +231,34 @@ namespace Game.World.Generation.Biomes.RockyShore
             };
         }
 
+        public int GetShoreSearchDistance()
+        {
+            float cliffWidth = math.max(
+                1f,
+                settings.CliffWidth);
+
+            float widthVariation = math.saturate(
+                settings.CliffWidthVariation);
+
+            float maxCliffWidth =
+                cliffWidth * (1f + widthVariation);
+
+            float maxInlandBlendWidth = math.max(
+                6f,
+                maxCliffWidth * 0.75f);
+
+            return math.max(
+                1,
+                (int)math.ceil(
+                    maxCliffWidth +
+                    maxInlandBlendWidth));
+        }
+        
         // ================================================================
         // Blocks
         // ================================================================
 
-        public static BlockId GetBlock(
-            int depth,
-            RockyShoreZone zone,
-            in RockyShoreSettingsComponent settings)
+        public BlockId GetBlock(int depth, RockyShoreZone zone)
         {
             switch (zone)
             {
@@ -259,7 +318,10 @@ namespace Game.World.Generation.Biomes.RockyShore
         private static float Smooth01(float value)
         {
             value = math.saturate(value);
-            return value * value * (3f - 2f * value);
+
+            return value *
+                   value *
+                   (3f - 2f * value);
         }
 
         private static float2 GetSeedOffset(uint seed)

@@ -36,7 +36,6 @@ namespace Game.World.Chunks
             state.RequireForUpdate<ChunkComponent>();
             state.RequireForUpdate<WorldSeedComponent>();
             state.RequireForUpdate<WorldGenerationSettingsComponent>();
-            state.RequireForUpdate<RockyShoreSettingsComponent>();
             state.RequireForUpdate<BiomeTerrainResolver>();
             state.RequireForUpdate<BlockDatabaseComponent>();
 
@@ -65,9 +64,6 @@ namespace Game.World.Chunks
 
             WorldGenerationSettingsComponent worldSettings =
                 SystemAPI.GetSingleton<WorldGenerationSettingsComponent>();
-
-            RockyShoreSettingsComponent rockyShoreSettings =
-                SystemAPI.GetSingleton<RockyShoreSettingsComponent>();
 
             BiomeTerrainResolver biomeTerrainResolver =
                 SystemAPI.GetSingleton<BiomeTerrainResolver>();
@@ -120,7 +116,6 @@ namespace Game.World.Chunks
                     macroSampleOrigin,
                     worldSeed,
                     worldSettings,
-                    rockyShoreSettings,
                     biomeTerrainResolver,
                     blockDatabase);
 
@@ -427,7 +422,6 @@ namespace Game.World.Chunks
             int2 macroOrigin,
             uint worldSeed,
             in WorldGenerationSettingsComponent worldSettings,
-            in RockyShoreSettingsComponent rockyShoreSettings,
             in BiomeTerrainResolver biomeTerrainResolver,
             in BlockDatabaseComponent blockDatabase)
         {
@@ -435,14 +429,12 @@ namespace Game.World.Chunks
             BlockData dirt = blockDatabase.CreateBlock(BlockId.Dirt);
             BlockData stone = blockDatabase.CreateBlock(BlockId.Stone);
             BlockData sand = blockDatabase.CreateBlock(BlockId.Sand);
-            BlockData oceanWater = blockDatabase.CreateBlock(BlockId.OceanWater);
             BlockData snow = blockDatabase.CreateBlock(BlockId.Snow);
             BlockData plainsGrass = blockDatabase.CreateBlock(BlockId.PlainsGrass);
             BlockData meadowGrass = blockDatabase.CreateBlock(BlockId.MeadowGrass);
             BlockData darkForestGrass = blockDatabase.CreateBlock(BlockId.DarkForestGrass);
 
-            int shoreSearchDistance = GetShoreSearchDistance(
-                rockyShoreSettings);
+            int shoreSearchDistance = biomeTerrainResolver.GetRockyShoreSearchDistance();
 
             ChunkShoreDistanceMap shoreDistanceMap = default;
 
@@ -550,15 +542,14 @@ namespace Game.World.Chunks
                                 z);
 
                         RockyShoreTerrainSample rockySample =
-                            RockyShoreTerrain.Sample(
+                            biomeTerrainResolver.SampleRockyShore(
                                 worldX,
                                 worldZ,
                                 baseHeight,
                                 shoreDistance,
                                 rockyInfluence,
                                 worldSeed,
-                                worldSettings,
-                                rockyShoreSettings);
+                                worldSettings);
 
                         terrainHeight =
                             rockySample.Height;
@@ -598,12 +589,7 @@ namespace Game.World.Chunks
 
                             if (biome == WorldBiome.RockyShore)
                             {
-                                BlockId blockId =
-                                    RockyShoreTerrain.GetBlock(
-                                        depth,
-                                        rockyZone,
-                                        rockyShoreSettings);
-
+                                BlockId blockId = biomeTerrainResolver.GetRockyShoreBlock(depth, rockyZone);
                                 block = blockDatabase.CreateBlock(blockId);
                             }
                             else
@@ -633,19 +619,6 @@ namespace Game.World.Chunks
 
             if (shoreDistanceMap.IsCreated)
                 shoreDistanceMap.Dispose();
-        }
-
-        private static int GetShoreSearchDistance(in RockyShoreSettingsComponent settings)
-        {
-            float cliffWidth = math.max(1f, settings.CliffWidth);
-            float widthVariation = math.saturate(settings.CliffWidthVariation);
-
-            float maxCliffWidth = cliffWidth * (1f + widthVariation);
-            float maxInlandBlendWidth = math.max(6f, maxCliffWidth * 0.75f);
-
-            return math.max(
-                1,
-                (int)math.ceil(maxCliffWidth + maxInlandBlendWidth));
         }
 
         // ================================================================
