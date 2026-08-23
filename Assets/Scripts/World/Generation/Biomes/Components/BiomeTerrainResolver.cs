@@ -18,7 +18,21 @@ namespace Game.World.Generation.Biomes
             rockyShore = new RockyShoreTerrain(
                 rockyShoreSettings);
         }
-        
+
+        public BiomeTerrainSample Sample(
+            WorldBiome biome,
+            int baseHeight)
+        {
+            return biome switch
+            {
+                WorldBiome.Ocean =>
+                    ocean.Sample(baseHeight),
+
+                _ =>
+                    new BiomeTerrainSample(baseHeight)
+            };
+        }
+
         // ================================================================
         // Rocky shore
         // ================================================================
@@ -53,17 +67,6 @@ namespace Game.World.Generation.Biomes
             int waterLevel,
             in BiomeTerrainSample terrainSample)
         {
-            if (terrainSample.Height < waterLevel)
-            {
-                return ocean.GetBlock(
-                    y,
-                    terrainSample.Height,
-                    waterLevel);
-            }
-
-            if (y >= terrainSample.Height)
-                return BlockId.Air;
-
             int depth =
                 terrainSample.Height - 1 - y;
 
@@ -71,8 +74,10 @@ namespace Game.World.Generation.Biomes
             {
                 WorldBiome.RockyShore =>
                     rockyShore.GetBlock(
-                        depth,
-                        (RockyShoreZone)terrainSample.Zone),
+                        y,
+                        (RockyShoreZone)terrainSample.Zone,
+                        terrainSample.Height,
+                        waterLevel),
 
                 WorldBiome.Plains =>
                     depth == 0

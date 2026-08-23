@@ -2,6 +2,11 @@ using Game.World.Blocks;
 
 namespace Game.World.Generation.Biomes.Ocean
 {
+    public enum OceanZone : byte
+    {
+        DeepOcean = 1
+    }
+
     public readonly struct OceanTerrain
     {
         private readonly OceanSettingsComponent settings;
@@ -9,6 +14,14 @@ namespace Game.World.Generation.Biomes.Ocean
         public OceanTerrain(in OceanSettingsComponent settings)
         {
             this.settings = settings;
+        }
+
+        public BiomeTerrainSample Sample(
+            int baseHeight)
+        {
+            return new BiomeTerrainSample(
+                baseHeight,
+                (byte)OceanZone.DeepOcean);
         }
 
         public BlockId GetBlock(int y, int terrainHeight, int waterLevel)

@@ -7,7 +7,7 @@ namespace Game.World.Generation.Biomes
 
         public BiomeTerrainSample(
             int height,
-            byte zone = 0)
+            byte zone = byte.MaxValue)
         {
             Height = height;
             Zone = zone;

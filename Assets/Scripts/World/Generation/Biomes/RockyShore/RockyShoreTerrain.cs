@@ -6,10 +6,11 @@ namespace Game.World.Generation.Biomes.RockyShore
 {
     public enum RockyShoreZone : byte
     {
-        Cliff = 0,
-        Ramp = 1,
-        GrassTop = 2,
-        Beach = 3
+        Cliff = 2,
+        Ramp = 3,
+        GrassTop = 4,
+        Beach = 5,
+        ShallowWater = 6,
     }
 
     public readonly struct RockyShoreTerrain
@@ -210,7 +211,9 @@ namespace Game.World.Generation.Biomes.RockyShore
                 targetHeight,
                 biomeInfluence);
 
-            return new BiomeTerrainSample(ClampHeight(blendedHeight), (byte)RockyShoreZone.GrassTop);
+            return new BiomeTerrainSample(
+                ClampHeight(blendedHeight),
+                (byte)RockyShoreZone.GrassTop);
         }
 
         public int GetShoreSearchDistance()
@@ -240,8 +243,15 @@ namespace Game.World.Generation.Biomes.RockyShore
         // Blocks
         // ================================================================
 
-        public BlockId GetBlock(int depth, RockyShoreZone zone)
+        public BlockId GetBlock(int y, RockyShoreZone zone, int terrainHeight, int waterLevel)
         {
+            if (y >= terrainHeight)
+            {
+                return BlockId.Air;
+            }
+
+            int depth = terrainHeight - 1 - y;
+        
             switch (zone)
             {
                 case RockyShoreZone.Beach:
