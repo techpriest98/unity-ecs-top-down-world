@@ -563,9 +563,7 @@ namespace Game.World.Chunks
                             rockySample.Zone;
                     }
 
-                    int waterLevel =
-                        worldSettings.SeaLevelHeight - 2;
-
+                    int waterLevel = worldSettings.SeaLevelHeight - 1;
                     bool hasWater = terrainHeight < waterLevel;
 
                     // ====================================================
@@ -580,8 +578,7 @@ namespace Game.World.Chunks
                         {
                             if (y < terrainHeight)
                             {
-                                int depth =
-                                    terrainHeight - 1 - y;
+                                int depth = terrainHeight - 1 - y;
 
                                 block = depth <= 3
                                     ? sand

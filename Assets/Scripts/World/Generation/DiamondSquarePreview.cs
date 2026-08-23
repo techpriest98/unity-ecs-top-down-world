@@ -416,9 +416,9 @@ namespace Game.World.Generation
             {
                 WorldBiome.Ocean =>
                     new Color32(
-                        5,
-                        15,
                         25,
+                        55,
+                        70,
                         255),
 
                 WorldBiome.RockyShore =>
