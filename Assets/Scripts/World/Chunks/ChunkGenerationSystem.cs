@@ -646,22 +646,17 @@ namespace Game.World.Chunks
                 shoreDistanceMap.Dispose();
         }
 
-        private static int GetShoreSearchDistance(
-            in RockyShoreSettingsComponent settings)
+        private static int GetShoreSearchDistance(in RockyShoreSettingsComponent settings)
         {
-            float cliffWidth = math.max(
-                1f,
-                settings.CliffWidth);
+            float cliffWidth = math.max(1f, settings.CliffWidth);
+            float widthVariation = math.saturate(settings.CliffWidthVariation);
 
-            float inlandBlendWidth = math.max(
-                6f,
-                cliffWidth * 0.75f);
+            float maxCliffWidth = cliffWidth * (1f + widthVariation);
+            float maxInlandBlendWidth = math.max(6f, maxCliffWidth * 0.75f);
 
             return math.max(
                 1,
-                (int)math.ceil(
-                    cliffWidth +
-                    inlandBlendWidth));
+                (int)math.ceil(maxCliffWidth + maxInlandBlendWidth));
         }
 
         // ================================================================

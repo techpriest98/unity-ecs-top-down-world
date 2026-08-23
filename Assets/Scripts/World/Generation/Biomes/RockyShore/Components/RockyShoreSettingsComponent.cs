@@ -6,6 +6,9 @@ namespace Game.World.Generation.Biomes.RockyShore
     {
         // Cliffs
         public float CliffWidth;
+        public float CliffWidthNoiseScale;
+        public float CliffWidthVariation;
+
         public int CliffMinHeight;
         public int CliffMaxHeight;
         public float CliffSharpness;

@@ -9,6 +9,12 @@ namespace Game.World.Generation.Biomes.RockyShore
         [SerializeField, Min(1f)]
         private float cliffWidth = 20f;
 
+        [SerializeField, Min(0.0001f)]
+        private float cliffWidthNoiseScale = 0.006f;
+
+        [SerializeField, Range(0f, 0.9f)]
+        private float cliffWidthVariation = 0.35f;
+
         [SerializeField, Min(0)]
         private int cliffMinHeight = 10;
 
@@ -37,29 +43,28 @@ namespace Game.World.Generation.Biomes.RockyShore
         [SerializeField, Range(0f, 1f)]
         private float rampStrength = 0.8f;
 
-
-        private sealed class Baker : Baker<RockyShoreSettingsAuthoring>
+        private sealed class Baker: Baker<RockyShoreSettingsAuthoring>
         {
             public override void Bake(RockyShoreSettingsAuthoring authoring)
             {
                 Entity entity = GetEntity(TransformUsageFlags.None);
 
-                AddComponent(
-                    entity,
-                    new RockyShoreSettingsComponent
-                    {
-                        CliffWidth = authoring.cliffWidth,
-                        CliffMinHeight = authoring.cliffMinHeight,
-                        CliffMaxHeight = authoring.cliffMaxHeight,
-                        CliffSharpness = authoring.cliffSharpness,
-                        CliffNoiseScale = authoring.cliffNoiseScale,
+                AddComponent(entity, new RockyShoreSettingsComponent
+                {
+                    CliffWidth = authoring.cliffWidth,
+                    CliffWidthNoiseScale = authoring.cliffWidthNoiseScale,
+                    CliffWidthVariation = authoring.cliffWidthVariation,
+                    CliffMinHeight = authoring.cliffMinHeight,
+                    CliffMaxHeight = authoring.cliffMaxHeight,
+                    CliffSharpness = authoring.cliffSharpness,
+                    CliffNoiseScale = authoring.cliffNoiseScale,
 
-                        GrassDepth = authoring.grassDepth,
+                    GrassDepth = authoring.grassDepth,
 
-                        RampNoiseScale = authoring.rampNoiseScale,
-                        RampThreshold = authoring.rampThreshold,
-                        RampStrength = authoring.rampStrength
-                    });
+                    RampNoiseScale = authoring.rampNoiseScale,
+                    RampThreshold = authoring.rampThreshold,
+                    RampStrength = authoring.rampStrength
+                });
             }
         }
     }
