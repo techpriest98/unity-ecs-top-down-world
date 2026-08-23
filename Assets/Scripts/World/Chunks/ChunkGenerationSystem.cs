@@ -2,7 +2,6 @@ using Game.World.Blocks;
 using Game.World.Generation;
 using Game.World.Generation.Biomes;
 using Game.World.Generation.Biomes.RockyShore;
-using Game.World.Generation.Biomes.Ocean;
 using Game.World.Generation.Terrain;
 using Game.World.Rendering;
 using Unity.Burst;
@@ -17,10 +16,7 @@ namespace Game.World.Chunks
     [UpdateBefore(typeof(ChunkProjectionSystem))]
     public partial struct ChunkGenerationSystem : ISystem
     {
-        private const byte MaxDurability = byte.MaxValue;
         private const int MaxChunksGeneratedPerFrame = 2;
-
-        private const bool ShowOceanWater = false;
 
         private WorldHeightMap worldHeightMap;
         private CoastDistanceMap coastDistanceMap;
@@ -42,6 +38,7 @@ namespace Game.World.Chunks
             state.RequireForUpdate<WorldGenerationSettingsComponent>();
             state.RequireForUpdate<RockyShoreSettingsComponent>();
             state.RequireForUpdate<BiomeTerrainResolver>();
+            state.RequireForUpdate<BlockDatabaseComponent>();
 
             worldHeightMap = default;
             coastDistanceMap = default;
@@ -74,6 +71,9 @@ namespace Game.World.Chunks
 
             BiomeTerrainResolver biomeTerrainResolver =
                 SystemAPI.GetSingleton<BiomeTerrainResolver>();
+
+            BlockDatabaseComponent blockDatabase =
+                SystemAPI.GetSingleton<BlockDatabaseComponent>();
 
             EnsureWorldData(worldSeed, worldSettings);
 
@@ -121,7 +121,8 @@ namespace Game.World.Chunks
                     worldSeed,
                     worldSettings,
                     rockyShoreSettings,
-                    biomeTerrainResolver);
+                    biomeTerrainResolver,
+                    blockDatabase);
 
                 ecb.AddComponent<ChunkGenerated>(entity);
                 ecb.SetComponentEnabled<ChunkNeedsProjection>(
@@ -427,23 +428,18 @@ namespace Game.World.Chunks
             uint worldSeed,
             in WorldGenerationSettingsComponent worldSettings,
             in RockyShoreSettingsComponent rockyShoreSettings,
-            in BiomeTerrainResolver biomeTerrainResolver)
+            in BiomeTerrainResolver biomeTerrainResolver,
+            in BlockDatabaseComponent blockDatabase)
         {
-            BlockData air = new(BlockId.Air, 0);
-            BlockData dirt = new(BlockId.Dirt, MaxDurability);
-            BlockData stone = new(BlockId.Stone, MaxDurability);
-            BlockData sand = new(BlockId.Sand, MaxDurability);
-            BlockData oceanWater = new(BlockId.OceanWater, MaxDurability);
-            BlockData snow = new(BlockId.Snow, MaxDurability);
-
-            BlockData plainsGrass =
-                new(BlockId.PlainsGrass, MaxDurability);
-
-            BlockData meadowGrass =
-                new(BlockId.MeadowGrass, MaxDurability);
-
-            BlockData darkForestGrass =
-                new(BlockId.DarkForestGrass, MaxDurability);
+            BlockData air = blockDatabase.CreateBlock(BlockId.Air);
+            BlockData dirt = blockDatabase.CreateBlock(BlockId.Dirt);
+            BlockData stone = blockDatabase.CreateBlock(BlockId.Stone);
+            BlockData sand = blockDatabase.CreateBlock(BlockId.Sand);
+            BlockData oceanWater = blockDatabase.CreateBlock(BlockId.OceanWater);
+            BlockData snow = blockDatabase.CreateBlock(BlockId.Snow);
+            BlockData plainsGrass = blockDatabase.CreateBlock(BlockId.PlainsGrass);
+            BlockData meadowGrass = blockDatabase.CreateBlock(BlockId.MeadowGrass);
+            BlockData darkForestGrass = blockDatabase.CreateBlock(BlockId.DarkForestGrass);
 
             int shoreSearchDistance = GetShoreSearchDistance(
                 rockyShoreSettings);
@@ -589,9 +585,7 @@ namespace Game.World.Chunks
                                 terrainHeight,
                                 waterLevel);
 
-                            block = blockId == BlockId.Air
-                                ? air
-                                : new BlockData(blockId, MaxDurability);
+                            block = blockDatabase.CreateBlock(blockId);
                         }
                         else if (y >= terrainHeight)
                         {
@@ -610,9 +604,7 @@ namespace Game.World.Chunks
                                         rockyZone,
                                         rockyShoreSettings);
 
-                                block = new BlockData(
-                                    blockId,
-                                    MaxDurability);
+                                block = blockDatabase.CreateBlock(blockId);
                             }
                             else
                             {

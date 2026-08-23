@@ -16,7 +16,7 @@ namespace Game.World.Blocks
         [Min(0)]
         public int AtlasRow;
 
-        [Min(1)]
+        [Min(0)]
         public int maxDurability;
     }
 }

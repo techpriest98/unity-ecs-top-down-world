@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 443306937}
   - component: {fileID: 443306939}
   - component: {fileID: 443306940}
+  - component: {fileID: 443306941}
   m_Layer: 0
   m_Name: Settings
   m_TagString: Untagged
@@ -198,6 +199,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.World.Generation.Biomes.RockyShore.RockyShoreSettingsAuthoring
   cliffWidth: 30
+  cliffWidthNoiseScale: 0.006
+  cliffWidthVariation: 0.35
   cliffMinHeight: 8
   cliffMaxHeight: 24
   cliffSharpness: 4.94
@@ -206,6 +209,19 @@ MonoBehaviour:
   rampNoiseScale: 0.008
   rampThreshold: 0.65
   rampStrength: 1
+--- !u!114 &443306941
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 443306936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c66e69a6bab4f4a9a989cb1c9af95aff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.World.Blocks.BlockDatabaseAuthoring
+  blockDatabase: {fileID: 11400000, guid: 4fb11d0e05fb84bf0a6c7d04dd2f682a, type: 2}
 --- !u!1 &470164823
 GameObject:
   m_ObjectHideFlags: 0
