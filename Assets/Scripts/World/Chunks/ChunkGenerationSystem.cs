@@ -548,7 +548,6 @@ namespace Game.World.Chunks
                     {
                         BlockId blockId =
                             biomeTerrainResolver.GetBlock(
-                                biome,
                                 y,
                                 waterLevel,
                                 terrainSample);

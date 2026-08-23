@@ -35,7 +35,7 @@ namespace Game.World.Generation.Biomes.RockyShore
 
             if (shoreDistance <= 0f)
             {
-                return new BiomeTerrainSample(baseHeight, (byte)RockyShoreZone.Beach);
+                return new BiomeTerrainSample(WorldBiome.RockyShore, baseHeight, (byte)RockyShoreZone.Beach);
             }
 
             float2 worldPosition = new float2(
@@ -184,7 +184,10 @@ namespace Game.World.Generation.Biomes.RockyShore
                     zone = RockyShoreZone.GrassTop;
                 }
 
-                return new BiomeTerrainSample(ClampHeight(height), (byte)zone);
+                return new BiomeTerrainSample(
+                    WorldBiome.RockyShore,
+                    ClampHeight(height),
+                    (byte)zone);
             }
 
             // ============================================================
@@ -212,6 +215,7 @@ namespace Game.World.Generation.Biomes.RockyShore
                 biomeInfluence);
 
             return new BiomeTerrainSample(
+                WorldBiome.RockyShore,
                 ClampHeight(blendedHeight),
                 (byte)RockyShoreZone.GrassTop);
         }
@@ -243,13 +247,13 @@ namespace Game.World.Generation.Biomes.RockyShore
         // Blocks
         // ================================================================
 
-        public BlockId GetBlock(int y, RockyShoreZone zone, int terrainHeight, int waterLevel)
+        public BlockId GetBlock(int y, byte zone, int terrainHeight, int waterLevel)
         {
             if (y < terrainHeight)
             {
                 int depth = terrainHeight - 1 - y;
 
-                switch (zone)
+                switch ((RockyShoreZone)zone)
                 {
                     case RockyShoreZone.Beach:
                         return BlockId.Stone;

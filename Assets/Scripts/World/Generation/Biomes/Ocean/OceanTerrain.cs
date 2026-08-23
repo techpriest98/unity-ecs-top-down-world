@@ -20,19 +20,27 @@ namespace Game.World.Generation.Biomes.Ocean
             int baseHeight)
         {
             return new BiomeTerrainSample(
+                WorldBiome.Ocean,
                 baseHeight,
                 (byte)OceanZone.DeepOcean);
         }
 
-        public BlockId GetBlock(int y, int terrainHeight, int waterLevel)
+        public BlockId GetBlock(int y, byte zone, int terrainHeight, int waterLevel)
         {
             if (y < terrainHeight)
             {
                 int depth = terrainHeight - 1 - y;
 
-                return depth <= settings.SandDepth
-                    ? BlockId.Sand
-                    : BlockId.Stone;
+                switch((OceanZone)zone)
+                {
+                    case OceanZone.DeepOcean:
+                        return depth <= settings.SandDepth
+                            ? BlockId.Sand
+                            : BlockId.Stone;
+                            
+                    default:
+                        return BlockId.Stone;
+                }
             }
 
             if (y < waterLevel)
