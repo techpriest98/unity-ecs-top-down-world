@@ -19,7 +19,6 @@ namespace Game.World.Generation
         public static WorldBiomeMap Create(
             WorldHeightMap heightMap,
             CoastDistanceMap coastDistanceMap,
-            WorldProgressionMap progressionMap,
             LandmassMap landmassMap,
             WorldAnchors anchors,
             float seaLevel,

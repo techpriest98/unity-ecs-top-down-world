@@ -16,7 +16,6 @@ namespace Game.World.Generation
         {
             Elevation,
             CoastDistance,
-            Progression,
             Biomes
         }
 
@@ -150,18 +149,6 @@ namespace Game.World.Generation
 
 
             // ============================================================
-            // Progression
-            // ============================================================
-
-            using WorldProgressionMap progressionMap =
-                WorldProgressionMap.Create(
-                    worldHeightMap,
-                    coastDistanceMap,
-                    seaLevel,
-                    Allocator.Temp);
-
-
-            // ============================================================
             // Primary biomes
             // ============================================================
 
@@ -169,7 +156,6 @@ namespace Game.World.Generation
                 WorldBiomeMap.Create(
                     worldHeightMap,
                     coastDistanceMap,
-                    progressionMap,
                     landmassMap,
                     anchors,
                     seaLevel,
@@ -230,13 +216,6 @@ namespace Game.World.Generation
                                     worldHeightMap,
                                     coastDistanceMap),
 
-                            PreviewMode.Progression =>
-                                GetProgressionPreviewColor(
-                                    x,
-                                    z,
-                                    worldHeightMap,
-                                    progressionMap),
-
                             PreviewMode.Biomes =>
                                 GetBiomePreviewColor(
                                     x,
@@ -258,10 +237,7 @@ namespace Game.World.Generation
             // Show anchors on progression + biome previews
             // ============================================================
 
-            if (previewMode ==
-                    PreviewMode.Progression ||
-                previewMode ==
-                    PreviewMode.Biomes)
+            if (previewMode == PreviewMode.Biomes)
             {
                 DrawAnchor(
                     pixels,
@@ -313,9 +289,6 @@ namespace Game.World.Generation
 
                     PreviewMode.CoastDistance =>
                         coastDistanceFileName,
-
-                    PreviewMode.Progression =>
-                        progressionFileName,
 
                     PreviewMode.Biomes =>
                         biomeFileName,
@@ -428,62 +401,6 @@ namespace Game.World.Generation
                 value,
                 255);
         }
-
-
-        // ================================================================
-        // Progression
-        // ================================================================
-
-        private Color32 GetProgressionPreviewColor(
-            int x,
-            int z,
-            WorldHeightMap worldHeightMap,
-            WorldProgressionMap progressionMap)
-        {
-            float elevation =
-                worldHeightMap.Get(
-                    x,
-                    z);
-
-
-            if (elevation <
-                seaLevel)
-            {
-                return new Color32(
-                    3,
-                    8,
-                    14,
-                    255);
-            }
-
-
-            float progression =
-                math.saturate(
-                    progressionMap.Get(
-                        x,
-                        z));
-
-
-            Color startColor =
-                new Color(
-                    0.12f,
-                    0.10f,
-                    0.10f);
-
-
-            Color finalColor =
-                new Color(
-                    0.85f,
-                    0.92f,
-                    1.00f);
-
-
-            return Color.Lerp(
-                startColor,
-                finalColor,
-                progression);
-        }
-
 
         // ================================================================
         // Biomes
