@@ -44,12 +44,8 @@ namespace Game.World.Generation
         private const float HighlandsFeather = 0.16f;
 
         // Rocky Shore
-        private const float RockyShoreMaxStartDistance = 0.05f;
         private const float RockyShoreMaxCoastDistance = 0.055f;
-
-        private const float RockyShoreCoreStartDistance = 0.025f;
         private const float RockyShoreCoreCoastDistance = 0.025f;
-
         private const float RockyNoiseFrequency = 5.0f;
 
         // Mountains
@@ -69,38 +65,12 @@ namespace Game.World.Generation
                 SeaLevel = seaLevel
             };
         }
-
-        // ================================================================
-        // Rocky Shore influence
-        //
-        // 1 = повний Rocky Shore
-        // 0 = Rocky Shore не впливає
-        //
-        // ВАЖЛИВО:
-        // тут немає elevation та isMainland.
-        //
-        // Тому influence існує і на суші, і трохи в морі.
-        // ================================================================
-
         public static float SampleRockyShoreInfluence(
             float2 uv,
             float coastDistance,
             WorldBiomeSamplingContext context)
         {
-            float startDistance =
-                math.distance(
-                    uv,
-                    context.StartUv);
-
-            // Далеко від стартової області навіть noise не рахуємо.
-            if (startDistance >
-                RockyShoreMaxStartDistance * 1.15f)
-            {
-                return 0f;
-            }
-
-            if (coastDistance >
-                RockyShoreMaxCoastDistance * 1.15f)
+            if (coastDistance > RockyShoreMaxCoastDistance * 1.15f)
             {
                 return 0f;
             }
@@ -117,28 +87,14 @@ namespace Game.World.Generation
             float noise01 =
                 rockyNoise * 0.5f + 0.5f;
 
-            // Noise змінює тільки зовнішній край.
-            // Внутрішнє ядро завжди залишається суцільним.
-            float startOuter =
-                RockyShoreMaxStartDistance *
-                math.lerp(
-                    0.88f,
-                    1.12f,
-                    noise01);
-
+            // Noise робить внутрішню межу біома нерівною.
+            // Безпосередньо берег залишається суцільним Rocky Shore.
             float coastOuter =
                 RockyShoreMaxCoastDistance *
                 math.lerp(
                     0.88f,
                     1.12f,
                     noise01);
-
-            float startInfluence =
-                1f -
-                SmoothRange(
-                    RockyShoreCoreStartDistance,
-                    startOuter,
-                    startDistance);
 
             float coastInfluence =
                 1f -
@@ -148,9 +104,7 @@ namespace Game.World.Generation
                     coastDistance);
 
             return math.saturate(
-                math.min(
-                    startInfluence,
-                    coastInfluence));
+                coastInfluence);
         }
 
         public static WorldBiome Sample(

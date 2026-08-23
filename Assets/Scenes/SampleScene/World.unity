@@ -197,7 +197,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b61243b051c8f485f82fce33a2621c19, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.World.Generation.Biomes.RockyShore.RockyShoreSettingsAuthoring
-  beachHeightAboveSea: 1
   cliffWidth: 30
   cliffMinHeight: 8
   cliffMaxHeight: 24
