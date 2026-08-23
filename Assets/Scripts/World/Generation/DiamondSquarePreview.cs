@@ -81,11 +81,6 @@ namespace Game.World.Generation
 
 
         [SerializeField]
-        private string progressionFileName =
-            "ProgressionPreview.png";
-
-
-        [SerializeField]
         private string biomeFileName =
             "BiomePreview.png";
 
@@ -234,7 +229,7 @@ namespace Game.World.Generation
 
 
             // ============================================================
-            // Show anchors on progression + biome previews
+            // Show anchors on biome previews
             // ============================================================
 
             if (previewMode == PreviewMode.Biomes)
