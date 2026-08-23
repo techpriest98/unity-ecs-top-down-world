@@ -18,22 +18,7 @@ namespace Game.World.Generation.Biomes
             rockyShore = new RockyShoreTerrain(
                 rockyShoreSettings);
         }
-
-        // ================================================================
-        // Ocean
-        // ================================================================
-
-        public BlockId GetOceanBlock(
-            int y,
-            int terrainHeight,
-            int waterLevel)
-        {
-            return ocean.GetBlock(
-                y,
-                terrainHeight,
-                waterLevel);
-        }
-
+        
         // ================================================================
         // Rocky shore
         // ================================================================
@@ -42,7 +27,8 @@ namespace Game.World.Generation.Biomes
         {
             return rockyShore.GetShoreSearchDistance();
         }
-        public RockyShoreTerrainSample SampleRockyShore(
+
+        public BiomeTerrainSample SampleRockyShore(
             int worldX,
             int worldZ,
             int baseHeight,
@@ -61,13 +47,87 @@ namespace Game.World.Generation.Biomes
                 worldSettings);
         }
 
-        public BlockId GetRockyShoreBlock(
-            int depth,
-            RockyShoreZone zone)
+        public BlockId GetBlock(
+            WorldBiome biome,
+            int y,
+            int waterLevel,
+            in BiomeTerrainSample terrainSample)
         {
-            return rockyShore.GetBlock(
-                depth,
-                zone);
+            if (terrainSample.Height < waterLevel)
+            {
+                return ocean.GetBlock(
+                    y,
+                    terrainSample.Height,
+                    waterLevel);
+            }
+
+            if (y >= terrainSample.Height)
+                return BlockId.Air;
+
+            int depth =
+                terrainSample.Height - 1 - y;
+
+            return biome switch
+            {
+                WorldBiome.RockyShore =>
+                    rockyShore.GetBlock(
+                        depth,
+                        (RockyShoreZone)terrainSample.Zone),
+
+                WorldBiome.Plains =>
+                    depth == 0
+                        ? BlockId.PlainsGrass
+                        : depth <= 3
+                            ? BlockId.Dirt
+                            : BlockId.Stone,
+
+                WorldBiome.Meadows =>
+                    depth == 0
+                        ? BlockId.MeadowGrass
+                        : depth <= 3
+                            ? BlockId.Dirt
+                            : BlockId.Stone,
+
+                WorldBiome.DarkForest =>
+                    depth == 0
+                        ? BlockId.DarkForestGrass
+                        : depth <= 4
+                            ? BlockId.Dirt
+                            : BlockId.Stone,
+
+                WorldBiome.Highlands =>
+                    BlockId.Stone,
+
+                WorldBiome.Mountains =>
+                    depth == 0
+                        ? BlockId.Snow
+                        : BlockId.Stone,
+
+                WorldBiome.Swamp =>
+                    depth == 0
+                        ? BlockId.MeadowGrass
+                        : depth <= 4
+                            ? BlockId.Dirt
+                            : BlockId.Stone,
+
+                WorldBiome.BurntForest =>
+                    depth == 0
+                        ? BlockId.PlainsGrass
+                        : depth <= 3
+                            ? BlockId.Dirt
+                            : BlockId.Stone,
+
+                WorldBiome.Ocean =>
+                    ocean.GetBlock(
+                        y,
+                        terrainSample.Height,
+                        waterLevel),
+
+                _ =>
+                    depth == 0
+                        ? BlockId.Sand
+                        : BlockId.Stone
+            };
         }
     }
 }

@@ -425,15 +425,6 @@ namespace Game.World.Chunks
             in BiomeTerrainResolver biomeTerrainResolver,
             in BlockDatabaseComponent blockDatabase)
         {
-            BlockData air = blockDatabase.CreateBlock(BlockId.Air);
-            BlockData dirt = blockDatabase.CreateBlock(BlockId.Dirt);
-            BlockData stone = blockDatabase.CreateBlock(BlockId.Stone);
-            BlockData sand = blockDatabase.CreateBlock(BlockId.Sand);
-            BlockData snow = blockDatabase.CreateBlock(BlockId.Snow);
-            BlockData plainsGrass = blockDatabase.CreateBlock(BlockId.PlainsGrass);
-            BlockData meadowGrass = blockDatabase.CreateBlock(BlockId.MeadowGrass);
-            BlockData darkForestGrass = blockDatabase.CreateBlock(BlockId.DarkForestGrass);
-
             int shoreSearchDistance = biomeTerrainResolver.GetRockyShoreSearchDistance();
 
             ChunkShoreDistanceMap shoreDistanceMap = default;
@@ -517,8 +508,7 @@ namespace Game.World.Chunks
                     // Biome terrain shaping
                     // ====================================================
 
-                    int terrainHeight = baseHeight;
-                    RockyShoreZone rockyZone = RockyShoreZone.GrassTop;
+                    BiomeTerrainSample terrainSample = new(baseHeight);
                     bool hasRockyShoreInfluence = rockyInfluence > 0f;
 
                     if (hasRockyShoreInfluence)
@@ -541,7 +531,7 @@ namespace Game.World.Chunks
                                 x,
                                 z);
 
-                        RockyShoreTerrainSample rockySample =
+                        terrainSample =
                             biomeTerrainResolver.SampleRockyShore(
                                 worldX,
                                 worldZ,
@@ -550,62 +540,21 @@ namespace Game.World.Chunks
                                 rockyInfluence,
                                 worldSeed,
                                 worldSettings);
-
-                        terrainHeight =
-                            rockySample.Height;
-
-                        rockyZone =
-                            rockySample.Zone;
                     }
 
                     int waterLevel = worldSettings.SeaLevelHeight - 1;
-                    bool hasWater = terrainHeight < waterLevel;
-
-                    // ====================================================
-                    // Blocks
-                    // ====================================================
 
                     for (int y = 0; y < ChunkSettings.SizeY; y++)
                     {
-                        BlockData block;
-
-                        if (hasWater)
-                        {
-                            BlockId blockId = biomeTerrainResolver.GetOceanBlock(
+                        BlockId blockId =
+                            biomeTerrainResolver.GetBlock(
+                                biome,
                                 y,
-                                terrainHeight,
-                                waterLevel);
+                                waterLevel,
+                                terrainSample);
 
-                            block = blockDatabase.CreateBlock(blockId);
-                        }
-                        else if (y >= terrainHeight)
-                        {
-                            block = air;
-                        }
-                        else
-                        {
-                            int depth =
-                                terrainHeight - 1 - y;
-
-                            if (biome == WorldBiome.RockyShore)
-                            {
-                                BlockId blockId = biomeTerrainResolver.GetRockyShoreBlock(depth, rockyZone);
-                                block = blockDatabase.CreateBlock(blockId);
-                            }
-                            else
-                            {
-                                block = GetLandBlock(
-                                    biome,
-                                    depth,
-                                    dirt,
-                                    stone,
-                                    sand,
-                                    snow,
-                                    plainsGrass,
-                                    meadowGrass,
-                                    darkForestGrass);
-                            }
-                        }
+                        BlockData block =
+                            blockDatabase.CreateBlock(blockId);
 
                         ChunkUtility.SetBlock(
                             blocks,
@@ -619,83 +568,6 @@ namespace Game.World.Chunks
 
             if (shoreDistanceMap.IsCreated)
                 shoreDistanceMap.Dispose();
-        }
-
-        // ================================================================
-        // Other biome blocks
-        // ================================================================
-
-        private static BlockData GetLandBlock(
-            WorldBiome biome,
-            int depth,
-            BlockData dirt,
-            BlockData stone,
-            BlockData sand,
-            BlockData snow,
-            BlockData plainsGrass,
-            BlockData meadowGrass,
-            BlockData darkForestGrass)
-        {
-            switch (biome)
-            {
-                case WorldBiome.Plains:
-                    if (depth == 0)
-                        return plainsGrass;
-
-                    if (depth <= 3)
-                        return dirt;
-
-                    return stone;
-
-                case WorldBiome.Meadows:
-                    if (depth == 0)
-                        return meadowGrass;
-
-                    if (depth <= 3)
-                        return dirt;
-
-                    return stone;
-
-                case WorldBiome.DarkForest:
-                    if (depth == 0)
-                        return darkForestGrass;
-
-                    if (depth <= 4)
-                        return dirt;
-
-                    return stone;
-
-                case WorldBiome.Highlands:
-                    return stone;
-
-                case WorldBiome.Mountains:
-                    return depth == 0
-                        ? snow
-                        : stone;
-
-                case WorldBiome.Swamp:
-                    if (depth == 0)
-                        return meadowGrass;
-
-                    if (depth <= 4)
-                        return dirt;
-
-                    return stone;
-
-                case WorldBiome.BurntForest:
-                    if (depth == 0)
-                        return plainsGrass;
-
-                    if (depth <= 3)
-                        return dirt;
-
-                    return stone;
-
-                default:
-                    return depth == 0
-                        ? sand
-                        : stone;
-            }
         }
 
         // ================================================================

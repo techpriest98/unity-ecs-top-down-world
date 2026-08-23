@@ -12,12 +12,6 @@ namespace Game.World.Generation.Biomes.RockyShore
         Beach = 3
     }
 
-    public struct RockyShoreTerrainSample
-    {
-        public int Height;
-        public RockyShoreZone Zone;
-    }
-
     public readonly struct RockyShoreTerrain
     {
         private readonly RockyShoreSettingsComponent settings;
@@ -27,7 +21,7 @@ namespace Game.World.Generation.Biomes.RockyShore
             this.settings = settings;
         }
 
-        public RockyShoreTerrainSample Sample(
+        public BiomeTerrainSample Sample(
             int worldX,
             int worldZ,
             int baseHeight,
@@ -40,11 +34,7 @@ namespace Game.World.Generation.Biomes.RockyShore
 
             if (shoreDistance <= 0f)
             {
-                return new RockyShoreTerrainSample
-                {
-                    Height = baseHeight,
-                    Zone = RockyShoreZone.Beach
-                };
+                return new BiomeTerrainSample(baseHeight, (byte)RockyShoreZone.Beach);
             }
 
             float2 worldPosition = new float2(
@@ -193,11 +183,7 @@ namespace Game.World.Generation.Biomes.RockyShore
                     zone = RockyShoreZone.GrassTop;
                 }
 
-                return new RockyShoreTerrainSample
-                {
-                    Height = ClampHeight(height),
-                    Zone = zone
-                };
+                return new BiomeTerrainSample(ClampHeight(height), (byte)zone);
             }
 
             // ============================================================
@@ -224,11 +210,7 @@ namespace Game.World.Generation.Biomes.RockyShore
                 targetHeight,
                 biomeInfluence);
 
-            return new RockyShoreTerrainSample
-            {
-                Height = ClampHeight(blendedHeight),
-                Zone = RockyShoreZone.GrassTop
-            };
+            return new BiomeTerrainSample(ClampHeight(blendedHeight), (byte)RockyShoreZone.GrassTop);
         }
 
         public int GetShoreSearchDistance()
