@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.World.Blocks.BlockDatabase
   blocks:
   - BlockId: 0
-    AtlasColumn: -1
-    AtlasRow: -1
+    AtlasColumn: 0
+    AtlasRow: 0
     maxDurability: 0
   - BlockId: 9
     AtlasColumn: 0

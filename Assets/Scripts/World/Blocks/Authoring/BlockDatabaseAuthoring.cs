@@ -20,6 +20,8 @@ namespace Game.World.Blocks
                     return;
                 }
 
+                DependsOn(authoring.blockDatabase);
+
                 BlockDefinition[] definitions = authoring.blockDatabase.Blocks;
                 int maximumBlockId = 0;
 
