@@ -19,7 +19,7 @@ namespace Game.World.Generation.Biomes.RockyShore
                 return 0f;
             }
 
-            float rockyNoise = SampleNoise(
+            float rockyNoise = BiomeSamplingUtility.SampleNoise(
                 uv,
                 context.SeedOffset,
                 new float2(211.17f, -163.43f),
@@ -37,45 +37,12 @@ namespace Game.World.Generation.Biomes.RockyShore
 
             float coastInfluence =
                 1f -
-                SmoothRange(
+                BiomeSamplingUtility.SmoothRange(
                     CoreCoastDistance,
                     coastOuter,
                     coastDistance);
 
             return math.saturate(coastInfluence);
-        }
-
-        private static float SampleNoise(
-            float2 uv,
-            float2 seedOffset,
-            float2 salt,
-            float frequency)
-        {
-            return noise.snoise(
-                (uv + seedOffset + salt) *
-                frequency);
-        }
-
-        private static float SmoothRange(
-            float minimum,
-            float maximum,
-            float value)
-        {
-            float range = math.max(
-                0.0001f,
-                maximum - minimum);
-
-            return Smooth01(
-                (value - minimum) / range);
-        }
-
-        private static float Smooth01(float value)
-        {
-            value = math.saturate(value);
-
-            return value *
-                   value *
-                   (3f - 2f * value);
         }
     }
 }
