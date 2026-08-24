@@ -11,17 +11,28 @@ namespace Game.World.Rendering
         private const uint TopInsetFlag =
             1u << 8;
 
-        private ProjectionOccupancy occupancy;
+        private ProjectionOccupancy
+            opaqueOccupancy;
+
+        private ProjectionOccupancy
+            waterOccupancy;
 
         private DynamicBuffer<ProjectedWaterCellData>
             result;
 
         public WaterProjectionWriter(
-            ProjectionOccupancy occupancy,
+            ProjectionOccupancy opaqueOccupancy,
+            ProjectionOccupancy waterOccupancy,
             DynamicBuffer<ProjectedWaterCellData> result)
         {
-            this.occupancy = occupancy;
-            this.result = result;
+            this.opaqueOccupancy =
+                opaqueOccupancy;
+
+            this.waterOccupancy =
+                waterOccupancy;
+
+            this.result =
+                result;
         }
 
         public bool TryAddTop(
@@ -78,7 +89,14 @@ namespace Game.World.Rendering
             ushort x,
             ushort y)
         {
-            if (!occupancy.TryOccupy(
+            if (opaqueOccupancy.IsOccupied(
+                    x,
+                    y))
+            {
+                return false;
+            }
+
+            if (!waterOccupancy.TryOccupy(
                     x,
                     y,
                     faceType))

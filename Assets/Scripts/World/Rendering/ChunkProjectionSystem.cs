@@ -213,9 +213,11 @@ namespace Game.World.Rendering
                     occupancy,
                     projectedCells);
 
-                WaterProjectionWriter waterWriter = new WaterProjectionWriter(
-                    waterOccupancy,
-                    projectedWaterCells);
+                WaterProjectionWriter waterWriter =
+                    new WaterProjectionWriter(
+                        occupancy,
+                        waterOccupancy,
+                        projectedWaterCells);
 
                 ChunkProjectionBuilder.Build(
                     blocks,
