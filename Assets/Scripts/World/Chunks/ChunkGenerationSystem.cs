@@ -1,7 +1,6 @@
 using Game.World.Blocks;
 using Game.World.Generation;
 using Game.World.Generation.Biomes;
-using Game.World.Generation.Biomes.RockyShore;
 using Game.World.Generation.Terrain;
 using Game.World.Rendering;
 using Unity.Burst;
@@ -315,7 +314,7 @@ namespace Game.World.Chunks
                         coastDistance,
                         isMainland,
                         isWaterColumn,
-                        biomeContext);
+                        biomeContext).Biome;
 
                     if (biome != WorldBiome.RockyShore)
                         continue;
@@ -502,7 +501,7 @@ namespace Game.World.Chunks
                             elevation,
                             worldSettings.MacroSeaLevel);
 
-                    WorldBiome biome = WorldBiomeSampler.Sample(
+                    WorldBiomeSample biomeSample = WorldBiomeSampler.Sample(
                         uv,
                         biomeElevation,
                         coastDistance,
@@ -510,11 +509,8 @@ namespace Game.World.Chunks
                         isWaterColumn,
                         biomeContext);
 
-                    float rockyInfluence =
-                        RockyShoreBiomeMask.SampleInfluence(
-                            uv,
-                            coastDistance,
-                            biomeContext);
+                    WorldBiome biome = biomeSample.Biome;
+                    float biomeInfluence = biomeSample.Influence;
 
                     // ====================================================
                     // Biome terrain shaping
@@ -546,7 +542,7 @@ namespace Game.World.Chunks
                             worldZ,
                             baseHeight,
                             shoreDistance,
-                            rockyInfluence,
+                            biomeInfluence,
                             worldSeed,
                             worldSettings);
 

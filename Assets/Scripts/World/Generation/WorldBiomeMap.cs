@@ -48,7 +48,7 @@ namespace Game.World.Generation
 
                     float2 uv = MapToUv(x, z, resolution);
 
-                    WorldBiome biome = WorldBiomeSampler.Sample(
+                    WorldBiomeSample biomeSample = WorldBiomeSampler.Sample(
                         uv,
                         elevation,
                         coastDistance,
@@ -56,7 +56,7 @@ namespace Game.World.Generation
                         isMacroOcean,
                         context);
 
-                    result[index] = (byte)biome;
+                    result[index] = (byte)biomeSample.Biome;
                 }
             }
 

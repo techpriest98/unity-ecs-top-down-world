@@ -7,6 +7,23 @@ namespace Game.World.Generation.Biomes.RockyShore
         private const float MaxCoastDistance = 0.055f;
         private const float CoreCoastDistance = 0.025f;
         private const float NoiseFrequency = 5f;
+        private const float SelectionThreshold = 0.5f;
+
+        public static bool Contains(
+            float2 uv,
+            float coastDistance,
+            in WorldBiomeSamplingContext context)
+        {
+            return SampleInfluence(
+                uv,
+                coastDistance,
+                context) >= SelectionThreshold;
+        }
+
+        public static bool Contains(float influence)
+        {
+            return influence >= SelectionThreshold;
+        }
 
         public static float SampleInfluence(
             float2 uv,

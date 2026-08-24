@@ -17,7 +17,7 @@ namespace Game.World.Generation
                 seaLevel);
         }
 
-        public static WorldBiome Sample(
+        public static WorldBiomeSample Sample(
             float2 uv,
             float elevation,
             float coastDistance,
@@ -26,19 +26,20 @@ namespace Game.World.Generation
             WorldBiomeSamplingContext context)
         {
             if (isWaterColumn)
-                return WorldBiome.Ocean;
+            {
+                return new WorldBiomeSample(
+                    WorldBiome.Ocean);
+            }
 
             float startDistance =
-                math.distance(uv, context.StartUv);
+                math.distance(
+                    uv,
+                    context.StartUv);
 
             float finalDistance =
-                math.distance(uv, context.FinalUv);
-
-            if (startDistance <= 0.000001f)
-                return WorldBiome.RockyShore;
-
-            if (finalDistance <= 0.000001f)
-                return WorldBiome.Mountains;
+                math.distance(
+                    uv,
+                    context.FinalUv);
 
             float rockyShoreInfluence =
                 RockyShoreBiomeMask.SampleInfluence(
@@ -46,16 +47,37 @@ namespace Game.World.Generation
                     coastDistance,
                     context);
 
-            if (rockyShoreInfluence >= 0.5f)
-                return WorldBiome.RockyShore;
+            if (startDistance <= 0.000001f)
+            {
+                return new WorldBiomeSample(
+                    WorldBiome.RockyShore,
+                    rockyShoreInfluence);
+            }
 
-            return LandBiomeSelector.Sample(
-                uv,
-                elevation,
-                coastDistance,
-                isMainland,
-                finalDistance,
-                context);
+            if (finalDistance <= 0.000001f)
+            {
+                return new WorldBiomeSample(
+                    WorldBiome.Mountains);
+            }
+
+            if (RockyShoreBiomeMask.Contains(rockyShoreInfluence))
+            {
+                return new WorldBiomeSample(
+                    WorldBiome.RockyShore,
+                    rockyShoreInfluence);
+            }
+
+            WorldBiome landBiome =
+                LandBiomeSelector.Sample(
+                    uv,
+                    elevation,
+                    coastDistance,
+                    isMainland,
+                    finalDistance,
+                    context);
+
+            return new WorldBiomeSample(
+                landBiome);
         }
 
         private static float2 GetSeedOffset(uint seed)
