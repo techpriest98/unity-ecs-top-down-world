@@ -5,41 +5,6 @@ namespace Game.World.Generation
 {
     public static class WorldBiomeSampler
     {
-        // Progression warp
-        private const float ProgressionWarpFrequency = 2.6f;
-        private const float ProgressionWarpStrength = 0.05f;
-
-        // Primary biome noise
-        private const float MeadowsNoiseFrequency = 2.7f;
-        private const float PlainsNoiseFrequency = 2.9f;
-        private const float DarkForestNoiseFrequency = 2.5f;
-        private const float HighlandsNoiseFrequency = 2.4f;
-        private const float PrimaryBiomeNoiseStrength = 0.45f;
-
-        // Plains / steppe
-        private const float PlainsMinProgression = 0.00f;
-        private const float PlainsMaxProgression = 0.48f;
-        private const float PlainsFeather = 0.15f;
-
-        // Meadows
-        private const float MeadowsMinProgression = 0.14f;
-        private const float MeadowsMaxProgression = 0.72f;
-        private const float MeadowsFeather = 0.15f;
-
-        // Dark Forest
-        private const float DarkForestMinProgression = 0.34f;
-        private const float DarkForestMaxProgression = 0.88f;
-        private const float DarkForestFeather = 0.16f;
-
-        // Highlands
-        private const float HighlandsMinProgression = 0.56f;
-        private const float HighlandsMaxProgression = 1.00f;
-        private const float HighlandsFeather = 0.16f;
-
-        // Mountains
-        private const float MountainMaxFinalDistance = 0.18f;
-        private const float MountainNoiseFrequency = 4.0f;
-
         public static WorldBiomeSamplingContext CreateContext(
             WorldAnchors anchors,
             float seaLevel,
@@ -63,37 +28,17 @@ namespace Game.World.Generation
             if (isWaterColumn)
                 return WorldBiome.Ocean;
 
-            float normalizedElevation =
-                NormalizeLandElevation(
-                    elevation,
-                    context.SeaLevel);
-
             float startDistance =
-                math.distance(
-                    uv,
-                    context.StartUv);
+                math.distance(uv, context.StartUv);
 
             float finalDistance =
-                math.distance(
-                    uv,
-                    context.FinalUv);
-
-            // ============================================================
-            // Exact anchors
-            // ============================================================
+                math.distance(uv, context.FinalUv);
 
             if (startDistance <= 0.000001f)
                 return WorldBiome.RockyShore;
 
             if (finalDistance <= 0.000001f)
                 return WorldBiome.Mountains;
-
-            // ============================================================
-            // Rocky Shore
-            //
-            // На суші categorical biome використовує той самий influence,
-            // який пізніше зможемо використати й під водою.
-            // ============================================================
 
             float rockyShoreInfluence =
                 RockyShoreBiomeMask.SampleInfluence(
@@ -104,290 +49,24 @@ namespace Game.World.Generation
             if (rockyShoreInfluence >= 0.5f)
                 return WorldBiome.RockyShore;
 
-            // ============================================================
-            // Progression
-            // ============================================================
-
-            float progressionWarp =
-                noise.snoise(
-                    uv *
-                    ProgressionWarpFrequency +
-                    context.SeedOffset);
-
-            float warpedProgression =
-                math.saturate(
-                    coastDistance +
-                    progressionWarp *
-                    ProgressionWarpStrength);
-
-            // ============================================================
-            // Biome noise
-            // ============================================================
-
-            float plainsNoise =
-                BiomeSamplingUtility.SampleNoise(
-                    uv,
-                    context.SeedOffset,
-                    new float2(
-                        -91.47f,
-                        28.63f),
-                    PlainsNoiseFrequency);
-
-            float meadowsNoise =
-                BiomeSamplingUtility.SampleNoise(
-                    uv,
-                    context.SeedOffset,
-                    new float2(
-                        17.31f,
-                        -43.77f),
-                    MeadowsNoiseFrequency);
-
-            float darkForestNoise =
-                BiomeSamplingUtility.SampleNoise(
-                    uv,
-                    context.SeedOffset,
-                    new float2(
-                        63.91f,
-                        117.27f),
-                    DarkForestNoiseFrequency);
-
-            float highlandsNoise =
-                BiomeSamplingUtility.SampleNoise(
-                    uv,
-                    context.SeedOffset,
-                    new float2(
-                        -143.71f,
-                        -81.39f),
-                    HighlandsNoiseFrequency);
-
-            // ============================================================
-            // Plains
-            // ============================================================
-
-            float plainsRange =
-                OverlapRange(
-                    warpedProgression,
-                    PlainsMinProgression,
-                    PlainsMaxProgression,
-                    PlainsFeather);
-
-            float middleElevation =
-                math.saturate(
-                    1f -
-                    math.abs(
-                        normalizedElevation -
-                        0.42f));
-
-            float plainsScore =
-                plainsRange *
-                (
-                    0.75f +
-                    plainsNoise *
-                    PrimaryBiomeNoiseStrength +
-                    middleElevation * 0.07f +
-                    (1f - coastDistance) * 0.05f
-                );
-
-            // ============================================================
-            // Meadows
-            // ============================================================
-
-            float meadowsRange =
-                OverlapRange(
-                    warpedProgression,
-                    MeadowsMinProgression,
-                    MeadowsMaxProgression,
-                    MeadowsFeather);
-
-            float meadowsScore =
-                meadowsRange *
-                (
-                    0.75f +
-                    meadowsNoise *
-                    PrimaryBiomeNoiseStrength +
-                    (1f - normalizedElevation) * 0.12f
-                );
-
-            // ============================================================
-            // Dark Forest
-            // ============================================================
-
-            float darkForestRange =
-                OverlapRange(
-                    warpedProgression,
-                    DarkForestMinProgression,
-                    DarkForestMaxProgression,
-                    DarkForestFeather);
-
-            float darkForestScore =
-                darkForestRange *
-                (
-                    0.75f +
-                    darkForestNoise *
-                    PrimaryBiomeNoiseStrength +
-                    coastDistance * 0.08f
-                );
-
-            // ============================================================
-            // Highlands
-            // ============================================================
-
-            float highlandsRange =
-                OverlapRange(
-                    warpedProgression,
-                    HighlandsMinProgression,
-                    HighlandsMaxProgression,
-                    HighlandsFeather);
-
-            float highlandsScore =
-                highlandsRange *
-                (
-                    0.75f +
-                    highlandsNoise *
-                    PrimaryBiomeNoiseStrength +
-                    normalizedElevation * 0.32f +
-                    coastDistance * 0.06f
-                );
-
-            // ============================================================
-            // Mountains
-            // ============================================================
-
-            float mountainsScore =
-                float.MinValue;
-
-            if (isMainland &&
-                finalDistance <=
-                MountainMaxFinalDistance)
-            {
-                float finalProximity =
-                    1f -
-                    BiomeSamplingUtility.SmoothRange(
-                        0.025f,
-                        MountainMaxFinalDistance,
-                        finalDistance);
-
-                float mountainNoise =
-                    BiomeSamplingUtility.SampleNoise(
-                        uv,
-                        context.SeedOffset,
-                        new float2(
-                            -247.31f,
-                            193.67f),
-                        MountainNoiseFrequency);
-
-                mountainsScore =
-                    finalProximity * 1.15f +
-                    normalizedElevation * 0.42f +
-                    warpedProgression * 0.20f +
-                    mountainNoise * 0.18f;
-            }
-
-            // ============================================================
-            // Select primary biome
-            // ============================================================
-
-            WorldBiome biome =
-                WorldBiome.Plains;
-
-            float bestScore =
-                plainsScore;
-
-            TrySelect(
-                WorldBiome.Meadows,
-                meadowsScore,
-                ref biome,
-                ref bestScore);
-
-            TrySelect(
-                WorldBiome.DarkForest,
-                darkForestScore,
-                ref biome,
-                ref bestScore);
-
-            TrySelect(
-                WorldBiome.Highlands,
-                highlandsScore,
-                ref biome,
-                ref bestScore);
-
-            TrySelect(
-                WorldBiome.Mountains,
-                mountainsScore,
-                ref biome,
-                ref bestScore);
-
-            return biome;
+            return LandBiomeSelector.Sample(
+                uv,
+                elevation,
+                coastDistance,
+                isMainland,
+                finalDistance,
+                context);
         }
 
-        private static float OverlapRange(
-            float progression,
-            float min,
-            float max,
-            float feather)
+        private static float2 GetSeedOffset(uint seed)
         {
-            float enter =
-                min <= 0f
-                    ? 1f
-                    : BiomeSamplingUtility.SmoothRange(
-                        min - feather,
-                        min,
-                        progression);
+            uint xHash = math.hash(
+                new uint2(seed, 0x9E3779B9u));
 
-            float exit =
-                max >= 1f
-                    ? 1f
-                    : 1f -
-                      BiomeSamplingUtility.SmoothRange(
-                          max,
-                          max + feather,
-                          progression);
-
-            return math.saturate(
-                enter * exit);
-        }
-
-        private static void TrySelect(
-            WorldBiome candidate,
-            float candidateScore,
-            ref WorldBiome currentBiome,
-            ref float currentScore)
-        {
-            if (candidateScore <= currentScore)
-                return;
-
-            currentScore =
-                candidateScore;
-
-            currentBiome =
-                candidate;
-        }
-
-        private static float NormalizeLandElevation(
-            float elevation,
-            float seaLevel)
-        {
-            return math.saturate(
-                (elevation - seaLevel) /
-                math.max(
-                    0.0001f,
-                    1f - seaLevel));
-        }
-
-        private static float2 GetSeedOffset(
-            uint seed)
-        {
-            uint xHash =
-                math.hash(
-                    new uint2(
-                        seed,
-                        0x9E3779B9u));
-
-            uint zHash =
-                math.hash(
-                    new uint2(
-                        seed ^ 0x85EBCA6Bu,
-                        0xC2B2AE35u));
+            uint zHash = math.hash(
+                new uint2(
+                    seed ^ 0x85EBCA6Bu,
+                    0xC2B2AE35u));
 
             return new float2(
                 (xHash & 0xFFFFu) / 4096f,
