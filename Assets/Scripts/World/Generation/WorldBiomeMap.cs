@@ -44,6 +44,7 @@ namespace Game.World.Generation
                     float elevation = heightMap.Get(x, z);
                     float coastDistance = coastDistanceMap.Get(x, z);
                     bool isMainland = landmassMap.IsMainland(x, z);
+                    bool isMacroOcean = elevation < seaLevel;
 
                     float2 uv = MapToUv(x, z, resolution);
 
@@ -52,6 +53,7 @@ namespace Game.World.Generation
                         elevation,
                         coastDistance,
                         isMainland,
+                        isMacroOcean,
                         context);
 
                     result[index] = (byte)biome;

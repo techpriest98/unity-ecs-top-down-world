@@ -37,7 +37,7 @@ namespace Game.World.Generation.Biomes.Ocean
                         return depth <= settings.SandDepth
                             ? BlockId.Sand
                             : BlockId.Stone;
-                            
+
                     default:
                         return BlockId.Stone;
                 }

@@ -294,6 +294,12 @@ namespace Game.World.Chunks
                         heightMap,
                         landmassMap);
 
+                    int waterLevel =
+                        worldSettings.SeaLevelHeight - 1;
+
+                    bool isWaterColumn =
+                        baseHeight < waterLevel;
+
                     float2 uv = WorldSamplingUtility.WorldToUv(
                         worldX,
                         worldZ,
@@ -308,6 +314,7 @@ namespace Game.World.Chunks
                         biomeElevation,
                         coastDistance,
                         isMainland,
+                        isWaterColumn,
                         biomeContext);
 
                     if (biome != WorldBiome.RockyShore)
@@ -480,6 +487,10 @@ namespace Game.World.Chunks
                         heightMap,
                         landmassMap);
 
+                    int waterLevel = worldSettings.SeaLevelHeight - 1;
+                    bool isWaterColumn =
+                        baseHeight < waterLevel;
+
                     float2 uv = WorldSamplingUtility.WorldToUv(
                         worldX,
                         worldZ,
@@ -496,6 +507,7 @@ namespace Game.World.Chunks
                         biomeElevation,
                         coastDistance,
                         isMainland,
+                        isWaterColumn,
                         biomeContext);
 
                     float rockyInfluence =
@@ -508,10 +520,8 @@ namespace Game.World.Chunks
                     // Biome terrain shaping
                     // ====================================================
 
-                    BiomeTerrainSample terrainSample = biomeTerrainResolver.Sample(biome, baseHeight);
-                    bool hasRockyShoreInfluence = rockyInfluence > 0f;
-
-                    if (hasRockyShoreInfluence)
+                    float shoreDistance = 0f;
+                    if (biome == WorldBiome.RockyShore)
                     {
                         if (!shoreDistanceMap.IsCreated)
                         {
@@ -526,23 +536,19 @@ namespace Game.World.Chunks
                                     Allocator.Temp);
                         }
 
-                        float shoreDistance =
-                            shoreDistanceMap.Get(
-                                x,
-                                z);
-
-                        terrainSample =
-                            biomeTerrainResolver.SampleRockyShore(
-                                worldX,
-                                worldZ,
-                                baseHeight,
-                                shoreDistance,
-                                rockyInfluence,
-                                worldSeed,
-                                worldSettings);
+                        shoreDistance = shoreDistanceMap.Get(x, z);
                     }
 
-                    int waterLevel = worldSettings.SeaLevelHeight - 1;
+                    BiomeTerrainSample terrainSample =
+                        biomeTerrainResolver.Sample(
+                            biome,
+                            worldX,
+                            worldZ,
+                            baseHeight,
+                            shoreDistance,
+                            rockyInfluence,
+                            worldSeed,
+                            worldSettings);
 
                     for (int y = 0; y < ChunkSettings.SizeY; y++)
                     {

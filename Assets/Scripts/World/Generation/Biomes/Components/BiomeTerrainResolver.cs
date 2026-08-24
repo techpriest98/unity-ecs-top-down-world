@@ -21,15 +21,33 @@ namespace Game.World.Generation.Biomes
 
         public BiomeTerrainSample Sample(
             WorldBiome biome,
-            int baseHeight)
+            int worldX,
+            int worldZ,
+            int baseHeight,
+            float shoreDistance,
+            float biomeInfluence,
+            uint worldSeed,
+            in WorldGenerationSettingsComponent worldSettings)
         {
             return biome switch
             {
                 WorldBiome.Ocean =>
                     ocean.Sample(baseHeight),
 
+                WorldBiome.RockyShore =>
+                    rockyShore.Sample(
+                        worldX,
+                        worldZ,
+                        baseHeight,
+                        shoreDistance,
+                        biomeInfluence,
+                        worldSeed,
+                        worldSettings),
+
                 _ =>
-                    new BiomeTerrainSample(biome, baseHeight)
+                    new BiomeTerrainSample(
+                        biome,
+                        baseHeight)
             };
         }
 

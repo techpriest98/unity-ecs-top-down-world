@@ -112,13 +112,10 @@ namespace Game.World.Generation
             float elevation,
             float coastDistance,
             bool isMainland,
+            bool isWaterColumn,
             WorldBiomeSamplingContext context)
         {
-            // Категоріальний biome для води все ще Ocean.
-            //
-            // RockyShoreInfluence для цієї ж координати при цьому
-            // може бути > 0 і буде використаний terrain generator'ом.
-            if (elevation < context.SeaLevel)
+            if (isWaterColumn)
                 return WorldBiome.Ocean;
 
             float normalizedElevation =
