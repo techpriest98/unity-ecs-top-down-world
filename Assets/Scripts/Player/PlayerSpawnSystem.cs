@@ -56,8 +56,14 @@ namespace Game.Player
                             PlayerWorldPosition>>()
                     .WithAll<PlayerTag>())
             {
-                playerPosition.ValueRW.Value = (float3)spawnPosition;
-                playerFound = true;
+                playerPosition.ValueRW.Value =
+                    new float3(
+                        spawnPosition.x + 0.5f,
+                        spawnPosition.y,
+                        spawnPosition.z + 0.5f);
+
+                playerFound =
+                    true;
 
                 break;
             }
