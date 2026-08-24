@@ -4,6 +4,7 @@ namespace Game.World.Generation.Biomes.Ocean
 {
     public enum OceanZone : byte
     {
+        ShallowWater = 0,
         DeepOcean = 1
     }
 

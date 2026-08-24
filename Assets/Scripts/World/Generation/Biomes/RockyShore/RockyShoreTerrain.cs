@@ -10,7 +10,6 @@ namespace Game.World.Generation.Biomes.RockyShore
         Ramp = 3,
         GrassTop = 4,
         Beach = 5,
-        ShallowWater = 6,
     }
 
     public readonly struct RockyShoreTerrain
@@ -247,7 +246,7 @@ namespace Game.World.Generation.Biomes.RockyShore
         // Blocks
         // ================================================================
 
-        public BlockId GetBlock(int y, byte zone, int terrainHeight, int waterLevel)
+        public BlockId GetBlock(int y, byte zone, int terrainHeight)
         {
             if (y < terrainHeight)
             {
@@ -280,9 +279,6 @@ namespace Game.World.Generation.Biomes.RockyShore
                         return BlockId.Stone;
                 }
             }
-
-            if (y < waterLevel)
-                return BlockId.OceanWater;
 
             return BlockId.Air;
         }

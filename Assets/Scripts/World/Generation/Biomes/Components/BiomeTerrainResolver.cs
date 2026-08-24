@@ -60,25 +60,6 @@ namespace Game.World.Generation.Biomes
             return rockyShore.GetShoreSearchDistance();
         }
 
-        public BiomeTerrainSample SampleRockyShore(
-            int worldX,
-            int worldZ,
-            int baseHeight,
-            float shoreDistance,
-            float biomeInfluence,
-            uint worldSeed,
-            in WorldGenerationSettingsComponent worldSettings)
-        {
-            return rockyShore.Sample(
-                worldX,
-                worldZ,
-                baseHeight,
-                shoreDistance,
-                biomeInfluence,
-                worldSeed,
-                worldSettings);
-        }
-
         public BlockId GetBlock(
             int y,
             int waterLevel,
@@ -93,8 +74,7 @@ namespace Game.World.Generation.Biomes
                     rockyShore.GetBlock(
                         y,
                         terrainSample.Zone,
-                        terrainSample.Height,
-                        waterLevel),
+                        terrainSample.Height),
 
                 WorldBiome.Plains =>
                     depth == 0
