@@ -5,8 +5,16 @@ namespace Game.World.Rendering
 {
     public struct WaterProjectionWriter
     {
+        private const uint OpticalDepthMask =
+            0xFF;
+
+        private const uint TopInsetFlag =
+            1u << 8;
+
         private ProjectionOccupancy occupancy;
-        private DynamicBuffer<ProjectedWaterCellData> result;
+
+        private DynamicBuffer<ProjectedWaterCellData>
+            result;
 
         public WaterProjectionWriter(
             ProjectionOccupancy occupancy,
@@ -19,6 +27,7 @@ namespace Game.World.Rendering
         public bool TryAddTop(
             BlockData block,
             byte opticalDepth,
+            bool topInset,
             ushort x,
             ushort y)
         {
@@ -26,6 +35,7 @@ namespace Game.World.Rendering
                 block,
                 ProjectedFaceType.Top,
                 opticalDepth,
+                topInset,
                 x,
                 y);
         }
@@ -40,6 +50,7 @@ namespace Game.World.Rendering
                 block,
                 ProjectedFaceType.SideUpper,
                 opticalDepth,
+                false,
                 x,
                 y);
         }
@@ -54,6 +65,7 @@ namespace Game.World.Rendering
                 block,
                 ProjectedFaceType.SideLower,
                 opticalDepth,
+                false,
                 x,
                 y);
         }
@@ -62,11 +74,17 @@ namespace Game.World.Rendering
             BlockData block,
             ProjectedFaceType faceType,
             byte opticalDepth,
+            bool topInset,
             ushort x,
             ushort y)
         {
-            if (!occupancy.TryOccupy(x, y, faceType))
+            if (!occupancy.TryOccupy(
+                    x,
+                    y,
+                    faceType))
+            {
                 return false;
+            }
 
             ProjectedCellData cell = new(
                 block,
@@ -75,11 +93,33 @@ namespace Game.World.Rendering
                 x,
                 y);
 
-            cell.Reserved = opticalDepth;
+            cell.Reserved =
+                PackReserved(
+                    opticalDepth,
+                    topInset);
 
-            result.Add(new ProjectedWaterCellData(cell));
+            result.Add(
+                new ProjectedWaterCellData(
+                    cell));
 
             return true;
+        }
+
+        private static uint PackReserved(
+            byte opticalDepth,
+            bool topInset)
+        {
+            uint packed =
+                (uint)opticalDepth &
+                OpticalDepthMask;
+
+            if (topInset)
+            {
+                packed |=
+                    TopInsetFlag;
+            }
+
+            return packed;
         }
     }
 }

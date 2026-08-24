@@ -17,6 +17,10 @@ Shader "Game/World/ChunkWaterProcedural"
         _WaterAbsorption(
             "Water Absorption",
             Range(0.0, 1.0)) = 0.12
+
+        _WaterTopInsetPixels(
+            "Water Top Inset Pixels",
+            Range(0.0, 4.0)) = 2.0
     }
 
     SubShader
@@ -51,12 +55,26 @@ Shader "Game/World/ChunkWaterProcedural"
             // Constants
             // ============================================================
 
-            static const uint TILE_WIDTH = 16;
-            static const uint TILE_HEIGHT = 8;
-            static const uint FACE_COUNT = 3;
+            static const uint TILE_WIDTH =
+                32;
 
-            static const float TOP_LIGHT = 1.0;
-            static const float SIDE_LIGHT = 1.0;
+            static const uint TILE_HEIGHT =
+                16;
+
+            static const uint FACE_COUNT =
+                3;
+
+            static const float TOP_LIGHT =
+                1.0;
+
+            static const float SIDE_LIGHT =
+                1.0;
+
+            static const uint OPTICAL_DEPTH_MASK =
+                0xFF;
+
+            static const uint TOP_INSET_FLAG =
+                1u << 8;
 
             // ============================================================
             // GPU data
@@ -101,8 +119,10 @@ Shader "Game/World/ChunkWaterProcedural"
             // ============================================================
 
             float4 _WaterTint;
+
             float _WaterOpacity;
             float _WaterAbsorption;
+            float _WaterTopInsetPixels;
 
             // ============================================================
             // Projection
@@ -122,8 +142,14 @@ Shader "Game/World/ChunkWaterProcedural"
                 uint packedPosition)
             {
                 return uint2(
-                    packedPosition & 0xFFFF,
-                    (packedPosition >> 16) & 0xFFFF);
+                    packedPosition &
+                    0xFFFF,
+
+                    (
+                        packedPosition >>
+                        16
+                    ) &
+                    0xFFFF);
             }
 
             uint GetBlockId(
@@ -138,8 +164,29 @@ Shader "Game/World/ChunkWaterProcedural"
                 uint packedBlockData)
             {
                 return
-                    (packedBlockData >> 8) &
+                    (
+                        packedBlockData >>
+                        8
+                    ) &
                     0xFF;
+            }
+
+            uint GetOpticalDepth(
+                uint reserved)
+            {
+                return
+                    reserved &
+                    OPTICAL_DEPTH_MASK;
+            }
+
+            bool HasTopInset(
+                uint reserved)
+            {
+                return
+                    (
+                        reserved &
+                        TOP_INSET_FLAG
+                    ) != 0;
             }
 
             uint2 UnpackAtlasPosition(
@@ -150,7 +197,10 @@ Shader "Game/World/ChunkWaterProcedural"
                     0xFF;
 
                 uint row =
-                    (atlasPosition >> 8) &
+                    (
+                        atlasPosition >>
+                        8
+                    ) &
                     0xFF;
 
                 return uint2(
@@ -271,9 +321,37 @@ Shader "Game/World/ChunkWaterProcedural"
                     UnpackPosition(
                         cell.Position);
 
+                uint faceIndex =
+                    GetFaceIndex(
+                        GetFaceType(
+                            cell.BlockData));
+
+                uint opticalDepth =
+                    GetOpticalDepth(
+                        cell.Reserved);
+
+                bool hasTopInset =
+                    HasTopInset(
+                        cell.Reserved);
+
                 float2 corner =
                     GetQuadCorner(
                         vertexId);
+
+                float insetHeight =
+                    0.0;
+
+                if (faceIndex == 0 &&
+                    hasTopInset)
+                {
+                    float insetRatio =
+                        _WaterTopInsetPixels /
+                        (float)TILE_HEIGHT;
+
+                    insetHeight =
+                        _CellHeight *
+                        insetRatio;
+                }
 
                 float chunkLeft =
                     cell.ChunkPosition.x -
@@ -297,15 +375,20 @@ Shader "Game/World/ChunkWaterProcedural"
                     ) *
                     _CellHeight;
 
+                float worldY =
+                    cellBottom +
+                    corner.y *
+                    _CellHeight -
+                    corner.y *
+                    insetHeight;
+
                 float3 worldPosition =
                     float3(
                         cellLeft +
                         corner.x *
                         _CellWidth,
 
-                        cellBottom +
-                        corner.y *
-                        _CellHeight,
+                        worldY,
 
                         cell.ChunkPosition.z);
 
@@ -323,12 +406,10 @@ Shader "Game/World/ChunkWaterProcedural"
                         cell.BlockData);
 
                 output.FaceIndex =
-                    GetFaceIndex(
-                        GetFaceType(
-                            cell.BlockData));
+                    faceIndex;
 
                 output.OpticalDepth =
-                    cell.Reserved;
+                    opticalDepth;
 
                 return output;
             }

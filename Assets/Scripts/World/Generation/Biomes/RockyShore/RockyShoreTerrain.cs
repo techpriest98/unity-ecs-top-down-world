@@ -255,6 +255,9 @@ namespace Game.World.Generation.Biomes.RockyShore
                 switch ((RockyShoreZone)zone)
                 {
                     case RockyShoreZone.Beach:
+                        if (depth <= 3)
+                            return BlockId.Sand;
+
                         return BlockId.Stone;
 
                     case RockyShoreZone.Cliff:

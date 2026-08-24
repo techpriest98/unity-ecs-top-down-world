@@ -172,6 +172,7 @@ namespace Game.World.Rendering
                 blockAccessor,
                 writer,
                 world,
+                direction,
                 projectionX,
                 projectionY);
         }
@@ -262,6 +263,7 @@ namespace Game.World.Rendering
             ChunkBlockAccessor blockAccessor,
             WaterProjectionWriter writer,
             int3 airWorld,
+            ViewDirection direction,
             ushort projectionX,
             ushort projectionY)
         {
@@ -296,9 +298,30 @@ namespace Game.World.Rendering
                     belowWorld,
                     new int3(0, -1, 0));
 
+            int3 awayFromCamera =
+                ViewDirectionUtility
+                    .GetAwayFromCameraOffset(
+                        direction);
+
+            int3 behindWorld =
+                belowWorld +
+                awayFromCamera;
+
+            BlockData behindBlock =
+                blockAccessor.GetBlockOrAir(
+                    chunkCoordinate,
+                    behindWorld.x,
+                    behindWorld.y,
+                    behindWorld.z);
+
+            bool topInset =
+                IsOpaque(
+                    behindBlock.BlockId);
+
             writer.TryAddTop(
                 belowBlock,
                 opticalDepth,
+                topInset,
                 projectionX,
                 projectionY);
         }

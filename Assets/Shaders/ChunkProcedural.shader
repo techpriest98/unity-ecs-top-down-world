@@ -34,8 +34,8 @@ Shader "Game/World/ChunkProcedural"
             // Constants
             // ============================================================
 
-            static const uint TILE_WIDTH = 16;
-            static const uint TILE_HEIGHT = 8;
+            static const uint TILE_WIDTH = 32;
+            static const uint TILE_HEIGHT = 16;
             static const uint FACE_COUNT = 3;
 
             // Temporary simple lighting
