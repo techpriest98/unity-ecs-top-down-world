@@ -1,3 +1,4 @@
+using Game.World.Generation.Biomes.RockyShore;
 using Unity.Mathematics;
 
 namespace Game.World.Generation
@@ -43,11 +44,6 @@ namespace Game.World.Generation
         private const float HighlandsMaxProgression = 1.00f;
         private const float HighlandsFeather = 0.16f;
 
-        // Rocky Shore
-        private const float RockyShoreMaxCoastDistance = 0.055f;
-        private const float RockyShoreCoreCoastDistance = 0.025f;
-        private const float RockyNoiseFrequency = 5.0f;
-
         // Mountains
         private const float MountainMaxFinalDistance = 0.18f;
         private const float MountainNoiseFrequency = 4.0f;
@@ -64,47 +60,6 @@ namespace Game.World.Generation
                 SeedOffset = GetSeedOffset(seed),
                 SeaLevel = seaLevel
             };
-        }
-        public static float SampleRockyShoreInfluence(
-            float2 uv,
-            float coastDistance,
-            WorldBiomeSamplingContext context)
-        {
-            if (coastDistance > RockyShoreMaxCoastDistance * 1.15f)
-            {
-                return 0f;
-            }
-
-            float rockyNoise =
-                SampleBiomeNoise(
-                    uv,
-                    context.SeedOffset,
-                    new float2(
-                        211.17f,
-                        -163.43f),
-                    RockyNoiseFrequency);
-
-            float noise01 =
-                rockyNoise * 0.5f + 0.5f;
-
-            // Noise робить внутрішню межу біома нерівною.
-            // Безпосередньо берег залишається суцільним Rocky Shore.
-            float coastOuter =
-                RockyShoreMaxCoastDistance *
-                math.lerp(
-                    0.88f,
-                    1.12f,
-                    noise01);
-
-            float coastInfluence =
-                1f -
-                SmoothRange(
-                    RockyShoreCoreCoastDistance,
-                    coastOuter,
-                    coastDistance);
-
-            return math.saturate(
-                coastInfluence);
         }
 
         public static WorldBiome Sample(
@@ -151,7 +106,7 @@ namespace Game.World.Generation
             // ============================================================
 
             float rockyShoreInfluence =
-                SampleRockyShoreInfluence(
+                RockyShoreBiomeMask.SampleInfluence(
                     uv,
                     coastDistance,
                     context);

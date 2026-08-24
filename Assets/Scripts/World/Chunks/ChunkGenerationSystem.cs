@@ -511,7 +511,7 @@ namespace Game.World.Chunks
                         biomeContext);
 
                     float rockyInfluence =
-                        WorldBiomeSampler.SampleRockyShoreInfluence(
+                        RockyShoreBiomeMask.SampleInfluence(
                             uv,
                             coastDistance,
                             biomeContext);
