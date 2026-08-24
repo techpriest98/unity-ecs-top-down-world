@@ -212,19 +212,19 @@ namespace Game.World.Rendering
             // Count projected cells
             // ============================================================
 
-            int totalCellCount =
-                0;
+            int totalCellCount = 0;
+            int totalWaterCellCount = 0;
 
-
-            foreach (var projectedCells
-                     in SystemAPI.Query<
-                             DynamicBuffer<
-                                 ProjectedCellData>>()
-                         .WithAll<
-                             ChunkGenerated>())
+            foreach (var (
+                    projectedCells,
+                    projectedWaterCells)
+                in SystemAPI.Query<
+                    DynamicBuffer<ProjectedCellData>,
+                    DynamicBuffer<ProjectedWaterCellData>>()
+                .WithAll<ChunkGenerated>())
             {
-                totalCellCount +=
-                    projectedCells.Length;
+                totalCellCount += projectedCells.Length;
+                totalWaterCellCount += projectedWaterCells.Length;
             }
 
 
@@ -238,17 +238,15 @@ namespace Game.World.Rendering
                     totalCellCount,
                     Allocator.Temp);
 
+            using var waterRenderData =
+                new NativeList<ProjectedCellRenderData>(
+                    totalWaterCellCount,
+                    Allocator.Temp);
 
-            bool hasBounds =
-                false;
+            bool hasBounds = false;
 
-
-            float3 minBounds =
-                float3.zero;
-
-
-            float3 maxBounds =
-                float3.zero;
+            float3 minBounds = float3.zero;
+            float3 maxBounds = float3.zero;
 
 
             float chunkWidth =
@@ -266,14 +264,14 @@ namespace Game.World.Rendering
 
 
             foreach (var (
-                         chunk,
-                         projectedCells)
-                     in SystemAPI.Query<
-                             RefRO<ChunkComponent>,
-                             DynamicBuffer<
-                                 ProjectedCellData>>()
-                         .WithAll<
-                             ChunkGenerated>())
+                        chunk,
+                        projectedCells,
+                        projectedWaterCells)
+                    in SystemAPI.Query<
+                            RefRO<ChunkComponent>,
+                            DynamicBuffer<ProjectedCellData>,
+                            DynamicBuffer<ProjectedWaterCellData>>()
+                        .WithAll<ChunkGenerated>())
             {
                 Vector3 chunkPosition =
                     ChunkRenderPositionUtility
@@ -297,8 +295,7 @@ namespace Game.World.Rendering
                 // --------------------------------------------------------
 
                 for (int index = 0;
-                     index <
-                     projectedCells.Length;
+                     index < projectedCells.Length;
                      index++)
                 {
                     ProjectedCellData cell =
@@ -328,6 +325,35 @@ namespace Game.World.Rendering
                         });
                 }
 
+                for (int index = 0;
+                    index < projectedWaterCells.Length;
+                    index++)
+                {
+                    ProjectedCellData cell =
+                        projectedWaterCells[index].Value;
+
+                    waterRenderData.Add(
+                        new ProjectedCellRenderData
+                        {
+                            BlockData =
+                                cell.BlockData,
+
+                            Position =
+                                cell.Position,
+
+                            LightData =
+                                cell.LightData,
+
+                            Reserved =
+                                cell.Reserved,
+
+                            ChunkPosition =
+                                chunkPositionFloat,
+
+                            Padding =
+                                0f
+                        });
+                }
 
                 // --------------------------------------------------------
                 // Bounds
@@ -429,6 +455,9 @@ namespace Game.World.Rendering
                 renderData.AsArray(),
                 bounds);
 
+            renderer.UploadWater(
+                waterRenderData.AsArray(),
+                bounds);
 
             // ============================================================
             // GPU is now synchronized with CPU projection.

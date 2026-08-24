@@ -12,6 +12,7 @@ namespace Game.World.Rendering
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
             ProjectionWriter writer,
+            WaterProjectionWriter waterWriter,
             ViewDirection direction)
         {
             int2 chunkSizeXZ = new int2(
@@ -57,9 +58,8 @@ namespace Game.World.Rendering
                             chunkCoordinate,
                             blockAccessor,
                             writer,
-                            view,
+                            waterWriter,
                             world,
-                            chunkSizeXZ,
                             direction,
                             checked((ushort)u),
                             checked((ushort)projectionY));
@@ -73,26 +73,59 @@ namespace Game.World.Rendering
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
             ProjectionWriter writer,
-            ViewCoordinate view,
+            WaterProjectionWriter waterWriter,
             int3 world,
-            int2 chunkSizeXZ,
             ViewDirection direction,
             ushort projectionX,
             ushort projectionY)
         {
-            BlockId currentBlockId =
-                GetBlockIdOrAir(
+            BlockData currentBlock =
+                GetBlockOrAir(
                     blocks,
                     chunkCoordinate,
                     blockAccessor,
                     world);
 
-            if (BlockUtility.IsSolid(currentBlockId))
+            BlockId currentBlockId =
+                currentBlock.BlockId;
+
+            ProcessOpaqueCell(
+                chunkCoordinate,
+                blockAccessor,
+                writer,
+                currentBlockId,
+                world,
+                direction,
+                projectionX,
+                projectionY);
+
+            ProcessWaterCell(
+                chunkCoordinate,
+                blockAccessor,
+                waterWriter,
+                currentBlockId,
+                world,
+                direction,
+                projectionX,
+                projectionY);
+        }
+
+        private static void ProcessOpaqueCell(
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            ProjectionWriter writer,
+            BlockId currentBlockId,
+            int3 world,
+            ViewDirection direction,
+            ushort projectionX,
+            ushort projectionY)
+        {
+            if (IsOpaque(currentBlockId))
             {
                 return;
             }
 
-            TryEmitSide(
+            TryEmitOpaqueSide(
                 chunkCoordinate,
                 blockAccessor,
                 writer,
@@ -101,8 +134,7 @@ namespace Game.World.Rendering
                 projectionX,
                 projectionY);
 
-            TryEmitTop(
-                blocks,
+            TryEmitOpaqueTop(
                 chunkCoordinate,
                 blockAccessor,
                 writer,
@@ -111,11 +143,124 @@ namespace Game.World.Rendering
                 projectionY);
         }
 
-        private static void TryEmitTop(
-            DynamicBuffer<BlockData> blocks,
+        private static void ProcessWaterCell(
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            WaterProjectionWriter writer,
+            BlockId currentBlockId,
+            int3 world,
+            ViewDirection direction,
+            ushort projectionX,
+            ushort projectionY)
+        {
+            if (!BlockUtility.IsAir(currentBlockId))
+            {
+                return;
+            }
+
+            TryEmitWaterSide(
+                chunkCoordinate,
+                blockAccessor,
+                writer,
+                world,
+                direction,
+                projectionX,
+                projectionY);
+
+            TryEmitWaterTop(
+                chunkCoordinate,
+                blockAccessor,
+                writer,
+                world,
+                projectionX,
+                projectionY);
+        }
+
+        private static void TryEmitOpaqueTop(
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
             ProjectionWriter writer,
+            int3 transparentWorld,
+            ushort projectionX,
+            ushort projectionY)
+        {
+            int3 belowWorld =
+                transparentWorld +
+                new int3(0, -1, 0);
+
+            if (!ChunkUtility.IsInside(
+                    belowWorld.x,
+                    belowWorld.y,
+                    belowWorld.z))
+            {
+                return;
+            }
+
+            BlockData belowBlock =
+                blockAccessor.GetBlockOrAir(
+                    chunkCoordinate,
+                    belowWorld.x,
+                    belowWorld.y,
+                    belowWorld.z);
+
+            if (!IsOpaque(belowBlock.BlockId))
+            {
+                return;
+            }
+
+            writer.TryAddTop(
+                belowBlock,
+                projectionX,
+                projectionY);
+        }
+
+        private static void TryEmitOpaqueSide(
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            ProjectionWriter writer,
+            int3 transparentWorld,
+            ViewDirection direction,
+            ushort projectionX,
+            ushort projectionY)
+        {
+            if (projectionY < 2)
+            {
+                return;
+            }
+
+            int3 blockWorld =
+                transparentWorld +
+                ViewDirectionUtility
+                    .GetAwayFromCameraOffset(
+                        direction);
+
+            BlockData block =
+                blockAccessor.GetBlockOrAir(
+                    chunkCoordinate,
+                    blockWorld.x,
+                    blockWorld.y,
+                    blockWorld.z);
+
+            if (!IsOpaque(block.BlockId))
+            {
+                return;
+            }
+
+            writer.TryAddSideUpper(
+                block,
+                projectionX,
+                checked((ushort)(projectionY - 2)));
+
+            writer.TryAddSideLower(
+                block,
+                projectionX,
+                checked((ushort)(projectionY - 1)));
+        }
+
+        private static void TryEmitWaterTop(
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            WaterProjectionWriter writer,
             int3 airWorld,
             ushort projectionX,
             ushort projectionY)
@@ -139,22 +284,29 @@ namespace Game.World.Rendering
                     belowWorld.y,
                     belowWorld.z);
 
-            if (!BlockUtility.IsSolid(
-                    belowBlock.BlockId))
+            if (!IsWater(belowBlock.BlockId))
             {
                 return;
             }
 
+            byte opticalDepth =
+                MeasureWaterDepth(
+                    chunkCoordinate,
+                    blockAccessor,
+                    belowWorld,
+                    new int3(0, -1, 0));
+
             writer.TryAddTop(
                 belowBlock,
+                opticalDepth,
                 projectionX,
                 projectionY);
         }
 
-        private static void TryEmitSide(
+        private static void TryEmitWaterSide(
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
-            ProjectionWriter writer,
+            WaterProjectionWriter writer,
             int3 airWorld,
             ViewDirection direction,
             ushort projectionX,
@@ -178,37 +330,93 @@ namespace Game.World.Rendering
                     blockWorld.y,
                     blockWorld.z);
 
-            if (!BlockUtility.IsSolid(
-                    block.BlockId))
+            if (!IsWater(block.BlockId))
             {
                 return;
             }
 
+            int3 awayFromCamera =
+                ViewDirectionUtility
+                    .GetAwayFromCameraOffset(
+                        direction);
+
+            byte opticalDepth =
+                MeasureWaterDepth(
+                    chunkCoordinate,
+                    blockAccessor,
+                    blockWorld,
+                    awayFromCamera);
+
             writer.TryAddSideUpper(
                 block,
+                opticalDepth,
                 projectionX,
                 checked((ushort)(projectionY - 2)));
 
             writer.TryAddSideLower(
                 block,
+                opticalDepth,
                 projectionX,
                 checked((ushort)(projectionY - 1)));
         }
 
-        private static BlockId GetBlockIdOrAir(
+        private static BlockData GetBlockOrAir(
             DynamicBuffer<BlockData> blocks,
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
             int3 world)
         {
-            BlockData block =
-                blockAccessor.GetBlockOrAir(
-                    chunkCoordinate,
-                    world.x,
-                    world.y,
-                    world.z);
+            return blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                world.x,
+                world.y,
+                world.z);
+        }
 
-            return block.BlockId;
+        private static byte MeasureWaterDepth(
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            int3 startWorld,
+            int3 direction)
+        {
+            int depth = 0;
+            int3 currentWorld =
+                startWorld;
+
+            while (depth < byte.MaxValue)
+            {
+                BlockData block =
+                    blockAccessor.GetBlockOrAir(
+                        chunkCoordinate,
+                        currentWorld.x,
+                        currentWorld.y,
+                        currentWorld.z);
+
+                if (!IsWater(block.BlockId))
+                {
+                    break;
+                }
+
+                depth++;
+
+                currentWorld +=
+                    direction;
+            }
+
+            return checked((byte)depth);
+        }
+
+        private static bool IsOpaque(
+            BlockId blockId)
+        {
+            return BlockUtility.IsSolid(blockId) &&
+                   !IsWater(blockId);
+        }
+
+        private static bool IsWater(
+            BlockId blockId)
+        {
+            return blockId == BlockId.OceanWater;
         }
     }
 }

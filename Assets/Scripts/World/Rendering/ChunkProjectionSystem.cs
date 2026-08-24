@@ -217,12 +217,12 @@ namespace Game.World.Rendering
                     waterOccupancy,
                     projectedWaterCells);
 
-
                 ChunkProjectionBuilder.Build(
                     blocks,
                     chunk.ValueRO.Coordinate,
                     blockAccessor,
                     writer,
+                    waterWriter,
                     projectionDirection);
 
                 ecb.SetComponentEnabled<

@@ -15,10 +15,15 @@ namespace Game.World.Rendering
             private set;
         }
 
-        [Header("Rendering")]
+        [Header("Opaque Rendering")]
         [SerializeField]
         private Material material;
 
+        [Header("Water Rendering")]
+        [SerializeField]
+        private Material waterMaterial;
+
+        [Header("Shared Resources")]
         [SerializeField]
         private Texture2D blockAtlas;
 
@@ -26,16 +31,22 @@ namespace Game.World.Rendering
         private BlockDatabase blockDatabase;
 
         private GraphicsBuffer projectedCellsBuffer;
+        private GraphicsBuffer projectedWaterCellsBuffer;
         private GraphicsBuffer blockDatabaseBuffer;
 
-        private MaterialPropertyBlock propertyBlock;
+        private MaterialPropertyBlock opaquePropertyBlock;
+        private MaterialPropertyBlock waterPropertyBlock;
 
         private int projectedCellsCapacity;
         private int projectedCellsCount;
 
+        private int projectedWaterCellsCapacity;
+        private int projectedWaterCellsCount;
+
         private int blockDatabaseCount;
 
-        private Bounds worldBounds;
+        private Bounds opaqueWorldBounds;
+        private Bounds waterWorldBounds;
 
         private void Awake()
         {
@@ -62,7 +73,10 @@ namespace Game.World.Rendering
                 return;
             }
 
-            propertyBlock =
+            opaquePropertyBlock =
+                new MaterialPropertyBlock();
+
+            waterPropertyBlock =
                 new MaterialPropertyBlock();
 
             CreateBlockDatabaseBuffer();
@@ -70,7 +84,8 @@ namespace Game.World.Rendering
 
         private void LateUpdate()
         {
-            Render();
+            RenderOpaque();
+            RenderWater();
         }
 
         private void OnDestroy()
@@ -88,6 +103,9 @@ namespace Game.World.Rendering
             NativeArray<ProjectedCellRenderData> cells,
             Bounds bounds)
         {
+            opaqueWorldBounds =
+                bounds;
+
             if (!enabled)
             {
                 return;
@@ -110,12 +128,40 @@ namespace Game.World.Rendering
 
             projectedCellsCount =
                 cells.Length;
-
-            worldBounds =
-                bounds;
         }
 
-        private void Render()
+        public void UploadWater(
+            NativeArray<ProjectedCellRenderData> cells,
+            Bounds bounds)
+        {
+            waterWorldBounds =
+                bounds;
+
+            if (!enabled)
+            {
+                return;
+            }
+
+            if (!cells.IsCreated ||
+                cells.Length == 0)
+            {
+                projectedWaterCellsCount =
+                    0;
+
+                return;
+            }
+
+            EnsureProjectedWaterCellsBuffer(
+                cells.Length);
+
+            projectedWaterCellsBuffer.SetData(
+                cells);
+
+            projectedWaterCellsCount =
+                cells.Length;
+        }
+
+        private void RenderOpaque()
         {
             if (!enabled ||
                 projectedCellsCount <= 0 ||
@@ -125,21 +171,55 @@ namespace Game.World.Rendering
                 return;
             }
 
-            propertyBlock.Clear();
+            RenderLayer(
+                material,
+                opaquePropertyBlock,
+                projectedCellsBuffer,
+                projectedCellsCount,
+                opaqueWorldBounds);
+        }
 
-            propertyBlock.SetBuffer(
+        private void RenderWater()
+        {
+            if (!enabled ||
+                waterMaterial == null ||
+                projectedWaterCellsCount <= 0 ||
+                projectedWaterCellsBuffer == null ||
+                blockDatabaseBuffer == null)
+            {
+                return;
+            }
+
+            RenderLayer(
+                waterMaterial,
+                waterPropertyBlock,
+                projectedWaterCellsBuffer,
+                projectedWaterCellsCount,
+                waterWorldBounds);
+        }
+
+        private void RenderLayer(
+            Material layerMaterial,
+            MaterialPropertyBlock layerPropertyBlock,
+            GraphicsBuffer cellsBuffer,
+            int cellsCount,
+            Bounds bounds)
+        {
+            layerPropertyBlock.Clear();
+
+            layerPropertyBlock.SetBuffer(
                 "_ProjectedCells",
-                projectedCellsBuffer);
+                cellsBuffer);
 
-            propertyBlock.SetBuffer(
+            layerPropertyBlock.SetBuffer(
                 "_BlockDatabase",
                 blockDatabaseBuffer);
 
-            propertyBlock.SetTexture(
+            layerPropertyBlock.SetTexture(
                 "_BlockAtlas",
                 blockAtlas);
 
-            propertyBlock.SetInt(
+            layerPropertyBlock.SetInt(
                 "_BlockDatabaseCount",
                 blockDatabaseCount);
 
@@ -161,31 +241,31 @@ namespace Game.World.Rendering
                 ) *
                 cellHeight;
 
-            propertyBlock.SetFloat(
+            layerPropertyBlock.SetFloat(
                 "_CellWidth",
                 cellWidth);
 
-            propertyBlock.SetFloat(
+            layerPropertyBlock.SetFloat(
                 "_CellHeight",
                 cellHeight);
 
-            propertyBlock.SetFloat(
+            layerPropertyBlock.SetFloat(
                 "_ChunkWidth",
                 chunkWidth);
 
-            propertyBlock.SetFloat(
+            layerPropertyBlock.SetFloat(
                 "_ProjectionHeight",
                 projectionHeight);
 
-            var renderParams =
+            RenderParams renderParams =
                 new RenderParams(
-                    material)
+                    layerMaterial)
                 {
                     worldBounds =
-                        worldBounds,
+                        bounds,
 
                     matProps =
-                        propertyBlock
+                        layerPropertyBlock
                 };
 
             Graphics.RenderPrimitives(
@@ -194,7 +274,7 @@ namespace Game.World.Rendering
                 vertexCount:
                     6,
                 instanceCount:
-                    projectedCellsCount);
+                    cellsCount);
         }
 
         private bool ValidateReferences()
@@ -287,24 +367,50 @@ namespace Game.World.Rendering
                         ProjectedCellRenderData>());
         }
 
+        private void EnsureProjectedWaterCellsBuffer(
+            int requiredCount)
+        {
+            if (projectedWaterCellsBuffer != null &&
+                projectedWaterCellsCapacity >=
+                requiredCount)
+            {
+                return;
+            }
+
+            projectedWaterCellsBuffer?.Dispose();
+
+            projectedWaterCellsCapacity =
+                Mathf.NextPowerOfTwo(
+                    Mathf.Max(
+                        requiredCount,
+                        1));
+
+            projectedWaterCellsBuffer =
+                new GraphicsBuffer(
+                    GraphicsBuffer.Target.Structured,
+                    projectedWaterCellsCapacity,
+                    Marshal.SizeOf<
+                        ProjectedCellRenderData>());
+        }
+
         private void ReleaseResources()
         {
             projectedCellsBuffer?.Dispose();
-            projectedCellsBuffer =
-                null;
+            projectedCellsBuffer = null;
 
-            projectedCellsCapacity =
-                0;
+            projectedCellsCapacity = 0;
+            projectedCellsCount = 0;
 
-            projectedCellsCount =
-                0;
+            projectedWaterCellsBuffer?.Dispose();
+            projectedWaterCellsBuffer = null;
+
+            projectedWaterCellsCapacity = 0;
+            projectedWaterCellsCount = 0;
 
             blockDatabaseBuffer?.Dispose();
-            blockDatabaseBuffer =
-                null;
+            blockDatabaseBuffer = null;
 
-            blockDatabaseCount =
-                0;
+            blockDatabaseCount = 0;
         }
     }
 }

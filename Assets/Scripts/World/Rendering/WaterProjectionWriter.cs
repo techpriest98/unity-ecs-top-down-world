@@ -18,36 +18,42 @@ namespace Game.World.Rendering
 
         public bool TryAddTop(
             BlockData block,
+            byte opticalDepth,
             ushort x,
             ushort y)
         {
             return TryAdd(
                 block,
                 ProjectedFaceType.Top,
+                opticalDepth,
                 x,
                 y);
         }
 
         public bool TryAddSideUpper(
             BlockData block,
+            byte opticalDepth,
             ushort x,
             ushort y)
         {
             return TryAdd(
                 block,
                 ProjectedFaceType.SideUpper,
+                opticalDepth,
                 x,
                 y);
         }
 
         public bool TryAddSideLower(
             BlockData block,
+            byte opticalDepth,
             ushort x,
             ushort y)
         {
             return TryAdd(
                 block,
                 ProjectedFaceType.SideLower,
+                opticalDepth,
                 x,
                 y);
         }
@@ -55,6 +61,7 @@ namespace Game.World.Rendering
         private bool TryAdd(
             BlockData block,
             ProjectedFaceType faceType,
+            byte opticalDepth,
             ushort x,
             ushort y)
         {
@@ -67,6 +74,8 @@ namespace Game.World.Rendering
                 byte.MaxValue,
                 x,
                 y);
+
+            cell.Reserved = opticalDepth;
 
             result.Add(new ProjectedWaterCellData(cell));
 
