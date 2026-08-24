@@ -98,12 +98,7 @@ namespace Game.World.Rendering
 
                 if (transitionActive)
                 {
-                    // Під час rotation будуємо вже
-                    // нову projection,
-                    // але Active ViewDirection
-                    // поки залишається старим.
-                    projectionDirection =
-                        transition.TargetDirection;
+                    projectionDirection = transition.TargetDirection;
                 }
             }
 
@@ -164,12 +159,13 @@ namespace Game.World.Rendering
             // Temporary projection data
             // ============================================================
 
-            var occupancy =
-                new ProjectionOccupancy(
-                    capacity:
-                        ChunkSettings.BlockCount,
-                    allocator:
-                        Allocator.Temp);
+            ProjectionOccupancy occupancy = new ProjectionOccupancy(
+                ChunkSettings.BlockCount,
+                Allocator.Temp);
+
+            ProjectionOccupancy waterOccupancy = new ProjectionOccupancy(
+                ChunkSettings.BlockCount,
+                Allocator.Temp);
 
 
             var ecb =
@@ -185,18 +181,20 @@ namespace Game.World.Rendering
             // ============================================================
 
             foreach (var (
-                         chunk,
-                         blocks,
-                         projectedCells,
-                         entity)
-                     in SystemAPI.Query<
-                             RefRO<ChunkComponent>,
-                             DynamicBuffer<BlockData>,
-                             DynamicBuffer<ProjectedCellData>>()
-                         .WithAll<
-                             ChunkGenerated,
-                             ChunkNeedsProjection>()
-                         .WithEntityAccess())
+                    chunk,
+                    blocks,
+                    projectedCells,
+                    projectedWaterCells,
+                    entity)
+                in SystemAPI.Query<
+                        RefRO<ChunkComponent>,
+                        DynamicBuffer<BlockData>,
+                        DynamicBuffer<ProjectedCellData>,
+                        DynamicBuffer<ProjectedWaterCellData>>()
+                    .WithAll<
+                        ChunkGenerated,
+                        ChunkNeedsProjection>()
+                    .WithEntityAccess())
             {
                 if (projectedCount >=
                     MaxChunksProjectedPerFrame)
@@ -206,13 +204,18 @@ namespace Game.World.Rendering
 
 
                 projectedCells.Clear();
+                projectedWaterCells.Clear();
 
                 occupancy.Clear();
+                waterOccupancy.Clear();
 
-                var writer =
-                    new ProjectionWriter(
-                        occupancy,
-                        projectedCells);
+                ProjectionWriter writer = new ProjectionWriter(
+                    occupancy,
+                    projectedCells);
+
+                WaterProjectionWriter waterWriter = new WaterProjectionWriter(
+                    waterOccupancy,
+                    projectedWaterCells);
 
 
                 ChunkProjectionBuilder.Build(
@@ -243,6 +246,7 @@ namespace Game.World.Rendering
             ecb.Dispose();
 
             occupancy.Dispose();
+            waterOccupancy.Dispose();
 
             chunkEntities.Dispose();
         }

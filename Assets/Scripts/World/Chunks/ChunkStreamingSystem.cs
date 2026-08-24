@@ -47,6 +47,7 @@ namespace Game.World.Chunks
                         typeof(ChunkComponent),
                         typeof(BlockData),
                         typeof(ProjectedCellData),
+                        typeof(ProjectedWaterCellData),
                         typeof(ChunkNeedsProjection),
                         typeof(ChunkNeedsRender));
 
