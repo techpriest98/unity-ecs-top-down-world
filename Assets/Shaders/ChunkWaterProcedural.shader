@@ -56,10 +56,10 @@ Shader "Game/World/ChunkWaterProcedural"
             // ============================================================
 
             static const uint TILE_WIDTH =
-                32;
+                16;
 
             static const uint TILE_HEIGHT =
-                16;
+                8;
 
             static const uint FACE_COUNT =
                 3;

@@ -21,16 +21,24 @@ namespace Game.Player
 
         protected override void OnUpdate()
         {
-            float2 input =
-                ReadMovementInput();
+            float2 move = ReadMovementInput();
+            Keyboard keyboard = Keyboard.current;
 
-            foreach (RefRW<PlayerMoveInput> moveInput
-                     in SystemAPI.Query<
-                             RefRW<PlayerMoveInput>>()
-                         .WithAll<PlayerTag>())
+            bool jumpPressed =
+                keyboard != null &&
+                keyboard.spaceKey
+                    .wasPressedThisFrame;
+
+            foreach (var (
+                        moveInput,
+                        jumpInput)
+                    in SystemAPI.Query<
+                        RefRW<PlayerMoveInput>,
+                        RefRW<PlayerJumpInput>>()
+                        .WithAll<PlayerTag>())
             {
-                moveInput.ValueRW.Value =
-                    input;
+                moveInput.ValueRW.Value = move;
+                jumpInput.ValueRW.IsPressed = jumpPressed;
             }
         }
 
