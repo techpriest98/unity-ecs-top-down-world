@@ -46,8 +46,8 @@ Material:
     m_Ints: []
     m_Floats:
     - _EnableExternalAlpha: 0
-    - _WaterAbsorption: 0.323
-    - _WaterOpacity: 0.713
+    - _WaterAbsorption: 0.372
+    - _WaterOpacity: 0.75
     - _WaterTopInsetPixels: 3
     - _ZWrite: 0
     m_Colors:

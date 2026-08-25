@@ -139,6 +139,7 @@ namespace Game.World.Rendering
                 blockAccessor,
                 writer,
                 world,
+                direction,
                 projectionX,
                 projectionY);
         }
@@ -177,17 +178,21 @@ namespace Game.World.Rendering
                 projectionY);
         }
 
-        private static void TryEmitOpaqueTop(
+       private static void TryEmitOpaqueTop(
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
             ProjectionWriter writer,
             int3 transparentWorld,
+            ViewDirection direction,
             ushort projectionX,
             ushort projectionY)
         {
             int3 belowWorld =
                 transparentWorld +
-                new int3(0, -1, 0);
+                new int3(
+                    0,
+                    -1,
+                    0);
 
             if (!ChunkUtility.IsInside(
                     belowWorld.x,
@@ -209,8 +214,16 @@ namespace Game.World.Rendering
                 return;
             }
 
+            byte neighborMask =
+                TopNeighborMaskUtility.Build(
+                    chunkCoordinate,
+                    belowWorld,
+                    blockAccessor,
+                    direction);
+
             writer.TryAddTop(
                 belowBlock,
+                neighborMask,
                 projectionX,
                 projectionY);
         }

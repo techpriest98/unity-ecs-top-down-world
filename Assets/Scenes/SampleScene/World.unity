@@ -186,7 +186,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac67053ceac734b478b858284b33f628, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.World.Generation.WorldSeedAuthoring
-  seed: 34343545
+  seed: 343543
 --- !u!114 &443306940
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -312,6 +312,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.PlayerAuthoring
   moveSpeed: 5
+  jumpSpeed: 9
+  collisionWidth: 0.6
+  collisionHeight: 2
 --- !u!4 &1581430485
 Transform:
   m_ObjectHideFlags: 0

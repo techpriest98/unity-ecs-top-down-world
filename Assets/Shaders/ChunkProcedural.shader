@@ -3,6 +3,7 @@ Shader "Game/World/ChunkProcedural"
     Properties
     {
         _BlockAtlas("Block Atlas", 2D) = "white" {}
+        _TopOverlayAtlas("Top Overlay Atlas", 2D) = "black" {}
     }
 
     SubShader
@@ -34,13 +35,26 @@ Shader "Game/World/ChunkProcedural"
             // Constants
             // ============================================================
 
-            static const uint TILE_WIDTH = 16;
-            static const uint TILE_HEIGHT = 8;
+            static const uint TILE_WIDTH = 32;
+            static const uint TILE_HEIGHT = 16;
             static const uint FACE_COUNT = 3;
 
             // Temporary simple lighting
             static const float TOP_LIGHT = 1.0;
             static const float SIDE_LIGHT = 0.72;
+
+            // Autotiling
+            static const uint OVERLAY_GROUP_WIDTH = 32;
+            static const uint OVERLAY_GROUP_HEIGHT = 32;
+            static const uint EDGE_THICKNESS = 4;
+            static const uint NORTH_BIT = 1 << 0;
+            static const uint EAST_BIT = 1 << 1;
+            static const uint SOUTH_BIT = 1 << 2;
+            static const uint WEST_BIT = 1 << 3;
+            static const uint NORTH_EAST_BIT = 1 << 4;
+            static const uint SOUTH_EAST_BIT = 1 << 5;
+            static const uint SOUTH_WEST_BIT = 1 << 6;
+            static const uint NORTH_WEST_BIT = 1 << 7;
 
             // ============================================================
             // GPU data
@@ -76,6 +90,10 @@ Shader "Game/World/ChunkProcedural"
             SAMPLER(sampler_BlockAtlas);
 
             float4 _BlockAtlas_TexelSize;
+
+            TEXTURE2D(_TopOverlayAtlas);
+            
+            float4 _TopOverlayAtlas_TexelSize;
 
             // ============================================================
             // Projection
@@ -166,6 +184,7 @@ Shader "Game/World/ChunkProcedural"
 
                 nointerpolation uint BlockId : TEXCOORD1;
                 nointerpolation uint FaceIndex : TEXCOORD2;
+                nointerpolation uint NeighborMask : TEXCOORD3;
             };
 
             // ============================================================
@@ -204,6 +223,7 @@ Shader "Game/World/ChunkProcedural"
                 output.LocalUv = corner;
                 output.BlockId = GetBlockId(cell.BlockData);
                 output.FaceIndex = GetFaceIndex(GetFaceType(cell.BlockData));
+                output.NeighborMask = cell.Reserved & 0xFF;
 
                 return output;
             }
@@ -211,6 +231,249 @@ Shader "Game/World/ChunkProcedural"
             // ============================================================
             // Fragment
             // ============================================================
+
+            bool HasNeighbor(uint neighborMask, uint bit)
+            {
+                return (neighborMask & bit) != 0;
+            }
+
+            float4 BlendOverlay(float4 baseColor, float4 overlayColor)
+            {
+                baseColor.rgb = lerp(
+                    baseColor.rgb,
+                    overlayColor.rgb,
+                    overlayColor.a);
+
+                return baseColor;
+            }
+
+            float4 LoadTopOverlay(uint2 atlasPosition, uint2 partOffset, uint2 partPixel)
+            {
+                uint2 groupOrigin = atlasPosition * uint2(OVERLAY_GROUP_WIDTH, OVERLAY_GROUP_HEIGHT);
+                uint2 atlasPixel = groupOrigin + partOffset + partPixel;
+
+                return _TopOverlayAtlas.Load(int3(atlasPixel, 0));
+            }
+
+            float4 ApplyTopEdges(
+                float4 color,
+                uint neighborMask,
+                uint2 atlasPosition,
+                uint localX,
+                uint localY)
+            {
+                // North:
+                if (!HasNeighbor(neighborMask, NORTH_BIT) && localY >= TILE_HEIGHT - EDGE_THICKNESS)
+                {
+                    float4 overlay = LoadTopOverlay(
+                        atlasPosition,
+                        uint2(0, 28),
+                        uint2(localX, localY - (TILE_HEIGHT - EDGE_THICKNESS)));
+
+                    color = BlendOverlay(color, overlay);
+                }
+
+                // South:
+                if (!HasNeighbor(neighborMask, SOUTH_BIT) && localY < EDGE_THICKNESS)
+                {
+                    float4 overlay = LoadTopOverlay(
+                        atlasPosition,
+                        uint2(0, 24),
+                        uint2(localX, localY));
+
+                    color = BlendOverlay(color, overlay);
+                }
+
+                // West:
+                if (!HasNeighbor(neighborMask, WEST_BIT) && localX < EDGE_THICKNESS)
+                {
+                    float4 overlay = LoadTopOverlay(
+                        atlasPosition,
+                        uint2(0, 8),
+                        uint2(localX, localY));
+
+                    color = BlendOverlay(color, overlay);
+                }
+
+                // East:
+                if (!HasNeighbor(neighborMask, EAST_BIT) && localX >= TILE_WIDTH - EDGE_THICKNESS)
+                {
+                    float4 overlay = LoadTopOverlay(
+                        atlasPosition,
+                        uint2(4, 8),
+                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS), localY));
+
+                    color = BlendOverlay(color, overlay);
+                }
+
+                return color;
+            }
+
+            float4 ApplyTopOuterCorners(
+                float4 color,
+                uint neighborMask,
+                uint2 atlasPosition,
+                uint localX,
+                uint localY)
+            {
+                bool northOpen = !HasNeighbor(neighborMask, NORTH_BIT);
+                bool eastOpen = !HasNeighbor(neighborMask, EAST_BIT);
+                bool southOpen = !HasNeighbor(neighborMask, SOUTH_BIT);
+                bool westOpen = !HasNeighbor(neighborMask, WEST_BIT);
+
+                // ========================================================
+                // Outer North West
+                // ========================================================
+
+                if (northOpen && westOpen &&
+                    localX < EDGE_THICKNESS &&
+                    localY >= TILE_HEIGHT - EDGE_THICKNESS)
+                {
+                    float4 overlay = LoadTopOverlay(
+                        atlasPosition,
+                        uint2(8, 20),
+                        uint2(localX, localY - (TILE_HEIGHT - EDGE_THICKNESS)));
+
+                    color = BlendOverlay(color, overlay);
+                }
+
+                // ========================================================
+                // Outer North East
+                // ========================================================
+
+                if (northOpen && eastOpen &&
+                    localX >= TILE_WIDTH - EDGE_THICKNESS &&
+                    localY >= TILE_HEIGHT - EDGE_THICKNESS)
+                {
+                    float4 overlay = LoadTopOverlay(
+                        atlasPosition,
+                        uint2(12, 20),
+                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS),
+                        localY - (TILE_HEIGHT - EDGE_THICKNESS)));
+
+                    color = BlendOverlay(color, overlay);
+                }
+
+                // ========================================================
+                // Outer South West
+                // ========================================================
+
+                if (southOpen && westOpen &&
+                    localX < EDGE_THICKNESS &&
+                    localY < EDGE_THICKNESS)
+                {
+                    float4 overlay = LoadTopOverlay(
+                        atlasPosition,
+                        uint2(16, 20),
+                        uint2(localX, localY));
+
+                    color = BlendOverlay(color, overlay);
+                }
+
+                // ========================================================
+                // Outer South East
+                // ========================================================
+
+                if (southOpen && eastOpen &&
+                    localX >= TILE_WIDTH - EDGE_THICKNESS &&
+                    localY < EDGE_THICKNESS)
+                {
+                    float4 overlay = LoadTopOverlay(
+                        atlasPosition,
+                        uint2(20, 20),
+                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS),
+                        localY));
+
+                    color = BlendOverlay(color, overlay);
+                }
+
+                return color;
+            }
+
+            float4 ApplyTopInnerCorners(
+                float4 color,
+                uint neighborMask,
+                uint2 atlasPosition,
+                uint localX,
+                uint localY)
+            {
+                bool north = HasNeighbor(neighborMask, NORTH_BIT);
+                bool east = HasNeighbor(neighborMask, EAST_BIT);
+                bool south = HasNeighbor(neighborMask, SOUTH_BIT);
+                bool west = HasNeighbor(neighborMask, WEST_BIT);
+                bool northEast = HasNeighbor(neighborMask, NORTH_EAST_BIT);
+                bool southEast = HasNeighbor(neighborMask, SOUTH_EAST_BIT);
+                bool southWest = HasNeighbor(neighborMask, SOUTH_WEST_BIT);
+                bool northWest = HasNeighbor(neighborMask, NORTH_WEST_BIT);
+
+                // ========================================================
+                // Inner North West
+                // ========================================================
+
+                if (north && west && !northWest &&
+                    localX < EDGE_THICKNESS &&
+                    localY >= TILE_HEIGHT - EDGE_THICKNESS)
+                {
+                    float4 overlay = LoadTopOverlay(
+                        atlasPosition,
+                        uint2(8, 16),
+                        uint2(localX, localY - (TILE_HEIGHT - EDGE_THICKNESS)));
+
+                    color = BlendOverlay(color, overlay);
+                }
+
+                // ========================================================
+                // Inner North East
+                // ========================================================
+
+                if (north && east && !northEast &&
+                    localX >= TILE_WIDTH - EDGE_THICKNESS &&
+                    localY >= TILE_HEIGHT - EDGE_THICKNESS)
+                {
+                    float4 overlay = LoadTopOverlay(
+                        atlasPosition,
+                        uint2(12, 16),
+                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS),
+                        localY - (TILE_HEIGHT - EDGE_THICKNESS)));
+
+                    color = BlendOverlay(color, overlay);
+                }
+
+                // ========================================================
+                // Inner South West
+                // ========================================================
+
+                if (south && west && !southWest &&
+                    localX < EDGE_THICKNESS &&
+                    localY < EDGE_THICKNESS)
+                {
+                    float4 overlay = LoadTopOverlay(
+                        atlasPosition,
+                        uint2(16, 16),
+                        uint2(localX, localY));
+
+                    color = BlendOverlay(color, overlay);
+                }
+
+                // ========================================================
+                // Inner South East
+                // ========================================================
+
+                if (south && east && !southEast &&
+                    localX >= TILE_WIDTH - EDGE_THICKNESS &&
+                    localY < EDGE_THICKNESS)
+                {
+                    float4 overlay = LoadTopOverlay(
+                        atlasPosition,
+                        uint2(20, 16),
+                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS),
+                        localY));
+
+                    color = BlendOverlay(color, overlay);
+                }
+
+                return color;
+            }
 
             float4 Frag(Varyings input) : SV_Target
             {
@@ -250,6 +513,31 @@ Shader "Game/World/ChunkProcedural"
 
                 float4 color = _BlockAtlas.Load(
                     int3(atlasPixelX, atlasPixelY, 0));
+                
+                // Autotiling
+                if (input.FaceIndex == 0)
+                {
+                    color = ApplyTopEdges(
+                        color,
+                        input.NeighborMask,
+                        atlasPosition,
+                        localX,
+                        localY);
+
+                    color = ApplyTopOuterCorners(
+                        color,
+                        input.NeighborMask,
+                        atlasPosition,
+                        localX,
+                        localY);
+
+                    color = ApplyTopInnerCorners(
+                        color,
+                        input.NeighborMask,
+                        atlasPosition,
+                        localX,
+                        localY);
+                }
 
                 // ========================================================
                 // Temporary face lighting

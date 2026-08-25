@@ -28,6 +28,9 @@ namespace Game.World.Rendering
         private Texture2D blockAtlas;
 
         [SerializeField]
+        private Texture2D topOverlayAtlas;
+
+        [SerializeField]
         private BlockDatabase blockDatabase;
 
         private GraphicsBuffer projectedCellsBuffer;
@@ -176,7 +179,8 @@ namespace Game.World.Rendering
                 opaquePropertyBlock,
                 projectedCellsBuffer,
                 projectedCellsCount,
-                opaqueWorldBounds);
+                opaqueWorldBounds,
+                topOverlayAtlas);
         }
 
         private void RenderWater()
@@ -195,15 +199,17 @@ namespace Game.World.Rendering
                 waterPropertyBlock,
                 projectedWaterCellsBuffer,
                 projectedWaterCellsCount,
-                waterWorldBounds);
+                waterWorldBounds,
+                null);
         }
 
-        private void RenderLayer(
+       private void RenderLayer(
             Material layerMaterial,
             MaterialPropertyBlock layerPropertyBlock,
             GraphicsBuffer cellsBuffer,
             int cellsCount,
-            Bounds bounds)
+            Bounds bounds,
+            Texture2D overlayAtlas)
         {
             layerPropertyBlock.Clear();
 
@@ -218,6 +224,13 @@ namespace Game.World.Rendering
             layerPropertyBlock.SetTexture(
                 "_BlockAtlas",
                 blockAtlas);
+
+            if (overlayAtlas != null)
+            {
+                layerPropertyBlock.SetTexture(
+                    "_TopOverlayAtlas",
+                    overlayAtlas);
+            }
 
             layerPropertyBlock.SetInt(
                 "_BlockDatabaseCount",
@@ -293,6 +306,16 @@ namespace Game.World.Rendering
             {
                 Debug.LogError(
                     "Block Atlas " +
+                    "не призначений.",
+                    this);
+
+                return false;
+            }
+
+            if (topOverlayAtlas == null)
+            {
+                Debug.LogError(
+                    "Top Overlay Atlas " +
                     "не призначений.",
                     this);
 

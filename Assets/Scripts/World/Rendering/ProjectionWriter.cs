@@ -18,18 +18,26 @@ namespace Game.World.Rendering
 
         public bool TryAddTop(
             BlockData block,
+            byte neighborMask,
             ushort x,
             ushort y)
         {
             if (!_occupancy.TryOccupy(x, y, ProjectedFaceType.Top))
+            {
                 return false;
+            }
 
-            _result.Add(new ProjectedCellData(
-                block,
-                ProjectedFaceType.Top,
-                byte.MaxValue,
-                x,
-                y));
+            ProjectedCellData cell =
+                new ProjectedCellData(
+                    block,
+                    ProjectedFaceType.Top,
+                    byte.MaxValue,
+                    x,
+                    y);
+
+            cell.Reserved = neighborMask;
+
+            _result.Add(cell);
 
             return true;
         }

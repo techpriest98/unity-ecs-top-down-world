@@ -265,13 +265,13 @@ namespace Game.World.Generation.Biomes.RockyShore
 
                     case RockyShoreZone.Ramp:
                         if (depth == 0)
-                            return BlockId.PlainsGrass;
+                            return BlockId.MeadowGrass;
 
                         return BlockId.Stone;
 
                     case RockyShoreZone.GrassTop:
                         if (depth == 0)
-                            return BlockId.PlainsGrass;
+                            return BlockId.MeadowGrass;
 
                         if (depth <= settings.GrassDepth)
                             return BlockId.Dirt;
