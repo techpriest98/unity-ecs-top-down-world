@@ -48,6 +48,8 @@ namespace Game.World.Chunks
                         typeof(BlockData),
                         typeof(ProjectedCellData),
                         typeof(ProjectedWaterCellData),
+                        typeof(ChunkShaderClippingEnabled),
+                        typeof(ChunkProjectionClippingEnabled),
                         typeof(ChunkNeedsProjection),
                         typeof(ChunkNeedsRender));
 
@@ -379,20 +381,12 @@ namespace Game.World.Chunks
                     .GetBuffer<BlockData>(
                         entity);
 
-            blocks.ResizeUninitialized(
-                ChunkSettings.BlockCount);
+            blocks.ResizeUninitialized(ChunkSettings.BlockCount);
 
-            state.EntityManager
-                .SetComponentEnabled<
-                    ChunkNeedsProjection>(
-                    entity,
-                    false);
-
-            state.EntityManager
-                .SetComponentEnabled<
-                    ChunkNeedsRender>(
-                    entity,
-                    false);
+            state.EntityManager.SetComponentEnabled<ChunkNeedsProjection>(entity, false);
+            state.EntityManager.SetComponentEnabled<ChunkNeedsRender>(entity,false);
+            state.EntityManager.SetComponentEnabled<ChunkShaderClippingEnabled>(entity,false);
+            state.EntityManager.SetComponentEnabled<ChunkProjectionClippingEnabled>(entity,false);
 
             return entity;
         }

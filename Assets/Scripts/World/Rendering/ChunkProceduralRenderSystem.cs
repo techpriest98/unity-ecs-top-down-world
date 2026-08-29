@@ -213,17 +213,33 @@ namespace Game.World.Rendering
             // ============================================================
 
             int totalCellCount = 0;
+            int totalClippedCellCount = 0;
             int totalWaterCellCount = 0;
 
             foreach (var (
+                    clippingEnabled,
                     projectedCells,
                     projectedWaterCells)
                 in SystemAPI.Query<
+                    EnabledRefRO<ChunkShaderClippingEnabled>,
                     DynamicBuffer<ProjectedCellData>,
                     DynamicBuffer<ProjectedWaterCellData>>()
-                .WithAll<ChunkGenerated>())
+                .WithAll<ChunkGenerated>()
+                .WithOptions(
+                    EntityQueryOptions
+                        .IgnoreComponentEnabledState))
             {
-                totalCellCount += projectedCells.Length;
+                if (clippingEnabled.ValueRO)
+                {
+                    totalClippedCellCount +=
+                        projectedCells.Length;
+                }
+                else
+                {
+                    totalCellCount +=
+                        projectedCells.Length;
+                }
+
                 totalWaterCellCount += projectedWaterCells.Length;
             }
 
@@ -241,6 +257,11 @@ namespace Game.World.Rendering
             using var waterRenderData =
                 new NativeList<ProjectedCellRenderData>(
                     totalWaterCellCount,
+                    Allocator.Temp);
+
+            using var clippedRenderData =
+                new NativeList<ProjectedCellRenderData>(
+                    totalClippedCellCount,
                     Allocator.Temp);
 
             bool hasBounds = false;
@@ -265,13 +286,17 @@ namespace Game.World.Rendering
 
             foreach (var (
                         chunk,
+                        clippingEnabled,
                         projectedCells,
                         projectedWaterCells)
                     in SystemAPI.Query<
                             RefRO<ChunkComponent>,
+                            EnabledRefRO<
+                                ChunkShaderClippingEnabled>,
                             DynamicBuffer<ProjectedCellData>,
                             DynamicBuffer<ProjectedWaterCellData>>()
-                        .WithAll<ChunkGenerated>())
+                        .WithAll<ChunkGenerated>()
+                        .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState))
             {
                 Vector3 chunkPosition =
                     ChunkRenderPositionUtility
@@ -302,7 +327,7 @@ namespace Game.World.Rendering
                         projectedCells[index];
 
 
-                    renderData.Add(
+                    ProjectedCellRenderData cellRenderData =
                         new ProjectedCellRenderData
                         {
                             BlockData =
@@ -320,9 +345,19 @@ namespace Game.World.Rendering
                             ChunkPosition =
                                 chunkPositionFloat,
 
-                            Padding =
-                                0f
-                        });
+                            Padding = 0
+                        };
+
+                    if (clippingEnabled.ValueRO)
+                    {
+                        clippedRenderData.Add(
+                            cellRenderData);
+                    }
+                    else
+                    {
+                        renderData.Add(
+                            cellRenderData);
+                    }
                 }
 
                 for (int index = 0;
@@ -350,8 +385,7 @@ namespace Game.World.Rendering
                             ChunkPosition =
                                 chunkPositionFloat,
 
-                            Padding =
-                                0f
+                            Padding = 0f
                         });
                 }
 
@@ -453,6 +487,10 @@ namespace Game.World.Rendering
 
             renderer.Upload(
                 renderData.AsArray(),
+                bounds);
+
+            renderer.UploadClipped(
+                clippedRenderData.AsArray(),
                 bounds);
 
             renderer.UploadWater(

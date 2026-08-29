@@ -13,8 +13,7 @@ namespace Game.Player
         MonoBehaviour
     {
         [SerializeField]
-        private Vector2 screenOffset =
-            Vector2.zero;
+        private Vector2 screenOffset = new Vector2(0f, -2f);
 
         [SerializeField]
         private float cameraDepth;

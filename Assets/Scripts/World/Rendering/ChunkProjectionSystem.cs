@@ -1,3 +1,4 @@
+using Game.Player;
 using Game.World.Blocks;
 using Game.World.Chunks;
 using Unity.Burst;
@@ -14,7 +15,7 @@ namespace Game.World.Rendering
         ISystem
     {
         private const int
-            MaxChunksProjectedPerFrame = 2;
+            MaxChunksProjectedPerFrame = 1;
 
         private EntityQuery
             generatedChunksQuery;
@@ -32,6 +33,8 @@ namespace Game.World.Rendering
             state.RequireForUpdate<
                 ViewDirectionComponent>();
 
+            state.RequireForUpdate<
+                PlayerWorldPosition>();
 
             generatedChunksQuery =
                 new EntityQueryBuilder(
@@ -81,6 +84,11 @@ namespace Game.World.Rendering
 
             ViewDirection projectionDirection =
                 activeDirection;
+
+            float3 playerPosition = SystemAPI.GetSingleton<PlayerWorldPosition>().Value;
+            ComponentLookup<ChunkProjectionClippingEnabled>
+            projectionClippingLookup = SystemAPI.GetComponentLookup<ChunkProjectionClippingEnabled>(
+                isReadOnly: true);
 
 
             bool transitionActive =
@@ -219,13 +227,19 @@ namespace Game.World.Rendering
                         waterOccupancy,
                         projectedWaterCells);
 
+                bool projectionClippingEnabled =
+                    projectionClippingLookup.HasComponent(entity) &&
+                    projectionClippingLookup.IsComponentEnabled(entity);
+
                 ChunkProjectionBuilder.Build(
                     blocks,
                     chunk.ValueRO.Coordinate,
                     blockAccessor,
                     writer,
                     waterWriter,
-                    projectionDirection);
+                    projectionDirection,
+                    projectionClippingEnabled,
+                    playerPosition);
 
                 ecb.SetComponentEnabled<
                     ChunkNeedsProjection>(

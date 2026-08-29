@@ -2,8 +2,14 @@ Shader "Game/World/ChunkProcedural"
 {
     Properties
     {
+        [Toggle(_PLAYER_CLIPPING)]
+        _PlayerClipping("Player Clipping", Float) = 0
+
         _BlockAtlas("Block Atlas", 2D) = "white" {}
         _TopOverlayAtlas("Top Overlay Atlas", 2D) = "black" {}
+        _PlayerClipRadius("Player Clip Radius", Range(0.0, 1024.0)) = 64.0
+        _PlayerClipFadeWidth("Player Clip Fade Width", Range(0.0, 256.0)) = 32.0
+        _PlayerClipGrainSize("Player Clip Grain Size", Range(1.0, 8.0)) = 2.0
     }
 
     SubShader
@@ -25,6 +31,7 @@ Shader "Game/World/ChunkProcedural"
 
             HLSLPROGRAM
 
+            #pragma shader_feature_local_fragment _PLAYER_CLIPPING
             #pragma target 4.5
             #pragma vertex Vert
             #pragma fragment Frag
@@ -106,6 +113,14 @@ Shader "Game/World/ChunkProcedural"
             float _ProjectionHeight;
 
             // ============================================================
+            // Clipping
+            // ============================================================
+
+            float _PlayerClipRadius;
+            float _PlayerClipFadeWidth;
+            float _PlayerClipGrainSize;
+
+            // ============================================================
             // Packed data
             // ============================================================
 
@@ -185,6 +200,7 @@ Shader "Game/World/ChunkProcedural"
                 nointerpolation uint BlockId : TEXCOORD1;
                 nointerpolation uint FaceIndex : TEXCOORD2;
                 nointerpolation uint NeighborMask : TEXCOORD3;
+                nointerpolation uint ClipFlags : TEXCOORD4;
             };
 
             // ============================================================
@@ -200,17 +216,10 @@ Shader "Game/World/ChunkProcedural"
                 uint2 cellPosition = UnpackPosition(cell.Position);
                 float2 corner = GetQuadCorner(vertexId);
 
-                float chunkLeft =
-                    cell.ChunkPosition.x - _ChunkWidth * 0.5;
-
-                float cellLeft =
-                    chunkLeft + cellPosition.x * _CellWidth;
-
-                float chunkTop =
-                    cell.ChunkPosition.y + _ProjectionHeight;
-
-                float cellBottom =
-                    chunkTop - (cellPosition.y + 1) * _CellHeight;
+                float chunkLeft = cell.ChunkPosition.x - _ChunkWidth * 0.5;
+                float cellLeft = chunkLeft + cellPosition.x * _CellWidth;
+                float chunkTop = cell.ChunkPosition.y + _ProjectionHeight;
+                float cellBottom = chunkTop - (cellPosition.y + 1) * _CellHeight;
 
                 float3 worldPosition = float3(
                     cellLeft + corner.x * _CellWidth,
@@ -229,7 +238,7 @@ Shader "Game/World/ChunkProcedural"
             }
 
             // ============================================================
-            // Fragment
+            // Autotiling
             // ============================================================
 
             bool HasNeighbor(uint neighborMask, uint bit)
@@ -475,8 +484,40 @@ Shader "Game/World/ChunkProcedural"
                 return color;
             }
 
+            // ============================================================
+            // Clipping
+            // ============================================================
+
+            float GetClipGrain(float2 screenPosition)
+            {
+                float grainSize = max(_PlayerClipGrainSize, 1.0);
+                float2 grainPosition = floor(screenPosition / grainSize);
+
+                return frac(52.9829189 * frac(dot(grainPosition, float2(0.06711056, 0.00583715))));
+            }
+
+            // ============================================================
+            // Fragment
+            // ============================================================
+
             float4 Frag(Varyings input) : SV_Target
             {
+                #if defined(_PLAYER_CLIPPING)
+                    float2 screenCenter = _ScreenParams.xy * 0.5;
+                    float2 clipOffset = input.PositionCS.xy - screenCenter;
+                    float distanceFromCenter = length(clipOffset);
+
+                    float fadeWidth = max(_PlayerClipFadeWidth, 0.0001);
+                    float innerRadius = max(_PlayerClipRadius - fadeWidth, 0.0);
+                    float visibility = saturate((distanceFromCenter - innerRadius) / fadeWidth);
+
+                    visibility = smoothstep(0.0, 1.0, visibility);
+
+                    float grain = GetClipGrain(input.PositionCS.xy);
+
+                    clip(visibility - grain);
+                #endif
+
                 if (input.BlockId == 0 ||
                     input.BlockId >= (uint)_BlockDatabaseCount)
                 {

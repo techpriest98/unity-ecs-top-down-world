@@ -7,6 +7,9 @@ namespace Game.World.Rendering
 {
     public static class ChunkProjectionBuilder
     {
+        private const float PlayerWaistOffset = 1f;
+        public const float ProjectionClipRadius = 4f;
+
         public static void Build(
             DynamicBuffer<BlockData> blocks,
             int2 chunkCoordinate,
@@ -14,6 +17,27 @@ namespace Game.World.Rendering
             ProjectionWriter writer,
             WaterProjectionWriter waterWriter,
             ViewDirection direction)
+        {
+            Build(
+                blocks,
+                chunkCoordinate,
+                blockAccessor,
+                writer,
+                waterWriter,
+                direction,
+                projectionClippingEnabled: false,
+                playerPosition: float3.zero);
+        }
+
+        public static void Build(
+            DynamicBuffer<BlockData> blocks,
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            ProjectionWriter writer,
+            WaterProjectionWriter waterWriter,
+            ViewDirection direction,
+            bool projectionClippingEnabled,
+            float3 playerPosition)
         {
             int2 chunkSizeXZ = new int2(
                 ChunkSettings.SizeX,
@@ -62,7 +86,9 @@ namespace Game.World.Rendering
                             world,
                             direction,
                             checked((ushort)u),
-                            checked((ushort)projectionY));
+                            checked((ushort)projectionY),
+                            projectionClippingEnabled,
+                            playerPosition);
                     }
                 }
             }
@@ -77,7 +103,9 @@ namespace Game.World.Rendering
             int3 world,
             ViewDirection direction,
             ushort projectionX,
-            ushort projectionY)
+            ushort projectionY,
+            bool projectionClippingEnabled,
+            float3 playerPosition)
         {
             BlockData currentBlock =
                 GetBlockOrAir(
@@ -97,7 +125,9 @@ namespace Game.World.Rendering
                 world,
                 direction,
                 projectionX,
-                projectionY);
+                projectionY,
+                projectionClippingEnabled,
+                playerPosition);
 
             ProcessWaterCell(
                 chunkCoordinate,
@@ -118,7 +148,9 @@ namespace Game.World.Rendering
             int3 world,
             ViewDirection direction,
             ushort projectionX,
-            ushort projectionY)
+            ushort projectionY,
+            bool projectionClippingEnabled,
+            float3 playerPosition)
         {
             if (IsOpaque(currentBlockId))
             {
@@ -132,7 +164,9 @@ namespace Game.World.Rendering
                 world,
                 direction,
                 projectionX,
-                projectionY);
+                projectionY,
+                projectionClippingEnabled,
+                playerPosition);
 
             TryEmitOpaqueTop(
                 chunkCoordinate,
@@ -141,7 +175,9 @@ namespace Game.World.Rendering
                 world,
                 direction,
                 projectionX,
-                projectionY);
+                projectionY,
+                projectionClippingEnabled,
+                playerPosition);
         }
 
         private static void ProcessWaterCell(
@@ -185,7 +221,9 @@ namespace Game.World.Rendering
             int3 transparentWorld,
             ViewDirection direction,
             ushort projectionX,
-            ushort projectionY)
+            ushort projectionY,
+            bool projectionClippingEnabled,
+            float3 playerPosition)
         {
             int3 belowWorld =
                 transparentWorld +
@@ -214,6 +252,21 @@ namespace Game.World.Rendering
                 return;
             }
 
+            float3 facePosition =
+                GetGlobalPosition(
+                    chunkCoordinate,
+                    belowWorld,
+                    1f);
+
+            if (ShouldClipOpaqueFace(
+                    projectionClippingEnabled,
+                    playerPosition,
+                    facePosition,
+                    direction))
+            {
+                return;
+            }
+
             byte neighborMask =
                 TopNeighborMaskUtility.Build(
                     chunkCoordinate,
@@ -235,7 +288,9 @@ namespace Game.World.Rendering
             int3 transparentWorld,
             ViewDirection direction,
             ushort projectionX,
-            ushort projectionY)
+            ushort projectionY,
+            bool projectionClippingEnabled,
+            float3 playerPosition)
         {
             if (projectionY < 2)
             {
@@ -256,6 +311,21 @@ namespace Game.World.Rendering
                     blockWorld.z);
 
             if (!IsOpaque(block.BlockId))
+            {
+                return;
+            }
+
+            float3 facePosition =
+                GetGlobalPosition(
+                    chunkCoordinate,
+                    blockWorld,
+                    0.5f);
+
+            if (ShouldClipOpaqueFace(
+                    projectionClippingEnabled,
+                    playerPosition,
+                    facePosition,
+                    direction))
             {
                 return;
             }
@@ -447,6 +517,120 @@ namespace Game.World.Rendering
         {
             return BlockUtility.IsSolid(blockId) &&
                    !IsWater(blockId);
+        }
+
+        private static float3 GetGlobalPosition(
+            int2 chunkCoordinate,
+            int3 localPosition,
+            float heightOffset)
+        {
+            return new float3(
+                chunkCoordinate.x *
+                    ChunkSettings.SizeX +
+                localPosition.x +
+                0.5f,
+
+                localPosition.y +
+                heightOffset,
+
+                chunkCoordinate.y *
+                    ChunkSettings.SizeZ +
+                localPosition.z +
+                0.5f);
+        }
+
+        private static bool ShouldClipOpaqueFace(
+            bool projectionClippingEnabled,
+            float3 playerPosition,
+            float3 facePosition,
+            ViewDirection direction)
+        {
+            if (!projectionClippingEnabled)
+            {
+                return false;
+            }
+
+            float3 playerWaistPosition =
+                playerPosition +
+                new float3(
+                    0f,
+                    PlayerWaistOffset,
+                    0f);
+
+            if (facePosition.y <=
+                playerWaistPosition.y)
+            {
+                return false;
+            }
+
+            int2 towardCamera =
+                ViewDirectionUtility.Forward(
+                    direction);
+
+            float2 depthDifference =
+                new float2(
+                    facePosition.x -
+                        playerPosition.x,
+                    facePosition.z -
+                        playerPosition.z);
+
+            if (math.dot(
+                    depthDifference,
+                    towardCamera) <= 0f)
+            {
+                return false;
+            }
+
+            float2 projectedFacePosition =
+                ProjectWorldPosition(
+                    facePosition,
+                    direction);
+
+            float2 projectedPlayerPosition =
+                ProjectWorldPosition(
+                    playerWaistPosition,
+                    direction);
+
+            return math.distancesq(
+                    projectedFacePosition,
+                    projectedPlayerPosition) <
+                ProjectionClipRadius *
+                ProjectionClipRadius;
+        }
+
+        private static float2 ProjectWorldPosition(
+            float3 worldPosition,
+            ViewDirection direction)
+        {
+            return direction switch
+            {
+                ViewDirection.Front =>
+                    new float2(
+                        worldPosition.x,
+                        worldPosition.y -
+                        worldPosition.z * 0.5f),
+
+                ViewDirection.Back =>
+                    new float2(
+                        -worldPosition.x,
+                        worldPosition.y +
+                        worldPosition.z * 0.5f),
+
+                ViewDirection.Right =>
+                    new float2(
+                        worldPosition.z,
+                        worldPosition.y +
+                        worldPosition.x * 0.5f),
+
+                ViewDirection.Left =>
+                    new float2(
+                        -worldPosition.z,
+                        worldPosition.y -
+                        worldPosition.x * 0.5f),
+
+                _ =>
+                    float2.zero
+            };
         }
 
         private static bool IsWater(

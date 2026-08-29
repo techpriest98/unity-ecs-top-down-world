@@ -201,7 +201,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -226,7 +226,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 10
+  orthographic size: 5
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -459,6 +459,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.World.Rendering.ChunkProceduralRenderer
   material: {fileID: 2100000, guid: aaf6d3886463549bd88f181df4b19b92, type: 2}
+  clippedMaterial: {fileID: 2100000, guid: 0ac8596eff77e43528473688993be69a, type: 2}
   waterMaterial: {fileID: 2100000, guid: 3689cef086b864c6797be1af3b981ab4, type: 2}
   blockAtlas: {fileID: 2800000, guid: 103e50935f1894ab99cf7d29e7e8cc31, type: 3}
   topOverlayAtlas: {fileID: 2800000, guid: c0e807728d40b426b87e54e685d84ec7, type: 3}
