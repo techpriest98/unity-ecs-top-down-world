@@ -5,75 +5,90 @@ namespace Game.World.Rendering
 {
     public struct ProjectionWriter
     {
-        private ProjectionOccupancy _occupancy;
-        private DynamicBuffer<ProjectedCellData> _result;
+        private ProjectionOccupancy occupancy;
+        private DynamicBuffer<ProjectedCellData> result;
 
         public ProjectionWriter(
             ProjectionOccupancy occupancy,
             DynamicBuffer<ProjectedCellData> result)
         {
-            _occupancy = occupancy;
-            _result = result;
+            this.occupancy = occupancy;
+            this.result = result;
         }
 
         public bool TryAddTop(
             BlockData block,
             byte neighborMask,
+            ushort sourceAirIndex,
             ushort x,
             ushort y)
         {
-            if (!_occupancy.TryOccupy(x, y, ProjectedFaceType.Top))
+            if (!occupancy.TryOccupy(x, y, ProjectedFaceType.Top))
             {
                 return false;
             }
 
-            ProjectedCellData cell =
-                new ProjectedCellData(
-                    block,
-                    ProjectedFaceType.Top,
-                    byte.MaxValue,
-                    x,
-                    y);
+            ProjectedCellData cell = new(
+                block,
+                ProjectedFaceType.Top,
+                byte.MaxValue,
+                x,
+                y);
 
-            cell.Reserved = neighborMask;
+            cell.SourceAirIndex = sourceAirIndex;
+            cell.FaceData = neighborMask;
 
-            _result.Add(cell);
+            result.Add(cell);
 
             return true;
         }
 
         public bool TryAddSideUpper(
             BlockData block,
+            ushort sourceAirIndex,
             ushort x,
             ushort y)
         {
-            if (!_occupancy.TryOccupy(x, y, ProjectedFaceType.SideUpper))
+            if (!occupancy.TryOccupy(x, y, ProjectedFaceType.SideUpper))
+            {
                 return false;
+            }
 
-            _result.Add(new ProjectedCellData(
+            ProjectedCellData cell = new(
                 block,
                 ProjectedFaceType.SideUpper,
                 byte.MaxValue,
                 x,
-                y));
+                y);
+
+            cell.SourceAirIndex = sourceAirIndex;
+
+            result.Add(cell);
 
             return true;
         }
 
         public bool TryAddSideLower(
             BlockData block,
+            ushort sourceAirIndex,
             ushort x,
             ushort y)
         {
-            if (!_occupancy.TryOccupy(x, y, ProjectedFaceType.SideLower))
+            if (!occupancy.TryOccupy(x, y, ProjectedFaceType.SideLower))
+            {
                 return false;
+            }
 
-            _result.Add(new ProjectedCellData(
+            ProjectedCellData cell = new(
                 block,
                 ProjectedFaceType.SideLower,
                 byte.MaxValue,
                 x,
-                y));
+                y);
+
+            cell.SourceAirIndex = sourceAirIndex;
+
+            result.Add(cell);
 
             return true;
         }

@@ -46,10 +46,6 @@ Shader "Game/World/ChunkProcedural"
             static const uint TILE_HEIGHT = 16;
             static const uint FACE_COUNT = 3;
 
-            // Temporary simple lighting
-            static const float TOP_LIGHT = 1.0;
-            static const float SIDE_LIGHT = 0.72;
-
             // Autotiling
             static const uint OVERLAY_GROUP_WIDTH = 32;
             static const uint OVERLAY_GROUP_HEIGHT = 32;
@@ -72,7 +68,7 @@ Shader "Game/World/ChunkProcedural"
                 uint BlockData;
                 uint Position;
                 uint LightData;
-                uint Reserved;
+                uint FaceData;
 
                 float3 ChunkPosition;
                 float Padding;
@@ -149,6 +145,20 @@ Shader "Game/World/ChunkProcedural"
                 return uint2(column, row);
             }
 
+            float GetLightLevel(uint packedLightData)
+            {
+                return (packedLightData & 0xFFu) / 255.0;
+            }
+
+            float3 GetLightColor(uint packedLightData)
+            {
+                return float3(
+                    (packedLightData >> 8) & 0xFFu,
+                    (packedLightData >> 16) & 0xFFu,
+                    (packedLightData >> 24) & 0xFFu) /
+                    255.0;
+            }
+
             // ============================================================
             // Faces
             // ============================================================
@@ -162,13 +172,6 @@ Shader "Game/World/ChunkProcedural"
                     case 3: return 2; // SideLower
                     default: return 0;
                 }
-            }
-
-            float GetFaceLighting(uint faceIndex)
-            {
-                return faceIndex == 0
-                    ? TOP_LIGHT
-                    : SIDE_LIGHT;
             }
 
             // ============================================================
@@ -200,7 +203,7 @@ Shader "Game/World/ChunkProcedural"
                 nointerpolation uint BlockId : TEXCOORD1;
                 nointerpolation uint FaceIndex : TEXCOORD2;
                 nointerpolation uint NeighborMask : TEXCOORD3;
-                nointerpolation uint ClipFlags : TEXCOORD4;
+                nointerpolation uint LightData : TEXCOORD4;
             };
 
             // ============================================================
@@ -232,7 +235,8 @@ Shader "Game/World/ChunkProcedural"
                 output.LocalUv = corner;
                 output.BlockId = GetBlockId(cell.BlockData);
                 output.FaceIndex = GetFaceIndex(GetFaceType(cell.BlockData));
-                output.NeighborMask = cell.Reserved & 0xFF;
+                output.NeighborMask = cell.FaceData & 0xFF;
+                output.LightData = cell.LightData;
 
                 return output;
             }
@@ -581,12 +585,13 @@ Shader "Game/World/ChunkProcedural"
                 }
 
                 // ========================================================
-                // Temporary face lighting
+                // Cell lighting
                 // ========================================================
 
-                float light = GetFaceLighting(input.FaceIndex);
-                color.rgb *= light;
-
+                float lightLevel = GetLightLevel(input.LightData);
+                float3 lightColor = GetLightColor(input.LightData);
+                color.rgb *= lightColor * lightLevel;
+                
                 color.a = 1.0;
 
                 return color;

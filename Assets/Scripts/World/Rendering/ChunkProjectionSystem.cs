@@ -1,6 +1,7 @@
 using Game.Player;
 using Game.World.Blocks;
 using Game.World.Chunks;
+using Game.World.Lighting;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -241,15 +242,8 @@ namespace Game.World.Rendering
                     projectionClippingEnabled,
                     playerPosition);
 
-                ecb.SetComponentEnabled<
-                    ChunkNeedsProjection>(
-                    entity,
-                    false);
-
-                ecb.SetComponentEnabled<
-                    ChunkNeedsRender>(
-                    entity,
-                    true);
+                ecb.SetComponentEnabled<ChunkNeedsProjection>(entity, false);
+                ecb.SetComponentEnabled<ChunkNeedsLighting>(entity, true);
 
                 projectedCount++;
             }

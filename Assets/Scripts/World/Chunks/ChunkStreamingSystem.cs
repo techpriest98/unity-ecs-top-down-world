@@ -1,5 +1,6 @@
 using Game.World.Blocks;
 using Game.World.Rendering;
+using Game.World.Lighting;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -51,7 +52,8 @@ namespace Game.World.Chunks
                         typeof(ChunkShaderClippingEnabled),
                         typeof(ChunkProjectionClippingEnabled),
                         typeof(ChunkNeedsProjection),
-                        typeof(ChunkNeedsRender));
+                        typeof(ChunkNeedsRender),
+                        typeof(ChunkNeedsLighting));
 
 
             chunkQuery =
@@ -387,6 +389,7 @@ namespace Game.World.Chunks
             state.EntityManager.SetComponentEnabled<ChunkNeedsRender>(entity,false);
             state.EntityManager.SetComponentEnabled<ChunkShaderClippingEnabled>(entity,false);
             state.EntityManager.SetComponentEnabled<ChunkProjectionClippingEnabled>(entity,false);
+            state.EntityManager.SetComponentEnabled<ChunkNeedsLighting>(entity,false);
 
             return entity;
         }

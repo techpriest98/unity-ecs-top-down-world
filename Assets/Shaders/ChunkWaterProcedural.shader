@@ -85,7 +85,7 @@ Shader "Game/World/ChunkWaterProcedural"
                 uint BlockData;
                 uint Position;
                 uint LightData;
-                uint Reserved;
+                uint FaceData;
 
                 float3 ChunkPosition;
                 float Padding;
@@ -328,11 +328,11 @@ Shader "Game/World/ChunkWaterProcedural"
 
                 uint opticalDepth =
                     GetOpticalDepth(
-                        cell.Reserved);
+                        cell.FaceData);
 
                 bool hasTopInset =
                     HasTopInset(
-                        cell.Reserved);
+                        cell.FaceData);
 
                 float2 corner =
                     GetQuadCorner(

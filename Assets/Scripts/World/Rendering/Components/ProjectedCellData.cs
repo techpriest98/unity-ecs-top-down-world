@@ -6,8 +6,7 @@ namespace Game.World.Rendering
 {
     [StructLayout(LayoutKind.Sequential)]
     [InternalBufferCapacity(0)]
-    public struct ProjectedCellData :
-        IBufferElementData
+    public struct ProjectedCellData : IBufferElementData
     {
         /// <summary>
         /// Bits:
@@ -35,9 +34,19 @@ namespace Game.World.Rendering
         public uint LightData;
 
         /// <summary>
-        /// Reserved for future use.
+        /// Index of the air cell from which this projected face was generated.
         /// </summary>
-        public uint Reserved;
+        public ushort SourceAirIndex;
+
+        /// <summary>
+        /// Opaque:
+        /// bits 0-7 NeighborMask.
+        ///
+        /// Water:
+        /// bits 0-7 OpticalDepth,
+        /// bit 8 TopInset.
+        /// </summary>
+        public ushort FaceData;
 
         public ProjectedCellData(
             BlockData block,
@@ -57,12 +66,13 @@ namespace Game.World.Rendering
                 ((uint)y << 16);
 
             LightData =
-                (uint)byte.MaxValue |
+                byte.MaxValue |
                 ((uint)byte.MaxValue << 8) |
                 ((uint)byte.MaxValue << 16) |
                 ((uint)byte.MaxValue << 24);
 
-            Reserved = 0;
+            SourceAirIndex = 0;
+            FaceData = 0;
         }
 
         public ProjectedCellData(
@@ -87,12 +97,13 @@ namespace Game.World.Rendering
                 ((uint)y << 16);
 
             LightData =
-                (uint)lightLevel |
+                lightLevel |
                 ((uint)lightR << 8) |
                 ((uint)lightG << 16) |
                 ((uint)lightB << 24);
 
-            Reserved = 0;
+            SourceAirIndex = 0;
+            FaceData = 0;
         }
     }
 }

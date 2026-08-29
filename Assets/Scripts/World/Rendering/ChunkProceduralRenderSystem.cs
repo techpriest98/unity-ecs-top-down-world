@@ -1,4 +1,5 @@
 using Game.World.Chunks;
+using Game.World.Lighting;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -6,10 +7,9 @@ using UnityEngine;
 
 namespace Game.World.Rendering
 {
-    [UpdateInGroup(
-        typeof(SimulationSystemGroup))]
-    [UpdateAfter(
-        typeof(ChunkProjectionSystem))]
+    [UpdateInGroup(typeof(SimulationSystemGroup))]
+    [UpdateAfter(typeof(ChunkProjectionSystem))]
+    [UpdateAfter(typeof(ChunkLightingSystem))]
     public partial class ChunkProceduralRenderSystem :
         SystemBase
     {
@@ -24,10 +24,8 @@ namespace Game.World.Rendering
 
 
         private EntityQuery dirtyQuery;
-
-        private EntityQuery
-            pendingProjectionQuery;
-
+        private EntityQuery pendingProjectionQuery;
+        private EntityQuery pendingLightingQuery;
 
         private bool hasLastCenter;
 
@@ -73,6 +71,13 @@ namespace Game.World.Rendering
                         ChunkNeedsProjection>()
                     .Build(
                         ref CheckedStateRef);
+
+            pendingLightingQuery =
+                new EntityQueryBuilder(Allocator.Temp)
+                    .WithAll<
+                        ChunkGenerated,
+                        ChunkNeedsLighting>()
+                    .Build(ref CheckedStateRef);
         }
 
 
@@ -94,6 +99,7 @@ namespace Game.World.Rendering
                         ChunkStreamingCenter>()
                     .Coordinate;
 
+            int pendingLightingCount = pendingLightingQuery.CalculateEntityCount();
 
             bool centerChanged =
                 !hasLastCenter ||
@@ -138,7 +144,7 @@ namespace Game.World.Rendering
                 // existing GPU GraphicsBuffer.
                 // --------------------------------------------------------
 
-                if (pendingProjectionCount > 0)
+                if (pendingProjectionCount > 0 || pendingLightingCount > 0)
                 {
                     return;
                 }
@@ -180,6 +186,11 @@ namespace Game.World.Rendering
                     true;
             }
 
+
+            if (pendingLightingCount > 0)
+            {
+                return;
+            }
 
             // ============================================================
             // Do we need a GPU rebuild?
@@ -319,33 +330,19 @@ namespace Game.World.Rendering
                 // Cells
                 // --------------------------------------------------------
 
-                for (int index = 0;
-                     index < projectedCells.Length;
-                     index++)
+                for (int index = 0; index < projectedCells.Length; index++)
                 {
-                    ProjectedCellData cell =
-                        projectedCells[index];
-
+                    ProjectedCellData cell = projectedCells[index];
 
                     ProjectedCellRenderData cellRenderData =
                         new ProjectedCellRenderData
                         {
-                            BlockData =
-                                cell.BlockData,
-
-                            Position =
-                                cell.Position,
-
-                            LightData =
-                                cell.LightData,
-
-                            Reserved =
-                                cell.Reserved,
-
-                            ChunkPosition =
-                                chunkPositionFloat,
-
-                            Padding = 0
+                            BlockData = cell.BlockData,
+                            Position = cell.Position,
+                            LightData = cell.LightData,
+                            FaceData = cell.FaceData,
+                            ChunkPosition = chunkPosition,
+                            Padding = 0f
                         };
 
                     if (clippingEnabled.ValueRO)
@@ -360,34 +357,21 @@ namespace Game.World.Rendering
                     }
                 }
 
-                for (int index = 0;
-                    index < projectedWaterCells.Length;
-                    index++)
+                for (int index = 0; index < projectedWaterCells.Length; index++)
                 {
-                    ProjectedCellData cell =
-                        projectedWaterCells[index].Value;
+                    ProjectedCellData cell = projectedWaterCells[index].Value;
 
                     waterRenderData.Add(
                         new ProjectedCellRenderData
                         {
-                            BlockData =
-                                cell.BlockData,
-
-                            Position =
-                                cell.Position,
-
-                            LightData =
-                                cell.LightData,
-
-                            Reserved =
-                                cell.Reserved,
-
-                            ChunkPosition =
-                                chunkPositionFloat,
-
+                            BlockData = cell.BlockData,
+                            Position = cell.Position,
+                            LightData = cell.LightData,
+                            FaceData = cell.FaceData,
+                            ChunkPosition = chunkPosition,
                             Padding = 0f
                         });
-                }
+                    }
 
                 // --------------------------------------------------------
                 // Bounds

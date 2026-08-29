@@ -5,40 +5,28 @@ namespace Game.World.Rendering
 {
     public struct WaterProjectionWriter
     {
-        private const uint OpticalDepthMask =
-            0xFF;
+        private const ushort OpticalDepthMask = 0xFF;
+        private const ushort TopInsetFlag = 1 << 8;
 
-        private const uint TopInsetFlag =
-            1u << 8;
-
-        private ProjectionOccupancy
-            opaqueOccupancy;
-
-        private ProjectionOccupancy
-            waterOccupancy;
-
-        private DynamicBuffer<ProjectedWaterCellData>
-            result;
+        private ProjectionOccupancy opaqueOccupancy;
+        private ProjectionOccupancy waterOccupancy;
+        private DynamicBuffer<ProjectedWaterCellData> result;
 
         public WaterProjectionWriter(
             ProjectionOccupancy opaqueOccupancy,
             ProjectionOccupancy waterOccupancy,
             DynamicBuffer<ProjectedWaterCellData> result)
         {
-            this.opaqueOccupancy =
-                opaqueOccupancy;
-
-            this.waterOccupancy =
-                waterOccupancy;
-
-            this.result =
-                result;
+            this.opaqueOccupancy = opaqueOccupancy;
+            this.waterOccupancy = waterOccupancy;
+            this.result = result;
         }
 
         public bool TryAddTop(
             BlockData block,
             byte opticalDepth,
             bool topInset,
+            ushort sourceAirIndex,
             ushort x,
             ushort y)
         {
@@ -47,6 +35,7 @@ namespace Game.World.Rendering
                 ProjectedFaceType.Top,
                 opticalDepth,
                 topInset,
+                sourceAirIndex,
                 x,
                 y);
         }
@@ -54,6 +43,7 @@ namespace Game.World.Rendering
         public bool TryAddSideUpper(
             BlockData block,
             byte opticalDepth,
+            ushort sourceAirIndex,
             ushort x,
             ushort y)
         {
@@ -62,6 +52,7 @@ namespace Game.World.Rendering
                 ProjectedFaceType.SideUpper,
                 opticalDepth,
                 false,
+                sourceAirIndex,
                 x,
                 y);
         }
@@ -69,6 +60,7 @@ namespace Game.World.Rendering
         public bool TryAddSideLower(
             BlockData block,
             byte opticalDepth,
+            ushort sourceAirIndex,
             ushort x,
             ushort y)
         {
@@ -77,6 +69,7 @@ namespace Game.World.Rendering
                 ProjectedFaceType.SideLower,
                 opticalDepth,
                 false,
+                sourceAirIndex,
                 x,
                 y);
         }
@@ -86,20 +79,16 @@ namespace Game.World.Rendering
             ProjectedFaceType faceType,
             byte opticalDepth,
             bool topInset,
+            ushort sourceAirIndex,
             ushort x,
             ushort y)
         {
-            if (opaqueOccupancy.IsOccupied(
-                    x,
-                    y))
+            if (opaqueOccupancy.IsOccupied(x, y))
             {
                 return false;
             }
 
-            if (!waterOccupancy.TryOccupy(
-                    x,
-                    y,
-                    faceType))
+            if (!waterOccupancy.TryOccupy(x, y, faceType))
             {
                 return false;
             }
@@ -111,33 +100,26 @@ namespace Game.World.Rendering
                 x,
                 y);
 
-            cell.Reserved =
-                PackReserved(
-                    opticalDepth,
-                    topInset);
+            cell.SourceAirIndex = sourceAirIndex;
+            cell.FaceData = PackFaceData(opticalDepth, topInset);
 
-            result.Add(
-                new ProjectedWaterCellData(
-                    cell));
+            result.Add(new ProjectedWaterCellData(cell));
 
             return true;
         }
 
-        private static uint PackReserved(
+        private static ushort PackFaceData(
             byte opticalDepth,
             bool topInset)
         {
-            uint packed =
-                (uint)opticalDepth &
-                OpticalDepthMask;
+            ushort faceData = (ushort)(opticalDepth & OpticalDepthMask);
 
             if (topInset)
             {
-                packed |=
-                    TopInsetFlag;
+                faceData |= TopInsetFlag;
             }
 
-            return packed;
+            return faceData;
         }
     }
 }

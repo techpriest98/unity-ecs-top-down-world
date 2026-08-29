@@ -117,6 +117,11 @@ namespace Game.World.Rendering
             BlockId currentBlockId =
                 currentBlock.BlockId;
 
+            ushort sourceAirIndex = checked((ushort)ChunkUtility.ToIndex(
+                world.x,
+                world.y,
+                world.z));
+
             ProcessOpaqueCell(
                 chunkCoordinate,
                 blockAccessor,
@@ -126,6 +131,7 @@ namespace Game.World.Rendering
                 direction,
                 projectionX,
                 projectionY,
+                sourceAirIndex,
                 projectionClippingEnabled,
                 playerPosition);
 
@@ -137,7 +143,8 @@ namespace Game.World.Rendering
                 world,
                 direction,
                 projectionX,
-                projectionY);
+                projectionY,
+                sourceAirIndex);
         }
 
         private static void ProcessOpaqueCell(
@@ -149,6 +156,7 @@ namespace Game.World.Rendering
             ViewDirection direction,
             ushort projectionX,
             ushort projectionY,
+            ushort sourceAirIndex,
             bool projectionClippingEnabled,
             float3 playerPosition)
         {
@@ -165,6 +173,7 @@ namespace Game.World.Rendering
                 direction,
                 projectionX,
                 projectionY,
+                sourceAirIndex,
                 projectionClippingEnabled,
                 playerPosition);
 
@@ -176,6 +185,7 @@ namespace Game.World.Rendering
                 direction,
                 projectionX,
                 projectionY,
+                sourceAirIndex,
                 projectionClippingEnabled,
                 playerPosition);
         }
@@ -188,7 +198,8 @@ namespace Game.World.Rendering
             int3 world,
             ViewDirection direction,
             ushort projectionX,
-            ushort projectionY)
+            ushort projectionY,
+            ushort sourceAirIndex)
         {
             if (!BlockUtility.IsAir(currentBlockId))
             {
@@ -202,7 +213,8 @@ namespace Game.World.Rendering
                 world,
                 direction,
                 projectionX,
-                projectionY);
+                projectionY,
+                sourceAirIndex);
 
             TryEmitWaterTop(
                 chunkCoordinate,
@@ -211,7 +223,8 @@ namespace Game.World.Rendering
                 world,
                 direction,
                 projectionX,
-                projectionY);
+                projectionY,
+                sourceAirIndex);
         }
 
        private static void TryEmitOpaqueTop(
@@ -222,6 +235,7 @@ namespace Game.World.Rendering
             ViewDirection direction,
             ushort projectionX,
             ushort projectionY,
+            ushort sourceAirIndex,
             bool projectionClippingEnabled,
             float3 playerPosition)
         {
@@ -277,6 +291,7 @@ namespace Game.World.Rendering
             writer.TryAddTop(
                 belowBlock,
                 neighborMask,
+                sourceAirIndex,
                 projectionX,
                 projectionY);
         }
@@ -289,6 +304,7 @@ namespace Game.World.Rendering
             ViewDirection direction,
             ushort projectionX,
             ushort projectionY,
+            ushort sourceAirIndex,
             bool projectionClippingEnabled,
             float3 playerPosition)
         {
@@ -332,11 +348,13 @@ namespace Game.World.Rendering
 
             writer.TryAddSideUpper(
                 block,
+                sourceAirIndex,
                 projectionX,
                 checked((ushort)(projectionY - 2)));
 
             writer.TryAddSideLower(
                 block,
+                sourceAirIndex,
                 projectionX,
                 checked((ushort)(projectionY - 1)));
         }
@@ -348,7 +366,8 @@ namespace Game.World.Rendering
             int3 airWorld,
             ViewDirection direction,
             ushort projectionX,
-            ushort projectionY)
+            ushort projectionY,
+            ushort sourceAirIndex)
         {
             int3 belowWorld =
                 airWorld +
@@ -405,6 +424,7 @@ namespace Game.World.Rendering
                 belowBlock,
                 opticalDepth,
                 topInset,
+                sourceAirIndex,
                 projectionX,
                 projectionY);
         }
@@ -416,7 +436,8 @@ namespace Game.World.Rendering
             int3 airWorld,
             ViewDirection direction,
             ushort projectionX,
-            ushort projectionY)
+            ushort projectionY,
+            ushort sourceAirIndex)
         {
             if (projectionY < 2)
             {
@@ -456,12 +477,14 @@ namespace Game.World.Rendering
             writer.TryAddSideUpper(
                 block,
                 opticalDepth,
+                sourceAirIndex,
                 projectionX,
                 checked((ushort)(projectionY - 2)));
 
             writer.TryAddSideLower(
                 block,
                 opticalDepth,
+                sourceAirIndex,
                 projectionX,
                 checked((ushort)(projectionY - 1)));
         }

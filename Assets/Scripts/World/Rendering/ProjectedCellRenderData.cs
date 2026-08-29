@@ -9,7 +9,7 @@ namespace Game.World.Rendering
         public uint BlockData;
         public uint Position;
         public uint LightData;
-        public uint Reserved;
+        public uint FaceData;
 
         public float3 ChunkPosition;
         public float Padding;

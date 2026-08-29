@@ -269,7 +269,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02137aace34a14ebe869be42dcd3d08b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.PlayerCameraFollow
-  screenOffset: {x: 0, y: 0}
+  screenOffset: {x: 0, y: 1}
   cameraDepth: 10
 --- !u!1 &619394800
 GameObject:
