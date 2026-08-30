@@ -7,7 +7,7 @@ namespace Game.World.Rendering
 {
     public static class ChunkProjectionBuilder
     {
-        private const float PlayerWaistOffset = 1f;
+        private const float PlayerClipCenterOffset = 1f;
         public const float ProjectionClipRadius = 4f;
 
         public static void Build(
@@ -276,6 +276,7 @@ namespace Game.World.Rendering
                     projectionClippingEnabled,
                     playerPosition,
                     facePosition,
+                    belowWorld.y,
                     direction))
             {
                 return;
@@ -341,6 +342,7 @@ namespace Game.World.Rendering
                     projectionClippingEnabled,
                     playerPosition,
                     facePosition,
+                    blockWorld.y,
                     direction))
             {
                 return;
@@ -566,6 +568,7 @@ namespace Game.World.Rendering
             bool projectionClippingEnabled,
             float3 playerPosition,
             float3 facePosition,
+            int blockY,
             ViewDirection direction)
         {
             if (!projectionClippingEnabled)
@@ -573,18 +576,17 @@ namespace Game.World.Rendering
                 return false;
             }
 
-            float3 playerWaistPosition =
-                playerPosition +
-                new float3(
-                    0f,
-                    PlayerWaistOffset,
-                    0f);
+            int playerFloorY = (int)math.floor(playerPosition.y + 0.01f);
 
-            if (facePosition.y <=
-                playerWaistPosition.y)
+            if (blockY < playerFloorY)
             {
                 return false;
             }
+
+            float3 playerClipCenterPosition = playerPosition + new float3(
+                0f,
+                PlayerClipCenterOffset,
+                0f);
 
             int2 towardCamera =
                 ViewDirectionUtility.Forward(
@@ -607,13 +609,8 @@ namespace Game.World.Rendering
                 return false;
             }
 
-            float2 projectedFacePosition = ProjectWorldPosition(
-                    facePosition,
-                    direction);
-
-            float2 projectedPlayerPosition = ProjectWorldPosition(
-                    playerWaistPosition,
-                    direction);
+            float2 projectedFacePosition = ProjectWorldPosition(facePosition, direction);
+            float2 projectedPlayerPosition = ProjectWorldPosition(playerClipCenterPosition, direction);
 
             return math.distancesq(
                     projectedFacePosition,
