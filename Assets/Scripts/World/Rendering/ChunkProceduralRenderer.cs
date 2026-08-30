@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Unity.Mathematics;
 using Game.World.Blocks;
 using Game.World.Chunks;
 using Unity.Collections;
@@ -35,6 +36,15 @@ namespace Game.World.Rendering
 
         [SerializeField]
         private BlockDatabase blockDatabase;
+
+        [Header("Selection")]
+        [SerializeField]
+        private Color selectionColor = new Color(1f, 0.8f, 0.2f, 0.45f);
+
+        private bool selectionEnabled;
+        private float3 selectedChunkPosition;
+        private uint selectedProjectionPosition;
+        private ProjectedFaceType selectedFaceType;
 
         private GraphicsBuffer projectedCellsBuffer;
         private GraphicsBuffer projectedClippedCellsBuffer;
@@ -113,6 +123,18 @@ namespace Game.World.Rendering
             }
 
             ReleaseResources();
+        }
+
+        public void SetSelection(
+            bool enabled,
+            float3 chunkPosition,
+            uint projectionPosition,
+            ProjectedFaceType faceType)
+        {
+            selectionEnabled = enabled;
+            selectedChunkPosition = chunkPosition;
+            selectedProjectionPosition = projectionPosition;
+            selectedFaceType = faceType;
         }
 
         public void Upload(
@@ -275,6 +297,30 @@ namespace Game.World.Rendering
             Texture2D overlayAtlas)
         {
             layerPropertyBlock.Clear();
+
+            layerPropertyBlock.SetFloat(
+                "_SelectionEnabled",
+                selectionEnabled ? 1f : 0f);
+
+            layerPropertyBlock.SetVector(
+                "_SelectedChunkPosition",
+                new Vector4(
+                    selectedChunkPosition.x,
+                    selectedChunkPosition.y,
+                    selectedChunkPosition.z,
+                    0f));
+
+            layerPropertyBlock.SetInteger(
+                "_SelectedProjectionPosition",
+                unchecked((int)selectedProjectionPosition));
+
+            layerPropertyBlock.SetColor(
+                "_SelectionColor",
+                selectionColor);
+
+            layerPropertyBlock.SetInteger(
+                "_SelectedFaceType",
+                (int)selectedFaceType);
 
             layerPropertyBlock.SetBuffer(
                 "_ProjectedCells",

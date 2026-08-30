@@ -1,3 +1,4 @@
+using Game.World.Interaction;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -46,6 +47,16 @@ namespace Game.Player
 
                 AddComponent(
                     entity,
+                    new PlayerBuildInput
+                    {
+                        PointerScreenPosition = float2.zero,
+                        IsBuildMode = false,
+                        RemovePressed = false,
+                        PlacePressed = false
+                    });
+
+                AddComponent(
+                    entity,
                     new PlayerJumpInput
                     {
                         IsPressed = false
@@ -85,6 +96,18 @@ namespace Game.Player
                     {
                         HalfExtentsXZ = new float2(halfWidth, halfWidth),
                         Height = authoring.collisionHeight
+                    });
+
+                AddComponent(
+                    entity,
+                    new SelectedProjectedCell
+                    {
+                        ChunkCoordinate = int2.zero,
+                        ProjectionPosition = 0,
+                        BlockData = 0,
+                        SourceAirIndex = 0,
+                        FaceType = default,
+                        IsValid = false
                     });
             }
         }
