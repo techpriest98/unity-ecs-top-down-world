@@ -4,10 +4,12 @@ namespace Game.World.Lighting
 {
     public static class DirectionalLightUtility
     {
-        private static readonly float3 NightAmbient = new float3(0.04f, 0.06f, 0.12f);
-        private static readonly float3 DayAmbient = new float3(0.3f, 0.32f, 0.36f);
-        private static readonly float3 WarmSunColor = new float3(1f, 0.55f, 0.3f);
-        private static readonly float3 DaySunColor = new float3(1f, 0.95f, 0.85f);
+        private const float MaxSunElevation = 70f;
+
+        private static readonly float3 NightAmbient = new(0.04f, 0.06f, 0.12f);
+        private static readonly float3 DayAmbient = new(0.3f, 0.32f, 0.36f);
+        private static readonly float3 WarmSunColor = new(1f, 0.55f, 0.3f);
+        private static readonly float3 DaySunColor = new(1f, 0.95f, 0.85f);
 
         public static DirectionalLightData Sample(int hour)
         {
@@ -25,17 +27,23 @@ namespace Game.World.Lighting
             }
 
             float dayProgress = (hour - 6) / 12f;
-            float sunAngle = dayProgress * math.PI;
-            float elevation = math.sin(sunAngle);
-            float horizontalX = math.cos(sunAngle);
+            float elevationProgress = math.sin(dayProgress * math.PI);
+            float elevationAngle = math.radians(MaxSunElevation) * elevationProgress;
+            float azimuth = math.lerp(-math.PI * 0.5f, math.PI * 0.5f, dayProgress);
 
-            float3 directionToLight = math.normalize(new float3(horizontalX, math.max(elevation, 0.05f), -0.35f));
-            float intensity = math.saturate(elevation);
-            float colorBlend = math.saturate(elevation * 2f);
+            float horizontalLength = math.cos(elevationAngle);
+
+            float3 directionToLight = new float3(
+                math.sin(azimuth) * horizontalLength,
+                math.sin(elevationAngle),
+                -math.cos(azimuth) * horizontalLength);
+
+            float intensity = math.saturate(elevationProgress);
+            float colorBlend = math.saturate(elevationProgress * 2f);
 
             return new DirectionalLightData
             {
-                DirectionToLight = directionToLight,
+                DirectionToLight = math.normalize(directionToLight),
                 Color = math.lerp(WarmSunColor, DaySunColor, colorBlend),
                 Intensity = intensity,
                 AmbientColor = math.lerp(NightAmbient, DayAmbient, intensity)

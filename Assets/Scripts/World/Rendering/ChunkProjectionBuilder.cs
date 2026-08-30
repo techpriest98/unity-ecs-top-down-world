@@ -590,27 +590,28 @@ namespace Game.World.Rendering
                 ViewDirectionUtility.Forward(
                     direction);
 
-            float2 depthDifference =
-                new float2(
-                    facePosition.x -
-                        playerPosition.x,
-                    facePosition.z -
-                        playerPosition.z);
+            int2 playerCell = new int2(
+                (int)math.floor(playerPosition.x),
+                (int)math.floor(playerPosition.z));
 
-            if (math.dot(
-                    depthDifference,
-                    towardCamera) <= 0f)
+            int2 faceCell = new int2(
+                (int)math.floor(facePosition.x),
+                (int)math.floor(facePosition.z));
+
+            int depthDistance = math.dot(
+                faceCell - playerCell,
+                towardCamera);
+
+            if (depthDistance <= 0)
             {
                 return false;
             }
 
-            float2 projectedFacePosition =
-                ProjectWorldPosition(
+            float2 projectedFacePosition = ProjectWorldPosition(
                     facePosition,
                     direction);
 
-            float2 projectedPlayerPosition =
-                ProjectWorldPosition(
+            float2 projectedPlayerPosition = ProjectWorldPosition(
                     playerWaistPosition,
                     direction);
 

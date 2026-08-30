@@ -24,7 +24,7 @@ namespace Game.World.Time
                         Hour = 12,
                         UpdateTimer = 0f
                     });
-                    
+
                 state.EntityManager.SetName(entity, "World Time");
             }
 
