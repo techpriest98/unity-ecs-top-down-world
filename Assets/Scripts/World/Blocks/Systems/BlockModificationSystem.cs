@@ -183,22 +183,12 @@ namespace Game.World.Blocks
 
                 foreach (Entity entity in dirtyProjectionChunks)
                 {
-                    ecb.SetComponentEnabled<ChunkNeedsProjection>(
-                        entity,
-                        true);
+                    ecb.SetComponentEnabled<ChunkNeedsSkyLight>(entity, true);
+                    ecb.SetComponentEnabled<ChunkNeedsProjection>(entity, true);
                 }
 
                 ecb.Playback(state.EntityManager);
                 ecb.Dispose();
-
-                foreach (EnabledRefRW<ChunkNeedsLighting> needsLighting in
-                         SystemAPI.Query<EnabledRefRW<ChunkNeedsLighting>>()
-                             .WithAll<ChunkGenerated>()
-                             .WithOptions(
-                                 EntityQueryOptions.IgnoreComponentEnabledState))
-                {
-                    needsLighting.ValueRW = true;
-                }
             }
 
             dirtyProjectionChunks.Dispose();

@@ -5,8 +5,13 @@ Shader "Game/World/ChunkProcedural"
         [Toggle(_PLAYER_CLIPPING)]
         _PlayerClipping("Player Clipping", Float) = 0
 
+        [Toggle(_DEBUG_NORMALS)]
+        _DebugNormals("Debug Normals", Float) = 0
+
         _BlockAtlas("Block Atlas", 2D) = "white" {}
+        _BlockNormalAtlas("Block Normal Atlas", 2D) = "bump" {}
         _TopOverlayAtlas("Top Overlay Atlas", 2D) = "black" {}
+        _TopOverlayNormalAtlas("Top Overlay Normal Atlas", 2D) = "bump" {}
         _PlayerClipRadius("Player Clip Radius", Range(0.0, 1024.0)) = 64.0
         _PlayerClipFadeWidth("Player Clip Fade Width", Range(0.0, 256.0)) = 32.0
         _PlayerClipGrainSize("Player Clip Grain Size", Range(1.0, 8.0)) = 2.0
@@ -32,6 +37,7 @@ Shader "Game/World/ChunkProcedural"
             HLSLPROGRAM
 
             #pragma shader_feature_local_fragment _PLAYER_CLIPPING
+            #pragma shader_feature_local_fragment _DEBUG_NORMALS
             #pragma target 4.5
             #pragma vertex Vert
             #pragma fragment Frag
@@ -94,8 +100,11 @@ Shader "Game/World/ChunkProcedural"
 
             float4 _BlockAtlas_TexelSize;
 
+            TEXTURE2D(_BlockNormalAtlas);
+
             TEXTURE2D(_TopOverlayAtlas);
-            
+            TEXTURE2D(_TopOverlayNormalAtlas);
+
             float4 _TopOverlayAtlas_TexelSize;
 
             // ============================================================
@@ -107,6 +116,15 @@ Shader "Game/World/ChunkProcedural"
 
             float _ChunkWidth;
             float _ProjectionHeight;
+
+            // ============================================================
+            // Lighting
+            // ============================================================
+
+            float3 _DirectionToLight;
+            float3 _DirectionalLightColor;
+            float _DirectionalLightIntensity;
+            float3 _SideFaceNormal;
 
             // ============================================================
             // Clipping
@@ -155,18 +173,17 @@ Shader "Game/World/ChunkProcedural"
                 return uint2(column, row);
             }
 
-            float GetLightLevel(uint packedLightData)
-            {
-                return (packedLightData & 0xFFu) / 255.0;
-            }
-
-            float3 GetLightColor(uint packedLightData)
+            float3 GetIndirectLight(uint packedLightData)
             {
                 return float3(
+                    packedLightData & 0xFFu,
                     (packedLightData >> 8) & 0xFFu,
-                    (packedLightData >> 16) & 0xFFu,
-                    (packedLightData >> 24) & 0xFFu) /
-                    255.0;
+                    (packedLightData >> 16) & 0xFFu) / 255.0;
+            }
+
+            float GetSunVisibility(uint packedLightData)
+            {
+                return ((packedLightData >> 24) & 0xFFu) / 255.0;
             }
 
             // ============================================================
@@ -182,6 +199,23 @@ Shader "Game/World/ChunkProcedural"
                     case 3: return 2; // SideLower
                     default: return 0;
                 }
+            }
+
+            float3 DecodeObjectNormal(float4 packedNormal)
+            {
+                return normalize(packedNormal.rgb * 2.0 - 1.0);
+            }
+
+            float3 GetWorldNormal(float3 normalOS)
+            {
+                float3 up = float3(0.0, 1.0, 0.0);
+                float3 sideNormal = normalize(_SideFaceNormal);
+                float3 tangent = normalize(cross(sideNormal, up));
+
+                return normalize(
+                    tangent * normalOS.x +
+                    up * normalOS.y +
+                    sideNormal * normalOS.z);
             }
 
             // ============================================================
@@ -302,6 +336,11 @@ Shader "Game/World/ChunkProcedural"
                 return baseColor;
             }
 
+            float3 BlendOverlayNormal(float3 baseNormal, float4 overlayNormal, float blend)
+            {
+                return normalize(lerp(baseNormal, DecodeObjectNormal(overlayNormal), blend));
+            }
+
             float4 LoadTopOverlay(uint2 atlasPosition, uint2 partOffset, uint2 partPixel)
             {
                 uint2 groupOrigin = atlasPosition * uint2(OVERLAY_GROUP_WIDTH, OVERLAY_GROUP_HEIGHT);
@@ -310,8 +349,17 @@ Shader "Game/World/ChunkProcedural"
                 return _TopOverlayAtlas.Load(int3(atlasPixel, 0));
             }
 
+            float4 LoadTopOverlayNormal(uint2 atlasPosition, uint2 partOffset, uint2 partPixel)
+            {
+                uint2 groupOrigin = atlasPosition * uint2(OVERLAY_GROUP_WIDTH, OVERLAY_GROUP_HEIGHT);
+                uint2 atlasPixel = groupOrigin + partOffset + partPixel;
+
+                return _TopOverlayNormalAtlas.Load(int3(atlasPixel, 0));
+            }
+
             float4 ApplyTopEdges(
                 float4 color,
+                inout float3 normalTS,
                 uint neighborMask,
                 uint2 atlasPosition,
                 uint localX,
@@ -325,6 +373,9 @@ Shader "Game/World/ChunkProcedural"
                         uint2(0, 28),
                         uint2(localX, localY - (TILE_HEIGHT - EDGE_THICKNESS)));
 
+                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
+                        atlasPosition, uint2(0, 28),
+                        uint2(localX, localY - (TILE_HEIGHT - EDGE_THICKNESS))), overlay.a);
                     color = BlendOverlay(color, overlay);
                 }
 
@@ -336,6 +387,8 @@ Shader "Game/World/ChunkProcedural"
                         uint2(0, 24),
                         uint2(localX, localY));
 
+                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
+                        atlasPosition, uint2(0, 24), uint2(localX, localY)), overlay.a);
                     color = BlendOverlay(color, overlay);
                 }
 
@@ -347,6 +400,8 @@ Shader "Game/World/ChunkProcedural"
                         uint2(0, 8),
                         uint2(localX, localY));
 
+                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
+                        atlasPosition, uint2(0, 8), uint2(localX, localY)), overlay.a);
                     color = BlendOverlay(color, overlay);
                 }
 
@@ -358,6 +413,9 @@ Shader "Game/World/ChunkProcedural"
                         uint2(4, 8),
                         uint2(localX - (TILE_WIDTH - EDGE_THICKNESS), localY));
 
+                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
+                        atlasPosition, uint2(4, 8),
+                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS), localY)), overlay.a);
                     color = BlendOverlay(color, overlay);
                 }
 
@@ -366,6 +424,7 @@ Shader "Game/World/ChunkProcedural"
 
             float4 ApplyTopOuterCorners(
                 float4 color,
+                inout float3 normalTS,
                 uint neighborMask,
                 uint2 atlasPosition,
                 uint localX,
@@ -389,6 +448,9 @@ Shader "Game/World/ChunkProcedural"
                         uint2(8, 20),
                         uint2(localX, localY - (TILE_HEIGHT - EDGE_THICKNESS)));
 
+                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
+                        atlasPosition, uint2(8, 20),
+                        uint2(localX, localY - (TILE_HEIGHT - EDGE_THICKNESS))), overlay.a);
                     color = BlendOverlay(color, overlay);
                 }
 
@@ -406,6 +468,10 @@ Shader "Game/World/ChunkProcedural"
                         uint2(localX - (TILE_WIDTH - EDGE_THICKNESS),
                         localY - (TILE_HEIGHT - EDGE_THICKNESS)));
 
+                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
+                        atlasPosition, uint2(12, 20),
+                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS),
+                        localY - (TILE_HEIGHT - EDGE_THICKNESS))), overlay.a);
                     color = BlendOverlay(color, overlay);
                 }
 
@@ -422,6 +488,8 @@ Shader "Game/World/ChunkProcedural"
                         uint2(16, 20),
                         uint2(localX, localY));
 
+                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
+                        atlasPosition, uint2(16, 20), uint2(localX, localY)), overlay.a);
                     color = BlendOverlay(color, overlay);
                 }
 
@@ -439,6 +507,9 @@ Shader "Game/World/ChunkProcedural"
                         uint2(localX - (TILE_WIDTH - EDGE_THICKNESS),
                         localY));
 
+                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
+                        atlasPosition, uint2(20, 20),
+                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS), localY)), overlay.a);
                     color = BlendOverlay(color, overlay);
                 }
 
@@ -447,6 +518,7 @@ Shader "Game/World/ChunkProcedural"
 
             float4 ApplyTopInnerCorners(
                 float4 color,
+                inout float3 normalTS,
                 uint neighborMask,
                 uint2 atlasPosition,
                 uint localX,
@@ -474,6 +546,9 @@ Shader "Game/World/ChunkProcedural"
                         uint2(8, 16),
                         uint2(localX, localY - (TILE_HEIGHT - EDGE_THICKNESS)));
 
+                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
+                        atlasPosition, uint2(8, 16),
+                        uint2(localX, localY - (TILE_HEIGHT - EDGE_THICKNESS))), overlay.a);
                     color = BlendOverlay(color, overlay);
                 }
 
@@ -491,6 +566,10 @@ Shader "Game/World/ChunkProcedural"
                         uint2(localX - (TILE_WIDTH - EDGE_THICKNESS),
                         localY - (TILE_HEIGHT - EDGE_THICKNESS)));
 
+                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
+                        atlasPosition, uint2(12, 16),
+                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS),
+                        localY - (TILE_HEIGHT - EDGE_THICKNESS))), overlay.a);
                     color = BlendOverlay(color, overlay);
                 }
 
@@ -507,6 +586,8 @@ Shader "Game/World/ChunkProcedural"
                         uint2(16, 16),
                         uint2(localX, localY));
 
+                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
+                        atlasPosition, uint2(16, 16), uint2(localX, localY)), overlay.a);
                     color = BlendOverlay(color, overlay);
                 }
 
@@ -524,6 +605,9 @@ Shader "Game/World/ChunkProcedural"
                         uint2(localX - (TILE_WIDTH - EDGE_THICKNESS),
                         localY));
 
+                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
+                        atlasPosition, uint2(20, 16),
+                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS), localY)), overlay.a);
                     color = BlendOverlay(color, overlay);
                 }
 
@@ -600,6 +684,10 @@ Shader "Game/World/ChunkProcedural"
 
                 float4 color = _BlockAtlas.Load(
                     int3(atlasPixelX, atlasPixelY, 0));
+
+                float3 normalOS = DecodeObjectNormal(
+                    _BlockNormalAtlas.Load(
+                        int3(atlasPixelX, atlasPixelY, 0)));
                 
                 // ========================================================
                 // Autotiling
@@ -609,6 +697,7 @@ Shader "Game/World/ChunkProcedural"
                 {
                     color = ApplyTopEdges(
                         color,
+                        normalOS,
                         input.NeighborMask,
                         atlasPosition,
                         localX,
@@ -616,6 +705,7 @@ Shader "Game/World/ChunkProcedural"
 
                     color = ApplyTopOuterCorners(
                         color,
+                        normalOS,
                         input.NeighborMask,
                         atlasPosition,
                         localX,
@@ -623,19 +713,36 @@ Shader "Game/World/ChunkProcedural"
 
                     color = ApplyTopInnerCorners(
                         color,
+                        normalOS,
                         input.NeighborMask,
                         atlasPosition,
                         localX,
                         localY);
                 }
 
+                #if defined(_DEBUG_NORMALS)
+                    return float4(normalOS * 0.5 + 0.5, 1.0);
+                #endif
+
                 // ========================================================
                 // Lighting
                 // ========================================================
 
-                float lightLevel = GetLightLevel(input.LightData);
-                float3 lightColor = GetLightColor(input.LightData);
-                color.rgb *= lightColor * lightLevel;
+                float3 worldNormal = GetWorldNormal(normalOS);
+                float directIntensity = saturate(dot(
+                    worldNormal,
+                    normalize(_DirectionToLight)));
+
+                float3 indirectLight = GetIndirectLight(input.LightData);
+                float sunVisibility = GetSunVisibility(input.LightData);
+
+                float3 directLight =
+                    _DirectionalLightColor *
+                    _DirectionalLightIntensity *
+                    directIntensity *
+                    sunVisibility;
+
+                color.rgb *= saturate(indirectLight + directLight);
 
                 // ========================================================
                 // Selection

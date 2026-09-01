@@ -360,7 +360,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: afa872e17509b48c29942b8ba4066cb3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.World.Rendering.ViewDirectionAuthoring
-  initialDirection: 3
+  initialDirection: 0
 --- !u!4 &1677043486
 Transform:
   m_ObjectHideFlags: 0

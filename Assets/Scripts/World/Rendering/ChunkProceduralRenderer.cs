@@ -38,6 +38,12 @@ namespace Game.World.Rendering
         private Texture2D topOverlayAtlas;
 
         [SerializeField]
+        private Texture2D blockNormalAtlas;
+
+        [SerializeField]
+        private Texture2D topOverlayNormalAtlas;
+
+        [SerializeField]
         private BlockDatabase blockDatabase;
 
         [Header("Selection")]
@@ -48,6 +54,11 @@ namespace Game.World.Rendering
         private float3 selectedChunkPosition;
         private uint selectedProjectionPosition;
         private ProjectedFaceType selectedFaceType;
+
+        private float3 directionToLight;
+        private float3 directionalLightColor;
+        private float directionalLightIntensity;
+        private float3 sideFaceNormal;
 
         private GraphicsBuffer projectedCellsBuffer;
         private GraphicsBuffer projectedClippedCellsBuffer;
@@ -148,6 +159,18 @@ namespace Game.World.Rendering
             selectedChunkPosition = chunkPosition;
             selectedProjectionPosition = projectionPosition;
             selectedFaceType = faceType;
+        }
+
+        public void SetDirectionalLight(
+            float3 direction,
+            float3 color,
+            float intensity,
+            float3 sideNormal)
+        {
+            directionToLight = direction;
+            directionalLightColor = color;
+            directionalLightIntensity = intensity;
+            sideFaceNormal = sideNormal;
         }
 
         public void Upload(
@@ -281,7 +304,9 @@ namespace Game.World.Rendering
                 projectedCellsBuffer,
                 projectedCellsCount,
                 opaqueWorldBounds,
-                topOverlayAtlas);
+                topOverlayAtlas,
+                blockNormalAtlas,
+                topOverlayNormalAtlas);
         }
 
         private void RenderWater()
@@ -301,6 +326,8 @@ namespace Game.World.Rendering
                 projectedWaterCellsBuffer,
                 projectedWaterCellsCount,
                 waterWorldBounds,
+                null,
+                null,
                 null);
         }
 
@@ -320,7 +347,9 @@ namespace Game.World.Rendering
                 projectedClippedCellsBuffer,
                 projectedClippedCellsCount,
                 clippedWorldBounds,
-                topOverlayAtlas);
+                topOverlayAtlas,
+                blockNormalAtlas,
+                topOverlayNormalAtlas);
         }
 
         private void RenderClippedWater()
@@ -337,6 +366,8 @@ namespace Game.World.Rendering
                 projectedClippedWaterCellsBuffer,
                 projectedClippedWaterCellsCount,
                 clippedWaterWorldBounds,
+                null,
+                null,
                 null);
         }
 
@@ -346,7 +377,9 @@ namespace Game.World.Rendering
             GraphicsBuffer cellsBuffer,
             int cellsCount,
             Bounds bounds,
-            Texture2D overlayAtlas)
+            Texture2D overlayAtlas,
+            Texture2D normalAtlas,
+            Texture2D overlayNormalAtlas)
         {
             layerPropertyBlock.Clear();
 
@@ -386,11 +419,41 @@ namespace Game.World.Rendering
                 "_BlockAtlas",
                 blockAtlas);
 
+            layerPropertyBlock.SetVector(
+                "_DirectionToLight",
+                new Vector4(directionToLight.x, directionToLight.y, directionToLight.z, 0f));
+
+            layerPropertyBlock.SetVector(
+                "_DirectionalLightColor",
+                new Vector4(directionalLightColor.x, directionalLightColor.y, directionalLightColor.z, 0f));
+
+            layerPropertyBlock.SetFloat(
+                "_DirectionalLightIntensity",
+                directionalLightIntensity);
+
+            layerPropertyBlock.SetVector(
+                "_SideFaceNormal",
+                new Vector4(sideFaceNormal.x, sideFaceNormal.y, sideFaceNormal.z, 0f));
+
             if (overlayAtlas != null)
             {
                 layerPropertyBlock.SetTexture(
                     "_TopOverlayAtlas",
                     overlayAtlas);
+            }
+
+            if (normalAtlas != null)
+            {
+                layerPropertyBlock.SetTexture(
+                    "_BlockNormalAtlas",
+                    normalAtlas);
+            }
+
+            if (overlayNormalAtlas != null)
+            {
+                layerPropertyBlock.SetTexture(
+                    "_TopOverlayNormalAtlas",
+                    overlayNormalAtlas);
             }
 
             layerPropertyBlock.SetInt(
@@ -502,6 +565,18 @@ namespace Game.World.Rendering
                     "не призначений.",
                     this);
 
+                return false;
+            }
+
+            if (blockNormalAtlas == null)
+            {
+                Debug.LogError("Block Normal Atlas не призначений.", this);
+                return false;
+            }
+
+            if (topOverlayNormalAtlas == null)
+            {
+                Debug.LogError("Top Overlay Normal Atlas не призначений.", this);
                 return false;
             }
 

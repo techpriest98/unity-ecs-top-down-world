@@ -34,26 +34,17 @@ namespace Game.World.Rendering
 
         protected override void OnCreate()
         {
-            RequireForUpdate<
-                ChunkComponent>();
-
-            RequireForUpdate<
-                ViewDirectionComponent>();
-
-            RequireForUpdate<
-                ChunkStreamingCenter>();
-
+            RequireForUpdate<ChunkComponent>();
+            RequireForUpdate<ViewDirectionComponent>();
+            RequireForUpdate<ChunkStreamingCenter>();
+            RequireForUpdate<DirectionalLightData>();
 
             // ------------------------------------------------------------
             // Chunks whose CPU projection changed
             // and therefore GPU data is outdated.
             // ------------------------------------------------------------
 
-            dirtyQuery =
-                GetEntityQuery(
-                    ComponentType.ReadOnly<
-                        ChunkNeedsRender>());
-
+            dirtyQuery = GetEntityQuery(ComponentType.ReadOnly<ChunkNeedsRender>());
 
             // ------------------------------------------------------------
             // Generated chunks which are still waiting
@@ -186,38 +177,37 @@ namespace Game.World.Rendering
                     true;
             }
 
+            ViewDirection direction =
+                SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
+
+            DirectionalLightData light =
+                SystemAPI.GetSingleton<DirectionalLightData>();
+
+            int2 towardCamera =
+                ViewDirectionUtility.Forward(direction);
+
+            renderer.SetDirectionalLight(
+                light.DirectionToLight,
+                light.Color,
+                light.Intensity,
+                new float3(
+                    towardCamera.x,
+                    0f,
+                    towardCamera.y));
+
+            // ============================================================
+            // Do we need a GPU rebuild?
+            // ============================================================
 
             if (pendingLightingCount > 0)
             {
                 return;
             }
 
-            // ============================================================
-            // Do we need a GPU rebuild?
-            // ============================================================
-
-            if (!centerChanged &&
-                !projectionChanged &&
-                !transitionCompleted)
+            if (!centerChanged && !projectionChanged && !transitionCompleted)
             {
                 return;
             }
-
-
-            // Active direction is now:
-            //
-            // normal operation:
-            //     current direction
-            //
-            // completed transition:
-            //     newly committed target direction
-
-            ViewDirection direction =
-                SystemAPI
-                    .GetSingleton<
-                        ViewDirectionComponent>()
-                    .Value;
-
 
             // ============================================================
             // Count projected cells
@@ -242,13 +232,11 @@ namespace Game.World.Rendering
             {
                 if (clippingEnabled.ValueRO)
                 {
-                    totalClippedCellCount +=
-                        projectedCells.Length;
+                    totalClippedCellCount += projectedCells.Length;
                 }
                 else
                 {
-                    totalCellCount +=
-                        projectedCells.Length;
+                    totalCellCount += projectedCells.Length;
                 }
 
                 totalWaterCellCount += projectedWaterCells.Length;
@@ -259,40 +247,29 @@ namespace Game.World.Rendering
             // Build GPU render data
             // ============================================================
 
-            using var renderData =
-                new NativeList<
-                    ProjectedCellRenderData>(
-                    totalCellCount,
-                    Allocator.Temp);
+            using var renderData = new NativeList<ProjectedCellRenderData>(
+                totalCellCount,
+                Allocator.Temp);
 
-            using var waterRenderData =
-                new NativeList<ProjectedCellRenderData>(
-                    totalWaterCellCount,
-                    Allocator.Temp);
+            using var waterRenderData = new NativeList<ProjectedCellRenderData>(
+                totalWaterCellCount,
+                Allocator.Temp);
 
-            using var clippedRenderData =
-                new NativeList<ProjectedCellRenderData>(
-                    totalClippedCellCount,
-                    Allocator.Temp);
+            using var clippedRenderData = new NativeList<ProjectedCellRenderData>(
+                totalClippedCellCount,
+                Allocator.Temp);
 
             bool hasBounds = false;
 
             float3 minBounds = float3.zero;
             float3 maxBounds = float3.zero;
 
-
-            float chunkWidth =
-                ChunkSettings.SizeX *
-                ProjectedCellWidth;
-
-
-            float projectionHeight =
-                (
-                    ChunkSettings.SizeY *
-                    2 +
-                    ChunkSettings.SizeZ
-                ) *
-                ProjectedCellHeight;
+            float chunkWidth = ChunkSettings.SizeX * ProjectedCellWidth;
+            float projectionHeight = (
+                ChunkSettings.SizeY *
+                2 +
+                ChunkSettings.SizeZ
+            ) * ProjectedCellHeight;
 
 
             foreach (var (
@@ -309,22 +286,17 @@ namespace Game.World.Rendering
                         .WithAll<ChunkGenerated>()
                         .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState))
             {
-                Vector3 chunkPosition =
-                    ChunkRenderPositionUtility
-                        .GetPosition(
-                            chunk.ValueRO.Coordinate,
-                            direction,
-                            ProjectedCellWidth,
-                            ProjectedCellHeight,
-                            DepthStep);
+                Vector3 chunkPosition = ChunkRenderPositionUtility.GetPosition(
+                    chunk.ValueRO.Coordinate,
+                    direction,
+                    ProjectedCellWidth,
+                    ProjectedCellHeight,
+                    DepthStep);
 
-
-                float3 chunkPositionFloat =
-                    new float3(
-                        chunkPosition.x,
-                        chunkPosition.y,
-                        chunkPosition.z);
-
+                float3 chunkPositionFloat = new float3(
+                    chunkPosition.x,
+                    chunkPosition.y,
+                    chunkPosition.z);
 
                 // --------------------------------------------------------
                 // Cells
@@ -334,26 +306,23 @@ namespace Game.World.Rendering
                 {
                     ProjectedCellData cell = projectedCells[index];
 
-                    ProjectedCellRenderData cellRenderData =
-                        new ProjectedCellRenderData
-                        {
-                            BlockData = cell.BlockData,
-                            Position = cell.Position,
-                            LightData = cell.LightData,
-                            FaceData = cell.FaceData,
-                            ChunkPosition = chunkPosition,
-                            Padding = 0f
-                        };
+                    ProjectedCellRenderData cellRenderData = new ProjectedCellRenderData
+                    {
+                        BlockData = cell.BlockData,
+                        Position = cell.Position,
+                        LightData = cell.LightData,
+                        FaceData = cell.FaceData,
+                        ChunkPosition = chunkPosition,
+                        Padding = 0f
+                    };
 
                     if (clippingEnabled.ValueRO)
                     {
-                        clippedRenderData.Add(
-                            cellRenderData);
+                        clippedRenderData.Add(cellRenderData);
                     }
                     else
                     {
-                        renderData.Add(
-                            cellRenderData);
+                        renderData.Add(cellRenderData);
                     }
                 }
 
@@ -377,45 +346,27 @@ namespace Game.World.Rendering
                 // Bounds
                 // --------------------------------------------------------
 
-                float3 chunkMin =
-                    chunkPositionFloat +
-                    new float3(
-                        -chunkWidth * 0.5f,
-                        0f,
-                        -0.1f);
+                float3 chunkMin = chunkPositionFloat + new float3(
+                    -chunkWidth * 0.5f,
+                    0f,
+                    -0.1f);
 
-
-                float3 chunkMax =
-                    chunkPositionFloat +
-                    new float3(
-                        chunkWidth * 0.5f,
-                        projectionHeight,
-                        0.1f);
+                float3 chunkMax = chunkPositionFloat + new float3(
+                    chunkWidth * 0.5f,
+                    projectionHeight,
+                    0.1f);
 
 
                 if (!hasBounds)
                 {
-                    minBounds =
-                        chunkMin;
-
-                    maxBounds =
-                        chunkMax;
-
-                    hasBounds =
-                        true;
+                    minBounds = chunkMin;
+                    maxBounds = chunkMax;
+                    hasBounds = true;
                 }
                 else
                 {
-                    minBounds =
-                        math.min(
-                            minBounds,
-                            chunkMin);
-
-
-                    maxBounds =
-                        math.max(
-                            maxBounds,
-                            chunkMax);
+                    minBounds = math.min(minBounds, chunkMin);
+                    maxBounds = math.max(maxBounds, chunkMax);
                 }
             }
 
@@ -429,39 +380,16 @@ namespace Game.World.Rendering
 
             if (hasBounds)
             {
-                float3 center =
-                    (
-                        minBounds +
-                        maxBounds
-                    ) *
-                    0.5f;
+                float3 center = (minBounds + maxBounds) * 0.5f;
+                float3 size = maxBounds - minBounds;
 
-
-                float3 size =
-                    maxBounds -
-                    minBounds;
-
-
-                bounds =
-                    new Bounds(
-                        new Vector3(
-                            center.x,
-                            center.y,
-                            center.z),
-
-                        new Vector3(
-                            size.x,
-                            size.y,
-                            math.max(
-                                size.z,
-                                1f)));
+                bounds = new Bounds(
+                    new Vector3(center.x, center.y, center.z),
+                    new Vector3(size.x, size.y, math.max(size.z, 1f)));
             }
             else
             {
-                bounds =
-                    new Bounds(
-                        Vector3.zero,
-                        Vector3.one);
+                bounds = new Bounds(Vector3.zero, Vector3.one);
             }
 
 
@@ -469,47 +397,24 @@ namespace Game.World.Rendering
             // One complete GPU upload
             // ============================================================
 
-            renderer.Upload(
-                renderData.AsArray(),
-                bounds);
-
-            renderer.UploadClipped(
-                clippedRenderData.AsArray(),
-                bounds);
-
-            renderer.UploadWater(
-                waterRenderData.AsArray(),
-                bounds);
+            renderer.Upload(renderData.AsArray(), bounds);
+            renderer.UploadClipped(clippedRenderData.AsArray(), bounds);
+            renderer.UploadWater(waterRenderData.AsArray(), bounds);
 
             // ============================================================
             // GPU is now synchronized with CPU projection.
             // Clear dirty flags.
             // ============================================================
 
-            using NativeArray<Entity> dirtyEntities =
-                dirtyQuery.ToEntityArray(
-                    Allocator.Temp);
+            using NativeArray<Entity> dirtyEntities = dirtyQuery.ToEntityArray(Allocator.Temp);
 
-
-            for (int index = 0;
-                 index <
-                 dirtyEntities.Length;
-                 index++)
+            for (int index = 0; index < dirtyEntities.Length; index++)
             {
-                EntityManager
-                    .SetComponentEnabled<
-                        ChunkNeedsRender>(
-                        dirtyEntities[index],
-                        false);
+                EntityManager.SetComponentEnabled<ChunkNeedsRender>(dirtyEntities[index], false);
             }
 
-
-            lastCenter =
-                currentCenter;
-
-
-            hasLastCenter =
-                true;
+            lastCenter = currentCenter;
+            hasLastCenter = true;
         }
     }
 }

@@ -31,6 +31,10 @@ Material:
         m_Texture: {fileID: 2800000, guid: 103e50935f1894ab99cf7d29e7e8cc31, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _BlockNormalAtlas:
+        m_Texture: {fileID: 2800000, guid: 39eaf2f78900447ac9a655ec07e0bc20, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -44,11 +48,16 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _TopOverlayAtlas:
-        m_Texture: {fileID: 2800000, guid: c0e807728d40b426b87e54e685d84ec7, type: 3}
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TopOverlayNormalAtlas:
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _DebugNormals: 0
     - _EnableExternalAlpha: 0
     - _PlayerClipFadeWidth: 139
     - _PlayerClipGrainSize: 8

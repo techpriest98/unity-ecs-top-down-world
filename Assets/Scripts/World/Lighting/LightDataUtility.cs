@@ -4,40 +4,27 @@ namespace Game.World.Lighting
 {
     public static class LightDataUtility
     {
-        public static uint Pack(float3 light)
+        public static uint Pack(float3 indirectLight, float sunVisibility)
         {
-            light = math.saturate(light);
+            indirectLight = math.saturate(indirectLight);
 
-            float level = math.cmax(light);
-
-            if (level <= 0f)
-            {
-                return 0;
-            }
-
-            float3 color = light / level;
-
-            byte packedLevel = ToByte(level);
-            byte packedR = ToByte(color.x);
-            byte packedG = ToByte(color.y);
-            byte packedB = ToByte(color.z);
-
-            return packedLevel |
-                   ((uint)packedR << 8) |
-                   ((uint)packedG << 16) |
-                   ((uint)packedB << 24);
+            return ToByte(indirectLight.x) |
+                   ((uint)ToByte(indirectLight.y) << 8) |
+                   ((uint)ToByte(indirectLight.z) << 16) |
+                   ((uint)ToByte(sunVisibility) << 24);
         }
 
-        public static float3 Unpack(uint lightData)
+        public static float3 UnpackIndirect(uint lightData)
         {
-            float level = (lightData & 0xFFu) / 255f;
-
-            float3 color = new float3(
+            return new float3(
+                lightData & 0xFFu,
                 (lightData >> 8) & 0xFFu,
-                (lightData >> 16) & 0xFFu,
-                (lightData >> 24) & 0xFFu) / 255f;
+                (lightData >> 16) & 0xFFu) / 255f;
+        }
 
-            return color * level;
+        public static float UnpackSunVisibility(uint lightData)
+        {
+            return ((lightData >> 24) & 0xFFu) / 255f;
         }
 
         private static byte ToByte(float value)

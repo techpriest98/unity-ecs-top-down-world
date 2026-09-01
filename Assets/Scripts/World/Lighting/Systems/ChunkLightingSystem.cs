@@ -17,6 +17,8 @@ namespace Game.World.Lighting
     {
         private const int MaxChunksLitPerFrame = 1;
         private const float MaximumShadowDistance = 16f;
+        private const float MaximumSkyLight = 15f;
+        private const float MinimumAmbientVisibility = 0.08f;
 
         private EntityQuery generatedChunksQuery;
         private EntityQuery chunksNeedingLightingQuery;
@@ -32,6 +34,7 @@ namespace Game.World.Lighting
 
             chunksNeedingLightingQuery = new EntityQueryBuilder(Allocator.Temp)
                 .WithAll<ChunkComponent, ChunkGenerated, ChunkNeedsLighting>()
+                .WithDisabled<ChunkNeedsSkyLight>()
                 .Build(ref state);
 
             state.RequireForUpdate<WorldTime>();
@@ -57,7 +60,6 @@ namespace Game.World.Lighting
             }
 
             DirectionalLightData light = SystemAPI.GetSingleton<DirectionalLightData>();
-            ViewDirection direction = GetProjectionDirection(ref state);
 
             int generatedChunkCount = generatedChunksQuery.CalculateEntityCount();
 
@@ -83,13 +85,15 @@ namespace Game.World.Lighting
             EntityCommandBuffer ecb = new(Allocator.Temp);
             int litChunkCount = 0;
 
-            foreach (var (chunk, projectedCells, projectedWaterCells, entity) in
-                     SystemAPI.Query<
-                             RefRO<ChunkComponent>,
-                             DynamicBuffer<ProjectedCellData>,
-                             DynamicBuffer<ProjectedWaterCellData>>()
-                         .WithAll<ChunkGenerated, ChunkNeedsLighting>()
-                         .WithEntityAccess())
+            foreach (var (chunk, skyLight, projectedCells, projectedWaterCells, entity) in
+                SystemAPI.Query<
+                        RefRO<ChunkComponent>,
+                        DynamicBuffer<SkyLightData>,
+                        DynamicBuffer<ProjectedCellData>,
+                        DynamicBuffer<ProjectedWaterCellData>>()
+                    .WithAll<ChunkGenerated, ChunkNeedsLighting>()
+                    .WithDisabled<ChunkNeedsSkyLight>()
+                    .WithEntityAccess())
             {
                 if (litChunkCount >= MaxChunksLitPerFrame)
                 {
@@ -98,17 +102,17 @@ namespace Game.World.Lighting
 
                 UpdateOpaqueCells(
                     projectedCells,
+                    skyLight,
                     chunk.ValueRO.Coordinate,
                     blockAccessor,
-                    light,
-                    direction);
+                    light);
 
                 UpdateWaterCells(
                     projectedWaterCells,
+                    skyLight,
                     chunk.ValueRO.Coordinate,
                     blockAccessor,
-                    light,
-                    direction);
+                    light);
 
                 ecb.SetComponentEnabled<ChunkNeedsLighting>(entity, false);
                 ecb.SetComponentEnabled<ChunkNeedsRender>(entity, true);
@@ -149,10 +153,10 @@ namespace Game.World.Lighting
 
         private static void UpdateOpaqueCells(
             DynamicBuffer<ProjectedCellData> cells,
+            DynamicBuffer<SkyLightData> skyLight,
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
-            DirectionalLightData light,
-            ViewDirection direction)
+            DirectionalLightData light)
         {
             for (int i = 0; i < cells.Length; i++)
             {
@@ -160,10 +164,10 @@ namespace Game.World.Lighting
 
                 cell.LightData = CalculateLightData(
                     cell,
+                    skyLight,
                     chunkCoordinate,
                     blockAccessor,
-                    light,
-                    direction);
+                    light);
 
                 cells[i] = cell;
             }
@@ -171,10 +175,10 @@ namespace Game.World.Lighting
 
         private static void UpdateWaterCells(
             DynamicBuffer<ProjectedWaterCellData> cells,
+            DynamicBuffer<SkyLightData> skyLight,
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
-            DirectionalLightData light,
-            ViewDirection direction)
+            DirectionalLightData light)
         {
             for (int i = 0; i < cells.Length; i++)
             {
@@ -183,10 +187,10 @@ namespace Game.World.Lighting
 
                 cell.LightData = CalculateLightData(
                     cell,
+                    skyLight,
                     chunkCoordinate,
                     blockAccessor,
-                    light,
-                    direction);
+                    light);
 
                 waterCell.Value = cell;
                 cells[i] = waterCell;
@@ -195,21 +199,14 @@ namespace Game.World.Lighting
 
         private static uint CalculateLightData(
             ProjectedCellData cell,
+            DynamicBuffer<SkyLightData> skyLight,
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
-            DirectionalLightData light,
-            ViewDirection direction)
+            DirectionalLightData light)
         {
-            ProjectedFaceType faceType =
-                (ProjectedFaceType)((cell.BlockData >> 8) & 0xFFu);
-
-            float3 normal = GetFaceNormal(faceType, direction);
-            float directIntensity =
-                math.max(math.dot(normal, light.DirectionToLight), 0f);
-
             bool occluded = false;
 
-            if (light.Intensity > 0f && directIntensity > 0f)
+            if (light.Intensity > 0f)
             {
                 int3 sourceAirPosition =
                     ChunkUtility.ToLocalPosition(cell.SourceAirIndex);
@@ -222,33 +219,25 @@ namespace Game.World.Lighting
                     MaximumShadowDistance);
             }
 
-            float shadowVisibility = occluded ? 0f : 1f;
+            float skyLevel = cell.SourceAirIndex < skyLight.Length
+                ? skyLight[cell.SourceAirIndex].Value / MaximumSkyLight
+                : 1f;
 
-            float3 finalLight =
-                light.AmbientColor +
-                light.Color *
-                light.Intensity *
-                directIntensity *
-                shadowVisibility;
+            float ambientVisibility = math.lerp(
+                MinimumAmbientVisibility,
+                1f,
+                skyLevel);
 
-            return LightDataUtility.Pack(finalLight);
-        }
+            float3 indirectLight =
+                light.AmbientColor *
+                ambientVisibility;
 
-        private static float3 GetFaceNormal(
-            ProjectedFaceType faceType,
-            ViewDirection direction)
-        {
-            if (faceType == ProjectedFaceType.Top)
-            {
-                return new float3(0f, 1f, 0f);
-            }
+            float sunVisibility =
+                occluded ? 0f : 1f;
 
-            int2 towardCamera = ViewDirectionUtility.Forward(direction);
-
-            return new float3(
-                towardCamera.x,
-                0f,
-                towardCamera.y);
+            return LightDataUtility.Pack(
+                indirectLight,
+                sunVisibility);
         }
     }
 }

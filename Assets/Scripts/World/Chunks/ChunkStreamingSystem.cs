@@ -51,9 +51,11 @@ namespace Game.World.Chunks
                         typeof(ProjectedWaterCellData),
                         typeof(ChunkShaderClippingEnabled),
                         typeof(ChunkProjectionClippingEnabled),
+                        typeof(SkyLightData),
                         typeof(ChunkNeedsProjection),
                         typeof(ChunkNeedsRender),
-                        typeof(ChunkNeedsLighting));
+                        typeof(ChunkNeedsLighting),
+                        typeof(ChunkNeedsSkyLight));
 
 
             chunkQuery =
@@ -364,32 +366,34 @@ namespace Game.World.Chunks
 
         private Entity CreateChunk(ref SystemState state, int2 coordinate)
         {
-            Entity entity =
-                state.EntityManager
-                    .CreateEntity(
-                        chunkArchetype);
+            Entity entity = state.EntityManager.CreateEntity(chunkArchetype);
 
-            state.EntityManager
-                .SetComponentData(
-                    entity,
-                    new ChunkComponent
-                    {
-                        Coordinate =
-                            coordinate
-                    });
+            state.EntityManager.SetComponentData(entity, new ChunkComponent
+            {
+                Coordinate = coordinate
+            });
 
             DynamicBuffer<BlockData> blocks =
-                state.EntityManager
-                    .GetBuffer<BlockData>(
-                        entity);
+                state.EntityManager.GetBuffer<BlockData>(entity);
 
             blocks.ResizeUninitialized(ChunkSettings.BlockCount);
 
+            DynamicBuffer<SkyLightData> skyLight =
+                state.EntityManager.GetBuffer<SkyLightData>(entity);
+
+            skyLight.ResizeUninitialized(ChunkSettings.BlockCount);
+
+            for (int index = 0; index < skyLight.Length; index++)
+            {
+                skyLight[index] = new SkyLightData(0);
+            }
+
             state.EntityManager.SetComponentEnabled<ChunkNeedsProjection>(entity, false);
-            state.EntityManager.SetComponentEnabled<ChunkNeedsRender>(entity,false);
-            state.EntityManager.SetComponentEnabled<ChunkShaderClippingEnabled>(entity,false);
-            state.EntityManager.SetComponentEnabled<ChunkProjectionClippingEnabled>(entity,false);
-            state.EntityManager.SetComponentEnabled<ChunkNeedsLighting>(entity,false);
+            state.EntityManager.SetComponentEnabled<ChunkNeedsRender>(entity, false);
+            state.EntityManager.SetComponentEnabled<ChunkShaderClippingEnabled>(entity, false);
+            state.EntityManager.SetComponentEnabled<ChunkProjectionClippingEnabled>(entity, false);
+            state.EntityManager.SetComponentEnabled<ChunkNeedsLighting>(entity, false);
+            state.EntityManager.SetComponentEnabled<ChunkNeedsSkyLight>(entity, true);
 
             return entity;
         }
