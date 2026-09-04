@@ -23,6 +23,7 @@ namespace Game.World.Lighting
         private uint lastChunkSignature;
         private bool initialized;
         private uint lastLightingRevision;
+        private NativeParallelHashSet<int2> previouslyLitChunks;
 
         public void OnCreate(ref SystemState state)
         {
@@ -50,6 +51,16 @@ namespace Game.World.Lighting
             }
 
             state.RequireForUpdate<DynamicLightingRevision>();
+
+            previouslyLitChunks = new NativeParallelHashSet<int2>(16, Allocator.Persistent);
+        }
+
+        public void OnDestroy(ref SystemState state)
+        {
+            if (previouslyLitChunks.IsCreated)
+            {
+                previouslyLitChunks.Dispose();
+            }
         }
 
         [BurstCompile]
@@ -128,13 +139,17 @@ namespace Game.World.Lighting
                 math.max(chunkCount, 1),
                 Allocator.Temp);
 
-            ClearLocalLight(ref state, dirtyChunks);
-
             BufferLookup<BlockData> blockLookup =
                 SystemAPI.GetBufferLookup<BlockData>(true);
 
             BufferLookup<VoxelLightData> lightLookup =
                 SystemAPI.GetBufferLookup<VoxelLightData>();
+
+            ClearLocalLight(chunkEntities, lightLookup, dirtyChunks);
+
+            var currentlyLitChunks = new NativeParallelHashSet<int2>(
+                math.max(chunkCount, 1),
+                Allocator.Temp);
 
             ChunkBlockAccessor blockAccessor = new(chunkEntities, blockLookup);
             ChunkVoxelLightAccessor lightAccessor = new(chunkEntities, lightLookup);
@@ -149,29 +164,36 @@ namespace Game.World.Lighting
                     position.ValueRO.Value,
                     blockAccessor,
                     lightAccessor,
-                    dirtyChunks);
+                    dirtyChunks,
+                    currentlyLitChunks);
             }
+
+            StoreLitChunks(currentlyLitChunks);
 
             foreach (Entity entity in dirtyChunks)
             {
                 state.EntityManager.SetComponentEnabled<ChunkNeedsLocalLightUpdate>(entity, true);
             }
 
+            currentlyLitChunks.Dispose();
             dirtyChunks.Dispose();
             chunkEntities.Dispose();
         }
 
         private void ClearLocalLight(
-            ref SystemState state,
+            NativeParallelHashMap<int2, Entity> chunkEntities,
+            BufferLookup<VoxelLightData> lightLookup,
             NativeParallelHashSet<Entity> dirtyChunks)
         {
-            foreach (var (voxelLight, entity) in
-                    SystemAPI.Query<DynamicBuffer<VoxelLightData>>()
-                        .WithAll<ChunkGenerated>()
-                        .WithEntityAccess())
+            foreach (int2 coordinate in previouslyLitChunks)
             {
-                DynamicBuffer<VoxelLightData> buffer =
-                    voxelLight;
+                if (!chunkEntities.TryGetValue(coordinate, out Entity entity) ||
+                    !lightLookup.HasBuffer(entity))
+                {
+                    continue;
+                }
+
+                DynamicBuffer<VoxelLightData> buffer = lightLookup[entity];
 
                 bool changed = false;
 
@@ -204,12 +226,28 @@ namespace Game.World.Lighting
             }
         }
 
+        private void StoreLitChunks(NativeParallelHashSet<int2> currentlyLitChunks)
+        {
+            if (previouslyLitChunks.Capacity < currentlyLitChunks.Count())
+            {
+                previouslyLitChunks.Capacity = currentlyLitChunks.Count();
+            }
+
+            previouslyLitChunks.Clear();
+
+            foreach (int2 coordinate in currentlyLitChunks)
+            {
+                previouslyLitChunks.Add(coordinate);
+            }
+        }
+
         private static void SpreadSource(
             DynamicLightSource source,
             float3 worldPosition,
             ChunkBlockAccessor blockAccessor,
             ChunkVoxelLightAccessor lightAccessor,
-            NativeParallelHashSet<Entity> dirtyChunks)
+            NativeParallelHashSet<Entity> dirtyChunks,
+            NativeParallelHashSet<int2> litChunks)
         {
             float radius = math.clamp(source.Radius, 0f, MaximumRadius);
             float3 sourceLight = math.saturate(source.Color * source.Intensity);
@@ -254,7 +292,8 @@ namespace Game.World.Lighting
                             sourceLight,
                             blockAccessor,
                             lightAccessor,
-                            dirtyChunks);
+                            dirtyChunks,
+                            litChunks);
                     }
                 }
             }
@@ -269,7 +308,8 @@ namespace Game.World.Lighting
             float3 sourceLight,
             ChunkBlockAccessor blockAccessor,
             ChunkVoxelLightAccessor lightAccessor,
-            NativeParallelHashSet<Entity> dirtyChunks)
+            NativeParallelHashSet<Entity> dirtyChunks,
+            NativeParallelHashSet<int2> litChunks)
         {
             bool isSource = math.all(position == sourcePosition);
 
@@ -320,9 +360,11 @@ namespace Game.World.Lighting
                         position.y,
                         position.z,
                         light,
-                        out Entity changedChunk))
+                        out Entity changedChunk,
+                        out int2 changedChunkCoordinate))
                 {
                     dirtyChunks.Add(changedChunk);
+                    litChunks.Add(changedChunkCoordinate);
                 }
             }
         }

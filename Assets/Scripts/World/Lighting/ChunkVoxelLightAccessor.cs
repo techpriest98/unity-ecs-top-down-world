@@ -33,7 +33,8 @@ namespace Game.World.Lighting
                     localY,
                     localZ,
                     out Entity entity,
-                    out int index))
+                    out int index,
+                    out _))
             {
                 return false;
             }
@@ -48,9 +49,11 @@ namespace Game.World.Lighting
             int localY,
             int localZ,
             VoxelLightData light,
-            out Entity chunkEntity)
+            out Entity chunkEntity,
+            out int2 chunkCoordinate)
         {
             chunkEntity = Entity.Null;
+            chunkCoordinate = default;
 
             if (!TryResolve(
                     sourceChunkCoordinate,
@@ -58,7 +61,8 @@ namespace Game.World.Lighting
                     localY,
                     localZ,
                     out chunkEntity,
-                    out int index))
+                    out int index,
+                    out chunkCoordinate))
             {
                 return false;
             }
@@ -74,10 +78,12 @@ namespace Game.World.Lighting
             int localY,
             int localZ,
             out Entity entity,
-            out int index)
+            out int index,
+            out int2 chunkCoordinate)
         {
             entity = Entity.Null;
             index = -1;
+            chunkCoordinate = default;
 
             if (localY < 0 || localY >= ChunkSettings.SizeY)
             {
@@ -88,9 +94,9 @@ namespace Game.World.Lighting
             int chunkOffsetZ = FloorDiv(localZ, ChunkSettings.SizeZ);
             int normalizedX = localX - chunkOffsetX * ChunkSettings.SizeX;
             int normalizedZ = localZ - chunkOffsetZ * ChunkSettings.SizeZ;
-            int2 targetCoordinate = sourceChunkCoordinate + new int2(chunkOffsetX, chunkOffsetZ);
+            chunkCoordinate = sourceChunkCoordinate + new int2(chunkOffsetX, chunkOffsetZ);
 
-            if (!chunkEntities.TryGetValue(targetCoordinate, out entity) || !lightLookup.HasBuffer(entity))
+            if (!chunkEntities.TryGetValue(chunkCoordinate, out entity) || !lightLookup.HasBuffer(entity))
             {
                 return false;
             }
