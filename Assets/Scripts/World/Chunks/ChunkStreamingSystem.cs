@@ -51,10 +51,11 @@ namespace Game.World.Chunks
                         typeof(ProjectedWaterCellData),
                         typeof(ChunkShaderClippingEnabled),
                         typeof(ChunkProjectionClippingEnabled),
-                        typeof(SkyLightData),
+                        typeof(VoxelLightData),
                         typeof(ChunkNeedsProjection),
                         typeof(ChunkNeedsRender),
                         typeof(ChunkNeedsLighting),
+                        typeof(ChunkNeedsLocalLightUpdate),
                         typeof(ChunkNeedsSkyLight));
 
 
@@ -378,14 +379,14 @@ namespace Game.World.Chunks
 
             blocks.ResizeUninitialized(ChunkSettings.BlockCount);
 
-            DynamicBuffer<SkyLightData> skyLight =
-                state.EntityManager.GetBuffer<SkyLightData>(entity);
+            DynamicBuffer<VoxelLightData> voxelLight =
+                state.EntityManager.GetBuffer<VoxelLightData>(entity);
 
-            skyLight.ResizeUninitialized(ChunkSettings.BlockCount);
+            voxelLight.ResizeUninitialized(ChunkSettings.BlockCount);
 
-            for (int index = 0; index < skyLight.Length; index++)
+            for (int index = 0; index < voxelLight.Length; index++)
             {
-                skyLight[index] = new SkyLightData(0);
+                voxelLight[index] = new VoxelLightData(0);
             }
 
             state.EntityManager.SetComponentEnabled<ChunkNeedsProjection>(entity, false);
@@ -394,6 +395,7 @@ namespace Game.World.Chunks
             state.EntityManager.SetComponentEnabled<ChunkProjectionClippingEnabled>(entity, false);
             state.EntityManager.SetComponentEnabled<ChunkNeedsLighting>(entity, false);
             state.EntityManager.SetComponentEnabled<ChunkNeedsSkyLight>(entity, true);
+            state.EntityManager.SetComponentEnabled<ChunkNeedsLocalLightUpdate>(entity, false);
 
             return entity;
         }

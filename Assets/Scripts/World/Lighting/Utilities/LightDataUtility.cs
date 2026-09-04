@@ -27,6 +27,21 @@ namespace Game.World.Lighting
             return ((lightData >> 24) & 0xFFu) / 255f;
         }
 
+        public static uint ReplaceIndirect(uint lightData, float3 indirectLight)
+        {
+            indirectLight = math.saturate(indirectLight);
+
+            uint r = ToByte(indirectLight.x);
+            uint g = ToByte(indirectLight.y);
+            uint b = ToByte(indirectLight.z);
+
+            return
+                (lightData & 0xFF000000u) |
+                r |
+                (g << 8) |
+                (b << 16);
+        }
+
         private static byte ToByte(float value)
         {
             return (byte)math.round(math.saturate(value) * byte.MaxValue);

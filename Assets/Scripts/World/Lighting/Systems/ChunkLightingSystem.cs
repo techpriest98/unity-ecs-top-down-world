@@ -85,10 +85,10 @@ namespace Game.World.Lighting
             EntityCommandBuffer ecb = new(Allocator.Temp);
             int litChunkCount = 0;
 
-            foreach (var (chunk, skyLight, projectedCells, projectedWaterCells, entity) in
+            foreach (var (chunk, voxelLight, projectedCells, projectedWaterCells, entity) in
                 SystemAPI.Query<
                         RefRO<ChunkComponent>,
-                        DynamicBuffer<SkyLightData>,
+                        DynamicBuffer<VoxelLightData>,
                         DynamicBuffer<ProjectedCellData>,
                         DynamicBuffer<ProjectedWaterCellData>>()
                     .WithAll<ChunkGenerated, ChunkNeedsLighting>()
@@ -102,14 +102,14 @@ namespace Game.World.Lighting
 
                 UpdateOpaqueCells(
                     projectedCells,
-                    skyLight,
+                    voxelLight,
                     chunk.ValueRO.Coordinate,
                     blockAccessor,
                     light);
 
                 UpdateWaterCells(
                     projectedWaterCells,
-                    skyLight,
+                    voxelLight,
                     chunk.ValueRO.Coordinate,
                     blockAccessor,
                     light);
@@ -153,7 +153,7 @@ namespace Game.World.Lighting
 
         private static void UpdateOpaqueCells(
             DynamicBuffer<ProjectedCellData> cells,
-            DynamicBuffer<SkyLightData> skyLight,
+            DynamicBuffer<VoxelLightData> voxelLight,
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
             DirectionalLightData light)
@@ -164,7 +164,7 @@ namespace Game.World.Lighting
 
                 cell.LightData = CalculateLightData(
                     cell,
-                    skyLight,
+                    voxelLight,
                     chunkCoordinate,
                     blockAccessor,
                     light);
@@ -175,7 +175,7 @@ namespace Game.World.Lighting
 
         private static void UpdateWaterCells(
             DynamicBuffer<ProjectedWaterCellData> cells,
-            DynamicBuffer<SkyLightData> skyLight,
+            DynamicBuffer<VoxelLightData> voxelLight,
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
             DirectionalLightData light)
@@ -187,7 +187,7 @@ namespace Game.World.Lighting
 
                 cell.LightData = CalculateLightData(
                     cell,
-                    skyLight,
+                    voxelLight,
                     chunkCoordinate,
                     blockAccessor,
                     light);
@@ -197,9 +197,9 @@ namespace Game.World.Lighting
             }
         }
 
-        private static uint CalculateLightData(
+       private static uint CalculateLightData(
             ProjectedCellData cell,
-            DynamicBuffer<SkyLightData> skyLight,
+            DynamicBuffer<VoxelLightData> voxelLight,
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
             DirectionalLightData light)
@@ -219,18 +219,27 @@ namespace Game.World.Lighting
                     MaximumShadowDistance);
             }
 
-            float skyLevel = cell.SourceAirIndex < skyLight.Length
-                ? skyLight[cell.SourceAirIndex].Value / MaximumSkyLight
-                : 1f;
+            VoxelLightData voxel = cell.SourceAirIndex < voxelLight.Length
+                ? voxelLight[cell.SourceAirIndex]
+                : new VoxelLightData((byte)MaximumSkyLight);
+
+
+            float skyLevel =voxel.Sky / (float)MaximumSkyLight;
 
             float ambientVisibility = math.lerp(
                 MinimumAmbientVisibility,
                 1f,
                 skyLevel);
 
+            float3 localLight = new float3(
+                voxel.R,
+                voxel.G,
+                voxel.B) / 255f;
+
             float3 indirectLight =
                 light.AmbientColor *
-                ambientVisibility;
+                ambientVisibility +
+                localLight;
 
             float sunVisibility =
                 occluded ? 0f : 1f;

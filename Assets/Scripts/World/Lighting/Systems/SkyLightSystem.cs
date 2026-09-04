@@ -22,10 +22,10 @@ namespace Game.World.Lighting
         {
             int processedCount = 0;
 
-            foreach (var (blocks, skyLight, needsSkyLight, needsLighting) in
+            foreach (var (blocks, voxelLight, needsSkyLight, needsLighting) in
                      SystemAPI.Query<
                              DynamicBuffer<BlockData>,
-                             DynamicBuffer<SkyLightData>,
+                             DynamicBuffer<VoxelLightData>,
                              EnabledRefRW<ChunkNeedsSkyLight>,
                              EnabledRefRW<ChunkNeedsLighting>>()
                          .WithAll<ChunkGenerated>()
@@ -41,7 +41,7 @@ namespace Game.World.Lighting
                     break;
                 }
 
-                Calculate(blocks, skyLight);
+                Calculate(blocks, voxelLight);
 
                 needsSkyLight.ValueRW = false;
                 needsLighting.ValueRW = true;
@@ -51,24 +51,24 @@ namespace Game.World.Lighting
 
         private static void Calculate(
             DynamicBuffer<BlockData> blocks,
-            DynamicBuffer<SkyLightData> skyLight)
+            DynamicBuffer<VoxelLightData> voxelLight)
         {
-            for (int index = 0; index < skyLight.Length; index++)
+            for (int index = 0; index < voxelLight.Length; index++)
             {
-                skyLight[index] = new SkyLightData(0);
+                SetSkyLight(voxelLight, index, 0);
             }
 
             NativeQueue<int3> queue = new(Allocator.Temp);
 
-            SeedVerticalLight(blocks, skyLight, queue);
-            SpreadLight(blocks, skyLight, queue);
+            SeedVerticalLight(blocks, voxelLight, queue);
+            SpreadLight(blocks, voxelLight, queue);
 
             queue.Dispose();
         }
 
         private static void SeedVerticalLight(
             DynamicBuffer<BlockData> blocks,
-            DynamicBuffer<SkyLightData> skyLight,
+            DynamicBuffer<VoxelLightData> voxelLight,
             NativeQueue<int3> queue)
         {
             for (int z = 0; z < ChunkSettings.SizeZ; z++)
@@ -92,7 +92,7 @@ namespace Game.World.Lighting
                             continue;
                         }
 
-                        skyLight[index] = new SkyLightData(MaximumLight);
+                        SetSkyLight(voxelLight, index, MaximumLight);
                         queue.Enqueue(new int3(x, y, z));
                     }
                 }
@@ -101,13 +101,13 @@ namespace Game.World.Lighting
 
         private static void SpreadLight(
             DynamicBuffer<BlockData> blocks,
-            DynamicBuffer<SkyLightData> skyLight,
+            DynamicBuffer<VoxelLightData> voxelLight,
             NativeQueue<int3> queue)
         {
             while (queue.TryDequeue(out int3 position))
             {
                 int index = ChunkUtility.ToIndex(position.x, position.y, position.z);
-                byte currentLight = skyLight[index].Value;
+                byte currentLight = voxelLight[index].Sky;
 
                 if (currentLight <= SpreadAttenuation)
                 {
@@ -116,12 +116,12 @@ namespace Game.World.Lighting
 
                 byte nextLight = (byte)(currentLight - SpreadAttenuation);
 
-                TrySpread(position + new int3(1, 0, 0), nextLight, blocks, skyLight, queue);
-                TrySpread(position + new int3(-1, 0, 0), nextLight, blocks, skyLight, queue);
-                TrySpread(position + new int3(0, 1, 0), nextLight, blocks, skyLight, queue);
-                TrySpread(position + new int3(0, -1, 0), nextLight, blocks, skyLight, queue);
-                TrySpread(position + new int3(0, 0, 1), nextLight, blocks, skyLight, queue);
-                TrySpread(position + new int3(0, 0, -1), nextLight, blocks, skyLight, queue);
+                TrySpread(position + new int3(1, 0, 0), nextLight, blocks, voxelLight, queue);
+                TrySpread(position + new int3(-1, 0, 0), nextLight, blocks, voxelLight, queue);
+                TrySpread(position + new int3(0, 1, 0), nextLight, blocks, voxelLight, queue);
+                TrySpread(position + new int3(0, -1, 0), nextLight, blocks, voxelLight, queue);
+                TrySpread(position + new int3(0, 0, 1), nextLight, blocks, voxelLight, queue);
+                TrySpread(position + new int3(0, 0, -1), nextLight, blocks, voxelLight, queue);
             }
         }
 
@@ -129,7 +129,7 @@ namespace Game.World.Lighting
             int3 position,
             byte light,
             DynamicBuffer<BlockData> blocks,
-            DynamicBuffer<SkyLightData> skyLight,
+            DynamicBuffer<VoxelLightData> voxelLight,
             NativeQueue<int3> queue)
         {
             if (!ChunkUtility.IsInside(position.x, position.y, position.z))
@@ -139,13 +139,23 @@ namespace Game.World.Lighting
 
             int index = ChunkUtility.ToIndex(position.x, position.y, position.z);
 
-            if (IsOpaque(blocks[index].BlockId) || skyLight[index].Value >= light)
+            if (IsOpaque(blocks[index].BlockId) || voxelLight[index].Sky >= light)
             {
                 return;
             }
 
-            skyLight[index] = new SkyLightData(light);
+            SetSkyLight(voxelLight, index, light);
             queue.Enqueue(position);
+        }
+
+        private static void SetSkyLight(
+            DynamicBuffer<VoxelLightData> voxelLight,
+            int index,
+            byte value)
+        {
+            VoxelLightData light = voxelLight[index];
+            light.Sky = value;
+            voxelLight[index] = light;
         }
 
         private static bool IsOpaque(BlockId blockId)

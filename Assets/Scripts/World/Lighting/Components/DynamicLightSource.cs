@@ -1,0 +1,12 @@
+using Unity.Entities;
+using Unity.Mathematics;
+
+namespace Game.World.Lighting
+{
+    public struct DynamicLightSource : IComponentData
+    {
+        public float3 Color;
+        public float Radius;
+        public float Intensity;
+    }
+}

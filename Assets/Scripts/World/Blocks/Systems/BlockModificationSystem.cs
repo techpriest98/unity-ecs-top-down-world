@@ -39,6 +39,7 @@ namespace Game.World.Blocks
                 .Build(ref state);
 
             state.RequireForUpdate<BlockModificationQueue>();
+            state.RequireForUpdate<DynamicLightingRevision>();
         }
 
         [BurstCompile]
@@ -178,6 +179,11 @@ namespace Game.World.Blocks
 
             if (worldChanged)
             {
+                RefRW<DynamicLightingRevision> lightingRevision =
+                    SystemAPI.GetSingletonRW<DynamicLightingRevision>();
+
+                lightingRevision.ValueRW.Value++;
+
                 EntityCommandBuffer ecb =
                     new EntityCommandBuffer(Allocator.Temp);
 
