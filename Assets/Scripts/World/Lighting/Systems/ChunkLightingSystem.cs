@@ -1,6 +1,5 @@
 using Game.World.Chunks;
 using Game.World.Rendering;
-using Game.World.Time;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -17,13 +16,14 @@ namespace Game.World.Lighting
     {
         private const int MaxChunksLitPerFrame = 1;
         private const float MaximumShadowDistance = 16f;
-        private const float MaximumSkyLight = 15f;
-        private const float MinimumAmbientVisibility = 0.08f;
+        private const byte MaximumSkyLight = 15;
+        private const float ShadowDirectionEpsilon = 0.0001f;
 
         private EntityQuery generatedChunksQuery;
         private EntityQuery chunksNeedingLightingQuery;
 
-        private int lastHour;
+        private float3 lastShadowDirection;
+        private bool lastSunActive;
         private bool initialized;
 
         public void OnCreate(ref SystemState state)
@@ -37,7 +37,6 @@ namespace Game.World.Lighting
                 .WithDisabled<ChunkNeedsSkyLight>()
                 .Build(ref state);
 
-            state.RequireForUpdate<WorldTime>();
             state.RequireForUpdate<DirectionalLightData>();
             state.RequireForUpdate<ViewDirectionComponent>();
         }
@@ -45,21 +44,27 @@ namespace Game.World.Lighting
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            int hour = SystemAPI.GetSingleton<WorldTime>().Hour;
+            DirectionalLightData light = SystemAPI.GetSingleton<DirectionalLightData>();
+            bool sunActive = light.Intensity > 0f;
 
-            if (!initialized || hour != lastHour)
+            bool shadowDirectionChanged =
+                sunActive &&
+                (!lastSunActive ||
+                 math.distancesq(light.DirectionToLight, lastShadowDirection) > ShadowDirectionEpsilon);
+
+            if (!initialized || shadowDirectionChanged)
             {
                 MarkAllChunksForLighting(ref state);
-                lastHour = hour;
-                initialized = true;
             }
+
+            lastShadowDirection = light.DirectionToLight;
+            lastSunActive = sunActive;
+            initialized = true;
 
             if (chunksNeedingLightingQuery.CalculateEntityCount() == 0)
             {
                 return;
             }
-
-            DirectionalLightData light = SystemAPI.GetSingleton<DirectionalLightData>();
 
             int generatedChunkCount = generatedChunksQuery.CalculateEntityCount();
 
@@ -83,6 +88,25 @@ namespace Game.World.Lighting
                 blockLookup);
 
             EntityCommandBuffer ecb = new(Allocator.Temp);
+
+            foreach (var (chunk, voxelLight, projectedCells, projectedWaterCells, entity) in
+                SystemAPI.Query<
+                        RefRO<ChunkComponent>,
+                        DynamicBuffer<VoxelLightData>,
+                        DynamicBuffer<ProjectedCellData>,
+                        DynamicBuffer<ProjectedWaterCellData>>()
+                    .WithAll<ChunkGenerated, ChunkNeedsLighting, ChunkNeedsImmediateLighting>()
+                    .WithDisabled<ChunkNeedsSkyLight>()
+                    .WithEntityAccess())
+            {
+                UpdateChunk(projectedCells, projectedWaterCells, voxelLight,
+                    chunk.ValueRO.Coordinate, blockAccessor, light);
+
+                ecb.SetComponentEnabled<ChunkNeedsLighting>(entity, false);
+                ecb.SetComponentEnabled<ChunkNeedsImmediateLighting>(entity, false);
+                ecb.SetComponentEnabled<ChunkNeedsRender>(entity, true);
+            }
+
             int litChunkCount = 0;
 
             foreach (var (chunk, voxelLight, projectedCells, projectedWaterCells, entity) in
@@ -93,6 +117,7 @@ namespace Game.World.Lighting
                         DynamicBuffer<ProjectedWaterCellData>>()
                     .WithAll<ChunkGenerated, ChunkNeedsLighting>()
                     .WithDisabled<ChunkNeedsSkyLight>()
+                    .WithDisabled<ChunkNeedsImmediateLighting>()
                     .WithEntityAccess())
             {
                 if (litChunkCount >= MaxChunksLitPerFrame)
@@ -100,19 +125,8 @@ namespace Game.World.Lighting
                     break;
                 }
 
-                UpdateOpaqueCells(
-                    projectedCells,
-                    voxelLight,
-                    chunk.ValueRO.Coordinate,
-                    blockAccessor,
-                    light);
-
-                UpdateWaterCells(
-                    projectedWaterCells,
-                    voxelLight,
-                    chunk.ValueRO.Coordinate,
-                    blockAccessor,
-                    light);
+                UpdateChunk(projectedCells, projectedWaterCells, voxelLight,
+                    chunk.ValueRO.Coordinate, blockAccessor, light);
 
                 ecb.SetComponentEnabled<ChunkNeedsLighting>(entity, false);
                 ecb.SetComponentEnabled<ChunkNeedsRender>(entity, true);
@@ -134,6 +148,29 @@ namespace Game.World.Lighting
             {
                 needsLighting.ValueRW = true;
             }
+        }
+
+        private static void UpdateChunk(
+            DynamicBuffer<ProjectedCellData> projectedCells,
+            DynamicBuffer<ProjectedWaterCellData> projectedWaterCells,
+            DynamicBuffer<VoxelLightData> voxelLight,
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            DirectionalLightData light)
+        {
+            UpdateOpaqueCells(
+                projectedCells,
+                voxelLight,
+                chunkCoordinate,
+                blockAccessor,
+                light);
+
+            UpdateWaterCells(
+                projectedWaterCells,
+                voxelLight,
+                chunkCoordinate,
+                blockAccessor,
+                light);
         }
 
         private ViewDirection GetProjectionDirection(ref SystemState state)
@@ -221,32 +258,17 @@ namespace Game.World.Lighting
 
             VoxelLightData voxel = cell.SourceAirIndex < voxelLight.Length
                 ? voxelLight[cell.SourceAirIndex]
-                : new VoxelLightData((byte)MaximumSkyLight);
-
-
-            float skyLevel =voxel.Sky / (float)MaximumSkyLight;
-
-            float ambientVisibility = math.lerp(
-                MinimumAmbientVisibility,
-                1f,
-                skyLevel);
+                : new VoxelLightData(MaximumSkyLight);
 
             float3 localLight = new float3(
                 voxel.R,
                 voxel.G,
                 voxel.B) / 255f;
 
-            float3 indirectLight =
-                light.AmbientColor *
-                ambientVisibility +
-                localLight;
-
-            float sunVisibility =
-                occluded ? 0f : 1f;
-
             return LightDataUtility.Pack(
-                indirectLight,
-                sunVisibility);
+                localLight,
+                voxel.Sky,
+                !occluded);
         }
     }
 }

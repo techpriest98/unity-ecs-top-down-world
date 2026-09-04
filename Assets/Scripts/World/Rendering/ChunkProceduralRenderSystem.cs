@@ -13,22 +13,15 @@ namespace Game.World.Rendering
     public partial class ChunkProceduralRenderSystem :
         SystemBase
     {
-        private const float ProjectedCellWidth =
-            1f;
-
-        private const float ProjectedCellHeight =
-            0.5f;
-
-        private const float DepthStep =
-            0.01f;
-
+        private const float ProjectedCellWidth = 1f;
+        private const float ProjectedCellHeight = 0.5f;
+        private const float DepthStep = 0.01f;
 
         private EntityQuery dirtyQuery;
         private EntityQuery pendingProjectionQuery;
         private EntityQuery pendingLightingQuery;
 
         private bool hasLastCenter;
-
         private int2 lastCenter;
 
 
@@ -74,9 +67,7 @@ namespace Game.World.Rendering
 
         protected override void OnUpdate()
         {
-            ChunkProceduralRenderer renderer =
-                ChunkProceduralRenderer.Instance;
-
+            ChunkProceduralRenderer renderer = ChunkProceduralRenderer.Instance;
 
             if (renderer == null)
             {
@@ -84,12 +75,7 @@ namespace Game.World.Rendering
             }
 
 
-            int2 currentCenter =
-                SystemAPI
-                    .GetSingleton<
-                        ChunkStreamingCenter>()
-                    .Coordinate;
-
+            int2 currentCenter = SystemAPI.GetSingleton<ChunkStreamingCenter>().Coordinate;
             int pendingLightingCount = pendingLightingQuery.CalculateEntityCount();
 
             bool centerChanged =
@@ -140,7 +126,6 @@ namespace Game.World.Rendering
                     return;
                 }
 
-
                 // --------------------------------------------------------
                 // Every currently generated chunk now contains
                 // projection data for TargetDirection.
@@ -148,33 +133,15 @@ namespace Game.World.Rendering
                 // We can atomically change the active direction.
                 // --------------------------------------------------------
 
-                RefRW<ViewDirectionComponent>
-                    viewDirection =
-                        SystemAPI
-                            .GetSingletonRW<
-                                ViewDirectionComponent>();
+                RefRW<ViewDirectionComponent> viewDirection =
+                    SystemAPI.GetSingletonRW<ViewDirectionComponent>();
+                viewDirection.ValueRW.Value = transition.TargetDirection;
 
+                RefRW<ViewDirectionTransitionComponent> transitionState =
+                    SystemAPI.GetSingletonRW<ViewDirectionTransitionComponent>();
 
-                viewDirection.ValueRW.Value =
-                    transition.TargetDirection;
-
-
-                RefRW<
-                    ViewDirectionTransitionComponent>
-                    transitionState =
-                        SystemAPI
-                            .GetSingletonRW<
-                                ViewDirectionTransitionComponent>();
-
-
-                transitionState
-                    .ValueRW
-                    .IsActive =
-                    false;
-
-
-                transitionCompleted =
-                    true;
+                transitionState.ValueRW.IsActive = false;
+                transitionCompleted = true;
             }
 
             ViewDirection direction =
@@ -190,6 +157,7 @@ namespace Game.World.Rendering
                 light.DirectionToLight,
                 light.Color,
                 light.Intensity,
+                light.AmbientColor,
                 new float3(
                     towardCamera.x,
                     0f,
@@ -198,11 +166,6 @@ namespace Game.World.Rendering
             // ============================================================
             // Do we need a GPU rebuild?
             // ============================================================
-
-            if (pendingLightingCount > 0)
-            {
-                return;
-            }
 
             if (!centerChanged && !projectionChanged && !transitionCompleted)
             {

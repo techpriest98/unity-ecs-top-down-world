@@ -51,6 +51,7 @@ Shader "Game/World/ChunkProcedural"
             static const uint TILE_WIDTH = 32;
             static const uint TILE_HEIGHT = 16;
             static const uint FACE_COUNT = 3;
+            static const float MINIMUM_AMBIENT_VISIBILITY = 0.08;
 
             // Autotiling
             static const uint OVERLAY_GROUP_WIDTH = 32;
@@ -124,6 +125,7 @@ Shader "Game/World/ChunkProcedural"
             float3 _DirectionToLight;
             float3 _DirectionalLightColor;
             float _DirectionalLightIntensity;
+            float3 _AmbientColor;
             float3 _SideFaceNormal;
 
             // ============================================================
@@ -173,7 +175,7 @@ Shader "Game/World/ChunkProcedural"
                 return uint2(column, row);
             }
 
-            float3 GetIndirectLight(uint packedLightData)
+            float3 GetLocalLight(uint packedLightData)
             {
                 return float3(
                     packedLightData & 0xFFu,
@@ -181,9 +183,14 @@ Shader "Game/World/ChunkProcedural"
                     (packedLightData >> 16) & 0xFFu) / 255.0;
             }
 
+            float GetSkyVisibility(uint packedLightData)
+            {
+                return ((packedLightData >> 24) & 0x0Fu) / 15.0;
+            }
+
             float GetSunVisibility(uint packedLightData)
             {
-                return ((packedLightData >> 24) & 0xFFu) / 255.0;
+                return (packedLightData >> 28) & 0x01u;
             }
 
             // ============================================================
@@ -733,8 +740,18 @@ Shader "Game/World/ChunkProcedural"
                     worldNormal,
                     normalize(_DirectionToLight)));
 
-                float3 indirectLight = GetIndirectLight(input.LightData);
+                float3 localLight = GetLocalLight(input.LightData);
+                float skyVisibility = GetSkyVisibility(input.LightData);
                 float sunVisibility = GetSunVisibility(input.LightData);
+
+                float ambientVisibility = lerp(
+                    MINIMUM_AMBIENT_VISIBILITY,
+                    1.0,
+                    skyVisibility);
+
+                float3 ambientLight =
+                    _AmbientColor *
+                    ambientVisibility;
 
                 float3 directLight =
                     _DirectionalLightColor *
@@ -742,7 +759,10 @@ Shader "Game/World/ChunkProcedural"
                     directIntensity *
                     sunVisibility;
 
-                color.rgb *= saturate(indirectLight + directLight);
+                color.rgb *= saturate(
+                    ambientLight +
+                    localLight +
+                    directLight);
 
                 // ========================================================
                 // Selection

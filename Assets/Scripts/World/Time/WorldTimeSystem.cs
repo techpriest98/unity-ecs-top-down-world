@@ -8,7 +8,7 @@ namespace Game.World.Time
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     public partial struct WorldTimeSystem : ISystem
     {
-        private const float SecondsPerHour = 60f;
+        private const float SecondsPerHour = 5f;
 
         public void OnCreate(ref SystemState state)
         {

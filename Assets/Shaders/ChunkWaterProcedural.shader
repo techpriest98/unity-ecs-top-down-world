@@ -50,8 +50,7 @@ Shader "Game/World/ChunkWaterProcedural"
             static const uint TILE_WIDTH = 32;
             static const uint TILE_HEIGHT = 16;
             static const uint FACE_COUNT = 3;
-            static const float TOP_LIGHT = 1.0;
-            static const float SIDE_LIGHT = 1.0;
+            static const float MINIMUM_AMBIENT_VISIBILITY = 0.08;
             static const uint OPTICAL_DEPTH_MASK = 0xFF;
             static const uint TOP_INSET_FLAG = 1u << 8;
 
@@ -113,6 +112,12 @@ Shader "Game/World/ChunkWaterProcedural"
             float _ChunkWidth;
             float _ProjectionHeight;
 
+            float3 _DirectionToLight;
+            float3 _DirectionalLightColor;
+            float _DirectionalLightIntensity;
+            float3 _AmbientColor;
+            float3 _SideFaceNormal;
+
             float _PlayerClipRadius;
             float _PlayerClipFadeWidth;
             float _PlayerClipGrainSize;
@@ -154,6 +159,24 @@ Shader "Game/World/ChunkWaterProcedural"
                 return uint2(column, row);
             }
 
+            float3 GetLocalLight(uint packedLightData)
+            {
+                return float3(
+                    packedLightData & 0xFFu,
+                    (packedLightData >> 8) & 0xFFu,
+                    (packedLightData >> 16) & 0xFFu) / 255.0;
+            }
+
+            float GetSkyVisibility(uint packedLightData)
+            {
+                return ((packedLightData >> 24) & 0x0Fu) / 15.0;
+            }
+
+            float GetSunVisibility(uint packedLightData)
+            {
+                return (packedLightData >> 28) & 0x01u;
+            }
+
             // ============================================================
             // Faces
             // ============================================================
@@ -176,9 +199,11 @@ Shader "Game/World/ChunkWaterProcedural"
                 }
             }
 
-            float GetFaceLighting(uint faceIndex)
+            float3 GetFaceNormal(uint faceIndex)
             {
-                return faceIndex == 0 ? TOP_LIGHT : SIDE_LIGHT;
+                return faceIndex == 0
+                    ? float3(0.0, 1.0, 0.0)
+                    : normalize(_SideFaceNormal);
             }
 
             // ============================================================
@@ -230,6 +255,9 @@ Shader "Game/World/ChunkWaterProcedural"
 
                 nointerpolation uint OpticalDepth :
                     TEXCOORD3;
+
+                nointerpolation uint LightData :
+                    TEXCOORD4;
             };
 
             // ============================================================
@@ -341,6 +369,9 @@ Shader "Game/World/ChunkWaterProcedural"
                 output.OpticalDepth =
                     opticalDepth;
 
+                output.LightData =
+                    cell.LightData;
+
                 return output;
             }
 
@@ -438,15 +469,39 @@ Shader "Game/World/ChunkWaterProcedural"
                             0));
 
                 // ========================================================
-                // Face lighting
+                // Lighting
                 // ========================================================
 
-                float light =
-                    GetFaceLighting(
-                        input.FaceIndex);
+                float3 worldNormal =
+                    GetFaceNormal(input.FaceIndex);
 
-                color.rgb *=
-                    light;
+                float directIntensity = saturate(dot(
+                    worldNormal,
+                    normalize(_DirectionToLight)));
+
+                float3 localLight = GetLocalLight(input.LightData);
+                float skyVisibility = GetSkyVisibility(input.LightData);
+                float sunVisibility = GetSunVisibility(input.LightData);
+
+                float ambientVisibility = lerp(
+                    MINIMUM_AMBIENT_VISIBILITY,
+                    1.0,
+                    skyVisibility);
+
+                float3 ambientLight =
+                    _AmbientColor *
+                    ambientVisibility;
+
+                float3 directLight =
+                    _DirectionalLightColor *
+                    _DirectionalLightIntensity *
+                    directIntensity *
+                    sunVisibility;
+
+                color.rgb *= saturate(
+                    ambientLight +
+                    localLight +
+                    directLight);
 
                 color.rgb *=
                     _WaterTint.rgb;

@@ -13,20 +13,9 @@ namespace Game.World.Lighting
     [UpdateBefore(typeof(ChunkLightingSystem))]
     public partial struct ChunkLocalLightUpdateSystem : ISystem
     {
-        private const float MaximumSkyLight = 15f;
-        private const float MinimumAmbientVisibility = 0.08f;
-
-        public void OnCreate(ref SystemState state)
-        {
-            state.RequireForUpdate<DirectionalLightData>();
-        }
-
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            float3 ambientColor =
-                SystemAPI.GetSingleton<DirectionalLightData>().AmbientColor;
-
             foreach (var (voxelLight, projectedCells, projectedWaterCells, needsUpdate, needsRender) in
                      SystemAPI.Query<
                              DynamicBuffer<VoxelLightData>,
@@ -42,8 +31,8 @@ namespace Game.World.Lighting
                     continue;
                 }
 
-                UpdateOpaqueCells(projectedCells, voxelLight, ambientColor);
-                UpdateWaterCells(projectedWaterCells, voxelLight, ambientColor);
+                UpdateOpaqueCells(projectedCells, voxelLight);
+                UpdateWaterCells(projectedWaterCells, voxelLight);
 
                 needsUpdate.ValueRW = false;
                 needsRender.ValueRW = true;
@@ -52,15 +41,14 @@ namespace Game.World.Lighting
 
         private static void UpdateOpaqueCells(
             DynamicBuffer<ProjectedCellData> cells,
-            DynamicBuffer<VoxelLightData> voxelLight,
-            float3 ambientColor)
+            DynamicBuffer<VoxelLightData> voxelLight)
         {
             for (int index = 0; index < cells.Length; index++)
             {
                 ProjectedCellData cell = cells[index];
-                cell.LightData = LightDataUtility.ReplaceIndirect(
+                cell.LightData = LightDataUtility.ReplaceLocalLight(
                     cell.LightData,
-                    CalculateIndirectLight(cell.SourceAirIndex, voxelLight, ambientColor));
+                    GetLocalLight(cell.SourceAirIndex, voxelLight));
 
                 cells[index] = cell;
             }
@@ -68,37 +56,33 @@ namespace Game.World.Lighting
 
         private static void UpdateWaterCells(
             DynamicBuffer<ProjectedWaterCellData> cells,
-            DynamicBuffer<VoxelLightData> voxelLight,
-            float3 ambientColor)
+            DynamicBuffer<VoxelLightData> voxelLight)
         {
             for (int index = 0; index < cells.Length; index++)
             {
                 ProjectedWaterCellData waterCell = cells[index];
                 ProjectedCellData cell = waterCell.Value;
 
-                cell.LightData = LightDataUtility.ReplaceIndirect(
+                cell.LightData = LightDataUtility.ReplaceLocalLight(
                     cell.LightData,
-                    CalculateIndirectLight(cell.SourceAirIndex, voxelLight, ambientColor));
+                    GetLocalLight(cell.SourceAirIndex, voxelLight));
 
                 waterCell.Value = cell;
                 cells[index] = waterCell;
             }
         }
 
-        private static float3 CalculateIndirectLight(
+        private static float3 GetLocalLight(
             ushort sourceAirIndex,
-            DynamicBuffer<VoxelLightData> voxelLight,
-            float3 ambientColor)
+            DynamicBuffer<VoxelLightData> voxelLight)
         {
-            VoxelLightData light = sourceAirIndex < voxelLight.Length
-                ? voxelLight[sourceAirIndex]
-                : new VoxelLightData(15);
+            if (sourceAirIndex >= voxelLight.Length)
+            {
+                return float3.zero;
+            }
 
-            float skyLevel = light.Sky / MaximumSkyLight;
-            float ambientVisibility = math.lerp(MinimumAmbientVisibility, 1f, skyLevel);
-            float3 localLight = new float3(light.R, light.G, light.B) / byte.MaxValue;
-
-            return ambientColor * ambientVisibility + localLight;
+            VoxelLightData light = voxelLight[sourceAirIndex];
+            return new float3(light.R, light.G, light.B) / byte.MaxValue;
         }
     }
 }

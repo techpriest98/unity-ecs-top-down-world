@@ -58,6 +58,7 @@ namespace Game.World.Rendering
         private float3 directionToLight;
         private float3 directionalLightColor;
         private float directionalLightIntensity;
+        private float3 ambientColor;
         private float3 sideFaceNormal;
 
         private GraphicsBuffer projectedCellsBuffer;
@@ -165,11 +166,13 @@ namespace Game.World.Rendering
             float3 direction,
             float3 color,
             float intensity,
+            float3 ambient,
             float3 sideNormal)
         {
             directionToLight = direction;
             directionalLightColor = color;
             directionalLightIntensity = intensity;
+            ambientColor = ambient;
             sideFaceNormal = sideNormal;
         }
 
@@ -430,6 +433,10 @@ namespace Game.World.Rendering
             layerPropertyBlock.SetFloat(
                 "_DirectionalLightIntensity",
                 directionalLightIntensity);
+
+            layerPropertyBlock.SetVector(
+                "_AmbientColor",
+                new Vector4(ambientColor.x, ambientColor.y, ambientColor.z, 0f));
 
             layerPropertyBlock.SetVector(
                 "_SideFaceNormal",

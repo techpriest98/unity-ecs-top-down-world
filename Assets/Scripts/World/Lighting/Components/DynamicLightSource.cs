@@ -3,7 +3,7 @@ using Unity.Mathematics;
 
 namespace Game.World.Lighting
 {
-    public struct DynamicLightSource : IComponentData
+    public struct DynamicLightSource : IComponentData, IEnableableComponent
     {
         public float3 Color;
         public float Radius;

@@ -4,17 +4,24 @@ namespace Game.World.Lighting
 {
     public static class LightDataUtility
     {
-        public static uint Pack(float3 indirectLight, float sunVisibility)
-        {
-            indirectLight = math.saturate(indirectLight);
+        private const uint LocalLightMask = 0x00FFFFFFu;
+        private const uint SkyLightMask = 0x0F000000u;
+        private const uint SunVisibilityMask = 0x10000000u;
 
-            return ToByte(indirectLight.x) |
-                   ((uint)ToByte(indirectLight.y) << 8) |
-                   ((uint)ToByte(indirectLight.z) << 16) |
-                   ((uint)ToByte(sunVisibility) << 24);
+        public static uint Pack(
+            float3 localLight,
+            byte skyLevel,
+            bool sunVisible)
+        {
+            uint packedSkyLevel =
+                (uint)math.min((int)skyLevel, 15);
+
+            return PackLocalLight(localLight) |
+                   (packedSkyLevel << 24) |
+                   (sunVisible ? SunVisibilityMask : 0u);
         }
 
-        public static float3 UnpackIndirect(uint lightData)
+        public static float3 UnpackLocalLight(uint lightData)
         {
             return new float3(
                 lightData & 0xFFu,
@@ -22,29 +29,46 @@ namespace Game.World.Lighting
                 (lightData >> 16) & 0xFFu) / 255f;
         }
 
-        public static float UnpackSunVisibility(uint lightData)
+        public static byte UnpackSkyLevel(uint lightData)
         {
-            return ((lightData >> 24) & 0xFFu) / 255f;
+            return (byte)((lightData & SkyLightMask) >> 24);
         }
 
-        public static uint ReplaceIndirect(uint lightData, float3 indirectLight)
+        public static float UnpackSkyVisibility(uint lightData)
         {
-            indirectLight = math.saturate(indirectLight);
+            return UnpackSkyLevel(lightData) / 15f;
+        }
 
-            uint r = ToByte(indirectLight.x);
-            uint g = ToByte(indirectLight.y);
-            uint b = ToByte(indirectLight.z);
+        public static float UnpackSunVisibility(uint lightData)
+        {
+            return (lightData & SunVisibilityMask) != 0u
+                ? 1f
+                : 0f;
+        }
 
+        public static uint ReplaceLocalLight(
+            uint lightData,
+            float3 localLight)
+        {
             return
-                (lightData & 0xFF000000u) |
-                r |
-                (g << 8) |
-                (b << 16);
+                (lightData & ~LocalLightMask) |
+                PackLocalLight(localLight);
+        }
+
+        private static uint PackLocalLight(float3 localLight)
+        {
+            localLight = math.saturate(localLight);
+
+            return ToByte(localLight.x) |
+                   ((uint)ToByte(localLight.y) << 8) |
+                   ((uint)ToByte(localLight.z) << 16);
         }
 
         private static byte ToByte(float value)
         {
-            return (byte)math.round(math.saturate(value) * byte.MaxValue);
+            return (byte)math.round(
+                math.saturate(value) *
+                byte.MaxValue);
         }
     }
 }
