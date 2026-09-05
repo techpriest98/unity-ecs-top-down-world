@@ -1,0 +1,962 @@
+fileFormatVersion: 2
+guid: 5514312bccf294ca3b8f72c6cab73cb0
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -5060355923793794708
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_0
+  - first:
+      213: -5714745825806262355
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_1
+  - first:
+      213: 654818651085629002
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_2
+  - first:
+      213: 2329987900541981179
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_3
+  - first:
+      213: -5103765007429473006
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_4
+  - first:
+      213: -85968545394398969
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_5
+  - first:
+      213: -2616697230627170014
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_6
+  - first:
+      213: 7991065614121137985
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_7
+  - first:
+      213: -2106602032936693284
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_8
+  - first:
+      213: -983129179122622681
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_9
+  - first:
+      213: -4826851700545894044
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_10
+  - first:
+      213: 69747330857838593
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_11
+  - first:
+      213: -1621082172668868371
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_12
+  - first:
+      213: 5503046113727659233
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_13
+  - first:
+      213: -5537186859658269109
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_14
+  - first:
+      213: -8153030894171027806
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_15
+  - first:
+      213: 6349270394763144627
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_16
+  - first:
+      213: -768828617516836733
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_17
+  - first:
+      213: 2830911577523025338
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_18
+  - first:
+      213: -7063347861154530432
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_19
+  - first:
+      213: -5197712729572003932
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_20
+  - first:
+      213: 3078010718354880142
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_21
+  - first:
+      213: -760787484887471590
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_22
+  - first:
+      213: -6277426856363404869
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_23
+  - first:
+      213: -270255774829033744
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_24
+  - first:
+      213: 1296676540234811839
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_25
+  - first:
+      213: -7920255107304914328
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_26
+  - first:
+      213: -6865773112768604993
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_27
+  - first:
+      213: 7402618398390665520
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_28
+  - first:
+      213: 1923374753214944133
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_29
+  - first:
+      213: 5004062904259333110
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_30
+  - first:
+      213: -6574614392185721283
+    second: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_31
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 0
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_0
+      rect:
+        serializedVersion: 2
+        x: 8
+        y: 408
+        width: 50
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c692a35291106c9b0800000000000000
+      internalID: -5060355923793794708
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_1
+      rect:
+        serializedVersion: 2
+        x: 72
+        y: 408
+        width: 50
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dafdb2f03f421b0b0800000000000000
+      internalID: -5714745825806262355
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_2
+      rect:
+        serializedVersion: 2
+        x: 136
+        y: 408
+        width: 50
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a4662420812661900800000000000000
+      internalID: 654818651085629002
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_3
+      rect:
+        serializedVersion: 2
+        x: 200
+        y: 408
+        width: 50
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bf153c696a7c55020800000000000000
+      internalID: 2329987900541981179
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_4
+      rect:
+        serializedVersion: 2
+        x: 264
+        y: 408
+        width: 50
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 21de81344c8cb29b0800000000000000
+      internalID: -5103765007429473006
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_5
+      rect:
+        serializedVersion: 2
+        x: 330
+        y: 407
+        width: 44
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 709e8ed30149ecef0800000000000000
+      internalID: -85968545394398969
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_6
+      rect:
+        serializedVersion: 2
+        x: 392
+        y: 408
+        width: 50
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 22918bb8bbf9fabd0800000000000000
+      internalID: -2616697230627170014
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_7
+      rect:
+        serializedVersion: 2
+        x: 460
+        y: 407
+        width: 44
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 147778a66d7f5ee60800000000000000
+      internalID: 7991065614121137985
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_8
+      rect:
+        serializedVersion: 2
+        x: 7
+        y: 281
+        width: 50
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cd151bfbc98d3c2e0800000000000000
+      internalID: -2106602032936693284
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_9
+      rect:
+        serializedVersion: 2
+        x: 71
+        y: 281
+        width: 50
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 72f131e68393b52f0800000000000000
+      internalID: -983129179122622681
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_10
+      rect:
+        serializedVersion: 2
+        x: 135
+        y: 281
+        width: 50
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 469c87db3f3930db0800000000000000
+      internalID: -4826851700545894044
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_11
+      rect:
+        serializedVersion: 2
+        x: 199
+        y: 281
+        width: 50
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 10820dfe3dac7f000800000000000000
+      internalID: 69747330857838593
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_12
+      rect:
+        serializedVersion: 2
+        x: 263
+        y: 281
+        width: 50
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: de88a525a52c089e0800000000000000
+      internalID: -1621082172668868371
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_13
+      rect:
+        serializedVersion: 2
+        x: 329
+        y: 280
+        width: 45
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1ecb457b84fbe5c40800000000000000
+      internalID: 5503046113727659233
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_14
+      rect:
+        serializedVersion: 2
+        x: 391
+        y: 281
+        width: 50
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4eab1f63e5f723b0800000000000000
+      internalID: -5537186859658269109
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_15
+      rect:
+        serializedVersion: 2
+        x: 458
+        y: 280
+        width: 45
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2a6862e299d9ade80800000000000000
+      internalID: -8153030894171027806
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_16
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 152
+        width: 36
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3bde2ceb8c32d1850800000000000000
+      internalID: 6349270394763144627
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_17
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 152
+        width: 36
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 38811cf12729455f0800000000000000
+      internalID: -768828617516836733
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_18
+      rect:
+        serializedVersion: 2
+        x: 145
+        y: 152
+        width: 36
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ab5fcc8b41b694720800000000000000
+      internalID: 2830911577523025338
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_19
+      rect:
+        serializedVersion: 2
+        x: 209
+        y: 152
+        width: 36
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 08b7ed22b82f9fd90800000000000000
+      internalID: -7063347861154530432
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_20
+      rect:
+        serializedVersion: 2
+        x: 273
+        y: 152
+        width: 36
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4afa555afc30ed7b0800000000000000
+      internalID: -5197712729572003932
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_21
+      rect:
+        serializedVersion: 2
+        x: 331
+        y: 153
+        width: 43
+        height: 96
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e86336ab07a47ba20800000000000000
+      internalID: 3078010718354880142
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_22
+      rect:
+        serializedVersion: 2
+        x: 401
+        y: 152
+        width: 36
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a1a28b530d32175f0800000000000000
+      internalID: -760787484887471590
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_23
+      rect:
+        serializedVersion: 2
+        x: 461
+        y: 152
+        width: 41
+        height: 97
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bb156fa888912e8a0800000000000000
+      internalID: -6277426856363404869
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_24
+      rect:
+        serializedVersion: 2
+        x: 11
+        y: 24
+        width: 37
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0f641defdcbdf3cf0800000000000000
+      internalID: -270255774829033744
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_25
+      rect:
+        serializedVersion: 2
+        x: 75
+        y: 24
+        width: 37
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fb947497178bef110800000000000000
+      internalID: 1296676540234811839
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_26
+      rect:
+        serializedVersion: 2
+        x: 139
+        y: 24
+        width: 37
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8620e9671f9951290800000000000000
+      internalID: -7920255107304914328
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_27
+      rect:
+        serializedVersion: 2
+        x: 203
+        y: 24
+        width: 37
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fb4dff8fabfd7b0a0800000000000000
+      internalID: -6865773112768604993
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_28
+      rect:
+        serializedVersion: 2
+        x: 267
+        y: 24
+        width: 37
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 031c8db66326bb660800000000000000
+      internalID: 7402618398390665520
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_29
+      rect:
+        serializedVersion: 2
+        x: 330
+        y: 25
+        width: 43
+        height: 96
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 583d457c52331ba10800000000000000
+      internalID: 1923374753214944133
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_30
+      rect:
+        serializedVersion: 2
+        x: 395
+        y: 24
+        width: 37
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6fb4612e2b0027540800000000000000
+      internalID: 5004062904259333110
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_31
+      rect:
+        serializedVersion: 2
+        x: 458
+        y: 24
+        width: 41
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d3e699a4b0742c4a0800000000000000
+      internalID: -6574614392185721283
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_0: -5060355923793794708
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_1: -5714745825806262355
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_10: -4826851700545894044
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_11: 69747330857838593
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_12: -1621082172668868371
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_13: 5503046113727659233
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_14: -5537186859658269109
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_15: -8153030894171027806
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_16: 6349270394763144627
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_17: -768828617516836733
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_18: 2830911577523025338
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_19: -7063347861154530432
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_2: 654818651085629002
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_20: -5197712729572003932
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_21: 3078010718354880142
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_22: -760787484887471590
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_23: -6277426856363404869
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_24: -270255774829033744
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_25: 1296676540234811839
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_26: -7920255107304914328
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_27: -6865773112768604993
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_28: 7402618398390665520
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_29: 1923374753214944133
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_3: 2329987900541981179
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_30: 5004062904259333110
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_31: -6574614392185721283
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_4: -5103765007429473006
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_5: -85968545394398969
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_6: -2616697230627170014
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_7: 7991065614121137985
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_8: -2106602032936693284
+      traveler_char_sprite_sheet_by_magosilustrator_dm7cppa_9: -983129179122622681
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

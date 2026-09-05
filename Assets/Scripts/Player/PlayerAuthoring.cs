@@ -26,6 +26,10 @@ namespace Game.Player
         [Min(0.01f)]
         private float collisionHeight = 2f;
 
+        [Header("Visual")]
+        [SerializeField]
+        private GameObject visual;
+
         private sealed class Baker : Baker<PlayerAuthoring>
         {
             public override void Bake(
@@ -109,6 +113,32 @@ namespace Game.Player
                         FaceType = default,
                         IsValid = false
                     });
+
+                if (authoring.visual == null)
+                {
+                    return;
+                }
+                
+                Entity visualEntity = GetEntity(
+                    authoring.visual,
+                    TransformUsageFlags.Renderable);
+
+                AddComponent(entity, new PlayerVisualEntity
+                {
+                    Entity = visualEntity
+                });
+
+                AddComponent(entity, new PlayerFacing
+                {
+                    Value = PlayerFacingDirection.NegativeZ
+                });
+
+                AddComponent(entity, new PlayerAnimationData
+                {
+                    State = PlayerAnimationState.Idle,
+                    Frame = 0,
+                    ElapsedTime = 0f
+                });
             }
         }
     }
