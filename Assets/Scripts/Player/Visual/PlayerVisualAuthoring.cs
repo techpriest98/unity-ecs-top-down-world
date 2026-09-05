@@ -13,12 +13,21 @@ namespace Game.Player
             {
                 Entity entity = GetEntity(TransformUsageFlags.Renderable);
                 AddComponent(entity, new PlayerSpriteUv
-{
+                {
                     Value = new float4(
                         1f / 8f,
                         1f / 4f,
                         0f,
                         3f / 4f)
+                });
+
+                AddComponent(entity, new PlayerLightColor
+                {
+                    Value = new float4(
+                        1f,
+                        1f,
+                        1f,
+                        1f)
                 });
             }
         }

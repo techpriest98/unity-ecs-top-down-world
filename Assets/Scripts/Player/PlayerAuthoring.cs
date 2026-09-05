@@ -139,6 +139,11 @@ namespace Game.Player
                     Frame = 0,
                     ElapsedTime = 0f
                 });
+
+                AddComponent(entity, new PlayerLightColor
+                {
+                    Value = new float4(1f, 1f, 1f, 1f)
+                });
             }
         }
     }
