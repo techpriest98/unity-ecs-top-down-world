@@ -9,22 +9,19 @@ namespace Game.World.Lighting
 {
     [BurstCompile]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
-    [UpdateAfter(typeof(DirectionalLightSystem))]
+    [UpdateAfter(typeof(SunShadowStateSystem))]
     [UpdateAfter(typeof(ChunkProjectionSystem))]
     [UpdateBefore(typeof(ChunkProceduralRenderSystem))]
     public partial struct ChunkLightingSystem : ISystem
     {
         private const int MaxChunksLitPerFrame = 1;
+        private const int MaxShadowChunksPerFrame = 1;
         private const float MaximumShadowDistance = 16f;
         private const byte MaximumSkyLight = 15;
-        private const float ShadowDirectionEpsilon = 0.0001f;
 
         private EntityQuery generatedChunksQuery;
         private EntityQuery chunksNeedingLightingQuery;
-
-        private float3 lastShadowDirection;
-        private bool lastSunActive;
-        private bool initialized;
+        private EntityQuery chunksNeedingShadowUpdateQuery;
 
         public void OnCreate(ref SystemState state)
         {
@@ -37,36 +34,35 @@ namespace Game.World.Lighting
                 .WithDisabled<ChunkNeedsSkyLight>()
                 .Build(ref state);
 
-            state.RequireForUpdate<DirectionalLightData>();
-            state.RequireForUpdate<ViewDirectionComponent>();
+            chunksNeedingShadowUpdateQuery = new EntityQueryBuilder(Allocator.Temp)
+                .WithAll<ChunkComponent, ChunkGenerated, ChunkNeedsSunShadowUpdate>()
+                .Build(ref state);
+
+            state.RequireForUpdate<SunShadowState>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            DirectionalLightData light = SystemAPI.GetSingleton<DirectionalLightData>();
-            bool sunActive = light.Intensity > 0f;
+            bool needsLighting =
+                chunksNeedingLightingQuery.CalculateEntityCount() > 0;
+            bool needsShadowUpdate =
+                chunksNeedingShadowUpdateQuery.CalculateEntityCount() > 0;
 
-            bool shadowDirectionChanged =
-                sunActive &&
-                (!lastSunActive ||
-                 math.distancesq(light.DirectionToLight, lastShadowDirection) > ShadowDirectionEpsilon);
-
-            if (!initialized || shadowDirectionChanged)
-            {
-                MarkAllChunksForLighting(ref state);
-            }
-
-            lastShadowDirection = light.DirectionToLight;
-            lastSunActive = sunActive;
-            initialized = true;
-
-            if (chunksNeedingLightingQuery.CalculateEntityCount() == 0)
+            if (!needsLighting && !needsShadowUpdate)
             {
                 return;
             }
 
-            int generatedChunkCount = generatedChunksQuery.CalculateEntityCount();
+            Entity shadowStateEntity =
+                SystemAPI.GetSingletonEntity<SunShadowState>();
+
+            SunShadowState shadowState =
+                state.EntityManager.GetComponentData<SunShadowState>(
+                    shadowStateEntity);
+
+            int generatedChunkCount =
+                generatedChunksQuery.CalculateEntityCount();
 
             var chunkEntities = new NativeParallelHashMap<int2, Entity>(
                 math.max(generatedChunkCount, 1),
@@ -89,172 +85,218 @@ namespace Game.World.Lighting
 
             EntityCommandBuffer ecb = new(Allocator.Temp);
 
-            foreach (var (chunk, voxelLight, projectedCells, projectedWaterCells, entity) in
-                SystemAPI.Query<
-                        RefRO<ChunkComponent>,
-                        DynamicBuffer<VoxelLightData>,
-                        DynamicBuffer<ProjectedCellData>,
-                        DynamicBuffer<ProjectedWaterCellData>>()
-                    .WithAll<ChunkGenerated, ChunkNeedsLighting, ChunkNeedsImmediateLighting>()
-                    .WithDisabled<ChunkNeedsSkyLight>()
-                    .WithEntityAccess())
+            foreach (var (chunk, voxelLight, cells, waterCells, entity) in
+                     SystemAPI.Query<
+                             RefRO<ChunkComponent>,
+                             DynamicBuffer<VoxelLightData>,
+                             DynamicBuffer<ProjectedCellData>,
+                             DynamicBuffer<ProjectedWaterCellData>>()
+                         .WithAll<ChunkGenerated, ChunkNeedsLighting,
+                             ChunkNeedsImmediateLighting>()
+                         .WithDisabled<ChunkNeedsSkyLight>()
+                         .WithEntityAccess())
             {
-                UpdateChunk(projectedCells, projectedWaterCells, voxelLight,
-                    chunk.ValueRO.Coordinate, blockAccessor, light);
+                UpdateChunkFully(
+                    cells,
+                    waterCells,
+                    voxelLight,
+                    chunk.ValueRO.Coordinate,
+                    blockAccessor,
+                    shadowState);
 
                 ecb.SetComponentEnabled<ChunkNeedsLighting>(entity, false);
                 ecb.SetComponentEnabled<ChunkNeedsImmediateLighting>(entity, false);
+                ecb.SetComponentEnabled<ChunkNeedsSunShadowUpdate>(entity, false);
                 ecb.SetComponentEnabled<ChunkNeedsRender>(entity, true);
             }
 
-            int litChunkCount = 0;
+            int processedCount = 0;
 
-            foreach (var (chunk, voxelLight, projectedCells, projectedWaterCells, entity) in
-                SystemAPI.Query<
-                        RefRO<ChunkComponent>,
-                        DynamicBuffer<VoxelLightData>,
-                        DynamicBuffer<ProjectedCellData>,
-                        DynamicBuffer<ProjectedWaterCellData>>()
-                    .WithAll<ChunkGenerated, ChunkNeedsLighting>()
-                    .WithDisabled<ChunkNeedsSkyLight>()
-                    .WithDisabled<ChunkNeedsImmediateLighting>()
-                    .WithEntityAccess())
+            foreach (var (chunk, voxelLight, cells, waterCells, entity) in
+                     SystemAPI.Query<
+                             RefRO<ChunkComponent>,
+                             DynamicBuffer<VoxelLightData>,
+                             DynamicBuffer<ProjectedCellData>,
+                             DynamicBuffer<ProjectedWaterCellData>>()
+                         .WithAll<ChunkGenerated, ChunkNeedsLighting>()
+                         .WithDisabled<ChunkNeedsSkyLight>()
+                         .WithDisabled<ChunkNeedsImmediateLighting>()
+                         .WithEntityAccess())
             {
-                if (litChunkCount >= MaxChunksLitPerFrame)
+                if (processedCount >= MaxChunksLitPerFrame)
                 {
                     break;
                 }
 
-                UpdateChunk(projectedCells, projectedWaterCells, voxelLight,
-                    chunk.ValueRO.Coordinate, blockAccessor, light);
+                UpdateChunkFully(
+                    cells,
+                    waterCells,
+                    voxelLight,
+                    chunk.ValueRO.Coordinate,
+                    blockAccessor,
+                    shadowState);
 
                 ecb.SetComponentEnabled<ChunkNeedsLighting>(entity, false);
+                ecb.SetComponentEnabled<ChunkNeedsSunShadowUpdate>(entity, false);
                 ecb.SetComponentEnabled<ChunkNeedsRender>(entity, true);
+                processedCount++;
+            }
 
-                litChunkCount++;
+            if (shadowState.IsTransitioning)
+            {
+                byte targetMaskIndex =
+                    (byte)(1 - shadowState.ActiveMaskIndex);
+
+                processedCount = 0;
+
+                foreach (var (chunk, cells, waterCells, entity) in
+                         SystemAPI.Query<
+                                 RefRO<ChunkComponent>,
+                                 DynamicBuffer<ProjectedCellData>,
+                                 DynamicBuffer<ProjectedWaterCellData>>()
+                             .WithAll<ChunkGenerated, ChunkNeedsSunShadowUpdate>()
+                             .WithDisabled<ChunkNeedsLighting>()
+                             .WithEntityAccess())
+                {
+                    if (processedCount >= MaxShadowChunksPerFrame)
+                    {
+                        break;
+                    }
+
+                    UpdateChunkShadowMask(
+                        cells,
+                        waterCells,
+                        chunk.ValueRO.Coordinate,
+                        blockAccessor,
+                        shadowState.TargetLight,
+                        targetMaskIndex);
+
+                    ecb.SetComponentEnabled<ChunkNeedsSunShadowUpdate>(
+                        entity,
+                        false);
+
+                    processedCount++;
+                }
             }
 
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
             chunkEntities.Dispose();
-        }
 
-        private void MarkAllChunksForLighting(ref SystemState state)
-        {
-            foreach (EnabledRefRW<ChunkNeedsLighting> needsLighting in
-                     SystemAPI.Query<EnabledRefRW<ChunkNeedsLighting>>()
-                         .WithAll<ChunkGenerated>()
-                         .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState))
+            if (shadowState.IsTransitioning &&
+                chunksNeedingShadowUpdateQuery.CalculateEntityCount() == 0)
             {
-                needsLighting.ValueRW = true;
+                shadowState.ActiveMaskIndex =
+                    (byte)(1 - shadowState.ActiveMaskIndex);
+                shadowState.ActiveLight = shadowState.TargetLight;
+                shadowState.IsTransitioning = false;
+
+                state.EntityManager.SetComponentData(
+                    shadowStateEntity,
+                    shadowState);
+
+                foreach (EnabledRefRW<ChunkNeedsRender> needsRender in
+                         SystemAPI.Query<EnabledRefRW<ChunkNeedsRender>>()
+                             .WithAll<ChunkGenerated>()
+                             .WithOptions(
+                                 EntityQueryOptions.IgnoreComponentEnabledState))
+                {
+                    needsRender.ValueRW = true;
+                    break;
+                }
             }
         }
 
-        private static void UpdateChunk(
-            DynamicBuffer<ProjectedCellData> projectedCells,
-            DynamicBuffer<ProjectedWaterCellData> projectedWaterCells,
-            DynamicBuffer<VoxelLightData> voxelLight,
-            int2 chunkCoordinate,
-            ChunkBlockAccessor blockAccessor,
-            DirectionalLightData light)
-        {
-            UpdateOpaqueCells(
-                projectedCells,
-                voxelLight,
-                chunkCoordinate,
-                blockAccessor,
-                light);
-
-            UpdateWaterCells(
-                projectedWaterCells,
-                voxelLight,
-                chunkCoordinate,
-                blockAccessor,
-                light);
-        }
-
-        private ViewDirection GetProjectionDirection(ref SystemState state)
-        {
-            ViewDirection direction =
-                SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
-
-            if (SystemAPI.TryGetSingleton<ViewDirectionTransitionComponent>(
-                    out ViewDirectionTransitionComponent transition) &&
-                transition.IsActive)
-            {
-                direction = transition.TargetDirection;
-            }
-
-            return direction;
-        }
-
-        private static void UpdateOpaqueCells(
+        private static void UpdateChunkFully(
             DynamicBuffer<ProjectedCellData> cells,
+            DynamicBuffer<ProjectedWaterCellData> waterCells,
             DynamicBuffer<VoxelLightData> voxelLight,
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
-            DirectionalLightData light)
+            SunShadowState shadowState)
+        {
+            byte targetMaskIndex =
+                (byte)(1 - shadowState.ActiveMaskIndex);
+
+            for (int i = 0; i < cells.Length; i++)
+            {
+                ProjectedCellData cell = cells[i];
+                cell.LightData = CalculateFullLightData(
+                    cell,
+                    voxelLight,
+                    chunkCoordinate,
+                    blockAccessor,
+                    shadowState,
+                    targetMaskIndex);
+                cells[i] = cell;
+            }
+
+            for (int i = 0; i < waterCells.Length; i++)
+            {
+                ProjectedWaterCellData waterCell = waterCells[i];
+                ProjectedCellData cell = waterCell.Value;
+                cell.LightData = CalculateFullLightData(
+                    cell,
+                    voxelLight,
+                    chunkCoordinate,
+                    blockAccessor,
+                    shadowState,
+                    targetMaskIndex);
+                waterCell.Value = cell;
+                waterCells[i] = waterCell;
+            }
+        }
+
+        private static void UpdateChunkShadowMask(
+            DynamicBuffer<ProjectedCellData> cells,
+            DynamicBuffer<ProjectedWaterCellData> waterCells,
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            DirectionalLightData targetLight,
+            byte targetMaskIndex)
         {
             for (int i = 0; i < cells.Length; i++)
             {
                 ProjectedCellData cell = cells[i];
-
-                cell.LightData = CalculateLightData(
+                cell.LightData = ReplaceSunVisibility(
                     cell,
-                    voxelLight,
+                    cell.LightData,
                     chunkCoordinate,
                     blockAccessor,
-                    light);
-
+                    targetLight,
+                    targetMaskIndex);
                 cells[i] = cell;
             }
-        }
 
-        private static void UpdateWaterCells(
-            DynamicBuffer<ProjectedWaterCellData> cells,
-            DynamicBuffer<VoxelLightData> voxelLight,
-            int2 chunkCoordinate,
-            ChunkBlockAccessor blockAccessor,
-            DirectionalLightData light)
-        {
-            for (int i = 0; i < cells.Length; i++)
+            for (int i = 0; i < waterCells.Length; i++)
             {
-                ProjectedWaterCellData waterCell = cells[i];
+                ProjectedWaterCellData waterCell = waterCells[i];
                 ProjectedCellData cell = waterCell.Value;
-
-                cell.LightData = CalculateLightData(
+                cell.LightData = ReplaceSunVisibility(
                     cell,
-                    voxelLight,
+                    cell.LightData,
                     chunkCoordinate,
                     blockAccessor,
-                    light);
-
+                    targetLight,
+                    targetMaskIndex);
                 waterCell.Value = cell;
-                cells[i] = waterCell;
+                waterCells[i] = waterCell;
             }
         }
 
-       private static uint CalculateLightData(
+        private static uint CalculateFullLightData(
             ProjectedCellData cell,
             DynamicBuffer<VoxelLightData> voxelLight,
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
-            DirectionalLightData light)
+            SunShadowState shadowState,
+            byte targetMaskIndex)
         {
-            bool occluded = false;
-
-            if (light.Intensity > 0f)
-            {
-                int3 sourceAirPosition =
-                    ChunkUtility.ToLocalPosition(cell.SourceAirIndex);
-
-                occluded = VoxelShadowUtility.IsOccluded(
-                    chunkCoordinate,
-                    sourceAirPosition,
-                    blockAccessor,
-                    light.DirectionToLight,
-                    MaximumShadowDistance);
-            }
+            bool activeVisible = IsSunVisible(
+                cell,
+                chunkCoordinate,
+                blockAccessor,
+                shadowState.ActiveLight);
 
             VoxelLightData voxel = cell.SourceAirIndex < voxelLight.Length
                 ? voxelLight[cell.SourceAirIndex]
@@ -265,10 +307,68 @@ namespace Game.World.Lighting
                 voxel.G,
                 voxel.B) / 255f;
 
-            return LightDataUtility.Pack(
+            uint lightData = LightDataUtility.Pack(
                 localLight,
                 voxel.Sky,
-                !occluded);
+                activeVisible);
+
+            if (shadowState.IsTransitioning)
+            {
+                bool targetVisible = IsSunVisible(
+                    cell,
+                    chunkCoordinate,
+                    blockAccessor,
+                    shadowState.TargetLight);
+
+                lightData = LightDataUtility.ReplaceSunVisibility(
+                    lightData,
+                    targetMaskIndex,
+                    targetVisible);
+            }
+
+            return lightData;
+        }
+
+        private static uint ReplaceSunVisibility(
+            ProjectedCellData cell,
+            uint lightData,
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            DirectionalLightData light,
+            byte maskIndex)
+        {
+            bool visible = IsSunVisible(
+                cell,
+                chunkCoordinate,
+                blockAccessor,
+                light);
+
+            return LightDataUtility.ReplaceSunVisibility(
+                lightData,
+                maskIndex,
+                visible);
+        }
+
+        private static bool IsSunVisible(
+            ProjectedCellData cell,
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            DirectionalLightData light)
+        {
+            if (light.Intensity <= 0f)
+            {
+                return true;
+            }
+
+            int3 sourceAirPosition =
+                ChunkUtility.ToLocalPosition(cell.SourceAirIndex);
+
+            return !VoxelShadowUtility.IsOccluded(
+                chunkCoordinate,
+                sourceAirPosition,
+                blockAccessor,
+                light.DirectionToLight,
+                MaximumShadowDistance);
         }
     }
 }

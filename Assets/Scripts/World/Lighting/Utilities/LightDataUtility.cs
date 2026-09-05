@@ -6,7 +6,8 @@ namespace Game.World.Lighting
     {
         private const uint LocalLightMask = 0x00FFFFFFu;
         private const uint SkyLightMask = 0x0F000000u;
-        private const uint SunVisibilityMask = 0x10000000u;
+        private const uint SunVisibilityAMask = 0x10000000u;
+        private const uint SunVisibilityBMask = 0x20000000u;
 
         public static uint Pack(
             float3 localLight,
@@ -16,9 +17,13 @@ namespace Game.World.Lighting
             uint packedSkyLevel =
                 (uint)math.min((int)skyLevel, 15);
 
+            uint sunVisibility = sunVisible
+                ? SunVisibilityAMask | SunVisibilityBMask
+                : 0u;
+
             return PackLocalLight(localLight) |
                    (packedSkyLevel << 24) |
-                   (sunVisible ? SunVisibilityMask : 0u);
+                   sunVisibility;
         }
 
         public static float3 UnpackLocalLight(uint lightData)
@@ -41,9 +46,34 @@ namespace Game.World.Lighting
 
         public static float UnpackSunVisibility(uint lightData)
         {
-            return (lightData & SunVisibilityMask) != 0u
+            return UnpackSunVisibility(lightData, 0);
+        }
+
+        public static float UnpackSunVisibility(
+            uint lightData,
+            byte maskIndex)
+        {
+            uint mask = maskIndex == 0
+                ? SunVisibilityAMask
+                : SunVisibilityBMask;
+
+            return (lightData & mask) != 0u
                 ? 1f
                 : 0f;
+        }
+
+        public static uint ReplaceSunVisibility(
+            uint lightData,
+            byte maskIndex,
+            bool visible)
+        {
+            uint mask = maskIndex == 0
+                ? SunVisibilityAMask
+                : SunVisibilityBMask;
+
+            return visible
+                ? lightData | mask
+                : lightData & ~mask;
         }
 
         public static uint ReplaceLocalLight(

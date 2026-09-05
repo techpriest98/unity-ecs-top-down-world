@@ -280,7 +280,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad16fe5f55b604056994fbd9c5618018, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.World.Chunks.WorldAuthoring
-  chunkRadius: 10
+  chunkRadius: 3
   initialCenterChunk: {x: 0, y: 0}
 --- !u!1 &1581430483
 GameObject:

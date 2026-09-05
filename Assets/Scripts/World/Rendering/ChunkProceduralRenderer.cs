@@ -60,6 +60,7 @@ namespace Game.World.Rendering
         private float directionalLightIntensity;
         private float3 ambientColor;
         private float3 sideFaceNormal;
+        private int sunShadowMaskIndex;
 
         private GraphicsBuffer projectedCellsBuffer;
         private GraphicsBuffer projectedClippedCellsBuffer;
@@ -167,13 +168,15 @@ namespace Game.World.Rendering
             float3 color,
             float intensity,
             float3 ambient,
-            float3 sideNormal)
+            float3 sideNormal,
+            int shadowMaskIndex = 0)
         {
             directionToLight = direction;
             directionalLightColor = color;
             directionalLightIntensity = intensity;
             ambientColor = ambient;
             sideFaceNormal = sideNormal;
+            sunShadowMaskIndex = shadowMaskIndex;
         }
 
         public void Upload(
@@ -441,6 +444,10 @@ namespace Game.World.Rendering
             layerPropertyBlock.SetVector(
                 "_SideFaceNormal",
                 new Vector4(sideFaceNormal.x, sideFaceNormal.y, sideFaceNormal.z, 0f));
+
+            layerPropertyBlock.SetInteger(
+                "_SunShadowMaskIndex",
+                sunShadowMaskIndex);
 
             if (overlayAtlas != null)
             {

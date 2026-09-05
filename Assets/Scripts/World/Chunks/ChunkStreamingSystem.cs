@@ -57,7 +57,8 @@ namespace Game.World.Chunks
                         typeof(ChunkNeedsLighting),
                         typeof(ChunkNeedsLocalLightUpdate),
                         typeof(ChunkNeedsSkyLight),
-                        typeof(ChunkNeedsImmediateLighting));
+                        typeof(ChunkNeedsImmediateLighting),
+                        typeof(ChunkNeedsSunShadowUpdate));
 
 
             chunkQuery =
@@ -398,6 +399,7 @@ namespace Game.World.Chunks
             state.EntityManager.SetComponentEnabled<ChunkNeedsSkyLight>(entity, true);
             state.EntityManager.SetComponentEnabled<ChunkNeedsLocalLightUpdate>(entity, false);
             state.EntityManager.SetComponentEnabled<ChunkNeedsImmediateLighting>(entity, false);
+            state.EntityManager.SetComponentEnabled<ChunkNeedsSunShadowUpdate>(entity, false);
 
             return entity;
         }

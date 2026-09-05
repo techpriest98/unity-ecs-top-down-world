@@ -117,6 +117,7 @@ Shader "Game/World/ChunkWaterProcedural"
             float _DirectionalLightIntensity;
             float3 _AmbientColor;
             float3 _SideFaceNormal;
+            int _SunShadowMaskIndex;
 
             float _PlayerClipRadius;
             float _PlayerClipFadeWidth;
@@ -174,7 +175,8 @@ Shader "Game/World/ChunkWaterProcedural"
 
             float GetSunVisibility(uint packedLightData)
             {
-                return (packedLightData >> 28) & 0x01u;
+                uint shift = _SunShadowMaskIndex == 0 ? 28u : 29u;
+                return (packedLightData >> shift) & 0x01u;
             }
 
             // ============================================================

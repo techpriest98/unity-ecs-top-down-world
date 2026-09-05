@@ -31,6 +31,7 @@ namespace Game.World.Rendering
             RequireForUpdate<ViewDirectionComponent>();
             RequireForUpdate<ChunkStreamingCenter>();
             RequireForUpdate<DirectionalLightData>();
+            RequireForUpdate<SunShadowState>();
 
             // ------------------------------------------------------------
             // Chunks whose CPU projection changed
@@ -147,8 +148,12 @@ namespace Game.World.Rendering
             ViewDirection direction =
                 SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
 
-            DirectionalLightData light =
-                SystemAPI.GetSingleton<DirectionalLightData>();
+            SunShadowState shadowState =
+                SystemAPI.GetSingleton<SunShadowState>();
+
+            DirectionalLightData light = shadowState.Initialized
+                ? shadowState.ActiveLight
+                : SystemAPI.GetSingleton<DirectionalLightData>();
 
             int2 towardCamera =
                 ViewDirectionUtility.Forward(direction);
@@ -161,7 +166,8 @@ namespace Game.World.Rendering
                 new float3(
                     towardCamera.x,
                     0f,
-                    towardCamera.y));
+                    towardCamera.y),
+                shadowState.ActiveMaskIndex);
 
             // ============================================================
             // Do we need a GPU rebuild?
