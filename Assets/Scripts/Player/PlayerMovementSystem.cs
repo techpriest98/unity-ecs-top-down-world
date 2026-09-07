@@ -1,6 +1,7 @@
 using Game.World.Blocks;
 using Game.World.Chunks;
 using Game.World.Rendering;
+using Game.World.Generation.Spawning;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -52,9 +53,15 @@ namespace Game.Player
         }
 
         [BurstCompile]
-        public void OnUpdate(
-            ref SystemState state)
+        public void OnUpdate(ref SystemState state)
         {
+            if (SystemAPI.TryGetSingleton<WorldStartupState>(
+                out WorldStartupState startup) &&
+                startup.Phase != WorldStartupPhase.Ready)
+            {
+                return;
+            }
+
             UpdateChunkLookup(ref state);
 
             BufferLookup<BlockData> blockLookup = SystemAPI.GetBufferLookup<BlockData>(isReadOnly: true);

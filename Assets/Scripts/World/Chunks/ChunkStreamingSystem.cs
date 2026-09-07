@@ -32,110 +32,50 @@ namespace Game.World.Chunks
             chunkQuery;
 
 
-        public void OnCreate(
-            ref SystemState state)
+        public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<
-                ChunkStreamingSettings>();
+            state.RequireForUpdate<ChunkStreamingRuntime>();
+            state.RequireForUpdate<ChunkStreamingCenter>();
 
-            state.RequireForUpdate<
-                ChunkStreamingCenter>();
-
-
-            chunkArchetype =
-                state.EntityManager
-                    .CreateArchetype(
-                        typeof(ChunkComponent),
-                        typeof(BlockData),
-                        typeof(ProjectedCellData),
-                        typeof(ProjectedWaterCellData),
-                        typeof(ChunkShaderClippingEnabled),
-                        typeof(ChunkProjectionClippingEnabled),
-                        typeof(VoxelLightData),
-                        typeof(ChunkNeedsProjection),
-                        typeof(ChunkNeedsRender),
-                        typeof(ChunkNeedsLighting),
-                        typeof(ChunkNeedsLocalLightUpdate),
-                        typeof(ChunkNeedsSkyLight),
-                        typeof(ChunkNeedsImmediateLighting),
-                        typeof(ChunkNeedsSunShadowUpdate));
+            chunkArchetype = state.EntityManager.CreateArchetype(
+                typeof(ChunkComponent),
+                typeof(BlockData),
+                typeof(ChunkColumnData),
+                typeof(ProjectedCellData),
+                typeof(ProjectedWaterCellData),
+                typeof(ChunkShaderClippingEnabled),
+                typeof(ChunkProjectionClippingEnabled),
+                typeof(VoxelLightData),
+                typeof(ChunkNeedsProjection),
+                typeof(ChunkNeedsRender),
+                typeof(ChunkNeedsLighting),
+                typeof(ChunkNeedsLocalLightUpdate),
+                typeof(ChunkNeedsSkyLight),
+                typeof(ChunkNeedsImmediateLighting),
+                typeof(ChunkNeedsSunShadowUpdate));
 
 
-            chunkQuery =
-                state.EntityManager
-                    .CreateEntityQuery(
-                        ComponentType.ReadOnly<
-                            ChunkComponent>());
+            chunkQuery = state.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<ChunkComponent>());
         }
 
 
-        public void OnUpdate(
-            ref SystemState state)
+        public void OnUpdate(ref SystemState state)
         {
-            ChunkStreamingSettings settings =
-                SystemAPI.GetSingleton<
-                    ChunkStreamingSettings>();
+            ChunkStreamingSettings settings = SystemAPI.GetSingleton<ChunkStreamingSettings>();
+            ChunkStreamingCenter center = SystemAPI.GetSingleton<ChunkStreamingCenter>();
 
+            int loadRadius = SystemAPI.GetSingleton<ChunkStreamingRuntime>().LoadRadius;
+            int preloadRadius = loadRadius + PreloadMargin;
+            int unloadRadius = loadRadius + UnloadMargin;
+            int preloadDiameter = preloadRadius * 2 + 1;
 
-            ChunkStreamingCenter center =
-                SystemAPI.GetSingleton<
-                    ChunkStreamingCenter>();
+            int desiredChunkCount = preloadDiameter * preloadDiameter;
+            int existingChunkCount = chunkQuery.CalculateEntityCount();
+            int mapCapacity = math.max(existingChunkCount + desiredChunkCount, 1);
 
-
-            int loadRadius =
-                math.max(
-                    settings.LoadRadius,
-                    0);
-
-
-            int preloadRadius =
-                loadRadius +
-                PreloadMargin;
-
-
-            int unloadRadius =
-                loadRadius +
-                UnloadMargin;
-
-
-            int preloadDiameter =
-                preloadRadius * 2 + 1;
-
-
-            int desiredChunkCount =
-                preloadDiameter *
-                preloadDiameter;
-
-
-            int existingChunkCount =
-                chunkQuery
-                    .CalculateEntityCount();
-
-
-            int mapCapacity =
-                math.max(
-                    existingChunkCount +
-                    desiredChunkCount,
-                    1);
-
-
-            var loadedChunks =
-                new NativeParallelHashMap<
-                    int2,
-                    Entity>(
-                    mapCapacity,
-                    Allocator.Temp);
-
-
-            var chunksToDestroy =
-                new NativeList<
-                    ChunkRemovalCandidate>(
-                    Allocator.Temp);
-
-
-            var removedCoordinates =
-                new NativeList<int2>(
-                    Allocator.Temp);
+            var loadedChunks = new NativeParallelHashMap<int2, Entity>(mapCapacity, Allocator.Temp);
+            var chunksToDestroy = new NativeList<ChunkRemovalCandidate>(Allocator.Temp);
+            var removedCoordinates = new NativeList<int2>(Allocator.Temp);
 
             CollectLoadedChunks(
                 ref state,
@@ -401,6 +341,9 @@ namespace Game.World.Chunks
             state.EntityManager.SetComponentEnabled<ChunkNeedsImmediateLighting>(entity, false);
             state.EntityManager.SetComponentEnabled<ChunkNeedsSunShadowUpdate>(entity, false);
 
+            DynamicBuffer<ChunkColumnData> columns = state.EntityManager.GetBuffer<ChunkColumnData>(entity);
+            columns.ResizeUninitialized(ChunkSettings.SizeX * ChunkSettings.SizeZ);
+                        
             return entity;
         }
 

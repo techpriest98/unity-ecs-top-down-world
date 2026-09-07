@@ -17,6 +17,15 @@ namespace Game.Player
             state.RequireForUpdate<PlayerTag>();
             state.RequireForUpdate<PlayerWorldPosition>();
             state.RequireForUpdate<WorldSpawnPointComponent>();
+
+            Entity startupEntity = state.EntityManager.CreateEntity(typeof(WorldStartupState));
+
+            state.EntityManager.SetComponentData(
+                startupEntity,
+                new WorldStartupState
+                {
+                    Phase = WorldStartupPhase.SearchingSpawn
+                });
         }
 
         [BurstCompile]
@@ -26,14 +35,9 @@ namespace Game.Player
 
             int3 spawnPosition = default;
 
-            foreach (var (
-                spawnPoint,
-                entity)
-                in SystemAPI
-                    .Query<
-                        RefRO<
-                            WorldSpawnPointComponent>>()
-                    .WithEntityAccess())
+            foreach (var (spawnPoint, entity) in SystemAPI
+                .Query<RefRO<WorldSpawnPointComponent>>()
+                .WithEntityAccess())
             {
                 spawnPointEntity = entity;
                 spawnPosition = spawnPoint.ValueRO.Position;
@@ -48,33 +52,28 @@ namespace Game.Player
 
             bool playerFound = false;
 
-            foreach (RefRW<PlayerWorldPosition>
-                playerPosition
-                in SystemAPI
-                    .Query<
-                        RefRW<
-                            PlayerWorldPosition>>()
-                    .WithAll<PlayerTag>())
+            foreach (var (playerPosition, verticalVelocity) in SystemAPI
+                .Query<RefRW<PlayerWorldPosition>, RefRW<PlayerVerticalVelocity>>()
+                .WithAll<PlayerTag>())
             {
-                playerPosition.ValueRW.Value =
-                    new float3(
-                        spawnPosition.x + 0.5f,
-                        spawnPosition.y,
-                        spawnPosition.z + 0.5f);
+                playerPosition.ValueRW.Value = new float3(
+                    spawnPosition.x + 0.5f,
+                    spawnPosition.y,
+                    spawnPosition.z + 0.5f);
 
-                playerFound =
-                    true;
+                verticalVelocity.ValueRW.Value = 0f;
 
+                playerFound = true;
                 break;
             }
 
             if (!playerFound)
                 return;
 
-            state.EntityManager.SetComponentEnabled<
-                WorldSpawnPointComponent>(
-                spawnPointEntity,
-                false);
+            state.EntityManager.SetComponentEnabled<WorldSpawnPointComponent>(spawnPointEntity, false);
+
+            RefRW<WorldStartupState> startup = SystemAPI.GetSingletonRW<WorldStartupState>();
+            startup.ValueRW.Phase = WorldStartupPhase.PreparingView;
         }
     }
 }

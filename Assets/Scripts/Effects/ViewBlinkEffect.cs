@@ -13,6 +13,9 @@ namespace Game.World.Effects
         [SerializeField, Min(0.01f)]
         private float openDuration = 0.18f;
 
+        [SerializeField]
+        private bool startClosed = true;
+
         private enum Phase
         {
             Idle,
@@ -34,9 +37,13 @@ namespace Game.World.Effects
         {
             Instance = this;
             canvasGroup = GetComponent<CanvasGroup>();
-            canvasGroup.alpha = 0f;
+
             canvasGroup.interactable = false;
             canvasGroup.blocksRaycasts = false;
+
+            canvasGroup.alpha = startClosed ? 1f : 0f;
+            phase = startClosed ? Phase.Closed : Phase.Idle;
+            blackFrame = UnityEngine.Time.frameCount;
         }
 
         private void OnDestroy()
@@ -49,8 +56,6 @@ namespace Game.World.Effects
 
         public void BeginBlink()
         {
-            Debug.Log($"BeginBlink: phase={phase}", this);
-
             if (IsBusy)
             {
                 return;

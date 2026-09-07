@@ -186,7 +186,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac67053ceac734b478b858284b33f628, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.World.Generation.WorldSeedAuthoring
-  seed: 343543
+  seed: 291098
 --- !u!114 &443306940
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -3,7 +3,6 @@ using Game.World.Generation;
 using Game.World.Generation.Biomes;
 using Game.World.Generation.Biomes.RockyShore;
 using Game.World.Generation.Terrain;
-using Game.World.Generation.Spawning;
 using Game.World.Rendering;
 using Unity.Burst;
 using Unity.Collections;
@@ -32,9 +31,6 @@ namespace Game.World.Chunks
         private WorldGenerationSettingsComponent loadedWorldSettings;
         private bool hasLoadedWorld;
 
-        private Entity spawnPointEntity;
-        private bool hasResolvedSpawnPoint;
-
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<ChunkComponent>();
@@ -54,31 +50,11 @@ namespace Game.World.Chunks
             loadedSeed = 0;
             loadedWorldSettings = default;
             hasLoadedWorld = false;
-
-            spawnPointEntity = state.EntityManager.CreateEntity();
-            hasResolvedSpawnPoint = false;
-
-            state.EntityManager.AddComponentData(
-                spawnPointEntity,
-                new WorldSpawnPointComponent
-                {
-                    Position = default
-                });
-
-            state.EntityManager.SetComponentEnabled<
-                WorldSpawnPointComponent>(
-                spawnPointEntity,
-                false);
         }
 
         public void OnDestroy(ref SystemState state)
         {
             DisposeWorldData();
-
-            if (state.EntityManager.Exists(spawnPointEntity))
-            {
-                state.EntityManager.DestroyEntity(spawnPointEntity);
-            }
         }
 
         [BurstCompile]
@@ -95,7 +71,7 @@ namespace Game.World.Chunks
             BlockDatabaseComponent blockDatabase =
                 SystemAPI.GetSingleton<BlockDatabaseComponent>();
 
-            EnsureWorldData(ref state, worldSeed, worldSettings);
+            EnsureWorldData(worldSeed, worldSettings);
             int chunkCount = SystemAPI.QueryBuilder()
                 .WithAll<ChunkComponent>()
                 .Build()
@@ -119,15 +95,11 @@ namespace Game.World.Chunks
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             int generatedCount = 0;
 
-            bool searchSpawnPoint = !hasResolvedSpawnPoint;
-
-            int2 spawnSearchOrigin =
-                new int2(
-                    ChunkSettings.SizeX / 2,
-                    ChunkSettings.SizeZ / 2);
-
-            foreach (var (chunk, blocks, entity) in
-                     SystemAPI.Query<RefRO<ChunkComponent>, DynamicBuffer<BlockData>>()
+            foreach (var (chunk, blocks, columns, entity) in
+                     SystemAPI.Query<
+                             RefRO<ChunkComponent>,
+                             DynamicBuffer<BlockData>,
+                             DynamicBuffer<ChunkColumnData>>()
                          .WithNone<ChunkGenerated>()
                          .WithEntityAccess())
             {
@@ -136,41 +108,19 @@ namespace Game.World.Chunks
 
                 int2 coordinate = chunk.ValueRO.Coordinate;
 
-                bool foundSpawnPoint =
-                    GenerateChunk(
-                        blocks,
-                        coordinate,
-                        worldHeightMap,
-                        coastDistanceMap,
-                        landmassMap,
-                        biomeSamplingContext,
-                        macroSampleOrigin,
-                        worldSeed,
-                        worldSettings,
-                        biomeTerrainResolver,
-                        blockDatabase,
-                        searchSpawnPoint,
-                        spawnSearchOrigin,
-                        out int3 spawnPosition);
-
-                if (foundSpawnPoint)
-                {
-                    hasResolvedSpawnPoint = true;
-
-                    state.EntityManager.SetComponentData(
-                        spawnPointEntity,
-                        new WorldSpawnPointComponent
-                        {
-                            Position = spawnPosition
-                        });
-
-                    state.EntityManager.SetComponentEnabled<
-                        WorldSpawnPointComponent>(
-                        spawnPointEntity,
-                        true);
-
-                    searchSpawnPoint = false;
-                }
+                GenerateChunk(
+                    blocks,
+                    columns,
+                    coordinate,
+                    worldHeightMap,
+                    coastDistanceMap,
+                    landmassMap,
+                    biomeSamplingContext,
+                    macroSampleOrigin,
+                    worldSeed,
+                    worldSettings,
+                    biomeTerrainResolver,
+                    blockDatabase);
 
                 ecb.AddComponent<ChunkGenerated>(entity);
                 ecb.SetComponentEnabled<ChunkNeedsProjection>(
@@ -196,7 +146,6 @@ namespace Game.World.Chunks
         // ================================================================
 
         private void EnsureWorldData(
-            ref SystemState state,
             uint worldSeed,
             in WorldGenerationSettingsComponent worldSettings)
         {
@@ -211,11 +160,6 @@ namespace Game.World.Chunks
                 return;
 
             DisposeWorldData();
-
-            state.EntityManager.SetComponentEnabled<
-                WorldSpawnPointComponent>(
-                spawnPointEntity,
-                false);
 
             worldHeightMap = WorldHeightMap.Create(
                 worldSettings.HeightMapResolution,
@@ -287,8 +231,9 @@ namespace Game.World.Chunks
         // Chunk generation
         // ================================================================
 
-        private static bool GenerateChunk(
+        private static void GenerateChunk(
             DynamicBuffer<BlockData> blocks,
+            DynamicBuffer<ChunkColumnData> columns,
             int2 chunkCoordinate,
             WorldHeightMap heightMap,
             CoastDistanceMap coastMap,
@@ -298,15 +243,8 @@ namespace Game.World.Chunks
             uint worldSeed,
             in WorldGenerationSettingsComponent worldSettings,
             in BiomeTerrainResolver biomeTerrainResolver,
-            in BlockDatabaseComponent blockDatabase,
-            bool searchSpawnPoint,
-            int2 spawnSearchOrigin,
-            out int3 spawnPosition)
+            in BlockDatabaseComponent blockDatabase)
         {
-            spawnPosition = default;
-
-            bool foundSpawnPoint = false;
-            int bestSpawnDistanceSquared = int.MaxValue;
             int shoreSearchDistance = biomeTerrainResolver.GetRockyShoreSearchDistance();
 
             ChunkShoreDistanceMap shoreDistanceMap = default;
@@ -422,38 +360,14 @@ namespace Game.World.Chunks
                             worldSeed,
                             worldSettings);
 
-                    if (searchSpawnPoint &&
-                        terrainSample.Biome ==
-                        WorldBiome.RockyShore &&
-                        terrainSample.Zone ==
-                        (byte)RockyShoreZone.Beach)
+                    int columnIndex = z * ChunkSettings.SizeX + x;
+
+                    columns[columnIndex] = new ChunkColumnData
                     {
-                        int offsetX =
-                            globalX -
-                            spawnSearchOrigin.x;
-
-                        int offsetZ =
-                            globalZ -
-                            spawnSearchOrigin.y;
-
-                        int distanceSquared =
-                            offsetX * offsetX +
-                            offsetZ * offsetZ;
-
-                        if (distanceSquared <
-                            bestSpawnDistanceSquared)
-                        {
-                            bestSpawnDistanceSquared =
-                                distanceSquared;
-
-                            spawnPosition = new int3(
-                                globalX,
-                                terrainSample.Height,
-                                globalZ);
-
-                            foundSpawnPoint = true;
-                        }
-                    }
+                        Biome = terrainSample.Biome,
+                        Zone = terrainSample.Zone,
+                        SurfaceHeight = terrainSample.Height
+                    };
 
                     for (int y = 0; y < ChunkSettings.SizeY; y++)
                     {
@@ -478,8 +392,6 @@ namespace Game.World.Chunks
 
             if (shoreDistanceMap.IsCreated)
                 shoreDistanceMap.Dispose();
-
-            return foundSpawnPoint;
         }
 
         // ================================================================

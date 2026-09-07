@@ -25,6 +25,9 @@ namespace Game.World.Rendering
         private bool hasLastCenter;
         private int2 lastCenter;
 
+        public bool HasUploadedView { get; private set; }
+        public int2 UploadedCenter { get; private set; }
+
 
         protected override void OnCreate()
         {
@@ -383,6 +386,9 @@ namespace Game.World.Rendering
 
             lastCenter = currentCenter;
             hasLastCenter = true;
+
+            UploadedCenter = currentCenter;
+            HasUploadedView = true;
         }
     }
 }
