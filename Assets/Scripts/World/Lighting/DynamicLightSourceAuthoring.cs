@@ -41,6 +41,8 @@ namespace Game.Player
                 });
 
                 AddComponent<DynamicLightSourceState>(entity);
+
+                SetComponentEnabled<DynamicLightSource>(entity, false);
             }
         }
     }

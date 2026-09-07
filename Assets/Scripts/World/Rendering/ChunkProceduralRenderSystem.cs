@@ -1,5 +1,6 @@
 using Game.World.Chunks;
 using Game.World.Lighting;
+using Game.World.Effects;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -75,29 +76,17 @@ namespace Game.World.Rendering
                 return;
             }
 
-
             int2 currentCenter = SystemAPI.GetSingleton<ChunkStreamingCenter>().Coordinate;
             int pendingLightingCount = pendingLightingQuery.CalculateEntityCount();
 
-            bool centerChanged =
-                !hasLastCenter ||
-                math.any(
-                    currentCenter !=
-                    lastCenter);
-
-
-            bool projectionChanged =
-                dirtyQuery
-                    .CalculateEntityCount() >
-                0;
-
+            bool centerChanged = !hasLastCenter || math.any(currentCenter != lastCenter);
+            bool projectionChanged = dirtyQuery.CalculateEntityCount() > 0;
 
             // ============================================================
             // View transition
             // ============================================================
 
-            bool transitionCompleted =
-                false;
+            bool transitionCompleted = false;
 
 
             if (SystemAPI.TryGetSingleton<
@@ -106,10 +95,7 @@ namespace Game.World.Rendering
                         transition) &&
                 transition.IsActive)
             {
-                int pendingProjectionCount =
-                    pendingProjectionQuery
-                        .CalculateEntityCount();
-
+                int pendingProjectionCount = pendingProjectionQuery.CalculateEntityCount();
 
                 // --------------------------------------------------------
                 // CPU is still preparing TargetDirection.
@@ -122,7 +108,11 @@ namespace Game.World.Rendering
                 // existing GPU GraphicsBuffer.
                 // --------------------------------------------------------
 
-                if (pendingProjectionCount > 0 || pendingLightingCount > 0)
+                ViewBlinkEffect blink = ViewBlinkEffect.Instance;
+
+                bool waitingForBlack = blink != null && !blink.CanSwitchView;
+
+                if (pendingProjectionCount > 0 || pendingLightingCount > 0 || waitingForBlack)
                 {
                     return;
                 }
@@ -299,17 +289,16 @@ namespace Game.World.Rendering
                 {
                     ProjectedCellData cell = projectedWaterCells[index].Value;
 
-                    waterRenderData.Add(
-                        new ProjectedCellRenderData
-                        {
-                            BlockData = cell.BlockData,
-                            Position = cell.Position,
-                            LightData = cell.LightData,
-                            FaceData = cell.FaceData,
-                            ChunkPosition = chunkPosition,
-                            Padding = 0f
-                        });
-                    }
+                    waterRenderData.Add(new ProjectedCellRenderData
+                    {
+                        BlockData = cell.BlockData,
+                        Position = cell.Position,
+                        LightData = cell.LightData,
+                        FaceData = cell.FaceData,
+                        ChunkPosition = chunkPosition,
+                        Padding = 0f
+                    });
+                }
 
                 // --------------------------------------------------------
                 // Bounds
@@ -369,6 +358,16 @@ namespace Game.World.Rendering
             renderer.Upload(renderData.AsArray(), bounds);
             renderer.UploadClipped(clippedRenderData.AsArray(), bounds);
             renderer.UploadWater(waterRenderData.AsArray(), bounds);
+
+            if (transitionCompleted)
+            {
+                ViewBlinkEffect blink = ViewBlinkEffect.Instance;
+
+                if (blink != null)
+                {
+                    blink.Reveal();
+                }
+            }
 
             // ============================================================
             // GPU is now synchronized with CPU projection.

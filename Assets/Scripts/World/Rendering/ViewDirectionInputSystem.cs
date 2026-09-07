@@ -1,63 +1,40 @@
 using Game.World.Chunks;
+using Game.World.Effects;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine.InputSystem;
 
 namespace Game.World.Rendering
 {
-    [UpdateBefore(
-        typeof(ChunkProjectionSystem))]
-    public partial struct ViewDirectionInputSystem :
-        ISystem
+    [UpdateBefore(typeof(ChunkProjectionSystem))]
+    public partial struct ViewDirectionInputSystem : ISystem
     {
         private EntityQuery chunksQuery;
 
-
-        public void OnCreate(
-            ref SystemState state)
+        public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<
-                ViewDirectionComponent>();
+            state.RequireForUpdate<ViewDirectionComponent>();
 
-            Entity transitionEntity =
-                state.EntityManager
-                    .CreateEntity(
-                        typeof(
-                            ViewDirectionTransitionComponent));
+            Entity transitionEntity = state.EntityManager.CreateEntity(typeof(ViewDirectionTransitionComponent));
 
+            state.EntityManager.SetComponentData(
+                transitionEntity,
+                new ViewDirectionTransitionComponent
+                {
+                    TargetDirection = ViewDirection.Front,
+                    IsActive = false
+                });
 
-            state.EntityManager
-                .SetComponentData(
-                    transitionEntity,
-                    new ViewDirectionTransitionComponent
-                    {
-                        TargetDirection =
-                            ViewDirection.Front,
-
-                        IsActive =
-                            false
-                    });
-
-            chunksQuery =
-                new EntityQueryBuilder(
-                        Allocator.Temp)
-                    .WithAll<
-                        ChunkGenerated,
-                        ChunkNeedsProjection>()
-                    .WithOptions(
-                        EntityQueryOptions
-                            .IgnoreComponentEnabledState)
-                    .Build(
-                        ref state);
+            chunksQuery = new EntityQueryBuilder(Allocator.Temp)
+                .WithAll<ChunkGenerated, ChunkNeedsProjection>()
+                .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState)
+                .Build(ref state);
         }
 
 
-        public void OnUpdate(
-            ref SystemState state)
+        public void OnUpdate(ref SystemState state)
         {
-            Keyboard keyboard =
-                Keyboard.current;
-
+            Keyboard keyboard = Keyboard.current;
 
             if (keyboard == null)
             {
@@ -65,63 +42,41 @@ namespace Game.World.Rendering
             }
 
 
-            bool rotateClockwise =
-                keyboard.rightArrowKey
-                    .wasPressedThisFrame;
+            bool rotateClockwise = keyboard.rightArrowKey.wasPressedThisFrame;
+            bool rotateCounterClockwise = keyboard.leftArrowKey.wasPressedThisFrame;
 
+            if (rotateClockwise == rotateCounterClockwise)
+            {
+                return;
+            }
 
-            bool rotateCounterClockwise =
-                keyboard.leftArrowKey
-                    .wasPressedThisFrame;
+            RefRW<ViewDirectionTransitionComponent> transition =
+                SystemAPI.GetSingletonRW<ViewDirectionTransitionComponent>();
 
+            ViewBlinkEffect blink = ViewBlinkEffect.Instance;
 
-            if (rotateClockwise ==
-                rotateCounterClockwise)
+            if (transition.ValueRO.IsActive || (blink != null && blink.IsBusy))
             {
                 return;
             }
 
 
-            RefRW<
-                ViewDirectionTransitionComponent>
-                transition =
-                    SystemAPI.GetSingletonRW<
-                        ViewDirectionTransitionComponent>();
+            ViewDirection currentDirection = SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
 
-            if (transition.ValueRO.IsActive)
+            ViewDirection targetDirection = rotateClockwise
+                ? ViewDirectionUtility.RotateClockwise(currentDirection)
+                : ViewDirectionUtility.RotateCounterClockwise(currentDirection);
+
+            transition.ValueRW.TargetDirection = targetDirection;
+
+            transition.ValueRW.IsActive = true;
+
+            if (blink != null)
             {
-                return;
+                blink.BeginBlink();
             }
 
-
-            ViewDirection currentDirection =
-                SystemAPI
-                    .GetSingleton<
-                        ViewDirectionComponent>()
-                    .Value;
-
-
-            ViewDirection targetDirection =
-                rotateClockwise
-                    ? ViewDirectionUtility
-                        .RotateClockwise(
-                            currentDirection)
-
-                    : ViewDirectionUtility
-                        .RotateCounterClockwise(
-                            currentDirection);
-
-            transition.ValueRW.TargetDirection =
-                targetDirection;
-
-            transition.ValueRW.IsActive =
-                true;
-
-            state.EntityManager
-                .SetComponentEnabled<
-                    ChunkNeedsProjection>(
-                    chunksQuery,
-                    true);
+            state.EntityManager.SetComponentEnabled<ChunkNeedsProjection>(chunksQuery, true);
         }
     }
 }
