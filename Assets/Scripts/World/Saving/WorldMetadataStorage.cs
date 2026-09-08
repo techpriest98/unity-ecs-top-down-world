@@ -7,6 +7,14 @@ using UnityEngine;
 
 namespace Game.World.Saving
 {
+    public enum WorldCreateStatus
+    {
+        Success,
+        InvalidName,
+        NameAlreadyExists,
+        StorageError
+    }
+
     public static class WorldMetadataStorage
     {
         public const int CurrentVersion = 1;
@@ -30,7 +38,7 @@ namespace Game.World.Saving
                     foreach (string directory in Directory.GetDirectories(RootPath))
                     {
                         string path = Path.Combine(directory, "world.json");
-
+                        // An interrupted first write may leave only a temporary file.
                         if (!File.Exists(path))
                             continue;
 
@@ -56,7 +64,7 @@ namespace Game.World.Saving
             }
         }
 
-        public static bool TryCreate(string name, uint seed,
+        public static WorldCreateStatus Create(string name, uint seed,
             out WorldMetadata world, out string error)
         {
             lock (Sync)
@@ -65,34 +73,29 @@ namespace Game.World.Saving
                 error = string.Empty;
                 string directory = null;
                 bool ownsDirectory = false;
-
                 try
                 {
                     name = NormalizeName(name);
                     if (string.IsNullOrWhiteSpace(name))
                     {
                         error = "Enter a world name.";
-                        return false;
+                        return WorldCreateStatus.InvalidName;
                     }
-
                     if (!TryList(out List<WorldMetadata> worlds, out error))
-                        return false;
-
+                        return WorldCreateStatus.StorageError;
                     foreach (WorldMetadata existing in worlds)
                     {
                         if (string.Equals(NormalizeName(existing.Name), name, StringComparison.OrdinalIgnoreCase))
                         {
                             error = "A world with this name already exists.";
-                            return false;
+                            return WorldCreateStatus.NameAlreadyExists;
                         }
                     }
 
                     string id = Guid.NewGuid().ToString("N");
                     directory = Path.Combine(RootPath, id);
-
                     if (Directory.Exists(directory))
                         throw new IOException("World directory already exists.");
-
                     Directory.CreateDirectory(directory);
                     ownsDirectory = true;
                     WorldMetadata metadata = new WorldMetadata
@@ -105,25 +108,21 @@ namespace Game.World.Saving
                         // Empty until a successful game launch is recorded in a later step.
                         LastPlayedAtUtc = string.Empty
                     };
-
                     string temporaryPath = Path.Combine(directory, "world.json.tmp");
                     byte[] bytes = Encoding.UTF8.GetBytes(JsonUtility.ToJson(metadata, true));
-
                     using (FileStream stream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write))
                     {
                         stream.Write(bytes, 0, bytes.Length);
                         stream.Flush(true);
                     }
-
                     File.Move(temporaryPath, Path.Combine(directory, "world.json"));
                     world = metadata;
-                    return true;
+                    return WorldCreateStatus.Success;
                 }
                 catch (Exception exception)
                 {
                     Debug.LogException(exception);
                     error = "Could not save the world. Check the Console.";
-
                     if (ownsDirectory)
                     {
                         try
@@ -134,7 +133,7 @@ namespace Game.World.Saving
                         }
                         catch (Exception cleanupException) { Debug.LogException(cleanupException); }
                     }
-                    return false;
+                    return WorldCreateStatus.StorageError;
                 }
             }
         }
