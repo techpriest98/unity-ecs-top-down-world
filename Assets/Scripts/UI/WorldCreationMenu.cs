@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using Game.World.Generation;
+using Game.World.Saving;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -16,9 +17,11 @@ namespace Game.UI
         [SerializeField] private string gameSceneName = "SampleScene";
 
         private bool isLoading;
+        private WorldMetadata createdWorld;
 
         private void OnEnable()
         {
+            createdWorld = null;
             ShowError(string.Empty);
         }
 
@@ -62,15 +65,32 @@ namespace Game.UI
             }
 
             ShowError(string.Empty);
-            WorldLaunchRequest.Set(worldName, seed);
+            if (createdWorld != null &&
+                (!string.Equals(createdWorld.Name, WorldMetadataStorage.NormalizeName(worldName),
+                     StringComparison.OrdinalIgnoreCase) ||
+                 (seedText.Length > 0 && createdWorld.Seed != seed)))
+            {
+                createdWorld = null;
+            }
+
+            if (createdWorld == null)
+            {
+                if (!WorldMetadataStorage.TryCreate(worldName, seed, out createdWorld, out string error))
+                {
+                    ShowError(error);
+                    return;
+                }
+            }
+
+            WorldLaunchRequest.Set(createdWorld.Id, createdWorld.Name, createdWorld.Seed);
             isLoading = true;
             bool wasInteractable = formGroup.interactable;
             formGroup.interactable = false;
 
             try
             {
-                AsyncOperation operation = SceneManager.LoadSceneAsync(
-                    gameSceneName, LoadSceneMode.Single);
+                AsyncOperation operation = SceneManager.LoadSceneAsync(gameSceneName, LoadSceneMode.Single);
+                
                 if (operation == null)
                     throw new InvalidOperationException("Scene loading did not start.");
             }
@@ -79,7 +99,7 @@ namespace Game.UI
                 WorldLaunchRequest.Reset();
                 isLoading = false;
                 formGroup.interactable = wasInteractable;
-                ShowError("Could not load the game scene.");
+                ShowError("World saved, but scene loading failed. Retry Create to open it.");
                 Debug.LogException(exception, this);
             }
         }
