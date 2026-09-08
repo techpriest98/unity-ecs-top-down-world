@@ -343,7 +343,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1863769256185711848, guid: 0b971797c26574811b4deca807afad45, type: 3}
       propertyPath: m_Name
-      value: Settings
+      value: SettingsButton
       objectReference: {fileID: 0}
     - target: {fileID: 4245105308784040989, guid: 0b971797c26574811b4deca807afad45, type: 3}
       propertyPath: m_text
@@ -544,6 +544,11 @@ CanvasRenderer:
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5776001262592754677, guid: 913b6dd34e0f84c89bc55af253e533dc, type: 3}
   m_PrefabInstance: {fileID: 1077966572548614219}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &675307699 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1863769256185711848, guid: 0b971797c26574811b4deca807afad45, type: 3}
+  m_PrefabInstance: {fileID: 1727431720}
   m_PrefabAsset: {fileID: 0}
 --- !u!224 &823508972 stripped
 RectTransform:
@@ -1272,6 +1277,18 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 1231893876990371596, guid: 0b971797c26574811b4deca807afad45, type: 3}
   m_PrefabInstance: {fileID: 1727431720}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1494646078
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 675307699}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fed7354025bc4954b4b9be1a541a3ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.UI.GameExitButton
 --- !u!1 &1547801897
 GameObject:
   m_ObjectHideFlags: 0
@@ -1648,6 +1665,34 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1607326816}
     m_Modifications:
+    - target: {fileID: 1044404767601426280, guid: 0b971797c26574811b4deca807afad45, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1044404767601426280, guid: 0b971797c26574811b4deca807afad45, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1044404767601426280, guid: 0b971797c26574811b4deca807afad45, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1494646078}
+    - target: {fileID: 1044404767601426280, guid: 0b971797c26574811b4deca807afad45, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1044404767601426280, guid: 0b971797c26574811b4deca807afad45, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: ExitGame
+      objectReference: {fileID: 0}
+    - target: {fileID: 1044404767601426280, guid: 0b971797c26574811b4deca807afad45, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: Game.UI.GameExitButton, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 1044404767601426280, guid: 0b971797c26574811b4deca807afad45, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     - target: {fileID: 1231893876990371596, guid: 0b971797c26574811b4deca807afad45, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -1730,7 +1775,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1863769256185711848, guid: 0b971797c26574811b4deca807afad45, type: 3}
       propertyPath: m_Name
-      value: ListButton
+      value: ExitButton
       objectReference: {fileID: 0}
     - target: {fileID: 4245105308784040989, guid: 0b971797c26574811b4deca807afad45, type: 3}
       propertyPath: m_text
@@ -1739,7 +1784,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1863769256185711848, guid: 0b971797c26574811b4deca807afad45, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1494646078}
   m_SourcePrefab: {fileID: 100100000, guid: 0b971797c26574811b4deca807afad45, type: 3}
 --- !u!114 &1747965029 stripped
 MonoBehaviour:
