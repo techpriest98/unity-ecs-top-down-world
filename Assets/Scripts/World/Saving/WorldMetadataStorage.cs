@@ -64,6 +64,34 @@ namespace Game.World.Saving
             }
         }
 
+        public static bool TryDelete(string worldId, out string error)
+        {
+            lock (Sync)
+            {
+                error = string.Empty;
+                if (!Guid.TryParseExact(worldId, "N", out _))
+                {
+                    error = "Invalid world ID.";
+                    return false;
+                }
+
+                try
+                {
+                    string directory = Path.Combine(RootPath, worldId);
+                    // A world already removed is also a successful deletion.
+                    if (!Directory.Exists(directory)) return true;
+                    Directory.Delete(directory, true);
+                    return true;
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                    error = "Could not delete the world. Please try again.";
+                    return false;
+                }
+            }
+        }
+
         public static WorldCreateStatus Create(string name, uint seed,
             out WorldMetadata world, out string error)
         {
@@ -133,6 +161,7 @@ namespace Game.World.Saving
                         }
                         catch (Exception cleanupException) { Debug.LogException(cleanupException); }
                     }
+                    
                     return WorldCreateStatus.StorageError;
                 }
             }

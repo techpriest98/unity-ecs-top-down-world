@@ -19,45 +19,27 @@ namespace Game.Player
             Keyboard keyboard = Keyboard.current;
             Mouse mouse = Mouse.current;
 
-            bool togglePressed =
-                keyboard != null &&
-                keyboard.bKey.wasPressedThisFrame;
+            bool togglePressed = keyboard != null && keyboard.bKey.wasPressedThisFrame;
 
-            Vector2 pointerPosition =
-                mouse != null
-                    ? mouse.position.ReadValue()
-                    : Vector2.zero;
+            Vector2 pointerPosition = mouse != null
+                ? mouse.position.ReadValue()
+                : Vector2.zero;
 
-            bool removePressed =
-                mouse != null &&
-                mouse.leftButton.wasPressedThisFrame;
+            bool removePressed = mouse != null && mouse.leftButton.wasPressedThisFrame;
+            bool placePressed = mouse != null && mouse.rightButton.wasPressedThisFrame;
 
-            bool placePressed =
-                mouse != null &&
-                mouse.rightButton.wasPressedThisFrame;
-
-            foreach (RefRW<PlayerBuildInput> input in
-                     SystemAPI.Query<RefRW<PlayerBuildInput>>()
-                         .WithAll<PlayerTag>())
+            foreach (RefRW<PlayerBuildInput> input in SystemAPI
+                .Query<RefRW<PlayerBuildInput>>()
+                .WithAll<PlayerTag>())
             {
                 if (togglePressed)
                 {
-                    input.ValueRW.IsBuildMode =
-                        !input.ValueRO.IsBuildMode;
+                    input.ValueRW.IsBuildMode = !input.ValueRO.IsBuildMode;
                 }
 
-                input.ValueRW.PointerScreenPosition =
-                    new float2(
-                        pointerPosition.x,
-                        pointerPosition.y);
-
-                input.ValueRW.RemovePressed =
-                    input.ValueRO.IsBuildMode &&
-                    removePressed;
-
-                input.ValueRW.PlacePressed =
-                    input.ValueRO.IsBuildMode &&
-                    placePressed;
+                input.ValueRW.PointerScreenPosition = new float2(pointerPosition.x, pointerPosition.y);
+                input.ValueRW.RemovePressed = input.ValueRO.IsBuildMode && removePressed;
+                input.ValueRW.PlacePressed = input.ValueRO.IsBuildMode && placePressed;
             }
         }
     }
