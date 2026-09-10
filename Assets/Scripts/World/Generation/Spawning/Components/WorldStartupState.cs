@@ -6,7 +6,8 @@ namespace Game.World.Generation.Spawning
     {
         SearchingSpawn,
         PreparingView,
-        Ready
+        Ready,
+        LoadFailed
     }
 
     public struct WorldStartupState : IComponentData

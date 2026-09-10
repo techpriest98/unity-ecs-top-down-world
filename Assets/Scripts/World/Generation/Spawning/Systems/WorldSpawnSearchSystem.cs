@@ -22,6 +22,7 @@ namespace Game.World.Generation.Spawning
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<ChunkGenerated>();
+            state.RequireForUpdate<WorldStartupState>();
 
             searchedChunks = new NativeParallelHashSet<Entity>(64, Allocator.Persistent);
 
@@ -44,6 +45,9 @@ namespace Game.World.Generation.Spawning
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            if (SystemAPI.GetSingleton<WorldStartupState>().Phase != WorldStartupPhase.SearchingSpawn)
+                return;
+
             if (hasResolvedSpawnPoint)
                 return;
 
@@ -75,11 +79,11 @@ namespace Game.World.Generation.Spawning
                     continue;
                 }
 
-                state.EntityManager.SetComponentData(
-                    spawnPointEntity,
-                    new WorldSpawnPointComponent { Position = position });
-                state.EntityManager.SetComponentEnabled<WorldSpawnPointComponent>(
-                    spawnPointEntity, true);
+                state.EntityManager.SetComponentData(spawnPointEntity, new WorldSpawnPointComponent {
+                    Position = position 
+                });
+
+                state.EntityManager.SetComponentEnabled<WorldSpawnPointComponent>(spawnPointEntity, true);
 
                 hasResolvedSpawnPoint = true;
                 return;

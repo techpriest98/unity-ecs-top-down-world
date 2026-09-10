@@ -1,5 +1,6 @@
 using System;
 using Game.World.Generation;
+using Game.World.Saving;
 using TMPro;
 using Unity.Entities;
 using UnityEngine;
@@ -11,10 +12,15 @@ namespace Game.UI
     [DefaultExecutionOrder(-10000)]
     public sealed class PauseMenu : MonoBehaviour
     {
-        [SerializeField] private GameObject pausePanel;
-        [SerializeField] private CanvasGroup formGroup;
-        [SerializeField] private TMP_Text errorText;
-        [SerializeField] private string mainMenuSceneName = "MainMenu";
+        [SerializeField]
+        private GameObject pausePanel;
+        [SerializeField]
+        private CanvasGroup formGroup;
+        [SerializeField]
+        private TMP_Text errorText;
+        [SerializeField] 
+        private string mainMenuSceneName = "MainMenu";
+
         private bool isLeaving;
 
         private SimulationSystemGroup simulationGroup;
@@ -24,21 +30,30 @@ namespace Game.UI
 
         private void Awake()
         {
-            if (pausePanel != null) pausePanel.SetActive(false);
+            if (pausePanel != null)
+                pausePanel.SetActive(false);
         }
 
         private void Update()
         {
-            if (isLeaving) return;
+            if (isLeaving)
+                return;
+
             Keyboard keyboard = Keyboard.current;
-            if (keyboard == null || !keyboard.escapeKey.wasPressedThisFrame) return;
-            if (IsPaused) Resume();
-            else Pause();
+            if (keyboard == null || !keyboard.escapeKey.wasPressedThisFrame)
+                return;
+
+            if (IsPaused)
+                Resume();
+            else
+                Pause();
         }
 
         public void Pause()
         {
-            if (isLeaving || IsPaused || pausePanel == null) return;
+            if (isLeaving || IsPaused || pausePanel == null)
+                return;
+
             Unity.Entities.World world = Unity.Entities.World.DefaultGameObjectInjectionWorld;
             if (world == null || !world.IsCreated) return;
 
@@ -50,7 +65,7 @@ namespace Game.UI
             simulationWasEnabled = group.Enabled;
             group.Enabled = false;
             IsPaused = true;
-            if (errorText != null) errorText.text = string.Empty;
+            if (errorText != null) errorText.text = world.GetExistingSystemManaged<WorldStateSystem>()?.LoadError ?? string.Empty;
             pausePanel.SetActive(true);
         }
 
@@ -87,7 +102,21 @@ namespace Game.UI
             Unity.Entities.World worldToDispose = pausedWorld;
             try
             {
+                WorldStateSystem stateSystem = worldToDispose.GetExistingSystemManaged<WorldStateSystem>();
+
+                if (stateSystem == null)
+                    throw new InvalidOperationException("WorldStateSystem is missing.");
+
+                if (!stateSystem.TrySave(out string saveError))
+                {
+                    isLeaving = false;
+                    formGroup.interactable = wasInteractable;
+                    errorText.text = saveError;
+                    return;
+                }
+
                 AsyncOperation operation = SceneManager.LoadSceneAsync(mainMenuSceneName, LoadSceneMode.Single);
+
                 if (operation == null)
                     throw new InvalidOperationException("Scene loading did not start.");
 
