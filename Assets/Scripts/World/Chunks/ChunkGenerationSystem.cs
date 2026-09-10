@@ -4,6 +4,7 @@ using Game.World.Generation.Biomes;
 using Game.World.Generation.Biomes.RockyShore;
 using Game.World.Generation.Terrain;
 using Game.World.Rendering;
+using Game.World.Saving;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -38,6 +39,7 @@ namespace Game.World.Chunks
             state.RequireForUpdate<WorldGenerationSettingsComponent>();
             state.RequireForUpdate<BiomeTerrainResolver>();
             state.RequireForUpdate<BlockDatabaseComponent>();
+            state.RequireForUpdate<WorldBlockChanges>();
 
             worldHeightMap = default;
             coastDistanceMap = default;
@@ -60,6 +62,10 @@ namespace Game.World.Chunks
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            WorldBlockChanges changes = SystemAPI.GetSingleton<WorldBlockChanges>();
+            if (!changes.IsReady)
+                return;
+
             uint worldSeed = SystemAPI.GetSingleton<WorldSeedComponent>().Value;
 
             WorldGenerationSettingsComponent worldSettings =
@@ -121,6 +127,8 @@ namespace Game.World.Chunks
                     worldSettings,
                     biomeTerrainResolver,
                     blockDatabase);
+
+                changes.Apply(coordinate, blocks);
 
                 ecb.AddComponent<ChunkGenerated>(entity);
                 ecb.SetComponentEnabled<ChunkNeedsProjection>(

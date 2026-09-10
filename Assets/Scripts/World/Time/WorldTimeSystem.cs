@@ -1,3 +1,4 @@
+using Game.World.Generation.Spawning;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -8,7 +9,7 @@ namespace Game.World.Time
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     public partial struct WorldTimeSystem : ISystem
     {
-        private const float SecondsPerHour = 120f;
+        private const float SecondsPerHour = 90f;
 
         public void OnCreate(ref SystemState state)
         {
@@ -34,6 +35,9 @@ namespace Game.World.Time
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            if (SystemAPI.TryGetSingleton<WorldStartupState>(out var startup) &&
+                startup.Phase != WorldStartupPhase.Ready) return;
+
             RefRW<WorldTime> worldTime = SystemAPI.GetSingletonRW<WorldTime>();
 
             worldTime.ValueRW.UpdateTimer += SystemAPI.Time.DeltaTime;

@@ -14,5 +14,22 @@ namespace Game.World.Saving
         public int Hour;
         public float UpdateTimer;
         public float VerticalVelocity;
+        public int ChunkSizeX, ChunkSizeY, ChunkSizeZ;
+        public ChunkChangesData[] Chunks;
+    }
+
+    [Serializable]
+    public sealed class ChunkChangesData
+    {
+        public int X, Z;
+        public BlockChangeData[] Blocks;
+    }
+
+    [Serializable]
+    public sealed class BlockChangeData
+    {
+        public int Index;
+        public int BlockId;
+        public int Durability;
     }
 }

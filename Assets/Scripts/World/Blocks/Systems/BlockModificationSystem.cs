@@ -1,6 +1,7 @@
 using Game.World.Chunks;
 using Game.World.Lighting;
 using Game.World.Rendering;
+using Game.World.Saving;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -40,11 +41,16 @@ namespace Game.World.Blocks
 
             state.RequireForUpdate<BlockModificationQueue>();
             state.RequireForUpdate<DynamicLightingRevision>();
+            state.RequireForUpdate<WorldBlockChanges>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            RefRW<WorldBlockChanges> changes = SystemAPI.GetSingletonRW<WorldBlockChanges>();
+            if (!changes.ValueRO.IsReady)
+                return;
+
             Entity queueEntity =
                 SystemAPI.GetSingletonEntity<BlockModificationQueue>();
 
@@ -136,6 +142,7 @@ namespace Game.World.Blocks
                     continue;
                 }
 
+                changes.ValueRW.Record(chunkCoordinate, blockIndex, request.Value);
                 blocks[blockIndex] = request.Value;
                 worldChanged = true;
 
