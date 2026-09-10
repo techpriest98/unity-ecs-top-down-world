@@ -1,0 +1,69 @@
+{
+    "Version": 1,
+    "BlockWidth": 64,
+    "BlockHeight": 48,
+    "Columns": 8,
+    "Origin": "top-left",
+    "Blocks": [
+        {
+            "BlockId": 9,
+            "MaxDurability": 12,
+            "Column": 0,
+            "Row": 0
+        },
+        {
+            "BlockId": 1,
+            "MaxDurability": 10,
+            "Column": 1,
+            "Row": 0
+        },
+        {
+            "BlockId": 2,
+            "MaxDurability": 20,
+            "Column": 2,
+            "Row": 0
+        },
+        {
+            "BlockId": 3,
+            "MaxDurability": 8,
+            "Column": 3,
+            "Row": 0
+        },
+        {
+            "BlockId": 10,
+            "MaxDurability": 5,
+            "Column": 4,
+            "Row": 0
+        },
+        {
+            "BlockId": 7,
+            "MaxDurability": 12,
+            "Column": 5,
+            "Row": 0
+        },
+        {
+            "BlockId": 11,
+            "MaxDurability": 12,
+            "Column": 6,
+            "Row": 0
+        },
+        {
+            "BlockId": 6,
+            "MaxDurability": 6,
+            "Column": 7,
+            "Row": 0
+        },
+        {
+            "BlockId": 4,
+            "MaxDurability": 1,
+            "Column": 0,
+            "Row": 1
+        },
+        {
+            "BlockId": 5,
+            "MaxDurability": 1,
+            "Column": 1,
+            "Row": 1
+        }
+    ]
+}
