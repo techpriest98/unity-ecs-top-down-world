@@ -46,9 +46,13 @@ Material:
     m_Ints: []
     m_Floats:
     - _EnableExternalAlpha: 0
+    - _PlayerClipFadeWidth: 32
+    - _PlayerClipGrainSize: 2
+    - _PlayerClipRadius: 64
+    - _PlayerClipping: 0
     - _WaterAbsorption: 0.372
     - _WaterOpacity: 0.75
-    - _WaterTopInsetPixels: 3
+    - _WaterTopInsetPixels: 4
     - _ZWrite: 0
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}

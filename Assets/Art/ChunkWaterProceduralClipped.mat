@@ -53,7 +53,7 @@ Material:
     - _PlayerClipping: 1
     - _WaterAbsorption: 0.372
     - _WaterOpacity: 0.75
-    - _WaterTopInsetPixels: 3
+    - _WaterTopInsetPixels: 4
     - _ZWrite: 0
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
