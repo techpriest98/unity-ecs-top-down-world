@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Game.World.Blocks;
+using Game.World.Rendering;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,6 +13,7 @@ namespace Game.EditorTools.BlockAtlas
     {
         [SerializeField] private BlockAtlasDraft draft;
         [SerializeField] private BlockDatabase source;
+        [SerializeField] private Texture2D gameColorAtlas, gameNormalAtlas;
         [SerializeField] private int selected, element, footIndex = -1;
         [SerializeField] private Color brushColor = Color.white;
         [SerializeField] private bool normalMode;
@@ -58,9 +60,11 @@ namespace Game.EditorTools.BlockAtlas
 
         private void OnGUI()
         {
-            using (new EditorGUI.DisabledScope(EditorApplication.isPlayingOrWillChangePlaymode))
+            using (new EditorGUI.DisabledScope(EditorApplication.isCompiling ||
+                (EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying)))
             {
                 Toolbar();
+                DrawGameTargets();
                 if (draft == null)
                 {
                     EditorGUILayout.HelpBox("Create a draft, then import block IDs from your database. Textures start transparent.", MessageType.Info);
@@ -111,6 +115,153 @@ namespace Game.EditorTools.BlockAtlas
                         if (GUILayout.Button("Export PNG + JSON", EditorStyles.toolbarButton)) Export();
                 }
             }
+        }
+
+        private void DrawGameTargets()
+        {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                gameColorAtlas = (Texture2D)EditorGUILayout.ObjectField(
+                    "Game color", gameColorAtlas, typeof(Texture2D), false);
+                gameNormalAtlas = (Texture2D)EditorGUILayout.ObjectField(
+                    "Game normals", gameNormalAtlas, typeof(Texture2D), false);
+                if (GUILayout.Button("Use scene renderer", GUILayout.Width(140))) UseSceneRenderer();
+                using (new EditorGUI.DisabledScope(draft == null || draft.Blocks.Count == 0 ||
+                    source == null || gameColorAtlas == null || gameNormalAtlas == null))
+                    if (GUILayout.Button("Apply to Game", GUILayout.Width(120))) ApplyToGame();
+            }
+        }
+
+        private void UseSceneRenderer()
+        {
+            var renderers = Resources.FindObjectsOfTypeAll<ChunkProceduralRenderer>()
+                .Where(r => !EditorUtility.IsPersistent(r) && r.gameObject.scene.IsValid() &&
+                    r.gameObject.scene.isLoaded).ToArray();
+            if (renderers.Length != 1)
+            {
+                ShowNotification(new GUIContent("Expected one scene renderer. Assign textures and database manually."));
+                return;
+            }
+            var renderer = new SerializedObject(renderers[0]);
+            gameColorAtlas = renderer.FindProperty("blockAtlas").objectReferenceValue as Texture2D;
+            gameNormalAtlas = renderer.FindProperty("blockNormalAtlas").objectReferenceValue as Texture2D;
+            source = renderer.FindProperty("blockDatabase").objectReferenceValue as BlockDatabase;
+        }
+
+        private static string GameTexturePath(Texture2D texture)
+        {
+            string path = AssetDatabase.GetAssetPath(texture);
+            if (!path.StartsWith("Assets/", StringComparison.Ordinal) ||
+                !path.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("Choose existing PNG texture assets inside Assets.");
+            if (!AssetDatabase.IsOpenForEdit(path))
+                throw new InvalidOperationException("Texture is not editable: " + path);
+            return path;
+        }
+
+        private void ValidateGameMapping(int columns)
+        {
+            var ids = new System.Collections.Generic.HashSet<BlockId>();
+            for (int i = 0; i < draft.Blocks.Count; i++)
+            {
+                if (!ids.Add(draft.Blocks[i].Id))
+                    throw new InvalidOperationException("Duplicate draft Block ID: " + draft.Blocks[i].Id);
+            }
+            foreach (var block in source.Blocks ?? Array.Empty<BlockDefinition>())
+            {
+                if (block.BlockId == BlockId.Air) continue;
+                int index = -1;
+                for (int i = 0; i < draft.Blocks.Count; i++)
+                    if (draft.Blocks[i].Id == block.BlockId) { index = i; break; }
+                if (index < 0 || block.AtlasColumn != index % columns || block.AtlasRow != index / columns)
+                    throw new InvalidOperationException(
+                        "Atlas mapping differs for " + block.BlockId +
+                        ". Update BlockDatabase coordinates and restart Play Mode before applying.");
+            }
+        }
+
+        private static void ImportGameTexture(string path, bool normal, int size)
+        {
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate |
+                ImportAssetOptions.ForceSynchronousImport);
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null) throw new InvalidOperationException("Texture importer missing: " + path);
+            // The shader reads encoded RGB normals directly with Load().
+            importer.textureType = TextureImporterType.Default;
+            importer.sRGBTexture = !normal;
+            importer.alphaSource = TextureImporterAlphaSource.FromInput;
+            importer.alphaIsTransparency = false;
+            importer.mipmapEnabled = false;
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.filterMode = FilterMode.Point;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.crunchedCompression = false;
+            importer.maxTextureSize = Mathf.Max(32, Mathf.NextPowerOfTwo(size));
+            importer.SaveAndReimport();
+        }
+
+        private void ApplyToGame()
+        {
+            EndStroke();
+            Texture2D texture = null;
+            try
+            {
+                string colorPath = GameTexturePath(gameColorAtlas);
+                string normalPath = GameTexturePath(gameNormalAtlas);
+                if (colorPath == normalPath)
+                    throw new InvalidOperationException("Color and normal atlases must be different assets.");
+                int columns = Mathf.Clamp(draft.Columns, 1, 64);
+                ValidateGameMapping(columns);
+                int rows = (draft.Blocks.Count + columns - 1) / columns;
+                int width = columns * 64, height = rows * 48;
+                if (height > 16384 || width > SystemInfo.maxTextureSize || height > SystemInfo.maxTextureSize)
+                    throw new InvalidOperationException("Atlas exceeds supported texture dimensions.");
+                var pixels = new Color32[width * height];
+                var normals = new Color32[width * height];
+                for (int i = 0; i < draft.Blocks.Count; i++)
+                {
+                    var block = draft.Blocks[i];
+                    if (block.EnsureNormals()) EditorUtility.SetDirty(draft);
+                    for (int y = 0; y < 48; y++)
+                    {
+                        int destination = ((i / columns) * 48 + y) * width + (i % columns) * 64;
+                        Array.Copy(block.Pixels, y * 64, pixels, destination, 64);
+                        Array.Copy(block.NormalPixels, y * 64, normals, destination, 64);
+                    }
+                }
+                UpdateTexture(ref texture, pixels, width, height);
+                byte[] colorPng = texture.EncodeToPNG();
+                UpdateTexture(ref texture, normals, width, height);
+                byte[] normalPng = texture.EncodeToPNG();
+                byte[] oldColor = File.ReadAllBytes(colorPath);
+                byte[] oldNormal = File.ReadAllBytes(normalPath);
+                try
+                {
+                    File.WriteAllBytes(colorPath, colorPng);
+                    File.WriteAllBytes(normalPath, normalPng);
+                }
+                catch
+                {
+                    File.WriteAllBytes(colorPath, oldColor);
+                    File.WriteAllBytes(normalPath, oldNormal);
+                    throw;
+                }
+                ImportGameTexture(colorPath, false, Mathf.Max(width, height));
+                ImportGameTexture(normalPath, true, Mathf.Max(width, height));
+                gameColorAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>(colorPath);
+                gameNormalAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>(normalPath);
+                AssetDatabase.SaveAssets();
+                EditorApplication.QueuePlayerLoopUpdate();
+                SceneView.RepaintAll();
+                ShowNotification(new GUIContent("Game color and normal atlases saved."));
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                ShowNotification(new GUIContent("Apply failed: " + ex.Message));
+            }
+            finally { if (texture != null) DestroyImmediate(texture); }
         }
 
         private void ImportIds()
@@ -212,7 +363,7 @@ namespace Game.EditorTools.BlockAtlas
                 GUILayout.Space(12);
                 GUILayout.Label("LMB: paint\nRMB: erase\nAlt + LMB: pick color\nCtrl/Cmd + Z: undo", EditorStyles.wordWrappedMiniLabel);
                 GUILayout.Space(12);
-                GUILayout.Label("Draft only. Database and game textures are unchanged.", EditorStyles.wordWrappedMiniLabel);
+                GUILayout.Label("Painting edits the draft. Apply to Game saves the selected game textures.", EditorStyles.wordWrappedMiniLabel);
                 EditorGUILayout.EndScrollView();
             }
         }

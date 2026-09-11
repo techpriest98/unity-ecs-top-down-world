@@ -10,8 +10,6 @@ Shader "Game/World/ChunkProcedural"
 
         _BlockAtlas("Block Atlas", 2D) = "white" {}
         _BlockNormalAtlas("Block Normal Atlas", 2D) = "bump" {}
-        _TopOverlayAtlas("Top Overlay Atlas", 2D) = "black" {}
-        _TopOverlayNormalAtlas("Top Overlay Normal Atlas", 2D) = "bump" {}
         _PlayerClipRadius("Player Clip Radius", Range(0.0, 1024.0)) = 64.0
         _PlayerClipFadeWidth("Player Clip Fade Width", Range(0.0, 256.0)) = 32.0
         _PlayerClipGrainSize("Player Clip Grain Size", Range(1.0, 8.0)) = 2.0
@@ -50,13 +48,11 @@ Shader "Game/World/ChunkProcedural"
 
             static const uint TILE_WIDTH = 32;
             static const uint TILE_HEIGHT = 16;
-            static const uint FACE_COUNT = 3;
+            static const uint ATLAS_GROUP_WIDTH = 64;
+            static const uint ATLAS_GROUP_HEIGHT = 48;
             static const float MINIMUM_AMBIENT_VISIBILITY = 0.08;
 
             // Autotiling
-            static const uint OVERLAY_GROUP_WIDTH = 32;
-            static const uint OVERLAY_GROUP_HEIGHT = 32;
-            static const uint EDGE_THICKNESS = 4;
             static const uint NORTH_BIT = 1 << 0;
             static const uint EAST_BIT = 1 << 1;
             static const uint SOUTH_BIT = 1 << 2;
@@ -103,10 +99,7 @@ Shader "Game/World/ChunkProcedural"
 
             TEXTURE2D(_BlockNormalAtlas);
 
-            TEXTURE2D(_TopOverlayAtlas);
-            TEXTURE2D(_TopOverlayNormalAtlas);
 
-            float4 _TopOverlayAtlas_TexelSize;
 
             // ============================================================
             // Projection
@@ -256,6 +249,7 @@ Shader "Game/World/ChunkProcedural"
                 nointerpolation uint NeighborMask : TEXCOORD3;
                 nointerpolation uint LightData : TEXCOORD4;
                 nointerpolation float IsSelected : TEXCOORD5;
+                nointerpolation uint FootBlockId : TEXCOORD6;
             };
 
             // ============================================================
@@ -288,6 +282,7 @@ Shader "Game/World/ChunkProcedural"
                 output.BlockId = GetBlockId(cell.BlockData);
                 output.FaceIndex = GetFaceIndex(GetFaceType(cell.BlockData));
                 output.NeighborMask = cell.FaceData & 0xFF;
+                output.FootBlockId = (cell.FaceData >> 8) & 0xFF;
                 output.LightData = cell.LightData;
 
                 uint2 selectedPosition = UnpackPosition(_SelectedProjectionPosition);
@@ -348,277 +343,144 @@ Shader "Game/World/ChunkProcedural"
                 return normalize(lerp(baseNormal, DecodeObjectNormal(overlayNormal), blend));
             }
 
-            float4 LoadTopOverlay(uint2 atlasPosition, uint2 partOffset, uint2 partPixel)
+            // Atlas coordinates and database rows use a top-left origin.
+            int3 GetAtlasPixel(uint2 atlasPosition, uint2 pixel)
             {
-                uint2 groupOrigin = atlasPosition * uint2(OVERLAY_GROUP_WIDTH, OVERLAY_GROUP_HEIGHT);
-                uint2 atlasPixel = groupOrigin + partOffset + partPixel;
-
-                return _TopOverlayAtlas.Load(int3(atlasPixel, 0));
+                uint2 position = atlasPosition *
+                    uint2(ATLAS_GROUP_WIDTH, ATLAS_GROUP_HEIGHT) + pixel;
+                return int3(position.x, (uint)_BlockAtlas_TexelSize.w - 1u - position.y, 0);
             }
 
-            float4 LoadTopOverlayNormal(uint2 atlasPosition, uint2 partOffset, uint2 partPixel)
+            void ApplyOverlay(
+                inout float4 color,
+                inout float3 normalOS,
+                uint2 atlasPosition,
+                uint2 pixel,
+                uint2 source,
+                uint2 destination,
+                uint2 size)
             {
-                uint2 groupOrigin = atlasPosition * uint2(OVERLAY_GROUP_WIDTH, OVERLAY_GROUP_HEIGHT);
-                uint2 atlasPixel = groupOrigin + partOffset + partPixel;
+                if (any(pixel < destination) || any(pixel >= destination + size))
+                    return;
 
-                return _TopOverlayNormalAtlas.Load(int3(atlasPixel, 0));
+                int3 atlasPixel = GetAtlasPixel(atlasPosition, source + pixel - destination);
+                float4 overlay = _BlockAtlas.Load(atlasPixel);
+                if (overlay.a <= 0.0)
+                    return;
+
+                normalOS = BlendOverlayNormal(
+                    normalOS, _BlockNormalAtlas.Load(atlasPixel), overlay.a);
+                color = BlendOverlay(color, overlay);
             }
 
-            float4 ApplyTopEdges(
-                float4 color,
-                inout float3 normalTS,
+            void ApplyTopOverlays(
+                inout float4 color,
+                inout float3 normalOS,
                 uint neighborMask,
                 uint2 atlasPosition,
-                uint localX,
-                uint localY)
-            {
-                // North:
-                if (!HasNeighbor(neighborMask, NORTH_BIT) && localY >= TILE_HEIGHT - EDGE_THICKNESS)
-                {
-                    float4 overlay = LoadTopOverlay(
-                        atlasPosition,
-                        uint2(0, 28),
-                        uint2(localX, localY - (TILE_HEIGHT - EDGE_THICKNESS)));
-
-                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
-                        atlasPosition, uint2(0, 28),
-                        uint2(localX, localY - (TILE_HEIGHT - EDGE_THICKNESS))), overlay.a);
-                    color = BlendOverlay(color, overlay);
-                }
-
-                // South:
-                if (!HasNeighbor(neighborMask, SOUTH_BIT) && localY < EDGE_THICKNESS)
-                {
-                    float4 overlay = LoadTopOverlay(
-                        atlasPosition,
-                        uint2(0, 24),
-                        uint2(localX, localY));
-
-                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
-                        atlasPosition, uint2(0, 24), uint2(localX, localY)), overlay.a);
-                    color = BlendOverlay(color, overlay);
-                }
-
-                // West:
-                if (!HasNeighbor(neighborMask, WEST_BIT) && localX < EDGE_THICKNESS)
-                {
-                    float4 overlay = LoadTopOverlay(
-                        atlasPosition,
-                        uint2(0, 8),
-                        uint2(localX, localY));
-
-                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
-                        atlasPosition, uint2(0, 8), uint2(localX, localY)), overlay.a);
-                    color = BlendOverlay(color, overlay);
-                }
-
-                // East:
-                if (!HasNeighbor(neighborMask, EAST_BIT) && localX >= TILE_WIDTH - EDGE_THICKNESS)
-                {
-                    float4 overlay = LoadTopOverlay(
-                        atlasPosition,
-                        uint2(4, 8),
-                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS), localY));
-
-                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
-                        atlasPosition, uint2(4, 8),
-                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS), localY)), overlay.a);
-                    color = BlendOverlay(color, overlay);
-                }
-
-                return color;
-            }
-
-            float4 ApplyTopOuterCorners(
-                float4 color,
-                inout float3 normalTS,
-                uint neighborMask,
-                uint2 atlasPosition,
-                uint localX,
-                uint localY)
-            {
-                bool northOpen = !HasNeighbor(neighborMask, NORTH_BIT);
-                bool eastOpen = !HasNeighbor(neighborMask, EAST_BIT);
-                bool southOpen = !HasNeighbor(neighborMask, SOUTH_BIT);
-                bool westOpen = !HasNeighbor(neighborMask, WEST_BIT);
-
-                // ========================================================
-                // Outer North West
-                // ========================================================
-
-                if (northOpen && westOpen &&
-                    localX < EDGE_THICKNESS &&
-                    localY >= TILE_HEIGHT - EDGE_THICKNESS)
-                {
-                    float4 overlay = LoadTopOverlay(
-                        atlasPosition,
-                        uint2(8, 20),
-                        uint2(localX, localY - (TILE_HEIGHT - EDGE_THICKNESS)));
-
-                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
-                        atlasPosition, uint2(8, 20),
-                        uint2(localX, localY - (TILE_HEIGHT - EDGE_THICKNESS))), overlay.a);
-                    color = BlendOverlay(color, overlay);
-                }
-
-                // ========================================================
-                // Outer North East
-                // ========================================================
-
-                if (northOpen && eastOpen &&
-                    localX >= TILE_WIDTH - EDGE_THICKNESS &&
-                    localY >= TILE_HEIGHT - EDGE_THICKNESS)
-                {
-                    float4 overlay = LoadTopOverlay(
-                        atlasPosition,
-                        uint2(12, 20),
-                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS),
-                        localY - (TILE_HEIGHT - EDGE_THICKNESS)));
-
-                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
-                        atlasPosition, uint2(12, 20),
-                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS),
-                        localY - (TILE_HEIGHT - EDGE_THICKNESS))), overlay.a);
-                    color = BlendOverlay(color, overlay);
-                }
-
-                // ========================================================
-                // Outer South West
-                // ========================================================
-
-                if (southOpen && westOpen &&
-                    localX < EDGE_THICKNESS &&
-                    localY < EDGE_THICKNESS)
-                {
-                    float4 overlay = LoadTopOverlay(
-                        atlasPosition,
-                        uint2(16, 20),
-                        uint2(localX, localY));
-
-                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
-                        atlasPosition, uint2(16, 20), uint2(localX, localY)), overlay.a);
-                    color = BlendOverlay(color, overlay);
-                }
-
-                // ========================================================
-                // Outer South East
-                // ========================================================
-
-                if (southOpen && eastOpen &&
-                    localX >= TILE_WIDTH - EDGE_THICKNESS &&
-                    localY < EDGE_THICKNESS)
-                {
-                    float4 overlay = LoadTopOverlay(
-                        atlasPosition,
-                        uint2(20, 20),
-                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS),
-                        localY));
-
-                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
-                        atlasPosition, uint2(20, 20),
-                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS), localY)), overlay.a);
-                    color = BlendOverlay(color, overlay);
-                }
-
-                return color;
-            }
-
-            float4 ApplyTopInnerCorners(
-                float4 color,
-                inout float3 normalTS,
-                uint neighborMask,
-                uint2 atlasPosition,
-                uint localX,
-                uint localY)
+                uint2 pixel)
             {
                 bool north = HasNeighbor(neighborMask, NORTH_BIT);
                 bool east = HasNeighbor(neighborMask, EAST_BIT);
                 bool south = HasNeighbor(neighborMask, SOUTH_BIT);
                 bool west = HasNeighbor(neighborMask, WEST_BIT);
-                bool northEast = HasNeighbor(neighborMask, NORTH_EAST_BIT);
-                bool southEast = HasNeighbor(neighborMask, SOUTH_EAST_BIT);
-                bool southWest = HasNeighbor(neighborMask, SOUTH_WEST_BIT);
-                bool northWest = HasNeighbor(neighborMask, NORTH_WEST_BIT);
 
-                // ========================================================
-                // Inner North West
-                // ========================================================
+                if (!north)
+                    ApplyOverlay(color, normalOS, atlasPosition, pixel,
+                        uint2(32, 0), uint2(0, 0), uint2(32, 4));
 
-                if (north && west && !northWest &&
-                    localX < EDGE_THICKNESS &&
-                    localY >= TILE_HEIGHT - EDGE_THICKNESS)
-                {
-                    float4 overlay = LoadTopOverlay(
-                        atlasPosition,
-                        uint2(8, 16),
-                        uint2(localX, localY - (TILE_HEIGHT - EDGE_THICKNESS)));
+                if (!south)
+                    ApplyOverlay(color, normalOS, atlasPosition, pixel,
+                        uint2(32, 4), uint2(0, 12), uint2(32, 4));
 
-                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
-                        atlasPosition, uint2(8, 16),
-                        uint2(localX, localY - (TILE_HEIGHT - EDGE_THICKNESS))), overlay.a);
-                    color = BlendOverlay(color, overlay);
-                }
+                if (!west)
+                    ApplyOverlay(color, normalOS, atlasPosition, pixel,
+                        uint2(32, 8), uint2(0, 0), uint2(4, 16));
 
-                // ========================================================
-                // Inner North East
-                // ========================================================
+                if (!east)
+                    ApplyOverlay(color, normalOS, atlasPosition, pixel,
+                        uint2(36, 8), uint2(28, 0), uint2(4, 16));
 
-                if (north && east && !northEast &&
-                    localX >= TILE_WIDTH - EDGE_THICKNESS &&
-                    localY >= TILE_HEIGHT - EDGE_THICKNESS)
-                {
-                    float4 overlay = LoadTopOverlay(
-                        atlasPosition,
-                        uint2(12, 16),
-                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS),
-                        localY - (TILE_HEIGHT - EDGE_THICKNESS)));
+                if (!north && !west)
+                    ApplyOverlay(color, normalOS, atlasPosition, pixel,
+                        uint2(40, 8), uint2(0, 0), uint2(4, 4));
 
-                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
-                        atlasPosition, uint2(12, 16),
-                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS),
-                        localY - (TILE_HEIGHT - EDGE_THICKNESS))), overlay.a);
-                    color = BlendOverlay(color, overlay);
-                }
+                if (!north && !east)
+                    ApplyOverlay(color, normalOS, atlasPosition, pixel,
+                        uint2(44, 8), uint2(28, 0), uint2(4, 4));
 
-                // ========================================================
-                // Inner South West
-                // ========================================================
+                if (!south && !west)
+                    ApplyOverlay(color, normalOS, atlasPosition, pixel,
+                        uint2(48, 8), uint2(0, 12), uint2(4, 4));
 
-                if (south && west && !southWest &&
-                    localX < EDGE_THICKNESS &&
-                    localY < EDGE_THICKNESS)
-                {
-                    float4 overlay = LoadTopOverlay(
-                        atlasPosition,
-                        uint2(16, 16),
-                        uint2(localX, localY));
+                if (!south && !east)
+                    ApplyOverlay(color, normalOS, atlasPosition, pixel,
+                        uint2(52, 8), uint2(28, 12), uint2(4, 4));
 
-                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
-                        atlasPosition, uint2(16, 16), uint2(localX, localY)), overlay.a);
-                    color = BlendOverlay(color, overlay);
-                }
+                if (north && west && !HasNeighbor(neighborMask, NORTH_WEST_BIT))
+                    ApplyOverlay(color, normalOS, atlasPosition, pixel,
+                        uint2(40, 12), uint2(0, 0), uint2(4, 4));
 
-                // ========================================================
-                // Inner South East
-                // ========================================================
+                if (north && east && !HasNeighbor(neighborMask, NORTH_EAST_BIT))
+                    ApplyOverlay(color, normalOS, atlasPosition, pixel,
+                        uint2(44, 12), uint2(28, 0), uint2(4, 4));
 
-                if (south && east && !southEast &&
-                    localX >= TILE_WIDTH - EDGE_THICKNESS &&
-                    localY < EDGE_THICKNESS)
-                {
-                    float4 overlay = LoadTopOverlay(
-                        atlasPosition,
-                        uint2(20, 16),
-                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS),
-                        localY));
+                if (south && west && !HasNeighbor(neighborMask, SOUTH_WEST_BIT))
+                    ApplyOverlay(color, normalOS, atlasPosition, pixel,
+                        uint2(48, 12), uint2(0, 12), uint2(4, 4));
 
-                    normalTS = BlendOverlayNormal(normalTS, LoadTopOverlayNormal(
-                        atlasPosition, uint2(20, 16),
-                        uint2(localX - (TILE_WIDTH - EDGE_THICKNESS), localY)), overlay.a);
-                    color = BlendOverlay(color, overlay);
-                }
+                if (south && east && !HasNeighbor(neighborMask, SOUTH_EAST_BIT))
+                    ApplyOverlay(color, normalOS, atlasPosition, pixel,
+                        uint2(52, 12), uint2(28, 12), uint2(4, 4));
+            }
 
-                return color;
+            void ApplySideOverlays(
+                inout float4 color,
+                inout float3 normalOS,
+                uint neighborMask,
+                uint footBlockId,
+                uint2 atlasPosition,
+                uint2 pixel)
+            {
+                bool aboveOpen = !HasNeighbor(neighborMask, NORTH_BIT);
+                bool rightOpen = !HasNeighbor(neighborMask, EAST_BIT);
+                bool leftOpen = !HasNeighbor(neighborMask, WEST_BIT);
+                bool hasFoot = footBlockId != 0u && footBlockId < (uint)_BlockDatabaseCount;
+                uint2 footAtlasPosition = uint2(0, 0);
+                if (hasFoot)
+                    footAtlasPosition = UnpackAtlasPosition(_BlockDatabase[footBlockId].AtlasPosition);
+
+                if (leftOpen)
+                    ApplyOverlay(color, normalOS, atlasPosition, pixel,
+                        uint2(56, 8), uint2(0, 16), uint2(4, 32));
+
+                if (rightOpen)
+                    ApplyOverlay(color, normalOS, atlasPosition, pixel,
+                        uint2(60, 8), uint2(28, 16), uint2(4, 32));
+
+                if (aboveOpen)
+                    ApplyOverlay(color, normalOS, atlasPosition, pixel,
+                        uint2(32, 40), uint2(0, 16), uint2(32, 4));
+
+                if (hasFoot)
+                    ApplyOverlay(color, normalOS, footAtlasPosition, pixel,
+                        uint2(32, 44), uint2(0, 44), uint2(32, 4));
+
+                if (aboveOpen && leftOpen)
+                    ApplyOverlay(color, normalOS, atlasPosition, pixel,
+                        uint2(40, 16), uint2(0, 16), uint2(4, 4));
+
+                if (aboveOpen && rightOpen)
+                    ApplyOverlay(color, normalOS, atlasPosition, pixel,
+                        uint2(44, 16), uint2(28, 16), uint2(4, 4));
+
+                if (hasFoot && leftOpen)
+                    ApplyOverlay(color, normalOS, footAtlasPosition, pixel,
+                        uint2(40, 20), uint2(0, 44), uint2(4, 4));
+
+                if (hasFoot && rightOpen)
+                    ApplyOverlay(color, normalOS, footAtlasPosition, pixel,
+                        uint2(44, 20), uint2(28, 44), uint2(4, 4));
             }
 
             // ============================================================
@@ -674,57 +536,23 @@ Shader "Game/World/ChunkProcedural"
                     (uint)(localUv.y * TILE_HEIGHT),
                     TILE_HEIGHT - 1);
 
-                uint atlasPixelX =
-                    atlasPosition.x * TILE_WIDTH +
-                    localX;
+                uint2 pixel = uint2(
+                    localX, input.FaceIndex * TILE_HEIGHT + TILE_HEIGHT - 1u - localY);
+                int3 atlasPixel = GetAtlasPixel(atlasPosition, pixel);
 
-                uint blockGroupHeight =
-                    TILE_HEIGHT * FACE_COUNT;
+                float4 color = _BlockAtlas.Load(atlasPixel);
+                float3 normalOS = DecodeObjectNormal(_BlockNormalAtlas.Load(atlasPixel));
 
-                uint atlasFaceRow =
-                    (FACE_COUNT - 1) - input.FaceIndex;
-
-                uint atlasPixelY =
-                    atlasPosition.y * blockGroupHeight +
-                    atlasFaceRow * TILE_HEIGHT +
-                    localY;
-
-                float4 color = _BlockAtlas.Load(
-                    int3(atlasPixelX, atlasPixelY, 0));
-
-                float3 normalOS = DecodeObjectNormal(
-                    _BlockNormalAtlas.Load(
-                        int3(atlasPixelX, atlasPixelY, 0)));
-                
-                // ========================================================
-                // Autotiling
-                // ========================================================
-
-                if (input.FaceIndex == 0)
+                if (input.FaceIndex == 0u)
                 {
-                    color = ApplyTopEdges(
-                        color,
-                        normalOS,
-                        input.NeighborMask,
-                        atlasPosition,
-                        localX,
-                        localY);
-
-                    color = ApplyTopOuterCorners(
-                        color,
-                        normalOS,
-                        input.NeighborMask,
-                        atlasPosition,
-                        localX,
-                        localY);
-
-                    color = ApplyTopInnerCorners(
-                        color,
-                        normalOS,
-                        input.NeighborMask,
-                        atlasPosition,
-                        localX,
-                        localY);
+                    ApplyTopOverlays(
+                        color, normalOS, input.NeighborMask, atlasPosition, pixel);
+                }
+                else
+                {
+                    ApplySideOverlays(
+                        color, normalOS, input.NeighborMask,
+                        input.FootBlockId, atlasPosition, pixel);
                 }
 
                 #if defined(_DEBUG_NORMALS)

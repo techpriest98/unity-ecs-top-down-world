@@ -310,52 +310,76 @@ namespace Game.World.Rendering
             float3 playerPosition)
         {
             if (projectionY < 2)
-            {
                 return;
-            }
 
-            int3 blockWorld =
-                transparentWorld +
-                ViewDirectionUtility
-                    .GetAwayFromCameraOffset(
-                        direction);
+            int3 blockWorld = transparentWorld + ViewDirectionUtility
+                .GetAwayFromCameraOffset(direction);
 
-            BlockData block =
-                blockAccessor.GetBlockOrAir(
-                    chunkCoordinate,
-                    blockWorld.x,
-                    blockWorld.y,
-                    blockWorld.z);
+            BlockData block = blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                blockWorld.x,
+                blockWorld.y,
+                blockWorld.z);
 
             if (!IsOpaque(block.BlockId))
-            {
                 return;
-            }
 
-            float3 facePosition =
-                GetGlobalPosition(
-                    chunkCoordinate,
-                    blockWorld,
-                    0.5f);
+            float3 facePosition = GetGlobalPosition(
+                chunkCoordinate, blockWorld, 0.5f);
 
             if (ShouldClipOpaqueFace(
-                    projectionClippingEnabled,
-                    playerPosition,
-                    facePosition,
-                    blockWorld.y,
-                    direction))
-            {
+                projectionClippingEnabled,
+                playerPosition,
+                facePosition,
+                blockWorld.y,
+                direction))
                 return;
-            }
+
+            int3 rightOffset = direction switch
+            {
+                ViewDirection.Front => new int3(1, 0, 0),
+                ViewDirection.Back => new int3(-1, 0, 0),
+                ViewDirection.Right => new int3(0, 0, 1),
+                ViewDirection.Left => new int3(0, 0, -1),
+                _ => int3.zero
+            };
+
+            int3 aboveWorld = blockWorld + new int3(0, 1, 0);
+            int3 rightWorld = blockWorld + rightOffset;
+            int3 leftWorld = blockWorld - rightOffset;
+
+            BlockData aboveBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate, aboveWorld.x, aboveWorld.y, aboveWorld.z);
+            BlockData rightBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate, rightWorld.x, rightWorld.y, rightWorld.z);
+            BlockData leftBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate, leftWorld.x, leftWorld.y, leftWorld.z);
+
+            byte neighborMask = (byte)(
+                (IsOpaque(aboveBlock.BlockId) ? 1 : 0) |
+                (IsOpaque(rightBlock.BlockId) ? 2 : 0) |
+                (IsOpaque(leftBlock.BlockId) ? 8 : 0));
+
+            int3 footWorld = transparentWorld + new int3(0, -1, 0);
+            BlockData footBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate, footWorld.x, footWorld.y, footWorld.z);
+
+            BlockId footBlockId = IsOpaque(footBlock.BlockId)
+                ? footBlock.BlockId
+                : BlockId.Air;
 
             writer.TryAddSideUpper(
                 block,
+                neighborMask,
+                footBlockId,
                 sourceAirIndex,
                 projectionX,
                 checked((ushort)(projectionY - 2)));
 
             writer.TryAddSideLower(
                 block,
+                neighborMask,
+                footBlockId,
                 sourceAirIndex,
                 projectionX,
                 checked((ushort)(projectionY - 1)));

@@ -39,14 +39,36 @@ namespace Game.World.Rendering
         public ushort SourceAirIndex;
 
         /// <summary>
-        /// Opaque:
-        /// bits 0-7 NeighborMask.
+        /// Opaque Top:
+        /// bits 0-7 NeighborMask (unchanged).
+        ///
+        /// Opaque SideUpper / SideLower:
+        /// bits 0-7 NeighborMask:
+        ///   bit 0 North = above solid,
+        ///   bit 1 East = right solid,
+        ///   bit 3 West = left solid.
+        /// Other neighbor bits are currently unused for Side.
+        /// bits 8-15 FootBlockId (Air means no bottom overlay).
+        /// Directions are relative to the current view.
+        /// Both Side halves receive the same data.
         ///
         /// Water:
         /// bits 0-7 OpticalDepth,
         /// bit 8 TopInset.
         /// </summary>
         public ushort FaceData;
+
+        public void SetTopNeighborMask(byte neighborMask)
+        {
+            FaceData = neighborMask;
+        }
+
+        // Use only for opaque Side faces. The caller resolves view-relative
+        // neighbors and the solid block below the air cell in front of the wall.
+        public void SetSideFaceData(byte neighborMask, BlockId footBlockId)
+        {
+            FaceData = (ushort)(neighborMask | ((uint)footBlockId << 8));
+        }
 
         public ProjectedCellData(
             BlockData block,

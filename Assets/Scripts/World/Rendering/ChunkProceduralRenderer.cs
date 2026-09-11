@@ -35,13 +35,7 @@ namespace Game.World.Rendering
         private Texture2D blockAtlas;
 
         [SerializeField]
-        private Texture2D topOverlayAtlas;
-
-        [SerializeField]
         private Texture2D blockNormalAtlas;
-
-        [SerializeField]
-        private Texture2D topOverlayNormalAtlas;
 
         [SerializeField]
         private BlockDatabase blockDatabase;
@@ -310,9 +304,7 @@ namespace Game.World.Rendering
                 projectedCellsBuffer,
                 projectedCellsCount,
                 opaqueWorldBounds,
-                topOverlayAtlas,
-                blockNormalAtlas,
-                topOverlayNormalAtlas);
+                blockNormalAtlas);
         }
 
         private void RenderWater()
@@ -332,8 +324,6 @@ namespace Game.World.Rendering
                 projectedWaterCellsBuffer,
                 projectedWaterCellsCount,
                 waterWorldBounds,
-                null,
-                null,
                 null);
         }
 
@@ -353,9 +343,7 @@ namespace Game.World.Rendering
                 projectedClippedCellsBuffer,
                 projectedClippedCellsCount,
                 clippedWorldBounds,
-                topOverlayAtlas,
-                blockNormalAtlas,
-                topOverlayNormalAtlas);
+                blockNormalAtlas);
         }
 
         private void RenderClippedWater()
@@ -372,20 +360,16 @@ namespace Game.World.Rendering
                 projectedClippedWaterCellsBuffer,
                 projectedClippedWaterCellsCount,
                 clippedWaterWorldBounds,
-                null,
-                null,
                 null);
         }
 
-       private void RenderLayer(
+        private void RenderLayer(
             Material layerMaterial,
             MaterialPropertyBlock layerPropertyBlock,
             GraphicsBuffer cellsBuffer,
             int cellsCount,
             Bounds bounds,
-            Texture2D overlayAtlas,
-            Texture2D normalAtlas,
-            Texture2D overlayNormalAtlas)
+            Texture2D normalAtlas)
         {
             layerPropertyBlock.Clear();
 
@@ -426,6 +410,11 @@ namespace Game.World.Rendering
                 blockAtlas);
 
             layerPropertyBlock.SetVector(
+                "_BlockAtlas_TexelSize",
+                new Vector4(1f / blockAtlas.width, 1f / blockAtlas.height,
+                    blockAtlas.width, blockAtlas.height));
+
+            layerPropertyBlock.SetVector(
                 "_DirectionToLight",
                 new Vector4(directionToLight.x, directionToLight.y, directionToLight.z, 0f));
 
@@ -449,40 +438,17 @@ namespace Game.World.Rendering
                 "_SunShadowMaskIndex",
                 sunShadowMaskIndex);
 
-            if (overlayAtlas != null)
-            {
-                layerPropertyBlock.SetTexture(
-                    "_TopOverlayAtlas",
-                    overlayAtlas);
-            }
-
             if (normalAtlas != null)
             {
-                layerPropertyBlock.SetTexture(
-                    "_BlockNormalAtlas",
-                    normalAtlas);
+                layerPropertyBlock.SetTexture("_BlockNormalAtlas", normalAtlas);
             }
 
-            if (overlayNormalAtlas != null)
-            {
-                layerPropertyBlock.SetTexture(
-                    "_TopOverlayNormalAtlas",
-                    overlayNormalAtlas);
-            }
+            layerPropertyBlock.SetInt("_BlockDatabaseCount", blockDatabaseCount);
 
-            layerPropertyBlock.SetInt(
-                "_BlockDatabaseCount",
-                blockDatabaseCount);
+            const float cellWidth = 1f;
+            const float cellHeight = 0.5f;
 
-            const float cellWidth =
-                1f;
-
-            const float cellHeight =
-                0.5f;
-
-            float chunkWidth =
-                ChunkSettings.SizeX *
-                cellWidth;
+            float chunkWidth = ChunkSettings.SizeX * cellWidth;
 
             float projectionHeight =
                 (
@@ -572,25 +538,9 @@ namespace Game.World.Rendering
                 return false;
             }
 
-            if (topOverlayAtlas == null)
-            {
-                Debug.LogError(
-                    "Top Overlay Atlas " +
-                    "не призначений.",
-                    this);
-
-                return false;
-            }
-
             if (blockNormalAtlas == null)
             {
                 Debug.LogError("Block Normal Atlas не призначений.", this);
-                return false;
-            }
-
-            if (topOverlayNormalAtlas == null)
-            {
-                Debug.LogError("Top Overlay Normal Atlas не призначений.", this);
                 return false;
             }
 

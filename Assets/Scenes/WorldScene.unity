@@ -712,10 +712,8 @@ MonoBehaviour:
   clippedMaterial: {fileID: 2100000, guid: 0ac8596eff77e43528473688993be69a, type: 2}
   waterMaterial: {fileID: 2100000, guid: 3689cef086b864c6797be1af3b981ab4, type: 2}
   clippedWaterMaterial: {fileID: 2100000, guid: f5dba8fd20fa04b27be4c8719e182443, type: 2}
-  blockAtlas: {fileID: 2800000, guid: 103e50935f1894ab99cf7d29e7e8cc31, type: 3}
-  topOverlayAtlas: {fileID: 2800000, guid: c0e807728d40b426b87e54e685d84ec7, type: 3}
-  blockNormalAtlas: {fileID: 2800000, guid: 39eaf2f78900447ac9a655ec07e0bc20, type: 3}
-  topOverlayNormalAtlas: {fileID: 2800000, guid: de1ddbc01c9884d49be84eafc29458b8, type: 3}
+  blockAtlas: {fileID: 2800000, guid: caf39e18ac09544eb9b2d58568b020f8, type: 3}
+  blockNormalAtlas: {fileID: 2800000, guid: 5651b7213f69a4275ade1f5005a192c2, type: 3}
   blockDatabase: {fileID: 11400000, guid: 4fb11d0e05fb84bf0a6c7d04dd2f682a, type: 2}
   selectionColor: {r: 1, g: 0.9021226, b: 0.6084906, a: 0.45}
 --- !u!4 &1238157590

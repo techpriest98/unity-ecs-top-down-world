@@ -38,22 +38,22 @@ MonoBehaviour:
     AtlasRow: 0
     maxDurability: 5
   - BlockId: 7
-    AtlasColumn: 0
-    AtlasRow: 1
+    AtlasColumn: 5
+    AtlasRow: 0
     maxDurability: 12
   - BlockId: 11
-    AtlasColumn: 0
-    AtlasRow: 2
+    AtlasColumn: 6
+    AtlasRow: 0
     maxDurability: 12
   - BlockId: 6
-    AtlasColumn: 0
-    AtlasRow: 3
+    AtlasColumn: 7
+    AtlasRow: 0
     maxDurability: 6
   - BlockId: 4
     AtlasColumn: 0
-    AtlasRow: 4
+    AtlasRow: 1
     maxDurability: 1
   - BlockId: 5
     AtlasColumn: 1
-    AtlasRow: 4
+    AtlasRow: 1
     maxDurability: 1

@@ -49,7 +49,8 @@ Shader "Game/World/ChunkWaterProcedural"
 
             static const uint TILE_WIDTH = 32;
             static const uint TILE_HEIGHT = 16;
-            static const uint FACE_COUNT = 3;
+            static const uint ATLAS_GROUP_WIDTH = 64;
+            static const uint ATLAS_GROUP_HEIGHT = 48;
             static const float MINIMUM_AMBIENT_VISIBILITY = 0.08;
             static const uint OPTICAL_DEPTH_MASK = 0xFF;
             static const uint TOP_INSET_FLAG = 1u << 8;
@@ -75,11 +76,8 @@ Shader "Game/World/ChunkWaterProcedural"
                 uint Flags;
             };
 
-            StructuredBuffer<ProjectedCellRenderData>
-                _ProjectedCells;
-
-            StructuredBuffer<BlockGpuData>
-                _BlockDatabase;
+            StructuredBuffer<ProjectedCellRenderData> _ProjectedCells;
+            StructuredBuffer<BlockGpuData> _BlockDatabase;
 
             int _BlockDatabaseCount;
 
@@ -212,8 +210,7 @@ Shader "Game/World/ChunkWaterProcedural"
             // Quad
             // ============================================================
 
-            float2 GetQuadCorner(
-                uint vertexId)
+            float2 GetQuadCorner(uint vertexId)
             {
                 switch (vertexId)
                 {
@@ -243,23 +240,13 @@ Shader "Game/World/ChunkWaterProcedural"
 
             struct Varyings
             {
-                float4 PositionCS :
-                    SV_POSITION;
+                float4 PositionCS : SV_POSITION;
+                float2 LocalUv : TEXCOORD0;
 
-                float2 LocalUv :
-                    TEXCOORD0;
-
-                nointerpolation uint BlockId :
-                    TEXCOORD1;
-
-                nointerpolation uint FaceIndex :
-                    TEXCOORD2;
-
-                nointerpolation uint OpticalDepth :
-                    TEXCOORD3;
-
-                nointerpolation uint LightData :
-                    TEXCOORD4;
+                nointerpolation uint BlockId : TEXCOORD1;
+                nointerpolation uint FaceIndex : TEXCOORD2;
+                nointerpolation uint OpticalDepth : TEXCOORD3;
+                nointerpolation uint LightData : TEXCOORD4;
             };
 
             // ============================================================
@@ -267,73 +254,31 @@ Shader "Game/World/ChunkWaterProcedural"
             // ============================================================
 
             Varyings Vert(
-                uint vertexId :
-                    SV_VertexID,
-
-                uint instanceId :
-                    SV_InstanceID)
+                uint vertexId : SV_VertexID,
+                uint instanceId : SV_InstanceID)
             {
-                ProjectedCellRenderData cell =
-                    _ProjectedCells[
-                        instanceId];
+                ProjectedCellRenderData cell = _ProjectedCells[instanceId];
 
-                uint2 cellPosition =
-                    UnpackPosition(
-                        cell.Position);
+                uint2 cellPosition = UnpackPosition(cell.Position);
+                uint faceIndex = GetFaceIndex(GetFaceType(cell.BlockData));
+                uint opticalDepth = GetOpticalDepth(cell.FaceData);
+                bool hasTopInset = HasTopInset(cell.FaceData);
 
-                uint faceIndex =
-                    GetFaceIndex(
-                        GetFaceType(
-                            cell.BlockData));
+                float2 corner = GetQuadCorner(vertexId);
+                float insetHeight = 0.0;
 
-                uint opticalDepth =
-                    GetOpticalDepth(
-                        cell.FaceData);
-
-                bool hasTopInset =
-                    HasTopInset(
-                        cell.FaceData);
-
-                float2 corner =
-                    GetQuadCorner(
-                        vertexId);
-
-                float insetHeight =
-                    0.0;
-
-                if (faceIndex == 0 &&
-                    hasTopInset)
+                if (faceIndex == 0 && hasTopInset)
                 {
-                    float insetRatio =
-                        _WaterTopInsetPixels /
-                        (float)TILE_HEIGHT;
+                    float insetRatio = _WaterTopInsetPixels / (float)TILE_HEIGHT;
 
-                    insetHeight =
-                        _CellHeight *
-                        insetRatio;
+                    insetHeight = _CellHeight * insetRatio;
                 }
 
-                float chunkLeft =
-                    cell.ChunkPosition.x -
-                    _ChunkWidth *
-                    0.5;
-
-                float cellLeft =
-                    chunkLeft +
-                    cellPosition.x *
-                    _CellWidth;
-
-                float chunkTop =
-                    cell.ChunkPosition.y +
-                    _ProjectionHeight;
-
-                float cellBottom =
-                    chunkTop -
-                    (
-                        cellPosition.y +
-                        1
-                    ) *
-                    _CellHeight;
+                float chunkLeft = cell.ChunkPosition.x - _ChunkWidth * 0.5;
+                float cellLeft = chunkLeft + cellPosition.x * _CellWidth;
+                
+                float chunkTop = cell.ChunkPosition.y + _ProjectionHeight;
+                float cellBottom = chunkTop - (cellPosition.y + 1) * _CellHeight;
 
                 float worldY =
                     cellBottom +
@@ -440,35 +385,17 @@ Shader "Game/World/ChunkWaterProcedural"
 
                         TILE_HEIGHT - 1);
 
-                uint atlasPixelX =
-                    atlasPosition.x *
-                    TILE_WIDTH +
-                    localX;
+                // Database rows and group pixels use a top-left origin.
+                uint2 groupPixel = uint2(
+                    localX,
+                    input.FaceIndex * TILE_HEIGHT + TILE_HEIGHT - 1u - localY);
 
-                uint blockGroupHeight =
-                    TILE_HEIGHT *
-                    FACE_COUNT;
+                uint2 atlasPixel = atlasPosition *
+                    uint2(ATLAS_GROUP_WIDTH, ATLAS_GROUP_HEIGHT) + groupPixel;
 
-                uint atlasFaceRow =
-                    (
-                        FACE_COUNT -
-                        1
-                    ) -
-                    input.FaceIndex;
+                atlasPixel.y = (uint)_BlockAtlas_TexelSize.w - 1u - atlasPixel.y;
 
-                uint atlasPixelY =
-                    atlasPosition.y *
-                    blockGroupHeight +
-                    atlasFaceRow *
-                    TILE_HEIGHT +
-                    localY;
-
-                float4 color =
-                    _BlockAtlas.Load(
-                        int3(
-                            atlasPixelX,
-                            atlasPixelY,
-                            0));
+                float4 color = _BlockAtlas.Load(int3(atlasPixel, 0));
 
                 // ========================================================
                 // Lighting

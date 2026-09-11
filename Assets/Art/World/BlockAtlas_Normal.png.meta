@@ -1,16 +1,16 @@
 fileFormatVersion: 2
-guid: c0e807728d40b426b87e54e685d84ec7
+guid: 5651b7213f69a4275ade1f5005a192c2
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -8189227506146850390
-    second: autotileAtlas_0
+      213: -7655137236333810997
+    second: BlockAtlas_Normal_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
     mipMapMode: 0
     enableMipMap: 0
-    sRGBTexture: 1
+    sRGBTexture: 0
     linearTexture: 0
     fadeOut: 0
     borderMipMap: 0
@@ -55,9 +55,9 @@ TextureImporter:
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
-  alphaIsTransparency: 1
+  alphaIsTransparency: 0
   spriteTessellationDetail: -1
-  textureType: 8
+  textureType: 0
   textureShape: 1
   singleChannelComponent: 0
   flipbookRows: 1
@@ -72,7 +72,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: 512
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: autotileAtlas_0
+      name: BlockAtlas_Normal_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 256
-        height: 256
+        width: 512
+        height: 96
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: aa94247b8f40a5e80800000000000000
-      internalID: -8189227506146850390
+      spriteID: bca25710e3d73c590800000000000000
+      internalID: -7655137236333810997
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      autotileAtlas_0: -8189227506146850390
+      BlockAtlas_Normal_0: -7655137236333810997
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

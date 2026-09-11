@@ -36,15 +36,23 @@ namespace Game.World.Rendering
                 y);
 
             cell.SourceAirIndex = sourceAirIndex;
-            cell.FaceData = neighborMask;
+            cell.SetTopNeighborMask(neighborMask);
 
             result.Add(cell);
 
             return true;
         }
 
+        // Temporary overload for the current ChunkProjectionBuilder.
+        public bool TryAddSideUpper(BlockData block, ushort sourceAirIndex, ushort x, ushort y)
+        {
+            return TryAddSideUpper(block, 0, BlockId.Air, sourceAirIndex, x, y);
+        }
+
         public bool TryAddSideUpper(
             BlockData block,
+            byte neighborMask,
+            BlockId footBlockId,
             ushort sourceAirIndex,
             ushort x,
             ushort y)
@@ -62,6 +70,7 @@ namespace Game.World.Rendering
                 y);
 
             cell.SourceAirIndex = sourceAirIndex;
+            cell.SetSideFaceData(neighborMask, footBlockId);
 
             result.Add(cell);
 
@@ -70,6 +79,8 @@ namespace Game.World.Rendering
 
         public bool TryAddSideLower(
             BlockData block,
+            byte neighborMask,
+            BlockId footBlockId,
             ushort sourceAirIndex,
             ushort x,
             ushort y)
@@ -87,6 +98,7 @@ namespace Game.World.Rendering
                 y);
 
             cell.SourceAirIndex = sourceAirIndex;
+            cell.SetSideFaceData(neighborMask, footBlockId);
 
             result.Add(cell);
 
