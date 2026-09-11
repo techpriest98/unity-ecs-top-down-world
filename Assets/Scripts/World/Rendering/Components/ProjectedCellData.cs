@@ -25,11 +25,9 @@ namespace Game.World.Rendering
         public uint Position;
 
         /// <summary>
-        /// Bits:
-        /// 0-7   LightLevel
-        /// 8-15  LightR
-        /// 16-23 LightG
-        /// 24-31 LightB
+        /// Packed cell lighting, written by ChunkLightingSystem through LightDataUtility.
+        /// Contains local RGB, sky visibility and sun visibility masks.
+        /// The legacy constructor below still accepts the old lighting layout.
         /// </summary>
         public uint LightData;
 
@@ -57,6 +55,18 @@ namespace Game.World.Rendering
         /// bit 8 TopInset.
         /// </summary>
         public ushort FaceData;
+
+        /// <summary>
+        /// Local light at the four corners of this projection quad, relative to screen.
+        /// Each value packs R in bits 0-7, G in 8-15, B in 16-23 (0-255).
+        /// Bits 24-31 are reserved. These values contain no sky or sun lighting.
+        /// For SideUpper / SideLower, corners belong to each half separately;
+        /// values along their shared edge must match.
+        /// </summary>
+        public uint LocalLightBottomLeft;
+        public uint LocalLightBottomRight;
+        public uint LocalLightTopLeft;
+        public uint LocalLightTopRight;
 
         public void SetTopNeighborMask(byte neighborMask)
         {
@@ -95,6 +105,10 @@ namespace Game.World.Rendering
 
             SourceAirIndex = 0;
             FaceData = 0;
+            LocalLightBottomLeft = 0;
+            LocalLightBottomRight = 0;
+            LocalLightTopLeft = 0;
+            LocalLightTopRight = 0;
         }
 
         public ProjectedCellData(
@@ -126,6 +140,10 @@ namespace Game.World.Rendering
 
             SourceAirIndex = 0;
             FaceData = 0;
+            LocalLightBottomLeft = 0;
+            LocalLightBottomRight = 0;
+            LocalLightTopLeft = 0;
+            LocalLightTopRight = 0;
         }
     }
 }

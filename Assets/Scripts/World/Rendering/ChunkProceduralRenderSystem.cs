@@ -275,7 +275,11 @@ namespace Game.World.Rendering
                         LightData = cell.LightData,
                         FaceData = cell.FaceData,
                         ChunkPosition = chunkPosition,
-                        Padding = 0f
+                        Padding = 0f,
+                        LocalLightBottomLeft = cell.LocalLightBottomLeft,
+                        LocalLightBottomRight = cell.LocalLightBottomRight,
+                        LocalLightTopLeft = cell.LocalLightTopLeft,
+                        LocalLightTopRight = cell.LocalLightTopRight
                     };
 
                     if (clippingEnabled.ValueRO)
@@ -299,7 +303,11 @@ namespace Game.World.Rendering
                         LightData = cell.LightData,
                         FaceData = cell.FaceData,
                         ChunkPosition = chunkPosition,
-                        Padding = 0f
+                        Padding = 0f,
+                        LocalLightBottomLeft = cell.LocalLightBottomLeft,
+                        LocalLightBottomRight = cell.LocalLightBottomRight,
+                        LocalLightTopLeft = cell.LocalLightTopLeft,
+                        LocalLightTopRight = cell.LocalLightTopRight
                     });
                 }
 

@@ -13,5 +13,10 @@ namespace Game.World.Rendering
 
         public float3 ChunkPosition;
         public float Padding;
+
+        public uint LocalLightBottomLeft;
+        public uint LocalLightBottomRight;
+        public uint LocalLightTopLeft;
+        public uint LocalLightTopRight;
     }
 }

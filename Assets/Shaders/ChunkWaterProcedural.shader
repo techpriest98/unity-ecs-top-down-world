@@ -68,6 +68,11 @@ Shader "Game/World/ChunkWaterProcedural"
 
                 float3 ChunkPosition;
                 float Padding;
+
+                uint LocalLightBottomLeft;
+                uint LocalLightBottomRight;
+                uint LocalLightTopLeft;
+                uint LocalLightTopRight;
             };
 
             struct BlockGpuData
@@ -247,6 +252,7 @@ Shader "Game/World/ChunkWaterProcedural"
                 nointerpolation uint FaceIndex : TEXCOORD2;
                 nointerpolation uint OpticalDepth : TEXCOORD3;
                 nointerpolation uint LightData : TEXCOORD4;
+                nointerpolation uint4 LocalLightCorners : TEXCOORD5;
             };
 
             // ============================================================
@@ -276,7 +282,7 @@ Shader "Game/World/ChunkWaterProcedural"
 
                 float chunkLeft = cell.ChunkPosition.x - _ChunkWidth * 0.5;
                 float cellLeft = chunkLeft + cellPosition.x * _CellWidth;
-                
+
                 float chunkTop = cell.ChunkPosition.y + _ProjectionHeight;
                 float cellBottom = chunkTop - (cellPosition.y + 1) * _CellHeight;
 
@@ -299,25 +305,18 @@ Shader "Game/World/ChunkWaterProcedural"
 
                 Varyings output;
 
-                output.PositionCS =
-                    TransformWorldToHClip(
-                        worldPosition);
+                output.PositionCS = TransformWorldToHClip(worldPosition);
+                output.LocalUv = corner;
+                output.BlockId = GetBlockId(cell.BlockData);
+                output.FaceIndex = faceIndex;
+                output.OpticalDepth = opticalDepth;
+                output.LightData = cell.LightData;
 
-                output.LocalUv =
-                    corner;
-
-                output.BlockId =
-                    GetBlockId(
-                        cell.BlockData);
-
-                output.FaceIndex =
-                    faceIndex;
-
-                output.OpticalDepth =
-                    opticalDepth;
-
-                output.LightData =
-                    cell.LightData;
+                output.LocalLightCorners = uint4(
+                    cell.LocalLightBottomLeft,
+                    cell.LocalLightBottomRight,
+                    cell.LocalLightTopLeft,
+                    cell.LocalLightTopRight);
 
                 return output;
             }
@@ -408,7 +407,15 @@ Shader "Game/World/ChunkWaterProcedural"
                     worldNormal,
                     normalize(_DirectionToLight)));
 
-                float3 localLight = GetLocalLight(input.LightData);
+                float3 bottomLight = lerp(
+                    GetLocalLight(input.LocalLightCorners.x),
+                    GetLocalLight(input.LocalLightCorners.y), localUv.x);
+
+                float3 topLight = lerp(
+                    GetLocalLight(input.LocalLightCorners.z),
+                    GetLocalLight(input.LocalLightCorners.w), localUv.x);
+
+                float3 localLight = lerp(bottomLight, topLight, localUv.y);
                 float skyVisibility = GetSkyVisibility(input.LightData);
                 float sunVisibility = GetSunVisibility(input.LightData);
 

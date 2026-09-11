@@ -39,6 +39,7 @@ namespace Game.World.Lighting
                 .Build(ref state);
 
             state.RequireForUpdate<SunShadowState>();
+            state.RequireForUpdate<ViewDirectionComponent>();
         }
 
         [BurstCompile]
@@ -83,6 +84,14 @@ namespace Game.World.Lighting
                 chunkEntities,
                 blockLookup);
 
+            ChunkLightAccessor lightAccessor = new(
+                chunkEntities, SystemAPI.GetBufferLookup<VoxelLightData>(true));
+
+            ViewDirection direction = SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
+            if (SystemAPI.TryGetSingleton<ViewDirectionTransitionComponent>(out var transition) &&
+                transition.IsActive)
+                direction = transition.TargetDirection;
+
             EntityCommandBuffer ecb = new(Allocator.Temp);
 
             foreach (var (chunk, voxelLight, cells, waterCells, entity) in
@@ -102,6 +111,8 @@ namespace Game.World.Lighting
                     voxelLight,
                     chunk.ValueRO.Coordinate,
                     blockAccessor,
+                    lightAccessor,
+                    direction,
                     shadowState);
 
                 ecb.SetComponentEnabled<ChunkNeedsLighting>(entity, false);
@@ -134,6 +145,8 @@ namespace Game.World.Lighting
                     voxelLight,
                     chunk.ValueRO.Coordinate,
                     blockAccessor,
+                    lightAccessor,
+                    direction,
                     shadowState);
 
                 ecb.SetComponentEnabled<ChunkNeedsLighting>(entity, false);
@@ -213,6 +226,8 @@ namespace Game.World.Lighting
             DynamicBuffer<VoxelLightData> voxelLight,
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
+            ChunkLightAccessor lightAccessor,
+            ViewDirection direction,
             SunShadowState shadowState)
         {
             byte targetMaskIndex =
@@ -228,6 +243,7 @@ namespace Game.World.Lighting
                     blockAccessor,
                     shadowState,
                     targetMaskIndex);
+                UpdateLocalLightCorners(ref cell, chunkCoordinate, blockAccessor, lightAccessor, direction);
                 cells[i] = cell;
             }
 
@@ -242,9 +258,72 @@ namespace Game.World.Lighting
                     blockAccessor,
                     shadowState,
                     targetMaskIndex);
+                UpdateLocalLightCorners(ref cell, chunkCoordinate, blockAccessor, lightAccessor, direction);
                 waterCell.Value = cell;
                 waterCells[i] = waterCell;
             }
+        }
+
+        public static void UpdateLocalLightCorners(
+            ref ProjectedCellData cell,
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blocks,
+            ChunkLightAccessor lights,
+            ViewDirection direction)
+        {
+            int3 position = ChunkUtility.ToLocalPosition(cell.SourceAirIndex);
+            int3 right = direction switch
+            {
+                ViewDirection.Front => new int3(1, 0, 0),
+                ViewDirection.Back => new int3(-1, 0, 0),
+                ViewDirection.Right => new int3(0, 0, 1),
+                ViewDirection.Left => new int3(0, 0, -1),
+                _ => new int3(1, 0, 0)
+            };
+
+            ProjectedFaceType face = (ProjectedFaceType)((cell.BlockData >> 8) & 0xFF);
+            bool isTop = face == ProjectedFaceType.Top;
+            int3 up = isTop
+                ? ViewDirectionUtility.GetAwayFromCameraOffset(direction)
+                : new int3(0, 1, 0);
+
+            uint bottomLeft = VoxelLightSmoothingUtility.SampleCorner(
+                chunkCoordinate, position, -right, -up, blocks, lights);
+            uint bottomRight = VoxelLightSmoothingUtility.SampleCorner(
+                chunkCoordinate, position, right, -up, blocks, lights);
+            uint topLeft = VoxelLightSmoothingUtility.SampleCorner(
+                chunkCoordinate, position, -right, up, blocks, lights);
+            uint topRight = VoxelLightSmoothingUtility.SampleCorner(
+                chunkCoordinate, position, right, up, blocks, lights);
+
+            if (!isTop)
+            {
+                uint middleLeft = AverageRgb(bottomLeft, topLeft);
+                uint middleRight = AverageRgb(bottomRight, topRight);
+                if (face == ProjectedFaceType.SideUpper)
+                {
+                    bottomLeft = middleLeft;
+                    bottomRight = middleRight;
+                }
+                else
+                {
+                    topLeft = middleLeft;
+                    topRight = middleRight;
+                }
+            }
+
+            cell.LocalLightBottomLeft = bottomLeft;
+            cell.LocalLightBottomRight = bottomRight;
+            cell.LocalLightTopLeft = topLeft;
+            cell.LocalLightTopRight = topRight;
+        }
+
+        private static uint AverageRgb(uint a, uint b)
+        {
+            uint r = ((a & 0xFFu) + (b & 0xFFu) + 1u) >> 1;
+            uint g = (((a >> 8) & 0xFFu) + ((b >> 8) & 0xFFu) + 1u) >> 1;
+            uint blue = (((a >> 16) & 0xFFu) + ((b >> 16) & 0xFFu) + 1u) >> 1;
+            return r | (g << 8) | (blue << 16);
         }
 
         private static void UpdateChunkShadowMask(

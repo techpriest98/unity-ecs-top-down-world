@@ -75,6 +75,11 @@ Shader "Game/World/ChunkProcedural"
 
                 float3 ChunkPosition;
                 float Padding;
+
+                uint LocalLightBottomLeft;
+                uint LocalLightBottomRight;
+                uint LocalLightTopLeft;
+                uint LocalLightTopRight;
             };
 
             struct BlockGpuData
@@ -250,6 +255,7 @@ Shader "Game/World/ChunkProcedural"
                 nointerpolation uint LightData : TEXCOORD4;
                 nointerpolation float IsSelected : TEXCOORD5;
                 nointerpolation uint FootBlockId : TEXCOORD6;
+                nointerpolation uint4 LocalLightCorners : TEXCOORD7;
             };
 
             // ============================================================
@@ -284,6 +290,12 @@ Shader "Game/World/ChunkProcedural"
                 output.NeighborMask = cell.FaceData & 0xFF;
                 output.FootBlockId = (cell.FaceData >> 8) & 0xFF;
                 output.LightData = cell.LightData;
+
+                output.LocalLightCorners = uint4(
+                    cell.LocalLightBottomLeft,
+                    cell.LocalLightBottomRight,
+                    cell.LocalLightTopLeft,
+                    cell.LocalLightTopRight);
 
                 uint2 selectedPosition = UnpackPosition(_SelectedProjectionPosition);
                 uint cellFaceType = GetFaceType(cell.BlockData);
@@ -568,7 +580,15 @@ Shader "Game/World/ChunkProcedural"
                     worldNormal,
                     normalize(_DirectionToLight)));
 
-                float3 localLight = GetLocalLight(input.LightData);
+                float3 bottomLight = lerp(
+                    GetLocalLight(input.LocalLightCorners.x),
+                    GetLocalLight(input.LocalLightCorners.y), localUv.x);
+
+                float3 topLight = lerp(
+                    GetLocalLight(input.LocalLightCorners.z),
+                    GetLocalLight(input.LocalLightCorners.w), localUv.x);
+
+                float3 localLight = lerp(bottomLight, topLight, localUv.y);
                 float skyVisibility = GetSkyVisibility(input.LightData);
                 float sunVisibility = GetSunVisibility(input.LightData);
 
