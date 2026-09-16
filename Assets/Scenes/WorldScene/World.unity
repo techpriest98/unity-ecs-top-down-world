@@ -345,7 +345,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90e4c7bfd9393445eb8fd0348f772e36, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.DynamicLightSourceAuthoring
-  color: {r: 1, g: 0.65, b: 0.35, a: 1}
+  color: {r: 1, g: 0.7127823, b: 0.34901965, a: 1}
   radius: 4
   intensity: 1
 --- !u!1 &1677043484

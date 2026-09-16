@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Game.World.Generation;
 using Game.World.Saving;
+using Game.Scenes;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -18,7 +19,7 @@ namespace Game.UI
         [SerializeField] private TMP_Text errorText;
         [SerializeField] private CanvasGroup formGroup;
         [SerializeField] private Button createButton;
-        [SerializeField] private string gameSceneName = "SampleScene";
+        [SerializeField] private string gameSceneName = "Intro";
 
         private readonly WorldCreationForm form = new WorldCreationForm();
         private readonly HashSet<string> existingNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -116,18 +117,12 @@ namespace Game.UI
             bool loadingStarted = false;
             try
             {
-                if (!Application.CanStreamedLevelBeLoaded(gameSceneName))
-                {
-                    ShowOperation("Game scene is missing from the build scene list.");
+                if (!PrepareWorld(result.Name, result.Seed))
                     return;
-                }
-                if (!PrepareWorld(result.Name, result.Seed)) return;
 
                 ShowOperation("Loading world...");
                 WorldLaunchRequest.Set(createdWorld.Id, createdWorld.Name, createdWorld.Seed);
-                AsyncOperation operation = SceneManager.LoadSceneAsync(gameSceneName, LoadSceneMode.Single);
-                if (operation == null)
-                    throw new InvalidOperationException("Scene loading did not start.");
+                SceneLoader.LoadScene(gameSceneName);
                 loadingStarted = true;
             }
             catch (Exception exception)
@@ -140,7 +135,8 @@ namespace Game.UI
             }
             finally
             {
-                if (!loadingStarted) SetBusy(false);
+                if (!loadingStarted)
+                    SetBusy(false);
             }
         }
 
@@ -148,7 +144,6 @@ namespace Game.UI
         {
             if (CanRetryLaunch(name, seed)) return true;
 
-            // Any storage refusal is an operation message, never a field error.
             WorldCreateStatus status = WorldMetadataStorage.Create(
                 name, seed ?? CreateRandomSeed(), out WorldMetadata world, out string error);
             if (status != WorldCreateStatus.Success)

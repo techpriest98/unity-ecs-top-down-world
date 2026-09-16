@@ -130,7 +130,7 @@ namespace Game.Player
 
                 AddComponent(entity, new PlayerFacing
                 {
-                    Value = PlayerFacingDirection.NegativeZ
+                    Value = PlayerFacingDirection.PositiveZ
                 });
 
                 AddComponent(entity, new PlayerAnimationData
