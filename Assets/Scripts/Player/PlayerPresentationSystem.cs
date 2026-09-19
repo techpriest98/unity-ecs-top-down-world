@@ -41,33 +41,22 @@ namespace Game.Player
                         ViewDirectionComponent>()
                     .Value;
 
-            foreach (var (
-                    worldPosition,
-                    localTransform)
-                in SystemAPI.Query<
-                        RefRO<PlayerWorldPosition>,
-                        RefRW<LocalTransform>>()
-                    .WithAll<PlayerTag>())
+            foreach (var (worldPosition, localTransform)in SystemAPI
+                .Query<RefRO<PlayerWorldPosition>, RefRW<LocalTransform>>()
+                .WithAll<PlayerTag>())
             {
-                float2 projectedPosition =
-                    WorldPositionProjectionUtility
-                        .Project(
-                            worldPosition
-                                .ValueRO
-                                .Value,
-                            viewDirection);
+                float2 projectedPosition = WorldPositionProjectionUtility.Project(
+                    worldPosition.ValueRO.Value,
+                    viewDirection);
 
-                LocalTransform transform =
-                    localTransform.ValueRO;
+                LocalTransform transform = localTransform.ValueRO;
 
-                transform.Position =
-                    new float3(
-                        projectedPosition.x,
-                        projectedPosition.y,
-                        RenderDepth);
+                transform.Position = new float3(
+                    projectedPosition.x,
+                    projectedPosition.y,
+                    RenderDepth);
 
-                localTransform.ValueRW =
-                    transform;
+                localTransform.ValueRW = transform;
             }
         }
     }

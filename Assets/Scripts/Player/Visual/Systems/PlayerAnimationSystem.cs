@@ -12,7 +12,8 @@ namespace Game.Player
     public partial struct PlayerAnimationSystem : ISystem
     {
         private const int FramesPerAnimation = 4;
-        private const float FrameDuration = 0.18f;
+        private const float IdleFrameDuration = 0.5f;
+        private const float WalkFrameDuration = 0.18f;        
         private const float FrameWidth = 1f / 8f;
         private const float FrameHeight = 1f / 4f;
 
@@ -70,9 +71,13 @@ namespace Game.Player
                 {
                     animation.ValueRW.ElapsedTime += deltaTime;
 
-                    while (animation.ValueRO.ElapsedTime >= FrameDuration)
+                    float frameDuration = animation.ValueRO.State == PlayerAnimationState.Walk
+                        ? WalkFrameDuration
+                        : IdleFrameDuration;
+
+                    while (animation.ValueRO.ElapsedTime >= frameDuration)
                     {
-                        animation.ValueRW.ElapsedTime -= FrameDuration;
+                        animation.ValueRW.ElapsedTime -= frameDuration;
 
                         animation.ValueRW.Frame =
                             (animation.ValueRO.Frame + 1) %
