@@ -30,10 +30,9 @@ namespace Game.Player
             state.RequireForUpdate<PlayerTag>();
             state.RequireForUpdate<SunShadowState>();
 
-            chunkEntities =
-                new NativeParallelHashMap<int2, Entity>(
-                    InitialChunkCapacity,
-                    Allocator.Persistent);
+            chunkEntities = new NativeParallelHashMap<int2, Entity>(
+                InitialChunkCapacity,
+                Allocator.Persistent);
 
             generatedChunksQuery =
                 new EntityQueryBuilder(Allocator.Temp)
@@ -48,9 +47,7 @@ namespace Game.Player
         public void OnDestroy(ref SystemState state)
         {
             if (chunkEntities.IsCreated)
-            {
                 chunkEntities.Dispose();
-            }
         }
 
         [BurstCompile]
@@ -77,31 +74,25 @@ namespace Game.Player
             SunShadowState shadowState =
                 SystemAPI.GetSingleton<SunShadowState>();
 
-            DirectionalLightData light =
-                shadowState.ActiveLight;
+            DirectionalLightData light = shadowState.ActiveLight;
 
             ComponentLookup<PlayerLightColor> playerLightLookup =
                 SystemAPI.GetComponentLookup<PlayerLightColor>();
 
             foreach (var (
-                    worldPosition,
-                    collisionShape,
-                    visual)
-                in SystemAPI.Query<
-                    RefRO<PlayerWorldPosition>,
-                    RefRO<PlayerCollisionShape>,
-                    RefRO<PlayerVisualEntity>>()
-                    .WithAll<PlayerTag>())
+                         worldPosition,
+                         collisionShape,
+                         parts)
+                     in SystemAPI.Query<
+                             RefRO<PlayerWorldPosition>,
+                             RefRO<PlayerCollisionShape>,
+                             DynamicBuffer<PlayerVisualPart>>()
+                         .WithAll<PlayerTag>())
             {
-                Entity visualEntity = visual.ValueRO.Entity;
-
-                if (!playerLightLookup.HasComponent(visualEntity))
-                {
+                if (parts.Length == 0)
                     continue;
-                }
 
-                float3 samplePosition =
-                    worldPosition.ValueRO.Value;
+                float3 samplePosition = worldPosition.ValueRO.Value;
 
                 samplePosition.y +=
                     collisionShape.ValueRO.Height * 0.5f;
@@ -115,34 +106,28 @@ namespace Game.Player
                     FloorDiv(worldZ, ChunkSettings.SizeZ));
 
                 int localX =
-                    worldX -
-                    chunkCoordinate.x * ChunkSettings.SizeX;
+                    worldX - chunkCoordinate.x * ChunkSettings.SizeX;
 
                 int localZ =
-                    worldZ -
-                    chunkCoordinate.y * ChunkSettings.SizeZ;
-
-                VoxelLightData voxelLight;
+                    worldZ - chunkCoordinate.y * ChunkSettings.SizeZ;
 
                 if (!lightAccessor.TryGet(
-                    chunkCoordinate,
-                    localX,
-                    worldY,
-                    localZ,
-                    out voxelLight))
+                        chunkCoordinate,
+                        localX,
+                        worldY,
+                        localZ,
+                        out VoxelLightData voxelLight))
                 {
                     voxelLight = new VoxelLightData(MaximumSkyLight);
                 }
 
                 float skyVisibility =
-                    voxelLight.Sky /
-                    (float)MaximumSkyLight;
+                    voxelLight.Sky / (float)MaximumSkyLight;
 
-                float ambientVisibility =
-                    math.lerp(
-                        MinimumAmbientVisibility,
-                        1f,
-                        skyVisibility);
+                float ambientVisibility = math.lerp(
+                    MinimumAmbientVisibility,
+                    1f,
+                    skyVisibility);
 
                 float3 localLight = new float3(
                     voxelLight.R,
@@ -159,8 +144,7 @@ namespace Game.Player
                         MaximumShadowDistance);
 
                 float3 finalLight =
-                    light.AmbientColor *
-                    ambientVisibility +
+                    light.AmbientColor * ambientVisibility +
                     localLight;
 
                 if (sunVisible)
@@ -173,24 +157,27 @@ namespace Game.Player
 
                 finalLight = math.saturate(finalLight);
 
-                playerLightLookup[visualEntity] =
-                    new PlayerLightColor
-                    {
-                        Value = new float4(finalLight, 1f)
-                    };
+                var color = new PlayerLightColor
+                {
+                    Value = new float4(finalLight, 1f)
+                };
+
+                for (int i = 0; i < parts.Length; i++)
+                {
+                    Entity visualEntity = parts[i].VisualEntity;
+
+                    if (playerLightLookup.HasComponent(visualEntity))
+                        playerLightLookup[visualEntity] = color;
+                }
             }
         }
 
         private void UpdateChunkLookup(ref SystemState state)
         {
-            int chunkCount =
-                generatedChunksQuery.CalculateEntityCount();
+            int chunkCount = generatedChunksQuery.CalculateEntityCount();
 
             if (chunkEntities.Capacity < chunkCount)
-            {
-                chunkEntities.Capacity =
-                    math.ceilpow2(chunkCount);
-            }
+                chunkEntities.Capacity = math.ceilpow2(chunkCount);
 
             chunkEntities.Clear();
 
@@ -208,17 +195,12 @@ namespace Game.Player
             }
         }
 
-        private static int FloorDiv(
-            int value,
-            int divisor)
+        private static int FloorDiv(int value, int divisor)
         {
             int quotient = value / divisor;
 
-            if (value % divisor != 0 &&
-                value < 0)
-            {
+            if (value % divisor != 0 && value < 0)
                 quotient--;
-            }
 
             return quotient;
         }

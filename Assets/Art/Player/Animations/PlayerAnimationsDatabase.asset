@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 273b5f23e52fd402ea5dc6ed48521921, type: 3}
+  m_Name: PlayerAnimationsDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Player.AnimationDatabase
+  Animations:
+  - {fileID: 11400000, guid: fdc3d9b77fb3948089e0528f60fa1de6, type: 2}
+  - {fileID: 11400000, guid: 4d619e590ea4145c88ea993fb3675c4d, type: 2}
+  - {fileID: 11400000, guid: 39b2a89c95cde42b2bc269ec37ddd0af, type: 2}
+  - {fileID: 11400000, guid: 88ad217305e0f4a86a685517ad334fa9, type: 2}
+  - {fileID: 11400000, guid: 40386489039a74e219da1b00381806d9, type: 2}
+  - {fileID: 11400000, guid: 2760e944a8d8d4b8b9a9efc3bfdb1bc2, type: 2}
