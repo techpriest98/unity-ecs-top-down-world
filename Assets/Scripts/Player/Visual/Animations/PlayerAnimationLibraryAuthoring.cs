@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Game.Player
@@ -10,7 +11,7 @@ namespace Game.Player
     public sealed class PlayerAnimationLibraryAuthoring : MonoBehaviour
     {
         [SerializeField]
-        private AnimationDatabase database;
+        private AnimationAtlas atlas;
 
         private sealed class Baker :
             Baker<PlayerAnimationLibraryAuthoring>
@@ -18,90 +19,54 @@ namespace Game.Player
             public override void Bake(
                 PlayerAnimationLibraryAuthoring authoring)
             {
-                AnimationDatabase database = authoring.database;
+                AnimationAtlas atlas = authoring.atlas;
 
-                if (database == null)
+                if (atlas == null)
                 {
-                    Debug.LogError(
-                        "Assign the Animation Database.",
-                        authoring);
+                    Debug.LogError("Assign the Animation Atlas.", authoring);
                     return;
                 }
 
-                DependsOn(database);
+                DependsOn(atlas);
 
-                AnimationDefinition[] definitions = database.Animations;
-
-                if (definitions == null || definitions.Length == 0)
+                if (atlas.TextureArray == null ||
+                    atlas.CellWidth <= 0 ||
+                    atlas.CellHeight <= 0 ||
+                    atlas.Clips == null ||
+                    atlas.Clips.Length == 0)
                 {
                     Debug.LogError(
-                        "Animation Database is empty.",
-                        authoring);
+                        "Animation Atlas is empty or invalid. Rebuild it.",
+                        atlas);
                     return;
                 }
 
-                foreach (AnimationDefinition definition in definitions)
-                {
-                    if (definition == null)
-                        continue;
-
-                    DependsOn(definition);
-
-                    if (definition.SpriteSheet != null)
-                        DependsOn(definition.SpriteSheet);
-                }
+                DependsOn(atlas.TextureArray);
 
                 var keys = new HashSet<(CharacterPart, AnimationID)>();
 
-                int cellWidth = 0;
-                int sheetHeight = 0;
-                int arrayWidth = 0;
-
-                for (int i = 0; i < definitions.Length; i++)
+                foreach (AnimationAtlas.Clip clip in atlas.Clips)
                 {
-                    AnimationDefinition definition = definitions[i];
-
-                    if (definition == null)
+                    if (clip == null || clip.Definition == null)
                     {
                         Debug.LogError(
-                            "Animation Database contains an empty entry.",
-                            authoring);
+                            "Animation Atlas contains a missing definition.",
+                            atlas);
                         return;
                     }
 
-                    if (!keys.Add((definition.Part, definition.Id)))
+                    DependsOn(clip.Definition);
+
+                    if (!keys.Add((clip.Part, clip.Id)))
                     {
                         Debug.LogError(
-                            $"Duplicate animation: " +
-                            $"{definition.Part} / {definition.Id}.",
-                            definition);
+                            $"Duplicate animation: {clip.Part} / {clip.Id}.",
+                            atlas);
                         return;
                     }
 
-                    if (!ValidateDefinition(definition))
+                    if (!ValidateClip(atlas, clip))
                         return;
-
-                    Texture2D texture = definition.SpriteSheet;
-
-                    int currentCellWidth =
-                        texture.width / definition.FrameCount;
-
-                    if (i == 0)
-                    {
-                        cellWidth = currentCellWidth;
-                        sheetHeight = texture.height;
-                    }
-                    else if (currentCellWidth != cellWidth ||
-                             texture.height != sheetHeight)
-                    {
-                        Debug.LogError(
-                            $"{definition.name}: all animations must " +
-                            "use the same cell dimensions.",
-                            definition);
-                        return;
-                    }
-
-                    arrayWidth = Mathf.Max(arrayWidth, texture.width);
                 }
 
                 var builder = new BlobBuilder(Allocator.Temp);
@@ -112,37 +77,77 @@ namespace Game.Player
                         ref builder.ConstructRoot<PlayerAnimationLibraryBlob>();
 
                     BlobBuilderArray<PlayerAnimationClipBlob> clips =
-                        builder.Allocate(
-                            ref root.Clips,
-                            definitions.Length);
+                        builder.Allocate(ref root.Clips, atlas.Clips.Length);
 
-                    float frameWidth = cellWidth / (float)arrayWidth;
+                    float2 cellSize = new float2(
+                        atlas.CellWidth,
+                        atlas.CellHeight);
 
-                    for (int i = 0; i < definitions.Length; i++)
+                    float2 textureSize = new float2(
+                        atlas.TextureArray.width,
+                        atlas.TextureArray.height);
+
+                    for (int i = 0; i < atlas.Clips.Length; i++)
                     {
-                        AnimationDefinition source = definitions[i];
+                        AnimationAtlas.Clip source = atlas.Clips[i];
+                        AnimationDefinition definition = source.Definition;
+
                         ref PlayerAnimationClipBlob target = ref clips[i];
 
                         target.Part = source.Part;
                         target.Id = source.Id;
                         target.FrameCount = source.FrameCount;
-                        target.FrameDuration = source.FrameDuration;
-                        target.Loop = source.Loop;
+                        target.FrameDuration = definition.FrameDuration;
+                        target.Loop = definition.Loop;
 
-                        target.TextureIndex = i;
-                        target.FrameWidth = frameWidth;
+                        BlobBuilderArray<PlayerAnimationFrameBlob> frames =
+                            builder.Allocate(
+                                ref target.Frames,
+                                source.Frames.Length);
 
-                        CopyLayers(
-                            ref builder, ref target.Down, source.Down);
+                        for (int direction = 0; direction < 4; direction++)
+                        {
+                            AnimationDefinition.FrameLayer[] layers =
+                                GetLayers(definition, direction);
 
-                        CopyLayers(
-                            ref builder, ref target.Up, source.Up);
+                            for (int frame = 0; frame < source.FrameCount; frame++)
+                            {
+                                int index = direction * source.FrameCount + frame;
+                                AnimationAtlas.Frame packed = source.Frames[index];
 
-                        CopyLayers(
-                            ref builder, ref target.Left, source.Left);
+                                var result = new PlayerAnimationFrameBlob
+                                {
+                                    PageIndex = packed.PageIndex,
+                                    ZIndex = layers[frame].ZIndex
+                                };
 
-                        CopyLayers(
-                            ref builder, ref target.Right, source.Right);
+                                if (packed.PageIndex >= 0)
+                                {
+                                    RectInt rect = packed.PackedRect;
+                                    RectInt atlasRect = packed.AtlasRect;
+
+                                    float2 size = new float2(
+                                        rect.width,
+                                        rect.height);
+
+                                    float2 center = new float2(
+                                        rect.x,
+                                        rect.y) + size * 0.5f;
+
+                                    result.Size = size / cellSize;
+                                    result.Offset = center / cellSize -
+                                                    new float2(0.5f);
+
+                                    result.UvScaleOffset = new float4(
+                                        atlasRect.width / textureSize.x,
+                                        atlasRect.height / textureSize.y,
+                                        atlasRect.x / textureSize.x,
+                                        atlasRect.y / textureSize.y);
+                                }
+
+                                frames[index] = result;
+                            }
+                        }
                     }
 
                     BlobAssetReference<PlayerAnimationLibraryBlob> blob =
@@ -164,80 +169,118 @@ namespace Game.Player
                 }
             }
 
-            private static bool ValidateDefinition(
-                AnimationDefinition definition)
+            private static bool ValidateClip(
+                AnimationAtlas atlas,
+                AnimationAtlas.Clip clip)
             {
-                if (definition.FrameCount < 1 ||
-                    definition.FrameDuration <= 0f ||
+                AnimationDefinition definition = clip.Definition;
+
+                if (definition.FrameDuration <= 0f ||
                     float.IsNaN(definition.FrameDuration) ||
                     float.IsInfinity(definition.FrameDuration))
                 {
                     Debug.LogError(
-                        $"{definition.name}: FrameCount and " +
-                        "FrameDuration must be positive.",
+                        $"{definition.name}: FrameDuration must be positive and finite.",
                         definition);
                     return false;
                 }
 
-                Texture2D texture = definition.SpriteSheet;
-
-                if (texture == null)
+                if (clip.Part != definition.Part ||
+                    clip.Id != definition.Id ||
+                    clip.FrameCount != definition.FrameCount ||
+                    clip.FrameCount < 1 ||
+                    clip.Frames == null ||
+                    clip.Frames.Length != (long)clip.FrameCount * 4)
                 {
-                    Debug.LogError(
-                        $"{definition.name}: SpriteSheet is missing.",
-                        definition);
-                    return false;
+                    return ReportStaleAtlas(definition);
                 }
 
-                if (texture.width % definition.FrameCount != 0 ||
-                    texture.height % 4 != 0)
+                for (int direction = 0; direction < 4; direction++)
                 {
-                    Debug.LogError(
-                        $"{definition.name}: expected FrameCount " +
-                        "columns and 4 direction rows.",
-                        definition);
-                    return false;
+                    AnimationDefinition.FrameLayer[] layers =
+                        GetLayers(definition, direction);
+
+                    if (layers == null || layers.Length != clip.FrameCount)
+                        return ReportStaleAtlas(definition);
+
+                    for (int frame = 0; frame < clip.FrameCount; frame++)
+                    {
+                        int index = direction * clip.FrameCount + frame;
+                        AnimationAtlas.Frame packed = clip.Frames[index];
+
+                        RectInt rect = packed.PackedRect;
+
+                        if (!rect.Equals(layers[frame].PackedRect))
+                            return ReportStaleAtlas(definition);
+
+                        bool empty = rect.Equals(new RectInt(0, 0, 0, 0));
+
+                        if (empty)
+                        {
+                            if (packed.PageIndex != -1)
+                                return ReportStaleAtlas(definition);
+
+                            continue;
+                        }
+
+                        if (!Fits(rect, atlas.CellWidth, atlas.CellHeight) ||
+                            packed.PageIndex < 0 ||
+                            packed.PageIndex >= atlas.TextureArray.depth)
+                        {
+                            return ReportStaleAtlas(definition);
+                        }
+
+                        RectInt atlasRect = packed.AtlasRect;
+
+                        if (atlasRect.width != rect.width ||
+                            atlasRect.height != rect.height ||
+                            !Fits(
+                                atlasRect,
+                                atlas.TextureArray.width,
+                                atlas.TextureArray.height))
+                        {
+                            return ReportStaleAtlas(definition);
+                        }
+                    }
                 }
 
-                return ValidateLayers(
-                           definition, definition.Down, "Down") &&
-                       ValidateLayers(
-                           definition, definition.Up, "Up") &&
-                       ValidateLayers(
-                           definition, definition.Left, "Left") &&
-                       ValidateLayers(
-                           definition, definition.Right, "Right");
+                return true;
             }
 
-            private static bool ValidateLayers(
-                AnimationDefinition definition,
-                AnimationDefinition.FrameLayer[] layers,
-                string direction)
+            private static bool Fits(RectInt rect, int width, int height)
             {
-                if (layers != null &&
-                    layers.Length == definition.FrameCount)
-                {
-                    return true;
-                }
+                return rect.x >= 0 &&
+                       rect.y >= 0 &&
+                       rect.width > 0 &&
+                       rect.height > 0 &&
+                       rect.width <= width &&
+                       rect.height <= height &&
+                       rect.x <= width - rect.width &&
+                       rect.y <= height - rect.height;
+            }
 
+            private static bool ReportStaleAtlas(
+                AnimationDefinition definition)
+            {
                 Debug.LogError(
-                    $"{definition.name}: {direction} must contain " +
-                    $"exactly {definition.FrameCount} ZIndex entries.",
+                    $"{definition.name}: atlas frame data is invalid or outdated. " +
+                    "Rebuild the Animation Atlas.",
                     definition);
 
                 return false;
             }
 
-            private static void CopyLayers(
-                ref BlobBuilder builder,
-                ref BlobArray<int> destination,
-                AnimationDefinition.FrameLayer[] source)
+            private static AnimationDefinition.FrameLayer[] GetLayers(
+                AnimationDefinition definition,
+                int direction)
             {
-                BlobBuilderArray<int> values =
-                    builder.Allocate(ref destination, source.Length);
-
-                for (int i = 0; i < source.Length; i++)
-                    values[i] = source[i].ZIndex;
+                return direction switch
+                {
+                    0 => definition.Down,
+                    1 => definition.Up,
+                    2 => definition.Left,
+                    _ => definition.Right
+                };
             }
         }
     }

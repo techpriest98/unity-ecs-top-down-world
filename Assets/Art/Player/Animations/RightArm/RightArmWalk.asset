@@ -20,21 +20,101 @@ MonoBehaviour:
   Loop: 1
   Down:
   - ZIndex: 1
+    PackedRect:
+      x: 42
+      y: 51
+      width: 9
+      height: 43
   - ZIndex: 0
+    PackedRect:
+      x: 46
+      y: 52
+      width: 11
+      height: 43
   - ZIndex: -1
+    PackedRect:
+      x: 44
+      y: 54
+      width: 9
+      height: 38
   - ZIndex: 0
+    PackedRect:
+      x: 46
+      y: 52
+      width: 11
+      height: 43
   Up:
-  - ZIndex: -1
-  - ZIndex: 0
   - ZIndex: 1
+    PackedRect:
+      x: 13
+      y: 49
+      width: 11
+      height: 45
   - ZIndex: 0
+    PackedRect:
+      x: 9
+      y: 52
+      width: 10
+      height: 42
+  - ZIndex: -1
+    PackedRect:
+      x: 12
+      y: 54
+      width: 9
+      height: 40
+  - ZIndex: 0
+    PackedRect:
+      x: 9
+      y: 52
+      width: 10
+      height: 42
   Left:
   - ZIndex: 1
+    PackedRect:
+      x: 34
+      y: 52
+      width: 15
+      height: 41
   - ZIndex: 1
+    PackedRect:
+      x: 33
+      y: 53
+      width: 12
+      height: 42
   - ZIndex: 1
+    PackedRect:
+      x: 29
+      y: 52
+      width: 15
+      height: 41
   - ZIndex: 1
+    PackedRect:
+      x: 33
+      y: 53
+      width: 12
+      height: 42
   Right:
   - ZIndex: -1
+    PackedRect:
+      x: 37
+      y: 55
+      width: 10
+      height: 32
   - ZIndex: -1
+    PackedRect:
+      x: 0
+      y: 0
+      width: 0
+      height: 0
   - ZIndex: -1
+    PackedRect:
+      x: 0
+      y: 0
+      width: 0
+      height: 0
   - ZIndex: -1
+    PackedRect:
+      x: 0
+      y: 0
+      width: 0
+      height: 0

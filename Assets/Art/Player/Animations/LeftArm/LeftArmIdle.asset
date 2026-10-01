@@ -20,13 +20,53 @@ MonoBehaviour:
   Loop: 1
   Down:
   - ZIndex: 0
+    PackedRect:
+      x: 10
+      y: 52
+      width: 10
+      height: 43
   - ZIndex: 0
+    PackedRect:
+      x: 10
+      y: 51
+      width: 10
+      height: 43
   Up:
   - ZIndex: 0
+    PackedRect:
+      x: 45
+      y: 52
+      width: 10
+      height: 42
   - ZIndex: 0
+    PackedRect:
+      x: 45
+      y: 51
+      width: 10
+      height: 42
   Left:
   - ZIndex: -1
+    PackedRect:
+      x: 0
+      y: 0
+      width: 0
+      height: 0
   - ZIndex: -1
+    PackedRect:
+      x: 0
+      y: 0
+      width: 0
+      height: 0
   Right:
   - ZIndex: 1
+    PackedRect:
+      x: 19
+      y: 53
+      width: 12
+      height: 42
   - ZIndex: 1
+    PackedRect:
+      x: 19
+      y: 53
+      width: 12
+      height: 41

@@ -29,6 +29,12 @@ namespace Game.Player
         public struct FrameLayer
         {
             public int ZIndex;
+
+            [Tooltip(
+                "Trimmed bounds in pixels relative to the bottom-left " +
+                "corner of the original frame cell. " +
+                "(0, 0, 0, 0) means an empty frame.")]
+            public RectInt PackedRect;
         }
     }
 }

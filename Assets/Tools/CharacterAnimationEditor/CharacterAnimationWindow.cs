@@ -6,6 +6,10 @@ using UnityEngine;
 
 public sealed class CharacterAnimationWindow : EditorWindow
 {
+    private const int CellWidth = 64;
+    private const int CellHeight = 128;
+    private const int DirectionCount = 4;
+
     private static readonly string[] PartNames =
     {
         "Body", "Left Arm", "Right Arm"
@@ -36,8 +40,8 @@ public sealed class CharacterAnimationWindow : EditorWindow
     [SerializeField] private int direction;
     [SerializeField] private int frame;
     [SerializeField] private int zoom = 3;
-
     [SerializeField] private int timelinePart;
+    [SerializeField] private bool showTrimBounds = true;
 
     private readonly AnimationDefinition[] layers =
         new AnimationDefinition[3];
@@ -72,7 +76,8 @@ public sealed class CharacterAnimationWindow : EditorWindow
         minSize = new Vector2(420f, 520f);
 
         selectedPart = Mathf.Clamp(selectedPart, 0, 2);
-        direction = Mathf.Clamp(direction, 0, 3);
+        timelinePart = Mathf.Clamp(timelinePart, 0, 2);
+        direction = Mathf.Clamp(direction, 0, DirectionCount - 1);
         zoom = Mathf.Clamp(zoom, 1, 4);
 
         if (visible == null || visible.Length != 3)
@@ -115,12 +120,13 @@ public sealed class CharacterAnimationWindow : EditorWindow
     {
         get
         {
-            if ((uint)timelinePart < (uint)layers.Length && layers[timelinePart] != null)
+            if ((uint)timelinePart < (uint)layers.Length &&
+                layers[timelinePart] != null)
             {
                 return layers[timelinePart];
             }
 
-            foreach (var layer in layers)
+            foreach (AnimationDefinition layer in layers)
             {
                 if (layer != null)
                     return layer;
@@ -134,7 +140,7 @@ public sealed class CharacterAnimationWindow : EditorWindow
     {
         get
         {
-            foreach (var ids in animationIdsByPart)
+            foreach (List<AnimationID> ids in animationIdsByPart)
             {
                 if (ids.Count > 0)
                     return true;
@@ -206,6 +212,7 @@ public sealed class CharacterAnimationWindow : EditorWindow
             DirectionNames);
 
         DrawPlayback();
+        DrawTrimControls();
 
         previewScroll = EditorGUILayout.BeginScrollView(
             previewScroll,
@@ -325,6 +332,26 @@ public sealed class CharacterAnimationWindow : EditorWindow
             4);
     }
 
+    private void DrawTrimControls()
+    {
+        EditorGUILayout.BeginHorizontal();
+
+        using (new EditorGUI.DisabledScope(
+                   database == null ||
+                   database.Animations == null ||
+                   database.Animations.Length == 0))
+        {
+            if (GUILayout.Button("Trim All", GUILayout.Width(90f)))
+                TrimAll();
+        }
+
+        showTrimBounds = GUILayout.Toggle(
+            showTrimBounds,
+            "Show Trim Bounds");
+
+        EditorGUILayout.EndHorizontal();
+    }
+
     private void DrawAnimationStrip()
     {
         EditorGUILayout.Space(4f);
@@ -400,7 +427,7 @@ public sealed class CharacterAnimationWindow : EditorWindow
     {
         refreshRequired = false;
 
-        foreach (var ids in animationIdsByPart)
+        foreach (List<AnimationID> ids in animationIdsByPart)
             ids.Clear();
 
         if (database != null && database.Animations != null)
@@ -544,11 +571,11 @@ public sealed class CharacterAnimationWindow : EditorWindow
             }
             else if (
                 (long)layer.SpriteSheet.width !=
-                    (long)layer.FrameCount * 64 ||
-                layer.SpriteSheet.height != 4 * 128)
+                    (long)layer.FrameCount * CellWidth ||
+                layer.SpriteSheet.height != DirectionCount * CellHeight)
             {
                 warnings.Add(
-                    $"{layer.name}: expected 64×128 cells, " +
+                    $"{layer.name}: expected {CellWidth}×{CellHeight} cells, " +
                     "FrameCount columns and 4 rows.");
             }
 
@@ -570,11 +597,11 @@ public sealed class CharacterAnimationWindow : EditorWindow
                      master.FrameDuration) ||
                  layer.Loop != master.Loop))
             {
-               warnings.Add(
-                "Selected parts have different playback settings. " +
-                "Preview uses the last clicked animation as its timeline. " +
-                "Shorter layers repeat or hold their last frame; " +
-                "longer layers may not show every frame.");
+                warnings.Add(
+                    "Selected parts have different playback settings. " +
+                    "Preview uses the last clicked animation as its timeline. " +
+                    "Shorter layers repeat or hold their last frame; " +
+                    "longer layers may not show every frame.");
 
                 timelineWarningAdded = true;
             }
@@ -590,8 +617,8 @@ public sealed class CharacterAnimationWindow : EditorWindow
 
     private void DrawPreview()
     {
-        float width = 64f * zoom;
-        float height = 128f * zoom;
+        float width = CellWidth * zoom;
+        float height = CellHeight * zoom;
 
         Rect area = GUILayoutUtility.GetRect(
             0f,
@@ -652,12 +679,13 @@ public sealed class CharacterAnimationWindow : EditorWindow
 
             int layerFrame = GetLayerFrame(definition);
             float frameWidth = 1f / definition.FrameCount;
+            float frameHeight = 1f / DirectionCount;
 
             Rect uv = new Rect(
                 layerFrame * frameWidth,
-                (3 - direction) * 0.25f,
+                (DirectionCount - 1 - direction) * frameHeight,
                 frameWidth,
-                0.25f);
+                frameHeight);
 
             GUI.DrawTextureWithTexCoords(
                 target,
@@ -665,6 +693,295 @@ public sealed class CharacterAnimationWindow : EditorWindow
                 uv,
                 true);
         }
+
+        if (showTrimBounds)
+            DrawTrimBounds(target);
+    }
+
+    private void TrimAll()
+    {
+        if (database == null || database.Animations == null)
+            return;
+
+        // Обчислюємо всі результати до зміни конфігурацій.
+        var results =
+            new Dictionary<
+                AnimationDefinition,
+                AnimationDefinition.FrameLayer[][]>();
+
+        int totalFrames = 0;
+        int emptyFrames = 0;
+
+        try
+        {
+            foreach (AnimationDefinition definition in database.Animations)
+            {
+                if (definition == null)
+                {
+                    throw new InvalidOperationException(
+                        "Database contains an empty animation entry.");
+                }
+
+                if (results.ContainsKey(definition))
+                    continue;
+
+                Texture2D texture = definition.SpriteSheet;
+
+                if (texture == null)
+                {
+                    throw new InvalidOperationException(
+                        $"{definition.name}: SpriteSheet is missing.");
+                }
+
+                if (definition.FrameCount < 1 ||
+                    (long)texture.width !=
+                        (long)definition.FrameCount * CellWidth ||
+                    texture.height != DirectionCount * CellHeight)
+                {
+                    throw new InvalidOperationException(
+                        $"{definition.name}: expected " +
+                        $"{CellWidth}×{CellHeight} cells, " +
+                        "FrameCount columns and 4 direction rows.");
+                }
+
+                if (!texture.isReadable)
+                {
+                    throw new InvalidOperationException(
+                        $"{texture.name}: enable Read/Write " +
+                        "in Texture Import Settings and click Apply.");
+                }
+
+                Color32[] pixels = texture.GetPixels32(0);
+
+                if (pixels.Length != texture.width * texture.height)
+                {
+                    throw new InvalidOperationException(
+                        $"{texture.name}: unexpected pixel count.");
+                }
+
+                var directions =
+                    new AnimationDefinition.FrameLayer[DirectionCount][];
+
+                for (int view = 0; view < DirectionCount; view++)
+                {
+                    AnimationDefinition.FrameLayer[] original =
+                        GetDirectionEntries(definition, view);
+
+                    var entries =
+                        new AnimationDefinition.FrameLayer[
+                            definition.FrameCount];
+
+                    // Зберігаємо ZIndex існуючих кадрів.
+                    if (original != null)
+                    {
+                        Array.Copy(
+                            original,
+                            entries,
+                            Math.Min(original.Length, entries.Length));
+                    }
+
+                    for (int index = 0;
+                         index < definition.FrameCount;
+                         index++)
+                    {
+                        RectInt bounds = CalculateTrimBounds(
+                            pixels,
+                            texture.width,
+                            index * CellWidth,
+                            (DirectionCount - 1 - view) * CellHeight,
+                            CellWidth,
+                            CellHeight);
+
+                        entries[index].PackedRect = bounds;
+
+                        totalFrames++;
+
+                        if (bounds.width == 0 || bounds.height == 0)
+                            emptyFrames++;
+                    }
+
+                    directions[view] = entries;
+                }
+
+                results.Add(definition, directions);
+            }
+        }
+        catch (Exception exception)
+        {
+            Debug.LogException(exception, database);
+
+            EditorUtility.DisplayDialog(
+                "Trim All",
+                exception.Message,
+                "OK");
+
+            return;
+        }
+
+        if (results.Count == 0)
+            return;
+
+        playing = false;
+
+        var targets = new UnityEngine.Object[results.Count];
+        int targetIndex = 0;
+
+        foreach (AnimationDefinition definition in results.Keys)
+            targets[targetIndex++] = definition;
+
+        Undo.IncrementCurrentGroup();
+        int undoGroup = Undo.GetCurrentGroup();
+
+        Undo.SetCurrentGroupName("Trim All Animations");
+        Undo.RegisterCompleteObjectUndo(
+            targets,
+            "Trim All Animations");
+
+        foreach (var result in results)
+        {
+            AnimationDefinition definition = result.Key;
+            AnimationDefinition.FrameLayer[][] directions = result.Value;
+
+            definition.Down = directions[0];
+            definition.Up = directions[1];
+            definition.Left = directions[2];
+            definition.Right = directions[3];
+
+            EditorUtility.SetDirty(definition);
+        }
+
+        Undo.CollapseUndoOperations(undoGroup);
+
+        AssetDatabase.SaveAssets();
+        RequestRefresh();
+
+        ShowNotification(new GUIContent(
+            $"Trimmed {results.Count} animations, " +
+            $"{totalFrames} frames ({emptyFrames} empty)."));
+    }
+
+    private static RectInt CalculateTrimBounds(
+        Color32[] pixels,
+        int textureWidth,
+        int cellX,
+        int cellY,
+        int cellWidth,
+        int cellHeight)
+    {
+        int minX = cellWidth;
+        int minY = cellHeight;
+        int maxX = -1;
+        int maxY = -1;
+
+        for (int y = 0; y < cellHeight; y++)
+        {
+            int rowStart = (cellY + y) * textureWidth + cellX;
+
+            for (int x = 0; x < cellWidth; x++)
+            {
+                if (pixels[rowStart + x].a == 0)
+                    continue;
+
+                minX = Math.Min(minX, x);
+                minY = Math.Min(minY, y);
+                maxX = Math.Max(maxX, x);
+                maxY = Math.Max(maxY, y);
+            }
+        }
+
+        if (maxX < 0)
+            return new RectInt(0, 0, 0, 0);
+
+        return new RectInt(
+            minX,
+            minY,
+            maxX - minX + 1,
+            maxY - minY + 1);
+    }
+
+    private void DrawTrimBounds(Rect target)
+    {
+        // Рамки малюються поверх усіх частин персонажа.
+        for (int i = 0; i < layers.Length; i++)
+        {
+            AnimationDefinition definition = layers[i];
+
+            if (!visible[i] ||
+                definition == null ||
+                definition.SpriteSheet == null ||
+                definition.FrameCount < 1)
+            {
+                continue;
+            }
+
+            AnimationDefinition.FrameLayer[] entries =
+                GetDirectionEntries(definition, direction);
+
+            int layerFrame = GetLayerFrame(definition);
+
+            if (entries == null || layerFrame >= entries.Length)
+                continue;
+
+            RectInt bounds = entries[layerFrame].PackedRect;
+
+            if (bounds.width <= 0 || bounds.height <= 0)
+                continue;
+
+            float scaleX = target.width / CellWidth;
+            float scaleY = target.height / CellHeight;
+
+            // Текстура: Y вгору. GUI: Y вниз.
+            Rect border = new Rect(
+                target.x + bounds.x * scaleX,
+                target.y + (CellHeight - bounds.yMax) * scaleY,
+                bounds.width * scaleX,
+                bounds.height * scaleY);
+
+            DrawTrimBorder(border);
+        }
+    }
+
+    private static void DrawTrimBorder(Rect rect)
+    {
+        Color color = new Color(0.2f, 0.8f, 1f, 1f);
+        float thickness = 1f / EditorGUIUtility.pixelsPerPoint;
+
+        EditorGUI.DrawRect(
+            new Rect(rect.xMin, rect.yMin, rect.width, thickness),
+            color);
+
+        EditorGUI.DrawRect(
+            new Rect(
+                rect.xMin,
+                rect.yMax - thickness,
+                rect.width,
+                thickness),
+            color);
+
+        EditorGUI.DrawRect(
+            new Rect(rect.xMin, rect.yMin, thickness, rect.height),
+            color);
+
+        EditorGUI.DrawRect(
+            new Rect(
+                rect.xMax - thickness,
+                rect.yMin,
+                thickness,
+                rect.height),
+            color);
+    }
+
+    private static AnimationDefinition.FrameLayer[] GetDirectionEntries(
+        AnimationDefinition definition,
+        int view)
+    {
+        return view switch
+        {
+            0 => definition.Down,
+            1 => definition.Up,
+            2 => definition.Left,
+            _ => definition.Right
+        };
     }
 
     private int GetLayerFrame(AnimationDefinition definition)
@@ -681,13 +998,8 @@ public sealed class CharacterAnimationWindow : EditorWindow
         if (definition == null)
             return 0;
 
-        AnimationDefinition.FrameLayer[] entries = direction switch
-        {
-            0 => definition.Down,
-            1 => definition.Up,
-            2 => definition.Left,
-            _ => definition.Right
-        };
+        AnimationDefinition.FrameLayer[] entries =
+            GetDirectionEntries(definition, direction);
 
         int layerFrame = GetLayerFrame(definition);
 

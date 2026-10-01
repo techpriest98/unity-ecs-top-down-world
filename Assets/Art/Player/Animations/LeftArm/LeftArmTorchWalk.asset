@@ -10,111 +10,111 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cf535e3438872402d8997322da8812ce, type: 3}
-  m_Name: LeftArmWalk
+  m_Name: LeftArmTorchWalk
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.AnimationDefinition
   Part: 1
-  Id: 1
-  SpriteSheet: {fileID: 2800000, guid: f5c4cd7da0356400ab4069a056d71553, type: 3}
+  Id: 3
+  SpriteSheet: {fileID: 2800000, guid: 6f6d3db7b78744d14b6c23af090dcc56, type: 3}
   FrameCount: 4
   FrameDuration: 0.18
   Loop: 1
   Down:
   - ZIndex: -1
     PackedRect:
-      x: 13
-      y: 53
-      width: 9
-      height: 40
+      x: 12
+      y: 62
+      width: 11
+      height: 32
   - ZIndex: 0
     PackedRect:
       x: 10
-      y: 52
-      width: 10
-      height: 43
+      y: 63
+      width: 11
+      height: 32
   - ZIndex: 1
     PackedRect:
-      x: 14
-      y: 51
-      width: 10
-      height: 42
+      x: 13
+      y: 62
+      width: 11
+      height: 32
   - ZIndex: 0
     PackedRect:
       x: 10
-      y: 52
-      width: 10
-      height: 43
+      y: 63
+      width: 11
+      height: 32
   Up:
   - ZIndex: -1
     PackedRect:
-      x: 44
-      y: 53
-      width: 9
-      height: 41
+      x: 43
+      y: 66
+      width: 14
+      height: 28
   - ZIndex: 0
     PackedRect:
-      x: 45
-      y: 52
-      width: 10
-      height: 42
+      x: 44
+      y: 66
+      width: 14
+      height: 28
   - ZIndex: 1
     PackedRect:
-      x: 41
-      y: 50
-      width: 10
-      height: 44
+      x: 42
+      y: 66
+      width: 14
+      height: 28
   - ZIndex: 0
     PackedRect:
-      x: 45
-      y: 52
-      width: 10
-      height: 42
+      x: 44
+      y: 66
+      width: 14
+      height: 28
   Left:
   - ZIndex: -1
     PackedRect:
-      x: 17
-      y: 55
-      width: 11
-      height: 32
+      x: 13
+      y: 63
+      width: 17
+      height: 28
   - ZIndex: -1
     PackedRect:
-      x: 0
-      y: 0
-      width: 0
-      height: 0
+      x: 13
+      y: 67
+      width: 17
+      height: 26
   - ZIndex: -1
     PackedRect:
-      x: 0
-      y: 0
-      width: 0
-      height: 0
+      x: 14
+      y: 64
+      width: 17
+      height: 28
   - ZIndex: -1
     PackedRect:
-      x: 0
-      y: 0
-      width: 0
-      height: 0
+      x: 13
+      y: 66
+      width: 17
+      height: 28
   Right:
   - ZIndex: 1
     PackedRect:
-      x: 15
-      y: 52
-      width: 15
-      height: 41
+      x: 18
+      y: 61
+      width: 27
+      height: 33
   - ZIndex: 1
     PackedRect:
-      x: 19
-      y: 53
-      width: 12
-      height: 42
+      x: 18
+      y: 63
+      width: 28
+      height: 33
   - ZIndex: 1
     PackedRect:
-      x: 19
-      y: 53
-      width: 16
-      height: 41
+      x: 18
+      y: 62
+      width: 28
+      height: 33
   - ZIndex: 1
     PackedRect:
-      x: 19
-      y: 53
-      width: 12
-      height: 42
+      x: 18
+      y: 63
+      width: 28
+      height: 33

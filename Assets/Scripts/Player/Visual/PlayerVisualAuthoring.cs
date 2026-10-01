@@ -4,6 +4,13 @@ using UnityEngine;
 
 namespace Game.Player
 {
+    public struct PlayerVisualBaseTransform : IComponentData
+    {
+        public float3 Position;
+        public quaternion Rotation;
+        public float3 Scale;
+    }
+
     [DisallowMultipleComponent]
     public sealed class PlayerVisualAuthoring : MonoBehaviour
     {
@@ -17,6 +24,14 @@ namespace Game.Player
             public override void Bake(PlayerVisualAuthoring authoring)
             {
                 Entity entity = GetEntity(TransformUsageFlags.Dynamic);
+                Transform source = authoring.transform;
+
+                AddComponent(entity, new PlayerVisualBaseTransform
+                {
+                    Position = source.localPosition,
+                    Rotation = source.localRotation,
+                    Scale = source.localScale
+                });
 
                 AddComponent(entity, new PlayerSpriteUv
                 {

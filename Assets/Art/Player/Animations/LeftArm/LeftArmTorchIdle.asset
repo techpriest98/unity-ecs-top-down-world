@@ -10,63 +10,63 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cf535e3438872402d8997322da8812ce, type: 3}
-  m_Name: BodyIdle
+  m_Name: LeftArmTorchIdle
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.AnimationDefinition
-  Part: 0
-  Id: 0
-  SpriteSheet: {fileID: 2800000, guid: 660da847993284adab605ae490db91c2, type: 3}
+  Part: 1
+  Id: 2
+  SpriteSheet: {fileID: 2800000, guid: aad1864070d7e4206b4ab6e4c1f93f49, type: 3}
   FrameCount: 2
   FrameDuration: 1
   Loop: 1
   Down:
   - ZIndex: 0
     PackedRect:
-      x: 18
-      y: 25
-      width: 31
-      height: 98
+      x: 10
+      y: 63
+      width: 11
+      height: 32
   - ZIndex: 0
     PackedRect:
-      x: 17
-      y: 25
-      width: 32
-      height: 97
+      x: 10
+      y: 62
+      width: 11
+      height: 32
   Up:
   - ZIndex: 0
     PackedRect:
-      x: 17
-      y: 26
-      width: 30
-      height: 96
+      x: 44
+      y: 66
+      width: 14
+      height: 28
   - ZIndex: 0
     PackedRect:
-      x: 17
-      y: 26
-      width: 30
-      height: 95
+      x: 44
+      y: 65
+      width: 14
+      height: 29
   Left:
-  - ZIndex: 0
+  - ZIndex: -1
     PackedRect:
-      x: 18
-      y: 25
-      width: 26
-      height: 97
-  - ZIndex: 0
+      x: 13
+      y: 66
+      width: 17
+      height: 26
+  - ZIndex: -1
     PackedRect:
-      x: 18
-      y: 25
-      width: 26
-      height: 96
+      x: 13
+      y: 65
+      width: 17
+      height: 26
   Right:
-  - ZIndex: 0
+  - ZIndex: 1
     PackedRect:
-      x: 20
-      y: 25
-      width: 27
-      height: 97
-  - ZIndex: 0
+      x: 18
+      y: 63
+      width: 28
+      height: 33
+  - ZIndex: 1
     PackedRect:
-      x: 20
-      y: 25
-      width: 27
-      height: 96
+      x: 18
+      y: 62
+      width: 28
+      height: 33

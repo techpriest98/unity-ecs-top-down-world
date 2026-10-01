@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace Game.Player
 {
@@ -21,12 +22,19 @@ namespace Game.Player
         public float FrameDuration;
         public bool Loop;
 
-        public int TextureIndex;
-        public float FrameWidth;
+        public BlobArray<PlayerAnimationFrameBlob> Frames;
+    }
 
-        public BlobArray<int> Down;
-        public BlobArray<int> Up;
-        public BlobArray<int> Left;
-        public BlobArray<int> Right;
+    public struct PlayerAnimationFrameBlob
+    {
+        public int PageIndex;
+
+        public int ZIndex;
+
+        public float4 UvScaleOffset;
+
+        public float2 Size;
+
+        public float2 Offset;
     }
 }

@@ -1,3 +1,4 @@
+using Game.World.Lighting;
 using Game.World.Rendering;
 using Unity.Burst;
 using Unity.Entities;
@@ -10,49 +11,82 @@ namespace Game.Player
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(PlayerMovementSystem))]
     [UpdateAfter(typeof(ViewDirectionInputSystem))]
+    [UpdateAfter(typeof(PlayerLightDebugSystem))]
     [UpdateBefore(typeof(TransformSystemGroup))]
     public partial struct PlayerAnimationSystem : ISystem
     {
-        private const float FrameHeight = 1f / 4f;
         private const float LayerDepthStep = 0.001f;
+
+        private EntityQuery missingPostTransformQuery;
 
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<ViewDirectionComponent>();
             state.RequireForUpdate<PlayerAnimationLibrary>();
+
+            missingPostTransformQuery = SystemAPI.QueryBuilder()
+                .WithAll<PlayerVisualBaseTransform, LocalTransform>()
+                .WithNone<PostTransformMatrix>()
+                .Build();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            if (!missingPostTransformQuery.IsEmptyIgnoreFilter)
+            {
+                state.EntityManager.AddComponent(
+                    missingPostTransformQuery,
+                    ComponentType.ReadWrite<PostTransformMatrix>());
+            }
+
+            state.Dependency.Complete();
+
             state.EntityManager.CompleteDependencyBeforeRW<LocalTransform>();
+            state.EntityManager.CompleteDependencyBeforeRW<PostTransformMatrix>();
+            state.EntityManager.CompleteDependencyBeforeRW<PlayerSpriteUv>();
+            state.EntityManager.CompleteDependencyBeforeRW<PlayerSpriteIndex>();
+            state.EntityManager.CompleteDependencyBeforeRO<PlayerVisualBaseTransform>();
+            state.EntityManager.CompleteDependencyBeforeRO<DynamicLightSource>();
+
             float deltaTime = SystemAPI.Time.DeltaTime;
 
             ViewDirection viewDirection =
                 SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
 
-            ComponentLookup<PlayerSpriteUv> uvLookup =
+            var uvLookup =
                 SystemAPI.GetComponentLookup<PlayerSpriteUv>();
 
-            ComponentLookup<PlayerSpriteIndex> spriteIndexLookup =
+            var spriteIndexLookup =
                 SystemAPI.GetComponentLookup<PlayerSpriteIndex>();
 
-            ComponentLookup<LocalTransform> transformLookup =
+            var transformLookup =
                 SystemAPI.GetComponentLookup<LocalTransform>();
+
+            var postTransformLookup =
+                SystemAPI.GetComponentLookup<PostTransformMatrix>();
+
+            var baseTransformLookup =
+                SystemAPI.GetComponentLookup<PlayerVisualBaseTransform>(true);
+
+            var lightLookup =
+                SystemAPI.GetComponentLookup<DynamicLightSource>(true);
 
             foreach (var (
                          moveInput,
                          facing,
                          animation,
                          library,
-                         parts)
+                         parts,
+                         playerEntity)
                      in SystemAPI.Query<
                              RefRO<PlayerMoveInput>,
                              RefRO<PlayerFacing>,
                              RefRW<PlayerAnimationData>,
                              RefRO<PlayerAnimationLibrary>,
                              DynamicBuffer<PlayerVisualPart>>()
-                         .WithAll<PlayerTag>())
+                         .WithAll<PlayerTag>()
+                         .WithEntityAccess())
             {
                 if (!library.ValueRO.Value.IsCreated)
                     continue;
@@ -62,6 +96,10 @@ namespace Game.Player
 
                 bool isMoving =
                     math.lengthsq(moveInput.ValueRO.Value) > 0.0001f;
+
+                bool torchEnabled =
+                    lightLookup.HasComponent(playerEntity) &&
+                    lightLookup.IsComponentEnabled(playerEntity);
 
                 PlayerAnimationState nextState = isMoving
                     ? PlayerAnimationState.Walk
@@ -82,6 +120,7 @@ namespace Game.Player
                 ref PlayerAnimationClipBlob bodyClip =
                     ref database.Clips[bodyIndex];
 
+                // Таймер тіла синхронізує кадри всіх частин.
                 if (animation.ValueRO.State != nextState)
                 {
                     animation.ValueRW.State = nextState;
@@ -133,59 +172,118 @@ namespace Game.Player
                 for (int i = 0; i < parts.Length; i++)
                 {
                     PlayerVisualPart part = parts[i];
+                    Entity visualEntity = part.VisualEntity;
 
-                    if (!uvLookup.HasComponent(part.VisualEntity) ||
-                        !spriteIndexLookup.HasComponent(part.VisualEntity) ||
-                        !transformLookup.HasComponent(part.VisualEntity))
+                    if (!uvLookup.HasComponent(visualEntity) ||
+                        !spriteIndexLookup.HasComponent(visualEntity) ||
+                        !transformLookup.HasComponent(visualEntity) ||
+                        !postTransformLookup.HasComponent(visualEntity) ||
+                        !baseTransformLookup.HasComponent(visualEntity))
                     {
                         continue;
+                    }
+
+                    AnimationID partAnimationId = animationId;
+
+                    if (torchEnabled && part.Part == CharacterPart.LeftArm)
+                    {
+                        partAnimationId = isMoving
+                            ? AnimationID.TorchWalk
+                            : AnimationID.TorchIdle;
                     }
 
                     int clipIndex = FindClip(
                         ref database,
                         part.Part,
-                        animationId);
+                        partAnimationId);
 
-                    if (clipIndex < 0)
-                        continue;
+                    // Якщо Torch-кліпу немає — звичайна анімація руки.
+                    if (clipIndex < 0 && partAnimationId != animationId)
+                    {
+                        clipIndex = FindClip(
+                            ref database,
+                            part.Part,
+                            animationId);
+                    }
 
-                    ref PlayerAnimationClipBlob clip =
-                        ref database.Clips[clipIndex];
+                    PlayerVisualBaseTransform baseTransform =
+                        baseTransformLookup[visualEntity];
 
-                    int frame = clip.Loop
-                        ? animation.ValueRO.Frame % clip.FrameCount
-                        : math.min(
-                            animation.ValueRO.Frame,
-                            clip.FrameCount - 1);
-
-                    float frameWidth = clip.FrameWidth;
-
-                    spriteIndexLookup[part.VisualEntity] =
-                        new PlayerSpriteIndex
+                    // Відсутній кліп теж приховує частину,
+                    // щоб не залишати зображення попереднього кадру.
+                    PlayerAnimationFrameBlob frameData =
+                        new PlayerAnimationFrameBlob
                         {
-                            Value = clip.TextureIndex
+                            PageIndex = -1
                         };
 
-                    uvLookup[part.VisualEntity] = new PlayerSpriteUv
+                    if (clipIndex >= 0)
                     {
-                        Value = new float4(
-                            frameWidth,
-                            FrameHeight,
-                            frame * frameWidth,
-                            (3 - direction) * FrameHeight)
+                        ref PlayerAnimationClipBlob clip =
+                            ref database.Clips[clipIndex];
+
+                        int frame = clip.Loop
+                            ? animation.ValueRO.Frame % clip.FrameCount
+                            : math.min(
+                                animation.ValueRO.Frame,
+                                clip.FrameCount - 1);
+
+                        frameData =
+                            clip.Frames[direction * clip.FrameCount + frame];
+                    }
+
+                    bool visible = frameData.PageIndex >= 0;
+
+                    spriteIndexLookup[visualEntity] = new PlayerSpriteIndex
+                    {
+                        // Не передаємо від'ємний індекс у шейдер.
+                        Value = visible ? frameData.PageIndex : 0
                     };
 
-                    int zIndex = GetZIndex(
-                        ref clip,
-                        direction,
-                        frame);
+                    uvLookup[visualEntity] = new PlayerSpriteUv
+                    {
+                        Value = visible
+                            ? frameData.UvScaleOffset
+                            : float4.zero
+                    };
 
-                    LocalTransform transform =
-                        transformLookup[part.VisualEntity];
+                    float3 offset = visible
+                        ? new float3(
+                            frameData.Offset.x,
+                            frameData.Offset.y,
+                            0f)
+                        : float3.zero;
 
-                    transform.Position.z = -zIndex * LayerDepthStep;
+                    // Offset заданий у частках початкового полотна.
+                    float3 position = baseTransform.Position +
+                        math.rotate(
+                            baseTransform.Rotation,
+                            offset * baseTransform.Scale);
 
-                    transformLookup[part.VisualEntity] = transform;
+                    position.z -= frameData.ZIndex * LayerDepthStep;
+
+                    transformLookup[visualEntity] = new LocalTransform
+                    {
+                        Position = position,
+                        Rotation = baseTransform.Rotation,
+
+                        // Весь масштаб задаємо нижче, щоб не подвоїти його.
+                        Scale = 1f
+                    };
+
+                    float3 scale = visible
+                        ? baseTransform.Scale * new float3(
+                            frameData.Size.x,
+                            frameData.Size.y,
+                            1f)
+                        : new float3(0f, 0f, baseTransform.Scale.z);
+
+                    // Порожній кадр має нульову площу Quad.
+                    postTransformLookup[visualEntity] =
+                        new PostTransformMatrix
+                        {
+                            Value = float4x4.Scale(scale)
+                        };
                 }
             }
         }
@@ -205,31 +303,6 @@ namespace Game.Player
             }
 
             return -1;
-        }
-
-        private static int GetZIndex(
-            ref PlayerAnimationClipBlob clip,
-            int direction,
-            int frame)
-        {
-            // Порядок рядків: Down, Up, Left, Right.
-            switch (direction)
-            {
-                case 0:
-                    return clip.Down[frame];
-
-                case 1:
-                    return clip.Up[frame];
-
-                case 2:
-                    return clip.Left[frame];
-
-                case 3:
-                    return clip.Right[frame];
-
-                default:
-                    return 0;
-            }
         }
     }
 }

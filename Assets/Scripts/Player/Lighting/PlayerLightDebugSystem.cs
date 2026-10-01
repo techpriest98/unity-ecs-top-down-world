@@ -6,6 +6,7 @@ namespace Game.Player
 {
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateBefore(typeof(DynamicLightSystem))]
+    [UpdateBefore(typeof(PlayerAnimationSystem))]
     public partial struct PlayerLightDebugSystem : ISystem
     {
         public void OnUpdate(ref SystemState state)
