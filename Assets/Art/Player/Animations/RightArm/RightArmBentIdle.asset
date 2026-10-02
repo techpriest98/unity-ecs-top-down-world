@@ -10,54 +10,41 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cf535e3438872402d8997322da8812ce, type: 3}
-  m_Name: LeftArmTorchIdle
+  m_Name: RightArmBentIdle
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.AnimationDefinition
-  Part: 1
+  Part: 2
   Id: 2
-  SpriteSheet: {fileID: 2800000, guid: aad1864070d7e4206b4ab6e4c1f93f49, type: 3}
+  SpriteSheet: {fileID: 2800000, guid: 2a6932d890b0243d8a2d1c6a9e1b5aaf, type: 3}
   FrameCount: 2
   FrameDuration: 1
   Loop: 1
   Down:
   - ZIndex: 0
     PackedRect:
-      x: 10
-      y: 63
-      width: 11
-      height: 32
+      x: 45
+      y: 62
+      width: 12
+      height: 33
   - ZIndex: 0
     PackedRect:
-      x: 10
+      x: 45
       y: 62
-      width: 11
+      width: 12
       height: 32
   Up:
-  - ZIndex: 0
+  - ZIndex: 1
     PackedRect:
-      x: 44
+      x: 6
       y: 66
       width: 14
       height: 28
-  - ZIndex: 0
+  - ZIndex: 1
     PackedRect:
-      x: 44
+      x: 6
       y: 65
       width: 14
-      height: 29
+      height: 28
   Left:
-  - ZIndex: -1
-    PackedRect:
-      x: 13
-      y: 66
-      width: 17
-      height: 26
-  - ZIndex: -1
-    PackedRect:
-      x: 13
-      y: 65
-      width: 17
-      height: 26
-  Right:
   - ZIndex: 1
     PackedRect:
       x: 18
@@ -70,3 +57,16 @@ MonoBehaviour:
       y: 62
       width: 28
       height: 33
+  Right:
+  - ZIndex: -1
+    PackedRect:
+      x: 34
+      y: 67
+      width: 17
+      height: 28
+  - ZIndex: -1
+    PackedRect:
+      x: 34
+      y: 66
+      width: 17
+      height: 28

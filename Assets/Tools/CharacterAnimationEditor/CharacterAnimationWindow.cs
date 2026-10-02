@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Game.Items;
 using Game.Player;
 using UnityEditor;
 using UnityEngine;
@@ -10,9 +11,9 @@ public sealed class CharacterAnimationWindow : EditorWindow
     private const int CellHeight = 128;
     private const int DirectionCount = 4;
 
-    private static readonly string[] PartNames =
+    private static readonly string[] StateNames =
     {
-        "Body", "Left Arm", "Right Arm"
+        "Idle", "Walk"
     };
 
     private static readonly string[] DirectionNames =
@@ -20,41 +21,37 @@ public sealed class CharacterAnimationWindow : EditorWindow
         "Down", "Up", "Left", "Right"
     };
 
-    [SerializeField]
-    private AnimationDatabase database;
+    [SerializeField] private AnimationDatabase database;
+    [SerializeField] private ItemDatabase itemDatabase;
 
-    [SerializeField]
-    private int selectedPart;
+    [SerializeField] private int selectedState;
+    [SerializeField] private ItemID leftItem;
+    [SerializeField] private ItemID rightItem;
 
-    [SerializeField]
-    private AnimationID[] selectedAnimations =
+    [SerializeField] private bool[] visible =
     {
-        AnimationID.Idle,
-        AnimationID.Idle,
-        AnimationID.Idle
+        true, true, true, true, true
     };
-
-    [SerializeField]
-    private bool[] visible = { true, true, true };
 
     [SerializeField] private int direction;
     [SerializeField] private int frame;
     [SerializeField] private int zoom = 3;
-    [SerializeField] private int timelinePart;
     [SerializeField] private bool showTrimBounds = true;
 
     private readonly AnimationDefinition[] layers =
-        new AnimationDefinition[3];
+        new AnimationDefinition[5];
 
-    private readonly List<AnimationID>[] animationIdsByPart =
-    {
-        new List<AnimationID>(),
-        new List<AnimationID>(),
-        new List<AnimationID>()
-    };
+    private readonly int[] drawOrder = { 0, 1, 2, 3, 4 };
 
+    private readonly Dictionary<
+        (CharacterPart, AnimationID),
+        AnimationDefinition> clips = new();
+
+    private readonly List<ItemDefinition> leftOptions = new();
+    private readonly List<ItemDefinition> rightOptions = new();
+
+    private readonly List<string> databaseWarnings = new();
     private readonly List<string> warnings = new();
-    private readonly int[] drawOrder = { 0, 1, 2 };
 
     private bool playing;
     private bool refreshRequired = true;
@@ -62,31 +59,38 @@ public sealed class CharacterAnimationWindow : EditorWindow
     private double lastUpdate;
     private double elapsed;
 
+    private Vector2 hierarchyScroll;
     private Vector2 previewScroll;
-    private Vector2 stripScroll;
+    private Vector2 controlsScroll;
+
+    private AnimationDefinition Master => layers[0];
+
+    private AnimationID BaseAnimation =>
+        selectedState == 1
+            ? AnimationID.Walk
+            : AnimationID.Idle;
 
     [MenuItem("Tools/Character Animation")]
     private static void Open()
     {
-        GetWindow<CharacterAnimationWindow>("Character Animation");
+        GetWindow<CharacterAnimationWindow>(
+            "Character Animation");
     }
 
     private void OnEnable()
     {
-        minSize = new Vector2(420f, 520f);
+        minSize = new Vector2(1000f, 600f);
 
-        selectedPart = Mathf.Clamp(selectedPart, 0, 2);
-        timelinePart = Mathf.Clamp(timelinePart, 0, 2);
+        selectedState = Mathf.Clamp(selectedState, 0, 1);
         direction = Mathf.Clamp(direction, 0, DirectionCount - 1);
         zoom = Mathf.Clamp(zoom, 1, 4);
 
-        if (visible == null || visible.Length != 3)
-            visible = new[] { true, true, true };
-
-        if (selectedAnimations == null ||
-            selectedAnimations.Length != 3)
+        if (visible == null || visible.Length != 5)
         {
-            selectedAnimations = new AnimationID[3];
+            visible = new[]
+            {
+                true, true, true, true, true
+            };
         }
 
         playing = false;
@@ -116,40 +120,6 @@ public sealed class CharacterAnimationWindow : EditorWindow
         Repaint();
     }
 
-    private AnimationDefinition Master
-    {
-        get
-        {
-            if ((uint)timelinePart < (uint)layers.Length &&
-                layers[timelinePart] != null)
-            {
-                return layers[timelinePart];
-            }
-
-            foreach (AnimationDefinition layer in layers)
-            {
-                if (layer != null)
-                    return layer;
-            }
-
-            return null;
-        }
-    }
-
-    private bool HasAnimations
-    {
-        get
-        {
-            foreach (List<AnimationID> ids in animationIdsByPart)
-            {
-                if (ids.Count > 0)
-                    return true;
-            }
-
-            return false;
-        }
-    }
-
     private void Tick()
     {
         double now = EditorApplication.timeSinceStartup;
@@ -161,10 +131,10 @@ public sealed class CharacterAnimationWindow : EditorWindow
 
         AnimationDefinition master = Master;
 
-        if (!playing || master == null)
+        if (!playing || master == null || master.FrameCount < 1)
             return;
 
-        int count = Mathf.Max(1, master.FrameCount);
+        int count = master.FrameCount;
         double duration = GetDuration(master);
 
         elapsed += delta;
@@ -192,7 +162,7 @@ public sealed class CharacterAnimationWindow : EditorWindow
 
     private void OnGUI()
     {
-        DrawDatabaseField();
+        DrawDatabaseFields();
 
         if (refreshRequired)
             RefreshDatabase();
@@ -205,25 +175,43 @@ public sealed class CharacterAnimationWindow : EditorWindow
             return;
         }
 
-        DrawVisibility();
+        EditorGUILayout.Space(5f);
+        EditorGUILayout.BeginHorizontal();
 
-        direction = GUILayout.Toolbar(
-            direction,
-            DirectionNames);
+        EditorGUILayout.BeginVertical(
+            EditorStyles.helpBox,
+            GUILayout.Width(320f),
+            GUILayout.ExpandHeight(true));
 
-        DrawPlayback();
-        DrawTrimControls();
+        GUILayout.Label("Character", EditorStyles.boldLabel);
+
+        hierarchyScroll = EditorGUILayout.BeginScrollView(
+            hierarchyScroll,
+            GUILayout.ExpandHeight(true));
+
+        DrawTree();
+
+        if (itemDatabase == null)
+        {
+            EditorGUILayout.HelpBox(
+                "Assign Item Database to preview equipped items.",
+                MessageType.Info);
+        }
+
+        EditorGUILayout.EndScrollView();
+        EditorGUILayout.EndVertical();
+
+        EditorGUILayout.BeginVertical(
+            GUILayout.ExpandWidth(true),
+            GUILayout.ExpandHeight(true));
+
+        GUILayout.Label("Preview", EditorStyles.boldLabel);
 
         previewScroll = EditorGUILayout.BeginScrollView(
             previewScroll,
             GUILayout.ExpandHeight(true));
 
-        if (!HasAnimations)
-        {
-            EditorGUILayout.HelpBox(
-                "Database contains no valid animation configs.",
-                MessageType.Info);
-        }
+        DrawPreview();
 
         foreach (string warning in warnings)
         {
@@ -232,33 +220,73 @@ public sealed class CharacterAnimationWindow : EditorWindow
                 MessageType.Warning);
         }
 
-        DrawPreview();
+        EditorGUILayout.EndScrollView();
+        EditorGUILayout.EndVertical();
+
+        EditorGUILayout.BeginVertical(
+            EditorStyles.helpBox,
+            GUILayout.Width(280f),
+            GUILayout.ExpandHeight(true));
+
+        controlsScroll = EditorGUILayout.BeginScrollView(
+            controlsScroll,
+            GUILayout.ExpandHeight(true));
+
+        float previousLabelWidth = EditorGUIUtility.labelWidth;
+        EditorGUIUtility.labelWidth = 65f;
+
+        GUILayout.Label("View", EditorStyles.boldLabel);
+
+        direction = GUILayout.SelectionGrid(
+            direction,
+            DirectionNames,
+            2);
+
+        EditorGUILayout.Space(10f);
+        GUILayout.Label("Playback", EditorStyles.boldLabel);
+
+        DrawPlayback();
+
+        EditorGUILayout.Space(10f);
+        GUILayout.Label("Trimming", EditorStyles.boldLabel);
+
+        DrawTrimControls();
+
+        EditorGUIUtility.labelWidth = previousLabelWidth;
 
         EditorGUILayout.EndScrollView();
+        EditorGUILayout.EndVertical();
 
-        DrawAnimationStrip();
+        EditorGUILayout.EndHorizontal();
     }
 
-    private void DrawDatabaseField()
+    private void DrawDatabaseFields()
     {
         EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.BeginVertical();
 
         EditorGUI.BeginChangeCheck();
 
-        AnimationDatabase nextDatabase =
-            (AnimationDatabase)EditorGUILayout.ObjectField(
-                "Database",
-                database,
-                typeof(AnimationDatabase),
-                false);
+        database = (AnimationDatabase)EditorGUILayout.ObjectField(
+            "Animation Database",
+            database,
+            typeof(AnimationDatabase),
+            false);
+
+        itemDatabase = (ItemDatabase)EditorGUILayout.ObjectField(
+            "Item Database",
+            itemDatabase,
+            typeof(ItemDatabase),
+            false);
 
         if (EditorGUI.EndChangeCheck())
         {
-            database = nextDatabase;
             playing = false;
             ResetTimeline();
             refreshRequired = true;
         }
+
+        EditorGUILayout.EndVertical();
 
         if (GUILayout.Button("Refresh", GUILayout.Width(65f)))
             refreshRequired = true;
@@ -266,18 +294,123 @@ public sealed class CharacterAnimationWindow : EditorWindow
         EditorGUILayout.EndHorizontal();
     }
 
-    private void DrawVisibility()
+    private void DrawTree()
     {
         EditorGUILayout.BeginHorizontal();
 
-        for (int i = 0; i < layers.Length; i++)
+        GUILayout.Label("State", GUILayout.Width(45f));
+
+        EditorGUI.BeginChangeCheck();
+
+        selectedState = EditorGUILayout.Popup(
+            selectedState,
+            StateNames);
+
+        if (EditorGUI.EndChangeCheck())
         {
-            using (new EditorGUI.DisabledScope(layers[i] == null))
-            {
-                visible[i] = GUILayout.Toggle(
-                    visible[i],
-                    PartNames[i]);
-            }
+            ResolveLayers();
+            ResetTimeline();
+        }
+
+        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.Space(8f);
+
+        DrawLayerRow(0, "Body");
+        EditorGUILayout.Space(8f);
+
+        DrawLayerRow(1, "Left Arm");
+        DrawItemRow(3, leftOptions, ref leftItem);
+
+        EditorGUILayout.Space(8f);
+
+        DrawLayerRow(2, "Right Arm");
+        DrawItemRow(4, rightOptions, ref rightItem);
+    }
+
+    private void DrawLayerRow(int index, string label)
+    {
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.Space(12f);
+
+        visible[index] = EditorGUILayout.ToggleLeft(
+            label,
+            visible[index]);
+
+        EditorGUILayout.EndHorizontal();
+
+        DrawResolvedClip(index, 28f);
+    }
+
+    private void DrawItemRow(
+        int layerIndex,
+        List<ItemDefinition> options,
+        ref ItemID selection)
+    {
+        string[] names = new string[options.Count + 1];
+        names[0] = "None";
+
+        int current = 0;
+
+        for (int i = 0; i < options.Count; i++)
+        {
+            ItemDefinition item = options[i];
+
+            string label = string.IsNullOrWhiteSpace(item.DisplayName)
+                ? item.name
+                : item.DisplayName;
+
+            names[i + 1] = $"{label} ({item.Id})";
+
+            if (item.Id == selection)
+                current = i + 1;
+        }
+
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.Space(28f);
+
+        visible[layerIndex] = EditorGUILayout.ToggleLeft(
+            "Item",
+            visible[layerIndex],
+            GUILayout.Width(55f));
+
+        int next = EditorGUILayout.Popup(current, names);
+
+        EditorGUILayout.EndHorizontal();
+
+        if (next != current)
+        {
+            selection = next == 0
+                ? ItemID.None
+                : options[next - 1].Id;
+
+            ResolveLayers();
+        }
+
+        DrawResolvedClip(layerIndex, 44f);
+    }
+
+    private void DrawResolvedClip(int index, float indent)
+    {
+        AnimationDefinition clip = layers[index];
+
+        string label = clip != null
+            ? $"{clip.Part} / {clip.Id}"
+            : "—";
+
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.Space(indent);
+
+        GUILayout.Label(
+            new GUIContent(label, label),
+            EditorStyles.miniLabel,
+            GUILayout.MinWidth(0f),
+            GUILayout.ExpandWidth(true));
+
+        if (clip != null &&
+            GUILayout.Button("Select", GUILayout.Width(52f)))
+        {
+            Selection.activeObject = clip;
+            EditorGUIUtility.PingObject(clip);
         }
 
         EditorGUILayout.EndHorizontal();
@@ -287,43 +420,60 @@ public sealed class CharacterAnimationWindow : EditorWindow
     {
         AnimationDefinition master = Master;
 
-        if (master == null)
-            return;
+        bool canPlay = master != null && master.FrameCount > 0;
 
-        int count = Mathf.Max(1, master.FrameCount);
+        int count = canPlay ? master.FrameCount : 1;
         frame = Mathf.Clamp(frame, 0, count - 1);
 
-        EditorGUILayout.BeginHorizontal();
-
-        if (GUILayout.Button(playing ? "Pause" : "Play"))
+        using (new EditorGUI.DisabledScope(!canPlay))
         {
-            if (!playing && !master.Loop && frame == count - 1)
-                frame = 0;
+            EditorGUILayout.BeginHorizontal();
 
-            playing = !playing;
-            elapsed = 0;
-            lastUpdate = EditorApplication.timeSinceStartup;
+            if (GUILayout.Button(playing ? "Pause" : "Play") &&
+                canPlay)
+            {
+                if (!playing && !master.Loop && frame == count - 1)
+                    frame = 0;
+
+                playing = !playing;
+                elapsed = 0;
+                lastUpdate = EditorApplication.timeSinceStartup;
+            }
+
+            if (GUILayout.Button("Restart"))
+                ResetTimeline();
+
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUI.BeginChangeCheck();
+
+            int nextFrame = EditorGUILayout.IntSlider(
+                "Frame",
+                frame,
+                0,
+                count - 1);
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                frame = nextFrame;
+                elapsed = 0;
+                playing = false;
+            }
         }
 
-        if (GUILayout.Button("Restart"))
-            ResetTimeline();
-
-        EditorGUILayout.EndHorizontal();
-
-        EditorGUI.BeginChangeCheck();
-
-        int nextFrame = EditorGUILayout.IntSlider(
-            "Frame",
-            frame,
-            0,
-            count - 1);
-
-        if (EditorGUI.EndChangeCheck())
+        if (master != null)
         {
-            frame = nextFrame;
-            elapsed = 0;
-            playing = false;
+            EditorGUILayout.Space(4f);
+
+            GUILayout.Label(
+                $"Body timeline\n" +
+                $"{master.FrameCount} frames · " +
+                $"{master.FrameDuration:0.###} s/frame · " +
+                (master.Loop ? "Loop" : "Once"),
+                EditorStyles.wordWrappedMiniLabel);
         }
+
+        EditorGUILayout.Space(6f);
 
         zoom = EditorGUILayout.IntSlider(
             "Zoom",
@@ -334,149 +484,96 @@ public sealed class CharacterAnimationWindow : EditorWindow
 
     private void DrawTrimControls()
     {
-        EditorGUILayout.BeginHorizontal();
-
         using (new EditorGUI.DisabledScope(
                    database == null ||
                    database.Animations == null ||
                    database.Animations.Length == 0))
         {
-            if (GUILayout.Button("Trim All", GUILayout.Width(90f)))
+            if (GUILayout.Button("Trim All"))
                 TrimAll();
         }
 
-        showTrimBounds = GUILayout.Toggle(
-            showTrimBounds,
-            "Show Trim Bounds");
-
-        EditorGUILayout.EndHorizontal();
-    }
-
-    private void DrawAnimationStrip()
-    {
-        EditorGUILayout.Space(4f);
-
-        int nextPart = GUILayout.Toolbar(
-            selectedPart,
-            PartNames);
-
-        if (nextPart != selectedPart)
-        {
-            selectedPart = nextPart;
-            stripScroll = Vector2.zero;
-        }
-
-        List<AnimationID> ids =
-            animationIdsByPart[selectedPart];
-
-        stripScroll = EditorGUILayout.BeginScrollView(
-            stripScroll,
-            GUILayout.Height(100f));
-
-        EditorGUILayout.BeginHorizontal();
-
-        if (ids.Count == 0)
-        {
-            GUILayout.Label(
-                $"No animations for {PartNames[selectedPart]}. " +
-                "Check Part in the configs.");
-        }
-
-        foreach (AnimationID id in ids)
-        {
-            bool selected = id == selectedAnimations[selectedPart];
-
-            var label = new GUIContent(
-                id.ToString(),
-                $"{PartNames[selectedPart]} / {id}");
-
-            Rect buttonRect = GUILayoutUtility.GetRect(
-                label,
-                GUI.skin.button,
-                GUILayout.Width(78f),
-                GUILayout.Height(72f));
-
-            bool pressed = GUI.Button(buttonRect, label);
-
-            if (Event.current.type == EventType.Repaint && selected)
-            {
-                GUI.skin.button.Draw(
-                    buttonRect,
-                    label,
-                    false,
-                    false,
-                    true,
-                    false);
-            }
-
-            if (pressed)
-            {
-                selectedAnimations[selectedPart] = id;
-                timelinePart = selectedPart;
-
-                ResolveLayers();
-                ResetTimeline();
-            }
-        }
-
-        EditorGUILayout.EndHorizontal();
-        EditorGUILayout.EndScrollView();
+        showTrimBounds = EditorGUILayout.ToggleLeft(
+            "Show Trim Bounds",
+            showTrimBounds);
     }
 
     private void RefreshDatabase()
     {
         refreshRequired = false;
 
-        foreach (List<AnimationID> ids in animationIdsByPart)
-            ids.Clear();
+        clips.Clear();
+        databaseWarnings.Clear();
+        leftOptions.Clear();
+        rightOptions.Clear();
 
         if (database != null && database.Animations != null)
         {
             foreach (AnimationDefinition definition in database.Animations)
             {
                 if (definition == null)
+                {
+                    databaseWarnings.Add(
+                        "Animation Database contains an empty entry.");
                     continue;
+                }
 
-                int part = (int)definition.Part;
+                var key = (definition.Part, definition.Id);
 
-                if ((uint)part >= (uint)animationIdsByPart.Length)
+                if (clips.ContainsKey(key))
+                {
+                    databaseWarnings.Add(
+                        $"Duplicate animation: {definition.Part} / " +
+                        $"{definition.Id}. Preview uses the first entry.");
                     continue;
+                }
 
-                List<AnimationID> ids = animationIdsByPart[part];
-
-                if (!ids.Contains(definition.Id))
-                    ids.Add(definition.Id);
+                clips.Add(key, definition);
             }
         }
 
-        bool selectionChanged = false;
+        var itemIds = new HashSet<ItemID>();
 
-        for (int part = 0; part < animationIdsByPart.Length; part++)
+        if (itemDatabase != null && itemDatabase.Items != null)
         {
-            List<AnimationID> ids = animationIdsByPart[part];
-            ids.Sort();
-
-            if (ids.Count > 0 &&
-                !ids.Contains(selectedAnimations[part]))
+            foreach (ItemDefinition item in itemDatabase.Items)
             {
-                selectedAnimations[part] = ids[0];
-                selectionChanged = true;
+                if (item == null)
+                {
+                    databaseWarnings.Add(
+                        "Item Database contains an empty entry.");
+                    continue;
+                }
+
+                if (item.Id == ItemID.None || !itemIds.Add(item.Id))
+                {
+                    databaseWarnings.Add(
+                        $"{item.name}: invalid or duplicate ItemID {item.Id}.");
+                    continue;
+                }
+
+                if ((item.AllowedSlots & EquipmentSlot.LeftHand) != 0)
+                    leftOptions.Add(item);
+
+                if ((item.AllowedSlots & EquipmentSlot.RightHand) != 0)
+                    rightOptions.Add(item);
             }
         }
+
+        if (FindItem(leftOptions, leftItem) == null)
+            leftItem = ItemID.None;
+
+        if (FindItem(rightOptions, rightItem) == null)
+            rightItem = ItemID.None;
 
         ResolveLayers();
 
-        if (selectionChanged)
-            ResetTimeline();
-
-        AnimationDefinition master = Master;
-
-        if (master != null)
+        if (Master != null && Master.FrameCount > 0)
         {
             frame = Mathf.Clamp(
                 frame,
                 0,
-                Mathf.Max(1, master.FrameCount) - 1);
+                Master.FrameCount - 1);
         }
         else
         {
@@ -487,132 +584,195 @@ public sealed class CharacterAnimationWindow : EditorWindow
     private void ResolveLayers()
     {
         Array.Clear(layers, 0, layers.Length);
+
         warnings.Clear();
+        warnings.AddRange(databaseWarnings);
 
-        if (database == null || database.Animations == null)
-            return;
+        layers[0] = FindClip(
+            CharacterPart.Body,
+            BaseAnimation);
 
-        var seen =
-            new Dictionary<(CharacterPart, AnimationID), AnimationDefinition>();
+        ResolveHand(
+            CharacterPart.LeftArm,
+            FindItem(leftOptions, leftItem),
+            true,
+            1,
+            3);
 
-        foreach (AnimationDefinition definition in database.Animations)
-        {
-            if (definition == null)
-            {
-                warnings.Add("Database contains an empty entry.");
-                continue;
-            }
-
-            int part = (int)definition.Part;
-
-            if ((uint)part >= (uint)layers.Length)
-            {
-                warnings.Add(
-                    $"{definition.name}: unsupported Part.");
-                continue;
-            }
-
-            var key = (definition.Part, definition.Id);
-
-            if (seen.TryGetValue(key, out AnimationDefinition first))
-            {
-                warnings.Add(
-                    $"Duplicate {definition.Part} + {definition.Id}: " +
-                    $"'{first.name}' and '{definition.name}'. " +
-                    "Preview uses the first entry.");
-                continue;
-            }
-
-            seen.Add(key, definition);
-
-            if (definition.Id == selectedAnimations[part])
-                layers[part] = definition;
-        }
+        ResolveHand(
+            CharacterPart.RightArm,
+            FindItem(rightOptions, rightItem),
+            false,
+            2,
+            4);
 
         ValidateLayers();
     }
 
+    private void ResolveHand(
+        CharacterPart armPart,
+        ItemDefinition item,
+        bool isLeft,
+        int armLayer,
+        int itemLayer)
+    {
+        AnimationID armAnimation = BaseAnimation;
+        ItemAnimationDefinition.HandAnimations hand = null;
+
+        if (item != null && item.Animation != null)
+        {
+            hand = isLeft
+                ? item.Animation.LeftHand
+                : item.Animation.RightHand;
+
+            if (hand == null)
+            {
+                warnings.Add(
+                    $"{item.name}: hand animation settings are missing.");
+            }
+            else
+            {
+                armAnimation = selectedState == 1
+                    ? hand.ArmWalk
+                    : hand.ArmIdle;
+            }
+        }
+
+        layers[armLayer] = FindClip(
+            armPart,
+            armAnimation);
+
+        if (hand == null || !hand.HasVisual)
+            return;
+
+        CharacterPart expectedPart = isLeft
+            ? CharacterPart.LeftHandTorch
+            : CharacterPart.RightHandTorch;
+
+        if (hand.VisualPart != expectedPart)
+        {
+            warnings.Add(
+                $"{item.name}: expected VisualPart {expectedPart}, " +
+                $"but selected {hand.VisualPart}.");
+            return;
+        }
+
+        AnimationID itemAnimation = selectedState == 1
+            ? hand.ItemWalk
+            : hand.ItemIdle;
+
+        layers[itemLayer] = FindClip(
+            hand.VisualPart,
+            itemAnimation);
+    }
+
+    private AnimationDefinition FindClip(
+        CharacterPart part,
+        AnimationID id)
+    {
+        if (clips.TryGetValue(
+                (part, id),
+                out AnimationDefinition clip))
+        {
+            return clip;
+        }
+
+        warnings.Add($"Missing animation: {part} / {id}.");
+        return null;
+    }
+
+    private static ItemDefinition FindItem(
+        List<ItemDefinition> options,
+        ItemID id)
+    {
+        if (id == ItemID.None)
+            return null;
+
+        foreach (ItemDefinition item in options)
+        {
+            if (item.Id == id)
+                return item;
+        }
+
+        return null;
+    }
+
     private void ValidateLayers()
     {
-        AnimationDefinition master = Master;
         bool timelineWarningAdded = false;
 
-        for (int i = 0; i < layers.Length; i++)
+        foreach (AnimationDefinition layer in layers)
         {
-            AnimationDefinition layer = layers[i];
-
             if (layer == null)
-            {
-                warnings.Add(
-                    $"{PartNames[i]}: no config for " +
-                    $"{selectedAnimations[i]}. Check Part and Id.");
                 continue;
-            }
 
-            if (layer.FrameCount < 1)
+            if (!HasValidSheet(layer))
             {
                 warnings.Add(
-                    $"{layer.name}: FrameCount must be positive.");
-                continue;
+                    $"{layer.name}: expected a SpriteSheet with " +
+                    $"{CellWidth}×{CellHeight} cells, " +
+                    "FrameCount columns and 4 rows.");
             }
 
             if (float.IsNaN(layer.FrameDuration) ||
                 float.IsInfinity(layer.FrameDuration) ||
-                layer.FrameDuration < 0.01f)
+                layer.FrameDuration <= 0f)
             {
                 warnings.Add(
                     $"{layer.name}: invalid FrameDuration.");
             }
 
-            if (layer.SpriteSheet == null)
+            for (int view = 0; view < DirectionCount; view++)
             {
-                warnings.Add(
-                    $"{layer.name}: SpriteSheet is missing.");
-            }
-            else if (
-                (long)layer.SpriteSheet.width !=
-                    (long)layer.FrameCount * CellWidth ||
-                layer.SpriteSheet.height != DirectionCount * CellHeight)
-            {
-                warnings.Add(
-                    $"{layer.name}: expected {CellWidth}×{CellHeight} cells, " +
-                    "FrameCount columns and 4 rows.");
+                AnimationDefinition.FrameLayer[] entries =
+                    GetDirectionEntries(layer, view);
+
+                if (entries == null ||
+                    entries.Length != layer.FrameCount)
+                {
+                    warnings.Add(
+                        $"{layer.name}: {DirectionNames[view]} array " +
+                        "must match FrameCount.");
+                }
             }
 
-            if (!HasExpectedLength(layer.Down, layer.FrameCount) ||
-                !HasExpectedLength(layer.Up, layer.FrameCount) ||
-                !HasExpectedLength(layer.Left, layer.FrameCount) ||
-                !HasExpectedLength(layer.Right, layer.FrameCount))
+            if (layer.SpriteSheet != null &&
+                (layer.SpriteSheet.filterMode != FilterMode.Point ||
+                 layer.SpriteSheet.mipmapCount > 1))
             {
                 warnings.Add(
-                    $"{layer.name}: direction arrays must match FrameCount. " +
-                    "Missing ZIndex values are previewed as 0.");
+                    $"{layer.SpriteSheet.name}: use Point filtering " +
+                    "and disable mipmaps for a sharp preview.");
             }
 
             if (!timelineWarningAdded &&
-                master != null &&
-                (layer.FrameCount != master.FrameCount ||
+                Master != null &&
+                (layer.FrameCount != Master.FrameCount ||
                  !Mathf.Approximately(
                      layer.FrameDuration,
-                     master.FrameDuration) ||
-                 layer.Loop != master.Loop))
+                     Master.FrameDuration) ||
+                 layer.Loop != Master.Loop))
             {
                 warnings.Add(
-                    "Selected parts have different playback settings. " +
-                    "Preview uses the last clicked animation as its timeline. " +
-                    "Shorter layers repeat or hold their last frame; " +
-                    "longer layers may not show every frame.");
+                    "Playback uses the Body timeline, as in the game. " +
+                    "Other layers repeat or hold frames according to " +
+                    "their Loop setting; their FrameDuration is not used.");
 
                 timelineWarningAdded = true;
             }
         }
     }
 
-    private static bool HasExpectedLength(
-        AnimationDefinition.FrameLayer[] entries,
-        int count)
+    private static bool HasValidSheet(
+        AnimationDefinition definition)
     {
-        return entries != null && entries.Length == count;
+        return definition != null &&
+               definition.FrameCount > 0 &&
+               definition.SpriteSheet != null &&
+               (long)definition.SpriteSheet.width ==
+                   (long)definition.FrameCount * CellWidth &&
+               definition.SpriteSheet.height ==
+                   DirectionCount * CellHeight;
     }
 
     private void DrawPreview()
@@ -621,7 +781,7 @@ public sealed class CharacterAnimationWindow : EditorWindow
         float height = CellHeight * zoom;
 
         Rect area = GUILayoutUtility.GetRect(
-            0f,
+            width + 16f,
             height + 16f,
             GUILayout.ExpandWidth(true));
 
@@ -669,20 +829,14 @@ public sealed class CharacterAnimationWindow : EditorWindow
         {
             AnimationDefinition definition = layers[index];
 
-            if (!visible[index] ||
-                definition == null ||
-                definition.SpriteSheet == null ||
-                definition.FrameCount < 1)
-            {
+            if (!visible[index] || !HasValidSheet(definition))
                 continue;
-            }
 
-            int layerFrame = GetLayerFrame(definition);
             float frameWidth = 1f / definition.FrameCount;
             float frameHeight = 1f / DirectionCount;
 
             Rect uv = new Rect(
-                layerFrame * frameWidth,
+                GetLayerFrame(definition) * frameWidth,
                 (DirectionCount - 1 - direction) * frameHeight,
                 frameWidth,
                 frameHeight);
@@ -698,16 +852,90 @@ public sealed class CharacterAnimationWindow : EditorWindow
             DrawTrimBounds(target);
     }
 
+    private void DrawTrimBounds(Rect target)
+    {
+        for (int i = 0; i < layers.Length; i++)
+        {
+            AnimationDefinition definition = layers[i];
+
+            if (!visible[i] || !HasValidSheet(definition))
+                continue;
+
+            AnimationDefinition.FrameLayer[] entries =
+                GetDirectionEntries(definition, direction);
+
+            int layerFrame = GetLayerFrame(definition);
+
+            if (entries == null ||
+                layerFrame >= entries.Length)
+            {
+                continue;
+            }
+
+            RectInt bounds = entries[layerFrame].PackedRect;
+
+            if (bounds.width <= 0 || bounds.height <= 0)
+                continue;
+
+            float scaleX = target.width / CellWidth;
+            float scaleY = target.height / CellHeight;
+
+            Rect border = new Rect(
+                target.x + bounds.x * scaleX,
+                target.y + (CellHeight - bounds.yMax) * scaleY,
+                bounds.width * scaleX,
+                bounds.height * scaleY);
+
+            DrawTrimBorder(border);
+        }
+    }
+
+    private static void DrawTrimBorder(Rect rect)
+    {
+        Color color = new Color(0.2f, 0.8f, 1f, 1f);
+        float thickness = 1f / EditorGUIUtility.pixelsPerPoint;
+
+        EditorGUI.DrawRect(
+            new Rect(
+                rect.xMin,
+                rect.yMin,
+                rect.width,
+                thickness),
+            color);
+
+        EditorGUI.DrawRect(
+            new Rect(
+                rect.xMin,
+                rect.yMax - thickness,
+                rect.width,
+                thickness),
+            color);
+
+        EditorGUI.DrawRect(
+            new Rect(
+                rect.xMin,
+                rect.yMin,
+                thickness,
+                rect.height),
+            color);
+
+        EditorGUI.DrawRect(
+            new Rect(
+                rect.xMax - thickness,
+                rect.yMin,
+                thickness,
+                rect.height),
+            color);
+    }
+
     private void TrimAll()
     {
         if (database == null || database.Animations == null)
             return;
 
-        // Обчислюємо всі результати до зміни конфігурацій.
-        var results =
-            new Dictionary<
-                AnimationDefinition,
-                AnimationDefinition.FrameLayer[][]>();
+        var results = new Dictionary<
+            AnimationDefinition,
+            AnimationDefinition.FrameLayer[][]>();
 
         int totalFrames = 0;
         int emptyFrames = 0;
@@ -725,24 +953,15 @@ public sealed class CharacterAnimationWindow : EditorWindow
                 if (results.ContainsKey(definition))
                     continue;
 
-                Texture2D texture = definition.SpriteSheet;
-
-                if (texture == null)
-                {
-                    throw new InvalidOperationException(
-                        $"{definition.name}: SpriteSheet is missing.");
-                }
-
-                if (definition.FrameCount < 1 ||
-                    (long)texture.width !=
-                        (long)definition.FrameCount * CellWidth ||
-                    texture.height != DirectionCount * CellHeight)
+                if (!HasValidSheet(definition))
                 {
                     throw new InvalidOperationException(
                         $"{definition.name}: expected " +
                         $"{CellWidth}×{CellHeight} cells, " +
-                        "FrameCount columns and 4 direction rows.");
+                        "FrameCount columns and 4 rows.");
                 }
+
+                Texture2D texture = definition.SpriteSheet;
 
                 if (!texture.isReadable)
                 {
@@ -771,7 +990,6 @@ public sealed class CharacterAnimationWindow : EditorWindow
                         new AnimationDefinition.FrameLayer[
                             definition.FrameCount];
 
-                    // Зберігаємо ZIndex існуючих кадрів.
                     if (original != null)
                     {
                         Array.Copy(
@@ -788,12 +1006,9 @@ public sealed class CharacterAnimationWindow : EditorWindow
                             pixels,
                             texture.width,
                             index * CellWidth,
-                            (DirectionCount - 1 - view) * CellHeight,
-                            CellWidth,
-                            CellHeight);
+                            (DirectionCount - 1 - view) * CellHeight);
 
                         entries[index].PackedRect = bounds;
-
                         totalFrames++;
 
                         if (bounds.width == 0 || bounds.height == 0)
@@ -833,6 +1048,7 @@ public sealed class CharacterAnimationWindow : EditorWindow
         int undoGroup = Undo.GetCurrentGroup();
 
         Undo.SetCurrentGroupName("Trim All Animations");
+
         Undo.RegisterCompleteObjectUndo(
             targets,
             "Trim All Animations");
@@ -840,7 +1056,9 @@ public sealed class CharacterAnimationWindow : EditorWindow
         foreach (var result in results)
         {
             AnimationDefinition definition = result.Key;
-            AnimationDefinition.FrameLayer[][] directions = result.Value;
+
+            AnimationDefinition.FrameLayer[][] directions =
+                result.Value;
 
             definition.Down = directions[0];
             definition.Up = directions[1];
@@ -864,20 +1082,18 @@ public sealed class CharacterAnimationWindow : EditorWindow
         Color32[] pixels,
         int textureWidth,
         int cellX,
-        int cellY,
-        int cellWidth,
-        int cellHeight)
+        int cellY)
     {
-        int minX = cellWidth;
-        int minY = cellHeight;
+        int minX = CellWidth;
+        int minY = CellHeight;
         int maxX = -1;
         int maxY = -1;
 
-        for (int y = 0; y < cellHeight; y++)
+        for (int y = 0; y < CellHeight; y++)
         {
             int rowStart = (cellY + y) * textureWidth + cellX;
 
-            for (int x = 0; x < cellWidth; x++)
+            for (int x = 0; x < CellWidth; x++)
             {
                 if (pixels[rowStart + x].a == 0)
                     continue;
@@ -897,78 +1113,6 @@ public sealed class CharacterAnimationWindow : EditorWindow
             minY,
             maxX - minX + 1,
             maxY - minY + 1);
-    }
-
-    private void DrawTrimBounds(Rect target)
-    {
-        // Рамки малюються поверх усіх частин персонажа.
-        for (int i = 0; i < layers.Length; i++)
-        {
-            AnimationDefinition definition = layers[i];
-
-            if (!visible[i] ||
-                definition == null ||
-                definition.SpriteSheet == null ||
-                definition.FrameCount < 1)
-            {
-                continue;
-            }
-
-            AnimationDefinition.FrameLayer[] entries =
-                GetDirectionEntries(definition, direction);
-
-            int layerFrame = GetLayerFrame(definition);
-
-            if (entries == null || layerFrame >= entries.Length)
-                continue;
-
-            RectInt bounds = entries[layerFrame].PackedRect;
-
-            if (bounds.width <= 0 || bounds.height <= 0)
-                continue;
-
-            float scaleX = target.width / CellWidth;
-            float scaleY = target.height / CellHeight;
-
-            // Текстура: Y вгору. GUI: Y вниз.
-            Rect border = new Rect(
-                target.x + bounds.x * scaleX,
-                target.y + (CellHeight - bounds.yMax) * scaleY,
-                bounds.width * scaleX,
-                bounds.height * scaleY);
-
-            DrawTrimBorder(border);
-        }
-    }
-
-    private static void DrawTrimBorder(Rect rect)
-    {
-        Color color = new Color(0.2f, 0.8f, 1f, 1f);
-        float thickness = 1f / EditorGUIUtility.pixelsPerPoint;
-
-        EditorGUI.DrawRect(
-            new Rect(rect.xMin, rect.yMin, rect.width, thickness),
-            color);
-
-        EditorGUI.DrawRect(
-            new Rect(
-                rect.xMin,
-                rect.yMax - thickness,
-                rect.width,
-                thickness),
-            color);
-
-        EditorGUI.DrawRect(
-            new Rect(rect.xMin, rect.yMin, thickness, rect.height),
-            color);
-
-        EditorGUI.DrawRect(
-            new Rect(
-                rect.xMax - thickness,
-                rect.yMin,
-                thickness,
-                rect.height),
-            color);
     }
 
     private static AnimationDefinition.FrameLayer[] GetDirectionEntries(

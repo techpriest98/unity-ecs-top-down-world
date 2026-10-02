@@ -1,0 +1,650 @@
+fileFormatVersion: 2
+guid: 9258340ab51534e90a37c3acd352c368
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -7812510923380136138
+    second: left_hand_torch_walk_0
+  - first:
+      213: -6723649719361563315
+    second: left_hand_torch_walk_1
+  - first:
+      213: 3211000062450242464
+    second: left_hand_torch_walk_2
+  - first:
+      213: 7880015023147661500
+    second: left_hand_torch_walk_3
+  - first:
+      213: 231632832646090339
+    second: left_hand_torch_walk_4
+  - first:
+      213: -8906752069189656587
+    second: left_hand_torch_walk_5
+  - first:
+      213: -3220550887172062669
+    second: left_hand_torch_walk_6
+  - first:
+      213: -8482067646680688727
+    second: left_hand_torch_walk_7
+  - first:
+      213: 7988609577117679301
+    second: left_hand_torch_walk_8
+  - first:
+      213: 285249770179393259
+    second: left_hand_torch_walk_9
+  - first:
+      213: -440147124441999739
+    second: left_hand_torch_walk_10
+  - first:
+      213: -8789209862150748183
+    second: left_hand_torch_walk_11
+  - first:
+      213: 2560014032382070987
+    second: left_hand_torch_walk_12
+  - first:
+      213: 2332731620910826012
+    second: left_hand_torch_walk_13
+  - first:
+      213: 856673693542338692
+    second: left_hand_torch_walk_14
+  - first:
+      213: -5525278909922476037
+    second: left_hand_torch_walk_15
+  - first:
+      213: 5836265911083766027
+    second: left_hand_torch_walk_16
+  - first:
+      213: 284774497501060032
+    second: left_hand_torch_walk_17
+  - first:
+      213: -3783999555281342133
+    second: left_hand_torch_walk_18
+  - first:
+      213: -4419060340632389467
+    second: left_hand_torch_walk_19
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 1
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: left_hand_torch_walk_0
+      rect:
+        serializedVersion: 2
+        x: 12
+        y: 442
+        width: 8
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 637611825b2649390800000000000000
+      internalID: -7812510923380136138
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_1
+      rect:
+        serializedVersion: 2
+        x: 74
+        y: 443
+        width: 8
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d459c43243cc0b2a0800000000000000
+      internalID: -6723649719361563315
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_2
+      rect:
+        serializedVersion: 2
+        x: 141
+        y: 442
+        width: 8
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0a39a105b83cf8c20800000000000000
+      internalID: 3211000062450242464
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_3
+      rect:
+        serializedVersion: 2
+        x: 202
+        y: 443
+        width: 8
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cb83577d9ef6b5d60800000000000000
+      internalID: 7880015023147661500
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_4
+      rect:
+        serializedVersion: 2
+        x: 49
+        y: 333
+        width: 8
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 36e003485dce63300800000000000000
+      internalID: 231632832646090339
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_5
+      rect:
+        serializedVersion: 2
+        x: 114
+        y: 333
+        width: 8
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5ff997dde2cd46480800000000000000
+      internalID: -8906752069189656587
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_6
+      rect:
+        serializedVersion: 2
+        x: 176
+        y: 333
+        width: 8
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3324a05080e4e43d0800000000000000
+      internalID: -3220550887172062669
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_7
+      rect:
+        serializedVersion: 2
+        x: 242
+        y: 333
+        width: 8
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9a793ce4a64a94a80800000000000000
+      internalID: -8482067646680688727
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_8
+      rect:
+        serializedVersion: 2
+        x: 50
+        y: 322
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5cef16db51e3dde60800000000000000
+      internalID: 7988609577117679301
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_9
+      rect:
+        serializedVersion: 2
+        x: 115
+        y: 322
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: be6fdc7972965f300800000000000000
+      internalID: 285249770179393259
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_10
+      rect:
+        serializedVersion: 2
+        x: 177
+        y: 322
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 58699b6b58844e9f0800000000000000
+      internalID: -440147124441999739
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_11
+      rect:
+        serializedVersion: 2
+        x: 243
+        y: 322
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9e705269234760680800000000000000
+      internalID: -8789209862150748183
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_12
+      rect:
+        serializedVersion: 2
+        x: 13
+        y: 187
+        width: 8
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bc0162ce23ff68320800000000000000
+      internalID: 2560014032382070987
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_13
+      rect:
+        serializedVersion: 2
+        x: 77
+        y: 191
+        width: 8
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c1206b4cc078f5020800000000000000
+      internalID: 2332731620910826012
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_14
+      rect:
+        serializedVersion: 2
+        x: 142
+        y: 188
+        width: 8
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 48053087f2483eb00800000000000000
+      internalID: 856673693542338692
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_15
+      rect:
+        serializedVersion: 2
+        x: 205
+        y: 190
+        width: 8
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bfffc190b144253b0800000000000000
+      internalID: -5525278909922476037
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_16
+      rect:
+        serializedVersion: 2
+        x: 37
+        y: 57
+        width: 8
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b019edc9ce49ef050800000000000000
+      internalID: 5836265911083766027
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_17
+      rect:
+        serializedVersion: 2
+        x: 102
+        y: 60
+        width: 8
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0cb14ac85e8b3f300800000000000000
+      internalID: 284774497501060032
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_18
+      rect:
+        serializedVersion: 2
+        x: 166
+        y: 58
+        width: 8
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b413835f3788c7bc0800000000000000
+      internalID: -3783999555281342133
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_torch_walk_19
+      rect:
+        serializedVersion: 2
+        x: 230
+        y: 60
+        width: 8
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5a8f69b88085ca2c0800000000000000
+      internalID: -4419060340632389467
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      left_hand_torch_walk_0: -7812510923380136138
+      left_hand_torch_walk_1: -6723649719361563315
+      left_hand_torch_walk_10: -440147124441999739
+      left_hand_torch_walk_11: -8789209862150748183
+      left_hand_torch_walk_12: 2560014032382070987
+      left_hand_torch_walk_13: 2332731620910826012
+      left_hand_torch_walk_14: 856673693542338692
+      left_hand_torch_walk_15: -5525278909922476037
+      left_hand_torch_walk_16: 5836265911083766027
+      left_hand_torch_walk_17: 284774497501060032
+      left_hand_torch_walk_18: -3783999555281342133
+      left_hand_torch_walk_19: -4419060340632389467
+      left_hand_torch_walk_2: 3211000062450242464
+      left_hand_torch_walk_3: 7880015023147661500
+      left_hand_torch_walk_4: 231632832646090339
+      left_hand_torch_walk_5: -8906752069189656587
+      left_hand_torch_walk_6: -3220550887172062669
+      left_hand_torch_walk_7: -8482067646680688727
+      left_hand_torch_walk_8: 7988609577117679301
+      left_hand_torch_walk_9: 285249770179393259
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

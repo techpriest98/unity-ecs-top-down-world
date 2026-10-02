@@ -7,5 +7,8 @@ namespace Game.Player
     {
         public CharacterPart Part;
         public Entity VisualEntity;
+
+        public AnimationID AnimationId;
+        public bool IsVisible;
     }
 }

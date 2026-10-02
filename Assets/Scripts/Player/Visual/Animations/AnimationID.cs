@@ -4,7 +4,7 @@ namespace Game.Player
     {
         Idle = 0,
         Walk = 1,
-        TorchIdle = 2,
-        TorchWalk = 3
+        BentIdle = 2,
+        BentWalk = 3
     }
 }

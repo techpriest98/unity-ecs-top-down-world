@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf535e3438872402d8997322da8812ce, type: 3}
+  m_Name: LeftArmBentIdle
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Player.AnimationDefinition
+  Part: 1
+  Id: 2
+  SpriteSheet: {fileID: 2800000, guid: aad1864070d7e4206b4ab6e4c1f93f49, type: 3}
+  FrameCount: 2
+  FrameDuration: 1
+  Loop: 1
+  Down:
+  - ZIndex: 0
+    PackedRect:
+      x: 10
+      y: 63
+      width: 11
+      height: 32
+  - ZIndex: 0
+    PackedRect:
+      x: 10
+      y: 62
+      width: 11
+      height: 32
+  Up:
+  - ZIndex: 0
+    PackedRect:
+      x: 44
+      y: 66
+      width: 14
+      height: 28
+  - ZIndex: 0
+    PackedRect:
+      x: 44
+      y: 65
+      width: 14
+      height: 29
+  Left:
+  - ZIndex: -1
+    PackedRect:
+      x: 13
+      y: 66
+      width: 17
+      height: 26
+  - ZIndex: -1
+    PackedRect:
+      x: 13
+      y: 65
+      width: 17
+      height: 26
+  Right:
+  - ZIndex: 1
+    PackedRect:
+      x: 18
+      y: 63
+      width: 28
+      height: 33
+  - ZIndex: 1
+    PackedRect:
+      x: 18
+      y: 62
+      width: 28
+      height: 33

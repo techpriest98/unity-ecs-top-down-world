@@ -135,7 +135,7 @@ namespace Game.Player
 
                 AddComponent(entity, new PlayerAnimationData
                 {
-                    State = PlayerAnimationState.Idle,
+                    ClipId = AnimationID.Idle,
                     Frame = 0,
                     ElapsedTime = 0f
                 });
@@ -158,7 +158,14 @@ namespace Game.Player
                         Part = part.Part,
                         VisualEntity = GetEntity(
                             part.gameObject,
-                            TransformUsageFlags.Dynamic)
+                            TransformUsageFlags.Dynamic),
+
+                        AnimationId = AnimationID.Idle,
+
+                        IsVisible =
+                            part.Part == CharacterPart.Body ||
+                            part.Part == CharacterPart.LeftArm ||
+                            part.Part == CharacterPart.RightArm
                     });
                 }
             }

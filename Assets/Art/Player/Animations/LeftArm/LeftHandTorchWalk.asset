@@ -1,0 +1,120 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf535e3438872402d8997322da8812ce, type: 3}
+  m_Name: LeftHandTorchWalk
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Player.AnimationDefinition
+  Part: 3
+  Id: 1
+  SpriteSheet: {fileID: 2800000, guid: 9258340ab51534e90a37c3acd352c368, type: 3}
+  FrameCount: 4
+  FrameDuration: 0.18
+  Loop: 1
+  Down:
+  - ZIndex: -1
+    PackedRect:
+      x: 13
+      y: 59
+      width: 6
+      height: 34
+  - ZIndex: 0
+    PackedRect:
+      x: 11
+      y: 60
+      width: 6
+      height: 34
+  - ZIndex: 1
+    PackedRect:
+      x: 14
+      y: 59
+      width: 6
+      height: 34
+  - ZIndex: 0
+    PackedRect:
+      x: 11
+      y: 60
+      width: 6
+      height: 34
+  Up:
+  - ZIndex: -1
+    PackedRect:
+      x: 50
+      y: 67
+      width: 6
+      height: 34
+  - ZIndex: 0
+    PackedRect:
+      x: 51
+      y: 67
+      width: 6
+      height: 34
+  - ZIndex: 1
+    PackedRect:
+      x: 49
+      y: 67
+      width: 6
+      height: 34
+  - ZIndex: 0
+    PackedRect:
+      x: 51
+      y: 67
+      width: 6
+      height: 34
+  Left:
+  - ZIndex: -1
+    PackedRect:
+      x: 14
+      y: 60
+      width: 6
+      height: 33
+  - ZIndex: -1
+    PackedRect:
+      x: 14
+      y: 64
+      width: 6
+      height: 33
+  - ZIndex: -1
+    PackedRect:
+      x: 15
+      y: 61
+      width: 6
+      height: 33
+  - ZIndex: -1
+    PackedRect:
+      x: 14
+      y: 63
+      width: 6
+      height: 33
+  Right:
+  - ZIndex: 1
+    PackedRect:
+      x: 38
+      y: 58
+      width: 6
+      height: 34
+  - ZIndex: 1
+    PackedRect:
+      x: 39
+      y: 61
+      width: 6
+      height: 34
+  - ZIndex: 1
+    PackedRect:
+      x: 39
+      y: 59
+      width: 6
+      height: 34
+  - ZIndex: 1
+    PackedRect:
+      x: 39
+      y: 61
+      width: 6
+      height: 34
