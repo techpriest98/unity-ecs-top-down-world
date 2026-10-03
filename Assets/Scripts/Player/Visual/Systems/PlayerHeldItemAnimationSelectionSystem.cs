@@ -77,40 +77,70 @@ namespace Game.Player
                 {
                     PlayerVisualPart part = parts[i];
 
-                    bool visible;
-                    ItemHandAnimationData hand;
+                    if (!IsHeldItemPart(ref items, part.Part))
+                        continue;
 
-                    switch (part.Part)
+                    bool visible = false;
+                    AnimationID animationId = AnimationID.Idle;
+
+                    if (hasLeftVisual && leftHand.VisualPart == part.Part)
                     {
-                        case CharacterPart.LeftHandTorch:
-                            hand = leftHand;
-                            visible = hasLeftVisual &&
-                                      hand.VisualPart == part.Part;
-                            break;
-
-                        case CharacterPart.RightHandTorch:
-                            hand = rightHand;
-                            visible = hasRightVisual &&
-                                      hand.VisualPart == part.Part;
-                            break;
-
-                        default:
-                            continue;
+                        visible = true;
+                        animationId = isMoving
+                            ? leftHand.ItemWalk
+                            : leftHand.ItemIdle;
+                    }
+                    else if (hasRightVisual && rightHand.VisualPart == part.Part)
+                    {
+                        visible = true;
+                        animationId = isMoving
+                            ? rightHand.ItemWalk
+                            : rightHand.ItemIdle;
                     }
 
-                    AnimationID animationId = visible
-                        ? (isMoving ? hand.ItemWalk : hand.ItemIdle)
-                        : AnimationID.Idle;
-
-                    if (part.AnimationId != animationId ||
-                        part.IsVisible != visible)
+                    if (part.AnimationId == animationId && part.IsVisible == visible)
                     {
-                        part.AnimationId = animationId;
-                        part.IsVisible = visible;
-                        writableParts[i] = part;
+                        continue;
                     }
+
+                    part.AnimationId = animationId;
+                    part.IsVisible = visible;
+                    writableParts[i] = part;
                 }
             }
+        }
+
+        private static bool IsHeldItemPart(
+            ref ItemLibraryBlob library,
+            CharacterPart part)
+        {
+            // These parts are controlled by their own systems.
+            if (part == CharacterPart.Body ||
+                part == CharacterPart.LeftArm ||
+                part == CharacterPart.RightArm)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < library.Items.Length; i++)
+            {
+                ref ItemData item = ref library.Items[i];
+
+                if (!item.HasAnimation)
+                    continue;
+
+                if (item.LeftHand.HasVisual && item.LeftHand.VisualPart == part)
+                {
+                    return true;
+                }
+
+                if (item.RightHand.HasVisual && item.RightHand.VisualPart == part)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool TryGetVisual(

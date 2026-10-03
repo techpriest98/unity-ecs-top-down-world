@@ -37,33 +37,35 @@ namespace Game.Player
                      SystemAPI.Query<DynamicBuffer<PlayerEquipmentSlot>>()
                          .WithAll<PlayerTag>())
             {
-                if (toggleLeft)
-                    ToggleTorch(slots, ref items, EquipmentSlot.LeftHand);
+                if (toggleLeft) {
+                    ItemID currentItem = PlayerEquipmentUtility.GetItem(slots, EquipmentSlot.LeftHand);
+                    ItemID nextItem = ItemID.None;
+
+                    if (currentItem == ItemID.None)
+                        nextItem = ItemID.Torch;
+
+                    PlayerEquipmentUtility.TryEquip(
+                        slots,
+                        ref items,
+                        EquipmentSlot.LeftHand,
+                        nextItem);
+                }
 
                 if (toggleRight)
-                    ToggleTorch(slots, ref items, EquipmentSlot.RightHand);
+                {
+                    ItemID currentItem = PlayerEquipmentUtility.GetItem(slots, EquipmentSlot.RightHand);
+                    ItemID nextItem = ItemID.None;
+
+                    if (currentItem == ItemID.None)
+                        nextItem = ItemID.GostTorch;
+
+                    PlayerEquipmentUtility.TryEquip(
+                        slots,
+                        ref items,
+                        EquipmentSlot.RightHand,
+                        nextItem);
+                }
             }
-        }
-
-        private static void ToggleTorch(
-            DynamicBuffer<PlayerEquipmentSlot> slots,
-            ref ItemLibraryBlob items,
-            EquipmentSlot slot)
-        {
-            ItemID current = PlayerEquipmentUtility.GetItem(slots, slot);
-
-            if (current != ItemID.None && current != ItemID.Torch)
-                return;
-
-            ItemID next = current == ItemID.Torch
-                ? ItemID.None
-                : ItemID.Torch;
-
-            PlayerEquipmentUtility.TryEquip(
-                slots,
-                ref items,
-                slot,
-                next);
         }
     }
 }

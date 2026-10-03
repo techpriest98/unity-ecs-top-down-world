@@ -6,6 +6,8 @@ namespace Game.Player
         LeftArm = 1,
         RightArm = 2,
         LeftHandTorch = 3,
-        RightHandTorch = 4
+        RightHandTorch = 4,
+        LeftHandGostTorch = 5,
+        RightHandGostTorch = 6
     }
 }

@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.ItemDatabase
   Items:
   - {fileID: 11400000, guid: 21863c02d6dcf45e395849a4c0b02231, type: 2}
+  - {fileID: 11400000, guid: 22b3719fb2c9947c28e5c2258dc66c34, type: 2}

@@ -645,18 +645,6 @@ public sealed class CharacterAnimationWindow : EditorWindow
         if (hand == null || !hand.HasVisual)
             return;
 
-        CharacterPart expectedPart = isLeft
-            ? CharacterPart.LeftHandTorch
-            : CharacterPart.RightHandTorch;
-
-        if (hand.VisualPart != expectedPart)
-        {
-            warnings.Add(
-                $"{item.name}: expected VisualPart {expectedPart}, " +
-                $"but selected {hand.VisualPart}.");
-            return;
-        }
-
         AnimationID itemAnimation = selectedState == 1
             ? hand.ItemWalk
             : hand.ItemIdle;

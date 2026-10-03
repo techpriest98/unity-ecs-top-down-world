@@ -1,0 +1,650 @@
+fileFormatVersion: 2
+guid: ffedd1ec2562d4846b68129c61816a3b
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -2735968514366170166
+    second: right_hand_gost_torch_walk_0
+  - first:
+      213: 5283372125616258462
+    second: right_hand_gost_torch_walk_1
+  - first:
+      213: -103854492258924189
+    second: right_hand_gost_torch_walk_2
+  - first:
+      213: -430798633071752298
+    second: right_hand_gost_torch_walk_3
+  - first:
+      213: -8241160561410372853
+    second: right_hand_gost_torch_walk_4
+  - first:
+      213: 6710469607003822773
+    second: right_hand_gost_torch_walk_5
+  - first:
+      213: -5963611288259000545
+    second: right_hand_gost_torch_walk_6
+  - first:
+      213: -1910805563456309941
+    second: right_hand_gost_torch_walk_7
+  - first:
+      213: 3884676583115999846
+    second: right_hand_gost_torch_walk_8
+  - first:
+      213: -4438013037595985309
+    second: right_hand_gost_torch_walk_9
+  - first:
+      213: -624656784556637901
+    second: right_hand_gost_torch_walk_10
+  - first:
+      213: 4461401015004662360
+    second: right_hand_gost_torch_walk_11
+  - first:
+      213: 2035096949984199170
+    second: right_hand_gost_torch_walk_12
+  - first:
+      213: -7729787064320759511
+    second: right_hand_gost_torch_walk_13
+  - first:
+      213: -6928535673869629280
+    second: right_hand_gost_torch_walk_14
+  - first:
+      213: 4366684746969751953
+    second: right_hand_gost_torch_walk_15
+  - first:
+      213: -5750789305791595707
+    second: right_hand_gost_torch_walk_16
+  - first:
+      213: 8770206231486331755
+    second: right_hand_gost_torch_walk_17
+  - first:
+      213: -118926793705189837
+    second: right_hand_gost_torch_walk_18
+  - first:
+      213: 9027461377021215538
+    second: right_hand_gost_torch_walk_19
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 1
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_0
+      rect:
+        serializedVersion: 2
+        x: 46
+        y: 442
+        width: 8
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: acb1d88c123e70ad0800000000000000
+      internalID: -2735968514366170166
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_1
+      rect:
+        serializedVersion: 2
+        x: 113
+        y: 443
+        width: 8
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e9dbe8ba4fe425940800000000000000
+      internalID: 5283372125616258462
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_2
+      rect:
+        serializedVersion: 2
+        x: 175
+        y: 441
+        width: 8
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3690498b3e80f8ef0800000000000000
+      internalID: -103854492258924189
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_3
+      rect:
+        serializedVersion: 2
+        x: 241
+        y: 443
+        width: 8
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 69bc80afcee750af0800000000000000
+      internalID: -430798633071752298
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_4
+      rect:
+        serializedVersion: 2
+        x: 9
+        y: 333
+        width: 8
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b0b0d28022481ad80800000000000000
+      internalID: -8241160561410372853
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_5
+      rect:
+        serializedVersion: 2
+        x: 70
+        y: 333
+        width: 8
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5ba9481dd80602d50800000000000000
+      internalID: 6710469607003822773
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_6
+      rect:
+        serializedVersion: 2
+        x: 135
+        y: 333
+        width: 8
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f1700d0412ffc3da0800000000000000
+      internalID: -5963611288259000545
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_7
+      rect:
+        serializedVersion: 2
+        x: 198
+        y: 333
+        width: 8
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b45b853c6747b75e0800000000000000
+      internalID: -1910805563456309941
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_8
+      rect:
+        serializedVersion: 2
+        x: 10
+        y: 322
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 66a48eb35c429e530800000000000000
+      internalID: 3884676583115999846
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_9
+      rect:
+        serializedVersion: 2
+        x: 71
+        y: 322
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 36af989e7a20962c0800000000000000
+      internalID: -4438013037595985309
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_10
+      rect:
+        serializedVersion: 2
+        x: 136
+        y: 322
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 331c6f9c6f5c457f0800000000000000
+      internalID: -624656784556637901
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_11
+      rect:
+        serializedVersion: 2
+        x: 199
+        y: 322
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 85a8bebe5941aed30800000000000000
+      internalID: 4461401015004662360
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_12
+      rect:
+        serializedVersion: 2
+        x: 18
+        y: 185
+        width: 8
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2020a43c4ed1e3c10800000000000000
+      internalID: 2035096949984199170
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_13
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 188
+        width: 8
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 92960c18e974ab490800000000000000
+      internalID: -7729787064320759511
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_14
+      rect:
+        serializedVersion: 2
+        x: 145
+        y: 185
+        width: 8
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0a801697385e8df90800000000000000
+      internalID: -6928535673869629280
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_15
+      rect:
+        serializedVersion: 2
+        x: 209
+        y: 188
+        width: 8
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 191af3544a4999c30800000000000000
+      internalID: 4366684746969751953
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_16
+      rect:
+        serializedVersion: 2
+        x: 42
+        y: 59
+        width: 8
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 54b3d2a68971130b0800000000000000
+      internalID: -5750789305791595707
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_17
+      rect:
+        serializedVersion: 2
+        x: 107
+        y: 63
+        width: 8
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b6bf8aad91806b970800000000000000
+      internalID: 8770206231486331755
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_18
+      rect:
+        serializedVersion: 2
+        x: 169
+        y: 61
+        width: 8
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 33e0de216bc795ef0800000000000000
+      internalID: -118926793705189837
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_gost_torch_walk_19
+      rect:
+        serializedVersion: 2
+        x: 234
+        y: 62
+        width: 8
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 23388e8fa4cf74d70800000000000000
+      internalID: 9027461377021215538
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      right_hand_gost_torch_walk_0: -2735968514366170166
+      right_hand_gost_torch_walk_1: 5283372125616258462
+      right_hand_gost_torch_walk_10: -624656784556637901
+      right_hand_gost_torch_walk_11: 4461401015004662360
+      right_hand_gost_torch_walk_12: 2035096949984199170
+      right_hand_gost_torch_walk_13: -7729787064320759511
+      right_hand_gost_torch_walk_14: -6928535673869629280
+      right_hand_gost_torch_walk_15: 4366684746969751953
+      right_hand_gost_torch_walk_16: -5750789305791595707
+      right_hand_gost_torch_walk_17: 8770206231486331755
+      right_hand_gost_torch_walk_18: -118926793705189837
+      right_hand_gost_torch_walk_19: 9027461377021215538
+      right_hand_gost_torch_walk_2: -103854492258924189
+      right_hand_gost_torch_walk_3: -430798633071752298
+      right_hand_gost_torch_walk_4: -8241160561410372853
+      right_hand_gost_torch_walk_5: 6710469607003822773
+      right_hand_gost_torch_walk_6: -5963611288259000545
+      right_hand_gost_torch_walk_7: -1910805563456309941
+      right_hand_gost_torch_walk_8: 3884676583115999846
+      right_hand_gost_torch_walk_9: -4438013037595985309
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
