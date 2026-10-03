@@ -43,6 +43,29 @@ namespace Game.World.Rendering
             return true;
         }
 
+        public bool TryAddCutTop(
+            BlockData block,
+            ushort sourceCellIndex,
+            ushort x,
+            ushort y)
+        {
+            if (!occupancy.TryOccupy(x, y, ProjectedFaceType.Top))
+                return false;
+
+            ProjectedCellData cell = new(
+                block,
+                ProjectedFaceType.Top,
+                byte.MaxValue,
+                x,
+                y);
+
+            cell.SourceAirIndex = sourceCellIndex;
+            cell.SetCutTop();
+
+            result.Add(cell);
+            return true;
+        }
+
         // Temporary overload for the current ChunkProjectionBuilder.
         public bool TryAddSideUpper(BlockData block, ushort sourceAirIndex, ushort x, ushort y)
         {

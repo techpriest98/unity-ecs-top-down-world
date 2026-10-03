@@ -68,6 +68,9 @@ namespace Game.World.Rendering
         public uint LocalLightTopLeft;
         public uint LocalLightTopRight;
 
+        public const ushort CutTopFlag = 1 << 15;
+
+
         public void SetTopNeighborMask(byte neighborMask)
         {
             FaceData = neighborMask;
@@ -78,6 +81,11 @@ namespace Game.World.Rendering
         public void SetSideFaceData(byte neighborMask, BlockId footBlockId)
         {
             FaceData = (ushort)(neighborMask | ((uint)footBlockId << 8));
+        }
+
+        public void SetCutTop()
+        {
+            FaceData = CutTopFlag;
         }
 
         public ProjectedCellData(

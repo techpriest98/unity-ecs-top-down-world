@@ -256,6 +256,7 @@ Shader "Game/World/ChunkProcedural"
                 nointerpolation float IsSelected : TEXCOORD5;
                 nointerpolation uint FootBlockId : TEXCOORD6;
                 nointerpolation uint4 LocalLightCorners : TEXCOORD7;
+                nointerpolation uint IsCutTop : TEXCOORD8;
             };
 
             // ============================================================
@@ -287,6 +288,10 @@ Shader "Game/World/ChunkProcedural"
                 output.LocalUv = corner;
                 output.BlockId = GetBlockId(cell.BlockData);
                 output.FaceIndex = GetFaceIndex(GetFaceType(cell.BlockData));
+                output.IsCutTop = GetFaceType(cell.BlockData) == 1u &&
+                    (cell.FaceData & 0x8000u) != 0u
+                        ? 1u
+                        : 0u;
                 output.NeighborMask = cell.FaceData & 0xFF;
                 output.FootBlockId = (cell.FaceData >> 8) & 0xFF;
                 output.LightData = cell.LightData;
@@ -513,6 +518,9 @@ Shader "Game/World/ChunkProcedural"
 
             float4 Frag(Varyings input) : SV_Target
             {
+                if (input.IsCutTop != 0u)
+                    return float4(0.0, 0.0, 0.0, 1.0);
+
                 #if defined(_PLAYER_CLIPPING)
                     float2 screenCenter = _ScreenParams.xy * 0.5;
                     float2 clipOffset = input.PositionCS.xy - screenCenter;

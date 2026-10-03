@@ -162,6 +162,18 @@ namespace Game.World.Rendering
         {
             if (IsOpaque(currentBlockId))
             {
+                TryEmitCutTop(
+                    chunkCoordinate,
+                    blockAccessor,
+                    writer,
+                    world,
+                    direction,
+                    projectionX,
+                    projectionY,
+                    sourceAirIndex,
+                    projectionClippingEnabled,
+                    playerPosition);
+
                 return;
             }
 
@@ -600,7 +612,7 @@ namespace Game.World.Rendering
                 return false;
             }
 
-            int playerFloorY = (int)math.floor(playerPosition.y + 0.01f);
+            int playerFloorY = (int)math.floor(playerPosition.y + PlayerClipCenterOffset + 0.01f);
 
             if (blockY < playerFloorY)
             {
@@ -641,6 +653,71 @@ namespace Game.World.Rendering
                     projectedPlayerPosition) <
                 ProjectionClipRadius *
                 ProjectionClipRadius;
+        }
+
+        private static void TryEmitCutTop(
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            ProjectionWriter writer,
+            int3 upperWorld,
+            ViewDirection direction,
+            ushort projectionX,
+            ushort projectionY,
+            ushort sourceCellIndex,
+            bool projectionClippingEnabled,
+            float3 playerPosition)
+        {
+            if (!projectionClippingEnabled)
+                return;
+
+            int clipFromBlockY = (int)math.floor(
+                playerPosition.y + PlayerClipCenterOffset + 0.01f);
+
+            // The current solid cell must be immediately above the cut.
+            if (upperWorld.y != clipFromBlockY)
+                return;
+
+            int3 belowWorld = upperWorld + new int3(0, -1, 0);
+
+            if (!ChunkUtility.IsInside(
+                    belowWorld.x,
+                    belowWorld.y,
+                    belowWorld.z))
+            {
+                return;
+            }
+
+            BlockData belowBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                belowWorld.x,
+                belowWorld.y,
+                belowWorld.z);
+
+            if (!IsOpaque(belowBlock.BlockId))
+                return;
+
+            // Match the clipping test used for the upper block's side.
+            float3 upperFacePosition = GetGlobalPosition(
+                chunkCoordinate,
+                upperWorld,
+                0.5f);
+
+            if (!ShouldClipOpaqueFace(
+                    projectionClippingEnabled,
+                    playerPosition,
+                    upperFacePosition,
+                    upperWorld.y,
+                    direction))
+            {
+                return;
+            }
+
+            // Same projection position as a normal Top below this cell.
+            writer.TryAddCutTop(
+                belowBlock,
+                sourceCellIndex,
+                projectionX,
+                projectionY);
         }
 
         private static float2 ProjectWorldPosition(
