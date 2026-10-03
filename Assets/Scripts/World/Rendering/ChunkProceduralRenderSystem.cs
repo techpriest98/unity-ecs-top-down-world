@@ -164,8 +164,6 @@ namespace Game.World.Rendering
                     towardCamera.y),
                 shadowState.ActiveMaskIndex);
 
-            // Маска залежить від позиції гравця навіть тоді,
-            // коли повторне завантаження чанків не потрібне.
             if (!centerChanged &&
                 !projectionChanged &&
                 !transitionCompleted)
@@ -304,7 +302,6 @@ namespace Game.World.Rendering
                     }
                 }
 
-                // Вода не додається до маски перекриття.
                 for (int index = 0;
                      index < projectedWaterCells.Length;
                      index++)
@@ -434,14 +431,9 @@ namespace Game.World.Rendering
 
             switch (faceType)
             {
-                // Top, включно з чорним зрізом.
-                // Вихідна комірка розташована над блоком.
                 case 1:
                     blockPosition.y--;
                     break;
-
-                // SideUpper / SideLower.
-                // Блок розташований за вихідною коміркою.
                 case 2:
                 case 3:
                 {
@@ -469,7 +461,6 @@ namespace Game.World.Rendering
             int projectionY =
                 (int)(cell.Position >> 16);
 
-            // Відтворюємо координати грані з шейдера блоків.
             float left =
                 chunkPosition.x -
                 chunkWidth * 0.5f +
@@ -519,25 +510,20 @@ namespace Game.World.Rendering
                 PlayerClipCenterOffset +
                 0.01f);
 
-            int2 playerCell =
-                (int2)math.floor(playerPosition.xz);
+            int2 playerCell =(int2)math.floor(playerPosition.xz);
 
-            int2 towardCamera =
-                ViewDirectionUtility.Forward(uploadedDirection);
+            int2 towardCamera = ViewDirectionUtility.Forward(uploadedDirection);
 
             for (int i = 0; i < uploadedFaces.Count; i++)
             {
                 OcclusionFace face = uploadedFaces[i];
 
-                // Лише блоки нижче межі обрізання.
                 if (face.BlockPosition.y >= clipFromBlockY)
                 {
                     continue;
                 }
 
-                // Поверхні під ногами не перекривають персонажа.
-                if (face.BlockPosition.y + 1f <=
-                    playerPosition.y + 0.01f)
+                if (face.BlockPosition.y + 1f <= playerPosition.y + 0.01f)
                 {
                     continue;
                 }

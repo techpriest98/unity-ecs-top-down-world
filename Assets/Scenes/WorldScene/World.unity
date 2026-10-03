@@ -671,7 +671,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.PlayerAuthoring
   moveSpeed: 5
-  jumpSpeed: 9
+  jumpSpeed: 10
   collisionWidth: 0.6
   collisionHeight: 2
   visualParts:
