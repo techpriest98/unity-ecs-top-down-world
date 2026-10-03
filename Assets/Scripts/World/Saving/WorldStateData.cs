@@ -16,6 +16,14 @@ namespace Game.World.Saving
         public float VerticalVelocity;
         public int ChunkSizeX, ChunkSizeY, ChunkSizeZ;
         public ChunkChangesData[] Chunks;
+        public EquipmentSlotData[] Equipment;
+    }
+
+    [Serializable]
+    public sealed class EquipmentSlotData
+    {
+        public int Slot;
+        public int ItemId;
     }
 
     [Serializable]

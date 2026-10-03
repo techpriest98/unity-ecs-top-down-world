@@ -19,6 +19,7 @@ MonoBehaviour:
   - {r: 0.5, g: 0.5, b: 0.5, a: 1}
   - {r: 1, g: 1, b: 1, a: 1}
   - {r: 1, g: 1, b: 1, a: 1}
+  - {r: 1, g: 1, b: 1, a: 1}
   Blocks:
   - Id: 9
     MaxDurability: 12
@@ -1084,7 +1085,7 @@ MonoBehaviour:
     - serializedVersion: 2
       rgba: 4285114739
     - serializedVersion: 2
-      rgba: 4285114739
+      rgba: 4294967295
     - serializedVersion: 2
       rgba: 4285114739
     - serializedVersion: 2
