@@ -6,6 +6,8 @@ namespace Game.World.Lighting
 {
     public static class VoxelLightSmoothingUtility
     {
+        private const float SkyToByte = 255f / 15f;
+
         public static uint SampleCorner(
             int2 chunkCoordinate,
             int3 airPosition,
@@ -14,26 +16,52 @@ namespace Game.World.Lighting
             ChunkBlockAccessor blocks,
             ChunkLightAccessor lights)
         {
-            if (!TrySample(chunkCoordinate, airPosition, blocks, lights, out float3 center))
-                return 0;
+            if (!TrySample(
+                    chunkCoordinate,
+                    airPosition,
+                    blocks,
+                    lights,
+                    out float4 center))
+            {
+                return 0u;
+            }
 
-            float3 sum = center;
+            float4 sum = center;
             int count = 1;
 
             bool hasA = TrySample(
-                chunkCoordinate, airPosition + offsetA,
-                blocks, lights, out float3 a);
+                chunkCoordinate,
+                airPosition + offsetA,
+                blocks,
+                lights,
+                out float4 a);
 
             bool hasB = TrySample(
-                chunkCoordinate, airPosition + offsetB,
-                blocks, lights, out float3 b);
+                chunkCoordinate,
+                airPosition + offsetB,
+                blocks,
+                lights,
+                out float4 b);
 
-            if (hasA) { sum += a; count++; }
-            if (hasB) { sum += b; count++; }
+            if (hasA)
+            {
+                sum += a;
+                count++;
+            }
 
-            if (hasA && hasB && TrySample(
-                chunkCoordinate, airPosition + offsetA + offsetB,
-                blocks, lights, out float3 diagonal))
+            if (hasB)
+            {
+                sum += b;
+                count++;
+            }
+
+            if (hasA && hasB &&
+                TrySample(
+                    chunkCoordinate,
+                    airPosition + offsetA + offsetB,
+                    blocks,
+                    lights,
+                    out float4 diagonal))
             {
                 sum += diagonal;
                 count++;
@@ -47,30 +75,54 @@ namespace Game.World.Lighting
             int3 position,
             ChunkBlockAccessor blocks,
             ChunkLightAccessor lights,
-            out float3 rgb)
+            out float4 value)
         {
-            rgb = float3.zero;
+            value = float4.zero;
 
             if (!blocks.TryGetBlock(
-                chunkCoordinate, position.x, position.y, position.z,
-                out BlockData block))
+                    chunkCoordinate,
+                    position.x,
+                    position.y,
+                    position.z,
+                    out BlockData block))
+            {
                 return false;
+            }
 
             if (BlockUtility.IsSolid(block.BlockId) &&
                 block.BlockId != BlockId.OceanWater)
+            {
                 return false;
+            }
 
-            if (!lights.TryGetLight(chunkCoordinate, position, out VoxelLightData light))
+            if (!lights.TryGetLight(
+                    chunkCoordinate,
+                    position,
+                    out VoxelLightData light))
+            {
                 return false;
+            }
 
-            rgb = new float3(light.R, light.G, light.B);
+            value = new float4(
+                light.R,
+                light.G,
+                light.B,
+                math.min((int)light.Sky, 15) * SkyToByte);
+
             return true;
         }
 
-        private static uint Pack(float3 rgb)
+        private static uint Pack(float4 light)
         {
-            uint3 value = (uint3)math.clamp(math.round(rgb), 0f, 255f);
-            return value.x | (value.y << 8) | (value.z << 16);
+            uint4 value = (uint4)math.clamp(
+                math.round(light),
+                0f,
+                255f);
+                
+            return value.x |
+                   (value.y << 8) |
+                   (value.z << 16) |
+                   (value.w << 24);
         }
     }
 }

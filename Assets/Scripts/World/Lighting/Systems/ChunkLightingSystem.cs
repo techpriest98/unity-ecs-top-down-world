@@ -298,8 +298,8 @@ namespace Game.World.Lighting
 
             if (!isTop)
             {
-                uint middleLeft = AverageRgb(bottomLeft, topLeft);
-                uint middleRight = AverageRgb(bottomRight, topRight);
+                uint middleLeft = AverageCornerLight(bottomLeft, topLeft);
+                uint middleRight = AverageCornerLight(bottomRight, topRight);
                 if (face == ProjectedFaceType.SideUpper)
                 {
                     bottomLeft = middleLeft;
@@ -318,12 +318,26 @@ namespace Game.World.Lighting
             cell.LocalLightTopRight = topRight;
         }
 
-        private static uint AverageRgb(uint a, uint b)
+        private static uint AverageCornerLight(uint a, uint b)
         {
             uint r = ((a & 0xFFu) + (b & 0xFFu) + 1u) >> 1;
-            uint g = (((a >> 8) & 0xFFu) + ((b >> 8) & 0xFFu) + 1u) >> 1;
-            uint blue = (((a >> 16) & 0xFFu) + ((b >> 16) & 0xFFu) + 1u) >> 1;
-            return r | (g << 8) | (blue << 16);
+
+            uint g = (
+                ((a >> 8) & 0xFFu) +
+                ((b >> 8) & 0xFFu) + 1u) >> 1;
+
+            uint blue = (
+                ((a >> 16) & 0xFFu) +
+                ((b >> 16) & 0xFFu) + 1u) >> 1;
+
+            uint sky = (
+                ((a >> 24) & 0xFFu) +
+                ((b >> 24) & 0xFFu) + 1u) >> 1;
+
+            return r |
+                (g << 8) |
+                (blue << 16) |
+                (sky << 24);
         }
 
         private static void UpdateChunkShadowMask(

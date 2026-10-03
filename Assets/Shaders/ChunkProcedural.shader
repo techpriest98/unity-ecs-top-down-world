@@ -181,6 +181,15 @@ Shader "Game/World/ChunkProcedural"
                     (packedLightData >> 16) & 0xFFu) / 255.0;
             }
 
+            float4 GetCornerLight(uint packedLight)
+            {
+                return float4(
+                    packedLight & 0xFFu,
+                    (packedLight >> 8) & 0xFFu,
+                    (packedLight >> 16) & 0xFFu,
+                    (packedLight >> 24) & 0xFFu) / 255.0;
+            }
+
             float GetSkyVisibility(uint packedLightData)
             {
                 return ((packedLightData >> 24) & 0x0Fu) / 15.0;
@@ -588,16 +597,24 @@ Shader "Game/World/ChunkProcedural"
                     worldNormal,
                     normalize(_DirectionToLight)));
 
-                float3 bottomLight = lerp(
-                    GetLocalLight(input.LocalLightCorners.x),
-                    GetLocalLight(input.LocalLightCorners.y), localUv.x);
+                float4 bottomLight = lerp(
+                    GetCornerLight(input.LocalLightCorners.x),
+                    GetCornerLight(input.LocalLightCorners.y),
+                    localUv.x);
 
-                float3 topLight = lerp(
-                    GetLocalLight(input.LocalLightCorners.z),
-                    GetLocalLight(input.LocalLightCorners.w), localUv.x);
+                float4 topLight = lerp(
+                    GetCornerLight(input.LocalLightCorners.z),
+                    GetCornerLight(input.LocalLightCorners.w),
+                    localUv.x);
 
-                float3 localLight = lerp(bottomLight, topLight, localUv.y);
-                float skyVisibility = GetSkyVisibility(input.LightData);
+                float4 smoothLight = lerp(
+                    bottomLight,
+                    topLight,
+                    localUv.y);
+
+                float3 localLight = smoothLight.rgb;
+                float skyVisibility = smoothLight.a;
+
                 float sunVisibility = GetSunVisibility(input.LightData);
 
                 float ambientVisibility = lerp(
