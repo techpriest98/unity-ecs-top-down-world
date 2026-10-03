@@ -21,15 +21,23 @@ namespace Game.World.Lighting
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            foreach (var (blocks, voxelLight, needsSkyLight, needsLighting, needsImmediateLighting) in
+            foreach (var (
+                        blocks,
+                        voxelLight,
+                        needsSkyLight,
+                        needsLighting,
+                        needsImmediateLighting,
+                        needsLocalLightUpdate) in
                     SystemAPI.Query<
                             DynamicBuffer<BlockData>,
                             DynamicBuffer<VoxelLightData>,
                             EnabledRefRW<ChunkNeedsSkyLight>,
                             EnabledRefRW<ChunkNeedsLighting>,
-                            EnabledRefRW<ChunkNeedsImmediateLighting>>()
+                            EnabledRefRW<ChunkNeedsImmediateLighting>,
+                            EnabledRefRW<ChunkNeedsLocalLightUpdate>>()
                         .WithAll<ChunkGenerated>()
-                        .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState))
+                        .WithOptions(
+                            EntityQueryOptions.IgnoreComponentEnabledState))
             {
                 if (!needsSkyLight.ValueRO ||
                     !needsImmediateLighting.ValueRO)
@@ -41,19 +49,29 @@ namespace Game.World.Lighting
 
                 needsSkyLight.ValueRW = false;
                 needsLighting.ValueRW = true;
+
+                needsLocalLightUpdate.ValueRW = true;
             }
 
             int processedCount = 0;
 
-            foreach (var (blocks, voxelLight, needsSkyLight, needsLighting, needsImmediateLighting) in
+            foreach (var (
+                        blocks,
+                        voxelLight,
+                        needsSkyLight,
+                        needsLighting,
+                        needsImmediateLighting,
+                        needsLocalLightUpdate) in
                     SystemAPI.Query<
                             DynamicBuffer<BlockData>,
                             DynamicBuffer<VoxelLightData>,
                             EnabledRefRW<ChunkNeedsSkyLight>,
                             EnabledRefRW<ChunkNeedsLighting>,
-                            EnabledRefRW<ChunkNeedsImmediateLighting>>()
+                            EnabledRefRW<ChunkNeedsImmediateLighting>,
+                            EnabledRefRW<ChunkNeedsLocalLightUpdate>>()
                         .WithAll<ChunkGenerated>()
-                        .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState))
+                        .WithOptions(
+                            EntityQueryOptions.IgnoreComponentEnabledState))
             {
                 if (!needsSkyLight.ValueRO ||
                     needsImmediateLighting.ValueRO)
@@ -62,14 +80,14 @@ namespace Game.World.Lighting
                 }
 
                 if (processedCount >= MaxChunksPerFrame)
-                {
                     break;
-                }
 
                 Calculate(blocks, voxelLight);
 
                 needsSkyLight.ValueRW = false;
                 needsLighting.ValueRW = true;
+                needsLocalLightUpdate.ValueRW = true;
+
                 processedCount++;
             }
         }

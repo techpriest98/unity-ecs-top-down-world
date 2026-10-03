@@ -8,6 +8,7 @@ namespace Game.World.Rendering
     public static class ChunkProjectionBuilder
     {
         private const float PlayerClipCenterOffset = 1f;
+
         public const float ProjectionClipRadius = 4f;
 
         public static void Build(
@@ -51,25 +52,18 @@ namespace Game.World.Rendering
 
             for (int u = 0; u < bounds.Width; u++)
             {
-                for (int h = bounds.Height - 1;
-                     h >= 0;
-                     h--)
+                for (int h = bounds.Height - 1; h >= 0; h--)
                 {
-                    int heightFromTop =
-                        bounds.Height - 1 - h;
+                    int heightFromTop = bounds.Height - 1 - h;
 
-                    for (int v = bounds.Depth - 1;
-                         v >= 0;
-                         v--)
+                    for (int v = bounds.Depth - 1; v >= 0; v--)
                     {
-                        int projectionY =
-                            heightFromTop * 2 + v;
+                        int projectionY = heightFromTop * 2 + v;
 
-                        ViewCoordinate view =
-                            new ViewCoordinate(
-                                u,
-                                v,
-                                h);
+                        ViewCoordinate view = new ViewCoordinate(
+                            u,
+                            v,
+                            h);
 
                         int3 world =
                             ViewCoordinateUtility.ViewToWorld(
@@ -107,20 +101,19 @@ namespace Game.World.Rendering
             bool projectionClippingEnabled,
             float3 playerPosition)
         {
-            BlockData currentBlock =
-                GetBlockOrAir(
-                    blocks,
-                    chunkCoordinate,
-                    blockAccessor,
-                    world);
+            BlockData currentBlock = GetBlockOrAir(
+                blocks,
+                chunkCoordinate,
+                blockAccessor,
+                world);
 
-            BlockId currentBlockId =
-                currentBlock.BlockId;
+            BlockId currentBlockId = currentBlock.BlockId;
 
-            ushort sourceAirIndex = checked((ushort)ChunkUtility.ToIndex(
-                world.x,
-                world.y,
-                world.z));
+            ushort sourceAirIndex = checked(
+                (ushort)ChunkUtility.ToIndex(
+                    world.x,
+                    world.y,
+                    world.z));
 
             ProcessOpaqueCell(
                 chunkCoordinate,
@@ -214,9 +207,7 @@ namespace Game.World.Rendering
             ushort sourceAirIndex)
         {
             if (!BlockUtility.IsAir(currentBlockId))
-            {
                 return;
-            }
 
             TryEmitWaterSide(
                 chunkCoordinate,
@@ -239,7 +230,7 @@ namespace Game.World.Rendering
                 sourceAirIndex);
         }
 
-       private static void TryEmitOpaqueTop(
+        private static void TryEmitOpaqueTop(
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
             ProjectionWriter writer,
@@ -252,11 +243,7 @@ namespace Game.World.Rendering
             float3 playerPosition)
         {
             int3 belowWorld =
-                transparentWorld +
-                new int3(
-                    0,
-                    -1,
-                    0);
+                transparentWorld + new int3(0, -1, 0);
 
             if (!ChunkUtility.IsInside(
                     belowWorld.x,
@@ -266,23 +253,19 @@ namespace Game.World.Rendering
                 return;
             }
 
-            BlockData belowBlock =
-                blockAccessor.GetBlockOrAir(
-                    chunkCoordinate,
-                    belowWorld.x,
-                    belowWorld.y,
-                    belowWorld.z);
+            BlockData belowBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                belowWorld.x,
+                belowWorld.y,
+                belowWorld.z);
 
             if (!IsOpaque(belowBlock.BlockId))
-            {
                 return;
-            }
 
-            float3 facePosition =
-                GetGlobalPosition(
-                    chunkCoordinate,
-                    belowWorld,
-                    1f);
+            float3 facePosition = GetGlobalPosition(
+                chunkCoordinate,
+                belowWorld,
+                1f);
 
             if (ShouldClipOpaqueFace(
                     projectionClippingEnabled,
@@ -294,12 +277,11 @@ namespace Game.World.Rendering
                 return;
             }
 
-            byte neighborMask =
-                TopNeighborMaskUtility.Build(
-                    chunkCoordinate,
-                    belowWorld,
-                    blockAccessor,
-                    direction);
+            byte neighborMask = TopNeighborMaskUtility.Build(
+                chunkCoordinate,
+                belowWorld,
+                blockAccessor,
+                direction);
 
             writer.TryAddTop(
                 belowBlock,
@@ -324,8 +306,9 @@ namespace Game.World.Rendering
             if (projectionY < 2)
                 return;
 
-            int3 blockWorld = transparentWorld + ViewDirectionUtility
-                .GetAwayFromCameraOffset(direction);
+            int3 blockWorld =
+                transparentWorld +
+                ViewDirectionUtility.GetAwayFromCameraOffset(direction);
 
             BlockData block = blockAccessor.GetBlockOrAir(
                 chunkCoordinate,
@@ -337,15 +320,19 @@ namespace Game.World.Rendering
                 return;
 
             float3 facePosition = GetGlobalPosition(
-                chunkCoordinate, blockWorld, 0.5f);
+                chunkCoordinate,
+                blockWorld,
+                0.5f);
 
             if (ShouldClipOpaqueFace(
-                projectionClippingEnabled,
-                playerPosition,
-                facePosition,
-                blockWorld.y,
-                direction))
+                    projectionClippingEnabled,
+                    playerPosition,
+                    facePosition,
+                    blockWorld.y,
+                    direction))
+            {
                 return;
+            }
 
             int3 rightOffset = direction switch
             {
@@ -361,20 +348,36 @@ namespace Game.World.Rendering
             int3 leftWorld = blockWorld - rightOffset;
 
             BlockData aboveBlock = blockAccessor.GetBlockOrAir(
-                chunkCoordinate, aboveWorld.x, aboveWorld.y, aboveWorld.z);
+                chunkCoordinate,
+                aboveWorld.x,
+                aboveWorld.y,
+                aboveWorld.z);
+
             BlockData rightBlock = blockAccessor.GetBlockOrAir(
-                chunkCoordinate, rightWorld.x, rightWorld.y, rightWorld.z);
+                chunkCoordinate,
+                rightWorld.x,
+                rightWorld.y,
+                rightWorld.z);
+
             BlockData leftBlock = blockAccessor.GetBlockOrAir(
-                chunkCoordinate, leftWorld.x, leftWorld.y, leftWorld.z);
+                chunkCoordinate,
+                leftWorld.x,
+                leftWorld.y,
+                leftWorld.z);
 
             byte neighborMask = (byte)(
                 (IsOpaque(aboveBlock.BlockId) ? 1 : 0) |
                 (IsOpaque(rightBlock.BlockId) ? 2 : 0) |
                 (IsOpaque(leftBlock.BlockId) ? 8 : 0));
 
-            int3 footWorld = transparentWorld + new int3(0, -1, 0);
+            int3 footWorld =
+                transparentWorld + new int3(0, -1, 0);
+
             BlockData footBlock = blockAccessor.GetBlockOrAir(
-                chunkCoordinate, footWorld.x, footWorld.y, footWorld.z);
+                chunkCoordinate,
+                footWorld.x,
+                footWorld.y,
+                footWorld.z);
 
             BlockId footBlockId = IsOpaque(footBlock.BlockId)
                 ? footBlock.BlockId
@@ -407,9 +410,7 @@ namespace Game.World.Rendering
             ushort projectionY,
             ushort sourceAirIndex)
         {
-            int3 belowWorld =
-                airWorld +
-                new int3(0, -1, 0);
+            int3 belowWorld = airWorld + new int3(0, -1, 0);
 
             if (!ChunkUtility.IsInside(
                     belowWorld.x,
@@ -419,44 +420,39 @@ namespace Game.World.Rendering
                 return;
             }
 
-            BlockData belowBlock =
-                blockAccessor.GetBlockOrAir(
-                    chunkCoordinate,
-                    belowWorld.x,
-                    belowWorld.y,
-                    belowWorld.z);
+            BlockData belowBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                belowWorld.x,
+                belowWorld.y,
+                belowWorld.z);
 
             if (!IsWater(belowBlock.BlockId))
-            {
                 return;
-            }
-
-            byte opticalDepth =
-                MeasureWaterDepth(
-                    chunkCoordinate,
-                    blockAccessor,
-                    belowWorld,
-                    new int3(0, -1, 0));
 
             int3 awayFromCamera =
-                ViewDirectionUtility
-                    .GetAwayFromCameraOffset(
-                        direction);
+                ViewDirectionUtility.GetAwayFromCameraOffset(direction);
 
-            int3 behindWorld =
-                belowWorld +
-                awayFromCamera;
+            // Центр верхньої грані водяного блока.
+            float3 rayOrigin = new float3(
+                belowWorld.x + 0.5f,
+                belowWorld.y + 1f,
+                belowWorld.z + 0.5f);
 
-            BlockData behindBlock =
-                blockAccessor.GetBlockOrAir(
-                    chunkCoordinate,
-                    behindWorld.x,
-                    behindWorld.y,
-                    behindWorld.z);
+            byte opticalDepth = MeasureWaterDepth(
+                chunkCoordinate,
+                blockAccessor,
+                rayOrigin,
+                awayFromCamera);
 
-            bool topInset =
-                IsOpaque(
-                    behindBlock.BlockId);
+            int3 behindWorld = belowWorld + awayFromCamera;
+
+            BlockData behindBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                behindWorld.x,
+                behindWorld.y,
+                behindWorld.z);
+
+            bool topInset = IsOpaque(behindBlock.BlockId);
 
             writer.TryAddTop(
                 belowBlock,
@@ -478,50 +474,50 @@ namespace Game.World.Rendering
             ushort sourceAirIndex)
         {
             if (projectionY < 2)
-            {
                 return;
-            }
-
-            int3 blockWorld =
-                airWorld +
-                ViewDirectionUtility
-                    .GetAwayFromCameraOffset(
-                        direction);
-
-            BlockData block =
-                blockAccessor.GetBlockOrAir(
-                    chunkCoordinate,
-                    blockWorld.x,
-                    blockWorld.y,
-                    blockWorld.z);
-
-            if (!IsWater(block.BlockId))
-            {
-                return;
-            }
 
             int3 awayFromCamera =
-                ViewDirectionUtility
-                    .GetAwayFromCameraOffset(
-                        direction);
+                ViewDirectionUtility.GetAwayFromCameraOffset(direction);
 
-            byte opticalDepth =
-                MeasureWaterDepth(
-                    chunkCoordinate,
-                    blockAccessor,
-                    blockWorld,
-                    awayFromCamera);
+            int3 blockWorld = airWorld + awayFromCamera;
+
+            BlockData block = blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                blockWorld.x,
+                blockWorld.y,
+                blockWorld.z);
+
+            if (!IsWater(block.BlockId))
+                return;
+
+            // Центр передньої грані, повернутої до камери.
+            float3 faceCenter =
+                (float3)blockWorld +
+                new float3(0.5f, 0.5f, 0.5f) -
+                (float3)awayFromCamera * 0.5f;
+
+            byte upperDepth = MeasureWaterDepth(
+                chunkCoordinate,
+                blockAccessor,
+                faceCenter + new float3(0f, 0.25f, 0f),
+                awayFromCamera);
+
+            byte lowerDepth = MeasureWaterDepth(
+                chunkCoordinate,
+                blockAccessor,
+                faceCenter - new float3(0f, 0.25f, 0f),
+                awayFromCamera);
 
             writer.TryAddSideUpper(
                 block,
-                opticalDepth,
+                upperDepth,
                 sourceAirIndex,
                 projectionX,
                 checked((ushort)(projectionY - 2)));
 
             writer.TryAddSideLower(
                 block,
-                opticalDepth,
+                lowerDepth,
                 sourceAirIndex,
                 projectionX,
                 checked((ushort)(projectionY - 1)));
@@ -543,38 +539,105 @@ namespace Game.World.Rendering
         private static byte MeasureWaterDepth(
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
-            int3 startWorld,
-            int3 direction)
+            float3 rayOrigin,
+            int3 awayFromCamera)
         {
-            int depth = 0;
-            int3 currentWorld =
-                startWorld;
+            // За один горизонтальний блок промінь
+            // опускається на половину блока.
+            const float verticalSpeed = 0.5f;
+            const float epsilon = 0.00001f;
+            const int maxSteps = byte.MaxValue * 3 + 3;
 
-            while (depth < byte.MaxValue)
+            bool movesAlongX = awayFromCamera.x != 0;
+
+            int horizontalStep = movesAlongX
+                ? awayFromCamera.x
+                : awayFromCamera.z;
+
+            if (horizontalStep == 0)
+                return 0;
+
+            float horizontalOrigin = movesAlongX
+                ? rayOrigin.x
+                : rayOrigin.z;
+
+            // На межі обираємо клітинку в напрямку променя.
+            int horizontalCell = horizontalStep > 0
+                ? (int)math.floor(horizontalOrigin)
+                : (int)math.ceil(horizontalOrigin) - 1;
+
+            int verticalCell = (int)math.ceil(rayOrigin.y) - 1;
+
+            int3 currentWorld = (int3)math.floor(rayOrigin);
+
+            if (movesAlongX)
+                currentWorld.x = horizontalCell;
+            else
+                currentWorld.z = horizontalCell;
+
+            currentWorld.y = verticalCell;
+
+            float nextHorizontal = horizontalStep > 0
+                ? horizontalCell + 1f - horizontalOrigin
+                : horizontalOrigin - horizontalCell;
+
+            float nextVertical =
+                (rayOrigin.y - verticalCell) / verticalSpeed;
+
+            float distance = 0f;
+            float maxDistance = byte.MaxValue / verticalSpeed;
+
+            for (int step = 0; step < maxSteps; step++)
             {
-                BlockData block =
-                    blockAccessor.GetBlockOrAir(
-                        chunkCoordinate,
-                        currentWorld.x,
-                        currentWorld.y,
-                        currentWorld.z);
+                BlockData block = blockAccessor.GetBlockOrAir(
+                    chunkCoordinate,
+                    currentWorld.x,
+                    currentWorld.y,
+                    currentWorld.z);
 
+                // Завершуємо на дні або при виході з води.
                 if (!IsWater(block.BlockId))
-                {
                     break;
+
+                float nextBoundary = math.min(
+                    nextHorizontal,
+                    nextVertical);
+
+                distance = math.min(nextBoundary, maxDistance);
+
+                if (distance >= maxDistance)
+                    break;
+
+                bool crossHorizontal =
+                    nextHorizontal <= nextBoundary + epsilon;
+
+                bool crossVertical =
+                    nextVertical <= nextBoundary + epsilon;
+
+                if (crossHorizontal)
+                {
+                    currentWorld += awayFromCamera;
+                    nextHorizontal += 1f;
                 }
 
-                depth++;
-
-                currentWorld +=
-                    direction;
+                if (crossVertical)
+                {
+                    currentWorld.y--;
+                    nextVertical += 1f / verticalSpeed;
+                }
             }
 
-            return checked((byte)depth);
+            // Один блок вертикальної товщини =
+            // одна одиниця оптичної глибини.
+            float depth = distance * verticalSpeed;
+
+            return (byte)math.clamp(
+                (int)math.ceil(depth - epsilon),
+                0,
+                byte.MaxValue);
         }
 
-        private static bool IsOpaque(
-            BlockId blockId)
+        private static bool IsOpaque(BlockId blockId)
         {
             return BlockUtility.IsSolid(blockId) &&
                    !IsWater(blockId);
@@ -586,18 +649,13 @@ namespace Game.World.Rendering
             float heightOffset)
         {
             return new float3(
-                chunkCoordinate.x *
-                    ChunkSettings.SizeX +
-                localPosition.x +
-                0.5f,
+                chunkCoordinate.x * ChunkSettings.SizeX +
+                localPosition.x + 0.5f,
 
-                localPosition.y +
-                heightOffset,
+                localPosition.y + heightOffset,
 
-                chunkCoordinate.y *
-                    ChunkSettings.SizeZ +
-                localPosition.z +
-                0.5f);
+                chunkCoordinate.y * ChunkSettings.SizeZ +
+                localPosition.z + 0.5f);
         }
 
         private static bool ShouldClipOpaqueFace(
@@ -608,25 +666,20 @@ namespace Game.World.Rendering
             ViewDirection direction)
         {
             if (!projectionClippingEnabled)
-            {
                 return false;
-            }
 
-            int playerFloorY = (int)math.floor(playerPosition.y + PlayerClipCenterOffset + 0.01f);
+            int playerFloorY = (int)math.floor(
+                playerPosition.y + PlayerClipCenterOffset + 0.01f);
 
             if (blockY < playerFloorY)
-            {
                 return false;
-            }
 
-            float3 playerClipCenterPosition = playerPosition + new float3(
-                0f,
-                PlayerClipCenterOffset,
-                0f);
+            float3 playerClipCenterPosition =
+                playerPosition +
+                new float3(0f, PlayerClipCenterOffset, 0f);
 
             int2 towardCamera =
-                ViewDirectionUtility.Forward(
-                    direction);
+                ViewDirectionUtility.Forward(direction);
 
             int2 playerCell = new int2(
                 (int)math.floor(playerPosition.x),
@@ -641,18 +694,20 @@ namespace Game.World.Rendering
                 towardCamera);
 
             if (depthDistance <= 0)
-            {
                 return false;
-            }
 
-            float2 projectedFacePosition = ProjectWorldPosition(facePosition, direction);
-            float2 projectedPlayerPosition = ProjectWorldPosition(playerClipCenterPosition, direction);
+            float2 projectedFacePosition =
+                ProjectWorldPosition(facePosition, direction);
+
+            float2 projectedPlayerPosition =
+                ProjectWorldPosition(
+                    playerClipCenterPosition,
+                    direction);
 
             return math.distancesq(
-                    projectedFacePosition,
-                    projectedPlayerPosition) <
-                ProjectionClipRadius *
-                ProjectionClipRadius;
+                       projectedFacePosition,
+                       projectedPlayerPosition) <
+                   ProjectionClipRadius * ProjectionClipRadius;
         }
 
         private static void TryEmitCutTop(
@@ -673,7 +728,6 @@ namespace Game.World.Rendering
             int clipFromBlockY = (int)math.floor(
                 playerPosition.y + PlayerClipCenterOffset + 0.01f);
 
-            // The current solid cell must be immediately above the cut.
             if (upperWorld.y != clipFromBlockY)
                 return;
 
@@ -696,7 +750,6 @@ namespace Game.World.Rendering
             if (!IsOpaque(belowBlock.BlockId))
                 return;
 
-            // Match the clipping test used for the upper block's side.
             float3 upperFacePosition = GetGlobalPosition(
                 chunkCoordinate,
                 upperWorld,
@@ -712,7 +765,6 @@ namespace Game.World.Rendering
                 return;
             }
 
-            // Same projection position as a normal Top below this cell.
             writer.TryAddCutTop(
                 belowBlock,
                 sourceCellIndex,
@@ -726,37 +778,27 @@ namespace Game.World.Rendering
         {
             return direction switch
             {
-                ViewDirection.Front =>
-                    new float2(
-                        worldPosition.x,
-                        worldPosition.y -
-                        worldPosition.z * 0.5f),
+                ViewDirection.Front => new float2(
+                    worldPosition.x,
+                    worldPosition.y - worldPosition.z * 0.5f),
 
-                ViewDirection.Back =>
-                    new float2(
-                        -worldPosition.x,
-                        worldPosition.y +
-                        worldPosition.z * 0.5f),
+                ViewDirection.Back => new float2(
+                    -worldPosition.x,
+                    worldPosition.y + worldPosition.z * 0.5f),
 
-                ViewDirection.Right =>
-                    new float2(
-                        worldPosition.z,
-                        worldPosition.y +
-                        worldPosition.x * 0.5f),
+                ViewDirection.Right => new float2(
+                    worldPosition.z,
+                    worldPosition.y + worldPosition.x * 0.5f),
 
-                ViewDirection.Left =>
-                    new float2(
-                        -worldPosition.z,
-                        worldPosition.y -
-                        worldPosition.x * 0.5f),
+                ViewDirection.Left => new float2(
+                    -worldPosition.z,
+                    worldPosition.y - worldPosition.x * 0.5f),
 
-                _ =>
-                    float2.zero
+                _ => float2.zero
             };
         }
 
-        private static bool IsWater(
-            BlockId blockId)
+        private static bool IsWater(BlockId blockId)
         {
             return blockId == BlockId.OceanWater;
         }
