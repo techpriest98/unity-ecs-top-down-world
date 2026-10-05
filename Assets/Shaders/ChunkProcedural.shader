@@ -2,17 +2,11 @@ Shader "Game/World/ChunkProcedural"
 {
     Properties
     {
-        [Toggle(_PLAYER_CLIPPING)]
-        _PlayerClipping("Player Clipping", Float) = 0
-
         [Toggle(_DEBUG_NORMALS)]
         _DebugNormals("Debug Normals", Float) = 0
 
         _BlockAtlas("Block Atlas", 2D) = "white" {}
         _BlockNormalAtlas("Block Normal Atlas", 2D) = "bump" {}
-        _PlayerClipRadius("Player Clip Radius", Range(0.0, 1024.0)) = 64.0
-        _PlayerClipFadeWidth("Player Clip Fade Width", Range(0.0, 256.0)) = 32.0
-        _PlayerClipGrainSize("Player Clip Grain Size", Range(1.0, 8.0)) = 2.0
     }
 
     SubShader
@@ -34,7 +28,6 @@ Shader "Game/World/ChunkProcedural"
 
             HLSLPROGRAM
 
-            #pragma shader_feature_local_fragment _PLAYER_CLIPPING
             #pragma shader_feature_local_fragment _DEBUG_NORMALS
             #pragma target 4.5
             #pragma vertex Vert
@@ -125,14 +118,6 @@ Shader "Game/World/ChunkProcedural"
             float _DirectionalLightIntensity;
             float3 _AmbientColor;
             float3 _SideFaceNormal;
-
-            // ============================================================
-            // Clipping
-            // ============================================================
-
-            float _PlayerClipRadius;
-            float _PlayerClipFadeWidth;
-            float _PlayerClipGrainSize;
 
             // ============================================================
             // Selection
@@ -510,18 +495,6 @@ Shader "Game/World/ChunkProcedural"
             }
 
             // ============================================================
-            // Clipping
-            // ============================================================
-
-            float GetClipGrain(float2 screenPosition)
-            {
-                float grainSize = max(_PlayerClipGrainSize, 1.0);
-                float2 grainPosition = floor(screenPosition / grainSize);
-
-                return frac(52.9829189 * frac(dot(grainPosition, float2(0.06711056, 0.00583715))));
-            }
-
-            // ============================================================
             // Fragment
             // ============================================================
 
@@ -529,22 +502,6 @@ Shader "Game/World/ChunkProcedural"
             {
                 if (input.IsCutTop != 0u)
                     return float4(0.0, 0.0, 0.0, 1.0);
-
-                #if defined(_PLAYER_CLIPPING)
-                    float2 screenCenter = _ScreenParams.xy * 0.5;
-                    float2 clipOffset = input.PositionCS.xy - screenCenter;
-                    float distanceFromCenter = length(clipOffset);
-
-                    float fadeWidth = max(_PlayerClipFadeWidth, 0.0001);
-                    float innerRadius = max(_PlayerClipRadius - fadeWidth, 0.0);
-                    float visibility = saturate((distanceFromCenter - innerRadius) / fadeWidth);
-
-                    visibility = smoothstep(0.0, 1.0, visibility);
-
-                    float grain = GetClipGrain(input.PositionCS.xy);
-
-                    clip(visibility - grain);
-                #endif
 
                 if (input.BlockId == 0 ||
                     input.BlockId >= (uint)_BlockDatabaseCount)

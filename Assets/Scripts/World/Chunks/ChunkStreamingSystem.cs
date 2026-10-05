@@ -43,8 +43,6 @@ namespace Game.World.Chunks
                 typeof(ChunkColumnData),
                 typeof(ProjectedCellData),
                 typeof(ProjectedWaterCellData),
-                typeof(ChunkShaderClippingEnabled),
-                typeof(ChunkProjectionClippingEnabled),
                 typeof(VoxelLightData),
                 typeof(ChunkNeedsProjection),
                 typeof(ChunkNeedsRender),
@@ -333,8 +331,6 @@ namespace Game.World.Chunks
 
             state.EntityManager.SetComponentEnabled<ChunkNeedsProjection>(entity, false);
             state.EntityManager.SetComponentEnabled<ChunkNeedsRender>(entity, false);
-            state.EntityManager.SetComponentEnabled<ChunkShaderClippingEnabled>(entity, false);
-            state.EntityManager.SetComponentEnabled<ChunkProjectionClippingEnabled>(entity, false);
             state.EntityManager.SetComponentEnabled<ChunkNeedsLighting>(entity, false);
             state.EntityManager.SetComponentEnabled<ChunkNeedsSkyLight>(entity, true);
             state.EntityManager.SetComponentEnabled<ChunkNeedsLocalLightUpdate>(entity, false);
