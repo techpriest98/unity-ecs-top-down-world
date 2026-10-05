@@ -145,6 +145,11 @@ namespace Game.Player
                     Value = new float4(1f, 1f, 1f, 1f)
                 });
 
+                AddComponent(entity, new PlayerSelectedBlock
+                {
+                    Value = Game.World.Blocks.BlockId.Stone
+                });
+
                 DynamicBuffer<PlayerVisualPart> parts =
                     AddBuffer<PlayerVisualPart>(entity);
 

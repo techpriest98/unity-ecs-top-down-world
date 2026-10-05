@@ -57,7 +57,7 @@ namespace Game.Player
                     ItemID nextItem = ItemID.None;
 
                     if (currentItem == ItemID.None)
-                        nextItem = ItemID.GostTorch;
+                        nextItem = ItemID.IgnitedTorch;
 
                     PlayerEquipmentUtility.TryEquip(
                         slots,

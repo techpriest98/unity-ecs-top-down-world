@@ -16,6 +16,7 @@ namespace Game.World.Interaction
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PlayerBuildInput>();
+            state.RequireForUpdate<PlayerSelectedBlock>();
             state.RequireForUpdate<SelectedProjectedCell>();
             state.RequireForUpdate<BlockModificationQueue>();
             state.RequireForUpdate<ViewDirectionComponent>();
@@ -34,10 +35,11 @@ namespace Game.World.Interaction
                 state.EntityManager.GetBuffer<BlockModificationRequest>(
                     queueEntity);
 
-            foreach (var (input, selection) in
+            foreach (var (input, selection, selectedBlock) in
                      SystemAPI.Query<
                              RefRO<PlayerBuildInput>,
-                             RefRO<SelectedProjectedCell>>()
+                             RefRO<SelectedProjectedCell>,
+                             RefRW<PlayerSelectedBlock>>()
                          .WithAll<PlayerTag>())
             {
                 if (!input.ValueRO.IsBuildMode ||
@@ -46,8 +48,17 @@ namespace Game.World.Interaction
                     continue;
                 }
 
-                SelectedProjectedCell selected =
-                    selection.ValueRO;
+                SelectedProjectedCell selected = selection.ValueRO;
+
+                if (input.ValueRO.PickPressed)
+                {
+                    BlockId blockId = (BlockId)(selected.BlockData & 0xFFu);
+
+                    if (!BlockUtility.IsAir(blockId))
+                    {
+                        selectedBlock.ValueRW.Value = blockId;
+                    }
+                }
 
                 if (input.ValueRO.RemovePressed &&
                     ProjectedCellInteractionUtility.TryGetRemovalPosition(
@@ -64,6 +75,7 @@ namespace Game.World.Interaction
                 }
 
                 if (input.ValueRO.PlacePressed &&
+                    !BlockUtility.IsAir(selectedBlock.ValueRO.Value) &&
                     ProjectedCellInteractionUtility.TryGetPlacementPosition(
                         selected,
                         out var placementPosition))
@@ -72,7 +84,7 @@ namespace Game.World.Interaction
                         new BlockModificationRequest(
                             placementPosition,
                             new BlockData(
-                                BlockId.Stone,
+                                selectedBlock.ValueRO.Value,
                                 byte.MaxValue)));
                 }
             }

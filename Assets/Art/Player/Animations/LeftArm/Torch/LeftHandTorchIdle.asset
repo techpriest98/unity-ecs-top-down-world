@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.AnimationDefinition
   Part: 3
   Id: 0
-  SpriteSheet: {fileID: 2800000, guid: f76a83ec6ada746a58e63ec288735c98, type: 3}
+  SpriteSheet: {fileID: 2800000, guid: cc06a9ed83e5346e493a8905cadbe5fc, type: 3}
   FrameCount: 2
   FrameDuration: 1
   Loop: 1

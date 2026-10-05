@@ -9,5 +9,6 @@ namespace Game.Player
         public bool IsBuildMode;
         public bool RemovePressed;
         public bool PlacePressed;
+        public bool PickPressed;
     }
 }

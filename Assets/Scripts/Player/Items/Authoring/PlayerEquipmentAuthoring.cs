@@ -17,6 +17,9 @@ namespace Game.Player
 
                 DynamicBuffer<PlayerEquipmentSlot> slots =
                     AddBuffer<PlayerEquipmentSlot>(player);
+                
+                AddBuffer<PlayerEquipmentChangeRequest>(player);
+                AddBuffer<PlayerAvailableSkill>(player);
 
                 slots.Add(new PlayerEquipmentSlot
                 {

@@ -7,7 +7,7 @@ namespace Game.Player
         RightArm = 2,
         LeftHandTorch = 3,
         RightHandTorch = 4,
-        LeftHandGostTorch = 5,
-        RightHandGostTorch = 6
+        LeftHandIgnitedTorch = 5,
+        RightHandIgnitedTorch = 6
     }
 }

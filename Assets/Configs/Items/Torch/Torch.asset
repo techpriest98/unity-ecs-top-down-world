@@ -14,6 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.ItemDefinition
   Id: 1
   DisplayName: Torch
+  Icon: {fileID: 0}
   AllowedSlots: -1
-  Light: {fileID: 11400000, guid: dbda422e0dd9e44e696ec152d9c4985f, type: 2}
+  Light: {fileID: 0}
   Animation: {fileID: 11400000, guid: 4c8b339d9e64f456d95169fc1213c7df, type: 2}
+  Skills:
+  - {fileID: 11400000, guid: 6915bc3950696455c8f38b7f7667f5da, type: 2}
