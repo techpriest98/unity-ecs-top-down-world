@@ -20,9 +20,15 @@ namespace Game.World.Rendering
         [SerializeField]
         private Material material;
 
+        [SerializeField]
+        private Material clippedMaterial;
+
         [Header("Water Rendering")]
         [SerializeField]
         private Material waterMaterial;
+
+        [SerializeField]
+        private Material clippedWaterMaterial;
 
         [Header("Shared Resources")]
         [SerializeField]
@@ -51,45 +57,71 @@ namespace Game.World.Rendering
         private int sunShadowMaskIndex;
 
         private GraphicsBuffer projectedCellsBuffer;
+        private GraphicsBuffer projectedClippedCellsBuffer;
         private GraphicsBuffer projectedWaterCellsBuffer;
+        private GraphicsBuffer projectedClippedWaterCellsBuffer;
         private GraphicsBuffer blockDatabaseBuffer;
 
         private MaterialPropertyBlock opaquePropertyBlock;
+        private MaterialPropertyBlock clippedPropertyBlock;
         private MaterialPropertyBlock waterPropertyBlock;
+        private MaterialPropertyBlock clippedWaterPropertyBlock;
 
         private int projectedCellsCapacity;
         private int projectedCellsCount;
 
+        private int projectedClippedCellsCapacity;
+        private int projectedClippedCellsCount;
+
         private int projectedWaterCellsCapacity;
         private int projectedWaterCellsCount;
+
+        private int projectedClippedWaterCellsCapacity;
+        private int projectedClippedWaterCellsCount;
 
         private int blockDatabaseCount;
 
         private Bounds opaqueWorldBounds;
+        private Bounds clippedWorldBounds;
         private Bounds waterWorldBounds;
+        private Bounds clippedWaterWorldBounds;
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            if (Instance != null &&
+                Instance != this)
             {
                 Debug.LogError(
-                    "ChunkProceduralRenderer is already existing in the scene.",
+                    "У сцені вже існує інший " +
+                    "ChunkProceduralRenderer.",
                     this);
 
                 Destroy(gameObject);
                 return;
             }
 
-            Instance = this;
+            Instance =
+                this;
 
             if (!ValidateReferences())
             {
-                enabled = false;
+                enabled =
+                    false;
+
                 return;
             }
 
-            opaquePropertyBlock = new MaterialPropertyBlock();
-            waterPropertyBlock = new MaterialPropertyBlock();
+            opaquePropertyBlock =
+                new MaterialPropertyBlock();
+
+            clippedPropertyBlock =
+                new MaterialPropertyBlock();
+
+            waterPropertyBlock =
+                new MaterialPropertyBlock();
+
+            clippedWaterPropertyBlock =
+                new MaterialPropertyBlock();
 
             CreateBlockDatabaseBuffer();
         }
@@ -97,7 +129,9 @@ namespace Game.World.Rendering
         private void LateUpdate()
         {
             RenderOpaque();
+            RenderClipped();
             RenderWater();
+            RenderClippedWater();
         }
 
         private void OnDestroy()
@@ -201,6 +235,59 @@ namespace Game.World.Rendering
                 cells.Length;
         }
 
+        public void UploadClipped(
+            NativeArray<ProjectedCellRenderData> cells,
+            Bounds bounds)
+        {
+            clippedWorldBounds =
+                bounds;
+
+            if (!enabled)
+            {
+                return;
+            }
+
+            if (!cells.IsCreated ||
+                cells.Length == 0)
+            {
+                projectedClippedCellsCount =
+                    0;
+
+                return;
+            }
+
+            EnsureProjectedClippedCellsBuffer(
+                cells.Length);
+
+            projectedClippedCellsBuffer.SetData(
+                cells);
+
+            projectedClippedCellsCount =
+                cells.Length;
+        }
+
+        public void UploadClippedWater(
+            NativeArray<ProjectedCellRenderData> cells,
+            Bounds bounds)
+        {
+            clippedWaterWorldBounds = bounds;
+
+            if (!enabled)
+            {
+                return;
+            }
+
+            if (!cells.IsCreated || cells.Length == 0)
+            {
+                projectedClippedWaterCellsCount = 0;
+                return;
+            }
+
+            EnsureProjectedClippedWaterCellsBuffer(cells.Length);
+            projectedClippedWaterCellsBuffer.SetData(cells);
+            projectedClippedWaterCellsCount = cells.Length;
+        }
+
         private void RenderOpaque()
         {
             if (!enabled ||
@@ -237,6 +324,42 @@ namespace Game.World.Rendering
                 projectedWaterCellsBuffer,
                 projectedWaterCellsCount,
                 waterWorldBounds,
+                null);
+        }
+
+        private void RenderClipped()
+        {
+            if (!enabled ||
+                projectedClippedCellsCount <= 0 ||
+                projectedClippedCellsBuffer == null ||
+                blockDatabaseBuffer == null)
+            {
+                return;
+            }
+
+            RenderLayer(
+                clippedMaterial,
+                clippedPropertyBlock,
+                projectedClippedCellsBuffer,
+                projectedClippedCellsCount,
+                clippedWorldBounds,
+                blockNormalAtlas);
+        }
+
+        private void RenderClippedWater()
+        {
+            if (!enabled || clippedWaterMaterial == null || projectedClippedWaterCellsCount <= 0 ||
+                projectedClippedWaterCellsBuffer == null || blockDatabaseBuffer == null)
+            {
+                return;
+            }
+
+            RenderLayer(
+                clippedWaterMaterial,
+                clippedWaterPropertyBlock,
+                projectedClippedWaterCellsBuffer,
+                projectedClippedWaterCellsCount,
+                clippedWaterWorldBounds,
                 null);
         }
 
@@ -376,7 +499,18 @@ namespace Game.World.Rendering
             if (material == null)
             {
                 Debug.LogError(
-                    "Procedural Material is not assigned.",
+                    "Procedural Material " +
+                    "не призначений.",
+                    this);
+
+                return false;
+            }
+
+            if (clippedMaterial == null)
+            {
+                Debug.LogError(
+                    "Clipped Procedural Material " +
+                    "не призначений.",
                     this);
 
                 return false;
@@ -384,26 +518,38 @@ namespace Game.World.Rendering
 
             if (waterMaterial == null)
             {
-                Debug.LogError("Water Procedural Material is not assigned.", this);
+                Debug.LogError("Water Procedural Material не призначений.", this);
+                return false;
+            }
+
+            if (clippedWaterMaterial == null)
+            {
+                Debug.LogError("Clipped Water Procedural Material не призначений.", this);
                 return false;
             }
 
             if (blockAtlas == null)
             {
-                Debug.LogError("Block Atlas is not assigned.", this);
+                Debug.LogError(
+                    "Block Atlas " +
+                    "не призначений.",
+                    this);
 
                 return false;
             }
 
             if (blockNormalAtlas == null)
             {
-                Debug.LogError("Block Normal Atlas is not assigned.", this);
+                Debug.LogError("Block Normal Atlas не призначений.", this);
                 return false;
             }
 
             if (blockDatabase == null)
             {
-                Debug.LogError("Block Database is not assigned.", this);
+                Debug.LogError(
+                    "Block Database " +
+                    "не призначена.",
+                    this);
 
                 return false;
             }
@@ -420,8 +566,8 @@ namespace Game.World.Rendering
                 gpuData.Length == 0)
             {
                 Debug.LogError(
-                    "Block Database is not creating " +
-                    "GPU data.",
+                    "Block Database не створила " +
+                    "GPU-дані.",
                     blockDatabase);
 
                 return;
@@ -492,6 +638,47 @@ namespace Game.World.Rendering
                         ProjectedCellRenderData>());
         }
 
+        private void EnsureProjectedClippedCellsBuffer(
+            int requiredCount)
+        {
+            if (projectedClippedCellsBuffer != null &&
+                projectedClippedCellsCapacity >=
+                requiredCount)
+            {
+                return;
+            }
+
+            projectedClippedCellsBuffer?.Dispose();
+
+            projectedClippedCellsCapacity =
+                Mathf.NextPowerOfTwo(
+                    Mathf.Max(
+                        requiredCount,
+                        1));
+
+            projectedClippedCellsBuffer =
+                new GraphicsBuffer(
+                    GraphicsBuffer.Target.Structured,
+                    projectedClippedCellsCapacity,
+                    Marshal.SizeOf<
+                        ProjectedCellRenderData>());
+        }
+
+        private void EnsureProjectedClippedWaterCellsBuffer(int requiredCount)
+        {
+            if (projectedClippedWaterCellsBuffer != null && projectedClippedWaterCellsCapacity >= requiredCount)
+            {
+                return;
+            }
+
+            projectedClippedWaterCellsBuffer?.Dispose();
+            projectedClippedWaterCellsCapacity = Mathf.NextPowerOfTwo(Mathf.Max(requiredCount, 1));
+            projectedClippedWaterCellsBuffer = new GraphicsBuffer(
+                GraphicsBuffer.Target.Structured,
+                projectedClippedWaterCellsCapacity,
+                Marshal.SizeOf<ProjectedCellRenderData>());
+        }
+
         private void ReleaseResources()
         {
             projectedCellsBuffer?.Dispose();
@@ -500,11 +687,23 @@ namespace Game.World.Rendering
             projectedCellsCapacity = 0;
             projectedCellsCount = 0;
 
+            projectedClippedCellsBuffer?.Dispose();
+            projectedClippedCellsBuffer = null;
+
+            projectedClippedCellsCapacity = 0;
+            projectedClippedCellsCount = 0;
+
             projectedWaterCellsBuffer?.Dispose();
             projectedWaterCellsBuffer = null;
 
             projectedWaterCellsCapacity = 0;
             projectedWaterCellsCount = 0;
+
+            projectedClippedWaterCellsBuffer?.Dispose();
+            projectedClippedWaterCellsBuffer = null;
+
+            projectedClippedWaterCellsCapacity = 0;
+            projectedClippedWaterCellsCount = 0;
 
             blockDatabaseBuffer?.Dispose();
             blockDatabaseBuffer = null;

@@ -1,3 +1,4 @@
+using Game.Player;
 using Game.World.Blocks;
 using Game.World.Chunks;
 using Game.World.Lighting;
@@ -9,101 +10,207 @@ using Unity.Mathematics;
 namespace Game.World.Rendering
 {
     [BurstCompile]
-    [UpdateAfter(typeof(ViewDirectionInputSystem))]
-    public partial struct ChunkProjectionSystem : ISystem
+    [UpdateAfter(
+        typeof(ViewDirectionInputSystem))]
+    public partial struct ChunkProjectionSystem :
+        ISystem
     {
-        private const int MaxChunksProjectedPerFrame = 1;
+        private const int
+            MaxChunksProjectedPerFrame = 1;
 
-        private EntityQuery generatedChunksQuery;
-        private EntityQuery chunksNeedingProjectionQuery;
+        private EntityQuery
+            generatedChunksQuery;
 
-        public void OnCreate(ref SystemState state)
+        private EntityQuery
+            chunksNeedingProjectionQuery;
+
+
+        public void OnCreate(
+            ref SystemState state)
         {
-            state.RequireForUpdate<ChunkComponent>();
-            state.RequireForUpdate<ViewDirectionComponent>();
+            state.RequireForUpdate<
+                ChunkComponent>();
+
+            state.RequireForUpdate<
+                ViewDirectionComponent>();
+
+            state.RequireForUpdate<
+                PlayerWorldPosition>();
 
             generatedChunksQuery =
-                new EntityQueryBuilder(Allocator.Temp)
-                    .WithAll<ChunkComponent, ChunkGenerated>()
-                    .Build(ref state);
-
+                new EntityQueryBuilder(
+                        Allocator.Temp)
+                    .WithAll<
+                        ChunkComponent,
+                        ChunkGenerated>()
+                    .Build(
+                        ref state);
+                        
             chunksNeedingProjectionQuery =
-                new EntityQueryBuilder(Allocator.Temp)
+                new EntityQueryBuilder(
+                        Allocator.Temp)
                     .WithAll<
                         ChunkComponent,
                         ChunkGenerated,
                         ChunkNeedsProjection>()
-                    .Build(ref state);
+                    .Build(
+                        ref state);
         }
 
+
         [BurstCompile]
-        public void OnUpdate(ref SystemState state)
+        public void OnUpdate(
+            ref SystemState state)
         {
-            if (chunksNeedingProjectionQuery.CalculateEntityCount() == 0)
-                return;
-
-            ViewDirection projectionDirection =
-                SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
-
-            if (SystemAPI.TryGetSingleton(
-                    out ViewDirectionTransitionComponent transition) &&
-                transition.IsActive)
+            // Немає роботи —
+            // не створюємо навіть тимчасові
+            // Native containers.
+            if (chunksNeedingProjectionQuery
+                    .CalculateEntityCount() == 0)
             {
-                projectionDirection = transition.TargetDirection;
+                return;
             }
 
-            int generatedChunkCount = generatedChunksQuery.CalculateEntityCount();
 
-            var chunkEntities = new NativeParallelHashMap<int2, Entity>(
-                math.max(generatedChunkCount, 1),
-                Allocator.Temp);
+            // ============================================================
+            // Direction
+            // ============================================================
 
-            foreach (var (chunk, entity) in
-                SystemAPI.Query<RefRO<ChunkComponent>>()
-                    .WithAll<ChunkGenerated>()
-                    .WithEntityAccess())
+            ViewDirection activeDirection =
+                SystemAPI
+                    .GetSingleton<
+                        ViewDirectionComponent>()
+                    .Value;
+
+
+            ViewDirection projectionDirection =
+                activeDirection;
+
+            float3 playerPosition = SystemAPI.GetSingleton<PlayerWorldPosition>().Value;
+            ComponentLookup<ChunkProjectionClippingEnabled>
+            projectionClippingLookup = SystemAPI.GetComponentLookup<ChunkProjectionClippingEnabled>(
+                isReadOnly: true);
+
+
+            bool transitionActive =
+                false;
+
+
+            if (SystemAPI.TryGetSingleton<
+                    ViewDirectionTransitionComponent>(
+                    out ViewDirectionTransitionComponent
+                        transition))
+            {
+                transitionActive =
+                    transition.IsActive;
+
+
+                if (transitionActive)
+                {
+                    projectionDirection = transition.TargetDirection;
+                }
+            }
+
+
+            // ============================================================
+            // Generated chunk lookup
+            // ============================================================
+
+            int generatedChunkCount =
+                generatedChunksQuery
+                    .CalculateEntityCount();
+
+
+            var chunkEntities =
+                new NativeParallelHashMap<
+                    int2,
+                    Entity>(
+                    math.max(
+                        generatedChunkCount,
+                        1),
+                    Allocator.Temp);
+
+
+            foreach (var (
+                         chunk,
+                         entity)
+                     in SystemAPI.Query<
+                             RefRO<ChunkComponent>>()
+                         .WithAll<
+                             ChunkGenerated>()
+                         .WithEntityAccess())
             {
                 chunkEntities.TryAdd(
                     chunk.ValueRO.Coordinate,
                     entity);
             }
 
-            BufferLookup<BlockData> blockLookup =
-                SystemAPI.GetBufferLookup<BlockData>(
-                    isReadOnly: true);
 
-            var blockAccessor = new ChunkBlockAccessor(
-                chunkEntities,
-                blockLookup);
+            // ============================================================
+            // Block accessor
+            // ============================================================
 
-            var occupancy = new ProjectionOccupancy(
+            BufferLookup<BlockData>
+                blockLookup =
+                    SystemAPI
+                        .GetBufferLookup<
+                            BlockData>(
+                            isReadOnly: true);
+
+
+            var blockAccessor =
+                new ChunkBlockAccessor(
+                    chunkEntities,
+                    blockLookup);
+
+
+            // ============================================================
+            // Temporary projection data
+            // ============================================================
+
+            ProjectionOccupancy occupancy = new ProjectionOccupancy(
                 ChunkSettings.BlockCount,
                 Allocator.Temp);
 
-            var waterOccupancy = new ProjectionOccupancy(
+            ProjectionOccupancy waterOccupancy = new ProjectionOccupancy(
                 ChunkSettings.BlockCount,
                 Allocator.Temp);
 
-            var ecb = new EntityCommandBuffer(Allocator.Temp);
+
+            var ecb =
+                new EntityCommandBuffer(
+                    Allocator.Temp);
+
 
             int projectedCount = 0;
+
+
+            // ============================================================
+            // Budgeted projection
+            // ============================================================
 
             foreach (var (
                     chunk,
                     blocks,
                     projectedCells,
                     projectedWaterCells,
-                    entity) in
-                SystemAPI.Query<
+                    entity)
+                in SystemAPI.Query<
                         RefRO<ChunkComponent>,
                         DynamicBuffer<BlockData>,
                         DynamicBuffer<ProjectedCellData>,
                         DynamicBuffer<ProjectedWaterCellData>>()
-                    .WithAll<ChunkGenerated, ChunkNeedsProjection>()
+                    .WithAll<
+                        ChunkGenerated,
+                        ChunkNeedsProjection>()
                     .WithEntityAccess())
             {
-                if (projectedCount >= MaxChunksProjectedPerFrame)
+                if (projectedCount >=
+                    MaxChunksProjectedPerFrame)
+                {
                     break;
+                }
+
 
                 projectedCells.Clear();
                 projectedWaterCells.Clear();
@@ -111,14 +218,19 @@ namespace Game.World.Rendering
                 occupancy.Clear();
                 waterOccupancy.Clear();
 
-                var writer = new ProjectionWriter(
+                ProjectionWriter writer = new ProjectionWriter(
                     occupancy,
                     projectedCells);
 
-                var waterWriter = new WaterProjectionWriter(
-                    occupancy,
-                    waterOccupancy,
-                    projectedWaterCells);
+                WaterProjectionWriter waterWriter =
+                    new WaterProjectionWriter(
+                        occupancy,
+                        waterOccupancy,
+                        projectedWaterCells);
+
+                bool projectionClippingEnabled =
+                    projectionClippingLookup.HasComponent(entity) &&
+                    projectionClippingLookup.IsComponentEnabled(entity);
 
                 ChunkProjectionBuilder.Build(
                     blocks,
@@ -126,24 +238,26 @@ namespace Game.World.Rendering
                     blockAccessor,
                     writer,
                     waterWriter,
-                    projectionDirection);
+                    projectionDirection,
+                    projectionClippingEnabled,
+                    playerPosition);
 
-                ecb.SetComponentEnabled<ChunkNeedsProjection>(
-                    entity,
-                    false);
-
-                ecb.SetComponentEnabled<ChunkNeedsLighting>(
-                    entity,
-                    true);
+                ecb.SetComponentEnabled<ChunkNeedsProjection>(entity, false);
+                ecb.SetComponentEnabled<ChunkNeedsLighting>(entity, true);
 
                 projectedCount++;
             }
 
-            ecb.Playback(state.EntityManager);
+
+            ecb.Playback(
+                state.EntityManager);
+
 
             ecb.Dispose();
+
             occupancy.Dispose();
             waterOccupancy.Dispose();
+
             chunkEntities.Dispose();
         }
     }
