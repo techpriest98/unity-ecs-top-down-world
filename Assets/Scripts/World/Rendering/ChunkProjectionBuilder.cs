@@ -167,6 +167,18 @@ namespace Game.World.Rendering
                     projectionClippingEnabled,
                     playerPosition);
 
+                TryEmitCutSide(
+                    chunkCoordinate,
+                    blockAccessor,
+                    writer,
+                    world,
+                    direction,
+                    projectionX,
+                    projectionY,
+                    sourceAirIndex,
+                    projectionClippingEnabled,
+                    playerPosition);
+
                 return;
             }
 
@@ -432,7 +444,6 @@ namespace Game.World.Rendering
             int3 awayFromCamera =
                 ViewDirectionUtility.GetAwayFromCameraOffset(direction);
 
-            // Центр верхньої грані водяного блока.
             float3 rayOrigin = new float3(
                 belowWorld.x + 0.5f,
                 belowWorld.y + 1f,
@@ -542,8 +553,6 @@ namespace Game.World.Rendering
             float3 rayOrigin,
             int3 awayFromCamera)
         {
-            // За один горизонтальний блок промінь
-            // опускається на половину блока.
             const float verticalSpeed = 0.5f;
             const float epsilon = 0.00001f;
             const int maxSteps = byte.MaxValue * 3 + 3;
@@ -627,8 +636,6 @@ namespace Game.World.Rendering
                 }
             }
 
-            // Один блок вертикальної товщини =
-            // одна одиниця оптичної глибини.
             float depth = distance * verticalSpeed;
 
             return (byte)math.clamp(
@@ -668,46 +675,26 @@ namespace Game.World.Rendering
             if (!projectionClippingEnabled)
                 return false;
 
-            int playerFloorY = (int)math.floor(
-                playerPosition.y + PlayerClipCenterOffset + 0.01f);
+            int playerFloorY = 
+                (int)math.floor(playerPosition.y + PlayerClipCenterOffset + 0.01f);
 
             if (blockY < playerFloorY)
                 return false;
 
-            float3 playerClipCenterPosition =
-                playerPosition +
-                new float3(0f, PlayerClipCenterOffset, 0f);
-
-            int2 towardCamera =
-                ViewDirectionUtility.Forward(direction);
-
-            int2 playerCell = new int2(
-                (int)math.floor(playerPosition.x),
-                (int)math.floor(playerPosition.z));
-
-            int2 faceCell = new int2(
-                (int)math.floor(facePosition.x),
-                (int)math.floor(facePosition.z));
-
-            int depthDistance = math.dot(
-                faceCell - playerCell,
-                towardCamera);
+            int depthDistance = GetDepthDistance(
+                playerPosition,
+                facePosition,
+                direction);
 
             if (depthDistance <= 0)
                 return false;
 
-            float2 projectedFacePosition =
-                ProjectWorldPosition(facePosition, direction);
-
-            float2 projectedPlayerPosition =
-                ProjectWorldPosition(
-                    playerClipCenterPosition,
-                    direction);
-
-            return math.distancesq(
-                       projectedFacePosition,
-                       projectedPlayerPosition) <
-                   ProjectionClipRadius * ProjectionClipRadius;
+            return IsInsideClippingRadius(
+                playerPosition,
+                facePosition,
+                direction,
+                PlayerClipCenterOffset,
+                ProjectionClipRadius);
         }
 
         private static void TryEmitCutTop(
@@ -772,6 +759,71 @@ namespace Game.World.Rendering
                 projectionY);
         }
 
+        private static void TryEmitCutSide(
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            ProjectionWriter writer,
+            int3 world,
+            ViewDirection direction,
+            ushort projectionX,
+            ushort projectionY,
+            ushort sourceCellIndex,
+            bool projectionClippingEnabled,
+            float3 playerPosition)
+        {
+            if (!projectionClippingEnabled)
+                return;
+
+            int3 behindWorld =
+                world +
+                ViewDirectionUtility.GetAwayFromCameraOffset(direction);
+
+            BlockData behindBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                behindWorld.x,
+                behindWorld.y,
+                behindWorld.z);
+            
+            if (!IsOpaque(behindBlock.BlockId))
+                return;
+
+            float3 facePosition = GetGlobalPosition(
+                chunkCoordinate,
+                behindWorld,
+                0.5f);
+
+            if (!IsInsideClippingRadius(
+                    playerPosition,
+                    facePosition,
+                    direction,
+                    PlayerClipCenterOffset,
+                    ProjectionClipRadius))
+            {
+                return;
+            }
+
+            if (GetDepthDistance(
+                    playerPosition,
+                    facePosition,
+                    direction) != 0)
+            {
+                return;
+            }
+
+
+            writer.TryAddCutSideUpper(
+                behindBlock,
+                sourceCellIndex,
+                projectionX,
+                checked((ushort)(projectionY - 2)));
+
+            writer.TryAddCutSideLower(
+                behindBlock,
+                sourceCellIndex,
+                projectionX,
+                checked((ushort)(projectionY - 1)));
+        }
+
         private static float2 ProjectWorldPosition(
             float3 worldPosition,
             ViewDirection direction)
@@ -801,6 +853,49 @@ namespace Game.World.Rendering
         private static bool IsWater(BlockId blockId)
         {
             return blockId == BlockId.OceanWater;
+        }
+
+        private static int GetDepthDistance(
+            float3 playerPosition,
+            float3 facePosition,
+            ViewDirection direction)
+        {
+            int2 towardCamera =
+                ViewDirectionUtility.Forward(direction);
+
+            int2 playerCell = new int2(
+                (int)math.floor(playerPosition.x),
+                (int)math.floor(playerPosition.z));
+
+            int2 faceCell = new int2(
+                (int)math.floor(facePosition.x),
+                (int)math.floor(facePosition.z));
+
+            return math.dot(faceCell - playerCell, towardCamera);
+        }
+
+        private static bool IsInsideClippingRadius(
+            float3 playerPosition,
+            float3 facePosition,
+            ViewDirection direction,
+            float centerOffset,
+            float clipRadius)
+        {
+            float3 playerClipCenterPosition =
+                playerPosition +
+                new float3(0f, centerOffset, 0f);
+
+            float2 projectedFacePosition =
+                ProjectWorldPosition(facePosition, direction);
+
+            float2 projectedPlayerPosition =
+                ProjectWorldPosition(
+                    playerClipCenterPosition,
+                    direction);
+
+            return math.distancesq(
+                projectedFacePosition,
+                projectedPlayerPosition) < clipRadius * clipRadius;
         }
     }
 }

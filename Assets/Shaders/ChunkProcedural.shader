@@ -265,7 +265,7 @@ Shader "Game/World/ChunkProcedural"
                 nointerpolation float IsSelected : TEXCOORD5;
                 nointerpolation uint FootBlockId : TEXCOORD6;
                 nointerpolation uint4 LocalLightCorners : TEXCOORD7;
-                nointerpolation uint IsCutTop : TEXCOORD8;
+nointerpolation uint IsCutSurface : TEXCOORD8;
             };
 
             // ============================================================
@@ -297,10 +297,20 @@ Shader "Game/World/ChunkProcedural"
                 output.LocalUv = corner;
                 output.BlockId = GetBlockId(cell.BlockData);
                 output.FaceIndex = GetFaceIndex(GetFaceType(cell.BlockData));
-                output.IsCutTop = GetFaceType(cell.BlockData) == 1u &&
-                    (cell.FaceData & 0x8000u) != 0u
-                        ? 1u
-                        : 0u;
+                
+                uint faceType = GetFaceType(cell.BlockData);
+
+                bool isCutTop =
+                    faceType == 1u &&
+                    (cell.FaceData & 0x8000u) != 0u;
+
+                bool isCutSide =
+                    (faceType == 2u || faceType == 3u) &&
+                    (cell.FaceData & 0x0004u) != 0u;
+
+                output.IsCutSurface =
+                    (isCutTop || isCutSide) ? 1u : 0u;
+
                 output.NeighborMask = cell.FaceData & 0xFF;
                 output.FootBlockId = (cell.FaceData >> 8) & 0xFF;
                 output.LightData = cell.LightData;
@@ -527,7 +537,7 @@ Shader "Game/World/ChunkProcedural"
 
             float4 Frag(Varyings input) : SV_Target
             {
-                if (input.IsCutTop != 0u)
+                if (input.IsCutSurface != 0u)
                     return float4(0.0, 0.0, 0.0, 1.0);
 
                 #if defined(_PLAYER_CLIPPING)
