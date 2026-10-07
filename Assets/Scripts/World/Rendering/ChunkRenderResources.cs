@@ -3,10 +3,10 @@ using UnityEngine;
 
 namespace Game.World.Rendering
 {
-    public sealed class ChunkRenderResources :
+    public struct ChunkRenderResources :
         IComponentData
     {
-        public Mesh Mesh;
-        public Material Material;
+        public UnityObjectRef<Mesh> Mesh;
+        public UnityObjectRef<Material> Material;
     }
 }

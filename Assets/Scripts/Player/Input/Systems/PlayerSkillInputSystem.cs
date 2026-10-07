@@ -14,7 +14,7 @@ namespace Game.Player
         protected override void OnCreate()
         {
             libraryQuery = GetEntityQuery(
-                ComponentType.ReadOnly<ItemLibrary>());
+                ComponentType.ReadOnly<ItemDefinitionReference>());
 
             RequireForUpdate(libraryQuery);
             RequireForUpdate<PlayerTag>();
@@ -29,7 +29,8 @@ namespace Game.Player
             
             Entity libraryEntity = libraryQuery.GetSingletonEntity();
 
-            ItemLibrary library = EntityManager.GetComponentData<ItemLibrary>(libraryEntity);
+            DynamicBuffer<ItemDefinitionReference> library =
+                EntityManager.GetBuffer<ItemDefinitionReference>(libraryEntity, true);
 
             ItemSkillAction action = null;
             Entity player = Entity.Null;
@@ -54,8 +55,7 @@ namespace Game.Player
                 if (equippedItem != entry.SourceItem)
                     continue;
 
-                if (!TryGetDefinition(
-                        ref library.Value.Value,
+                if (!ItemDefinitionReference.TryGet(library,
                         entry.SourceItem,
                         out ItemDefinition item))
                 {
@@ -92,23 +92,6 @@ namespace Game.Player
             }
         }
 
-        private static bool TryGetDefinition(
-            ref ItemLibraryBlob library,
-            ItemID itemId,
-            out ItemDefinition definition)
-        {
-            for (int i = 0; i < library.Items.Length; i++)
-            {
-                if (library.Items[i].Id == itemId)
-                {
-                    definition = library.Definitions[i].Value;
-                    return definition != null;
-                }
-            }
-
-            definition = null;
-            return false;
-        }
 
         private static int GetPressedSkillIndex()
         {

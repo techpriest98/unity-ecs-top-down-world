@@ -22,7 +22,7 @@ namespace Game.World.Rendering
                     GetEntity(
                         TransformUsageFlags.None);
 
-                AddComponentObject(
+                AddComponent(
                     entity,
                     new ChunkRenderResources
                     {

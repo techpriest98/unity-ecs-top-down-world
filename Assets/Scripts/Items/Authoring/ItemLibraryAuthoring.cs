@@ -109,15 +109,9 @@ namespace Game.Items
                             ref root.Items,
                             definitions.Length);
 
-                    BlobBuilderArray<UnityObjectRef<ItemDefinition>> definitionRefs =
-                        builder.Allocate(
-                            ref root.Definitions,
-                            definitions.Length);
-
                     for (int i = 0; i < definitions.Length; i++)
                     {
                         ItemDefinition definition = definitions[i];
-                        definitionRefs[i] = definition;
                         ItemLightDefinition light = definition.Light;
                         ItemAnimationDefinition animation = definition.Animation;
 
@@ -163,6 +157,17 @@ namespace Game.Items
                     {
                         Value = blob
                     });
+
+                    DynamicBuffer<ItemDefinitionReference> references =
+                        AddBuffer<ItemDefinitionReference>(entity);
+                    foreach (ItemDefinition definition in definitions)
+                    {
+                        references.Add(new ItemDefinitionReference
+                        {
+                            Id = definition.Id,
+                            Definition = definition
+                        });
+                    }
 
                 }
                 finally
