@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Game.Player;
 using Game.World.Chunks;
 using Game.World.Effects;
@@ -19,22 +18,10 @@ namespace Game.World.Rendering
         private const float ProjectedCellWidth = 1f;
         private const float ProjectedCellHeight = 0.5f;
         private const float DepthStep = 0.01f;
-        private const float PlayerClipCenterOffset = 1f;
-
-        private struct OcclusionFace
-        {
-            public int3 BlockPosition;
-            public Rect ProjectedRect;
-        }
 
         private EntityQuery dirtyQuery;
         private EntityQuery pendingProjectionQuery;
         private EntityQuery pendingLightingQuery;
-
-        private readonly List<OcclusionFace> uploadedFaces = new();
-
-        private PlayerOcclusionMask playerOcclusionMask;
-        private ViewDirection uploadedDirection;
 
         private bool hasLastCenter;
         private int2 lastCenter;
@@ -66,28 +53,14 @@ namespace Game.World.Rendering
                         ChunkGenerated,
                         ChunkNeedsLighting>()
                     .Build(ref CheckedStateRef);
-
-            playerOcclusionMask = new PlayerOcclusionMask();
-        }
-
-        protected override void OnStopRunning()
-        {
-            playerOcclusionMask?.Disable();
-        }
-
-        protected override void OnDestroy()
-        {
-            playerOcclusionMask?.Dispose();
         }
 
         protected override void OnUpdate()
         {
-            ChunkProceduralRenderer renderer =
-                ChunkProceduralRenderer.Instance;
+            ChunkProceduralRenderer renderer = ChunkProceduralRenderer.Instance;
 
             if (renderer == null)
             {
-                playerOcclusionMask.Disable();
                 return;
             }
 
@@ -122,7 +95,6 @@ namespace Game.World.Rendering
                     pendingLightingCount > 0 ||
                     waitingForBlack)
                 {
-                    UpdatePlayerOcclusion();
                     return;
                 }
 
@@ -168,7 +140,17 @@ namespace Game.World.Rendering
                 !projectionChanged &&
                 !transitionCompleted)
             {
-                UpdatePlayerOcclusion();
+                return;
+            }
+
+            // All chunks share one mask and GPU upload. Publishing a partial
+            // rebuild can remove an old mask contributor before its replacement
+            // is ready, exposing unclipped geometry for a frame.
+            // Preserve the last GPU snapshot, including dirty flags, until both
+            // geometry and lighting are ready to be published together.
+            if (pendingProjectionQuery.CalculateEntityCount() > 0 ||
+                pendingLightingCount > 0)
+            {
                 return;
             }
 
@@ -216,6 +198,7 @@ namespace Game.World.Rendering
                     Allocator.Temp);
 
             bool hasBounds = false;
+            using var clipRects = new NativeList<float4>(Allocator.Temp);
             float3 minBounds = float3.zero;
             float3 maxBounds = float3.zero;
 
@@ -226,18 +209,18 @@ namespace Game.World.Rendering
                 (ChunkSettings.SizeY * 2 + ChunkSettings.SizeZ) *
                 ProjectedCellHeight;
 
-            uploadedFaces.Clear();
-
             foreach (var (
                          chunk,
                          clippingEnabled,
                          projectedCells,
-                         projectedWaterCells)
+                         projectedWaterCells,
+                         clipCells)
                      in SystemAPI.Query<
                              RefRO<ChunkComponent>,
                              EnabledRefRO<ChunkShaderClippingEnabled>,
                              DynamicBuffer<ProjectedCellData>,
-                             DynamicBuffer<ProjectedWaterCellData>>()
+                             DynamicBuffer<ProjectedWaterCellData>,
+                             DynamicBuffer<ProjectedClipCell>>()
                          .WithAll<ChunkGenerated>()
                          .WithOptions(
                              EntityQueryOptions.IgnoreComponentEnabledState))
@@ -255,19 +238,20 @@ namespace Game.World.Rendering
                     chunkPosition.y,
                     chunkPosition.z);
 
+                for (int index = 0; index < clipCells.Length; index++)
+                {
+                    ProjectedClipCell cell = clipCells[index];
+                    float left = chunkPosition.x - chunkWidth * 0.5f + cell.X * ProjectedCellWidth;
+                    float bottom = chunkPosition.y + projectionHeight - (cell.Y + 1) * ProjectedCellHeight;
+                    clipRects.Add(new float4(left, bottom,
+                        left + ProjectedCellWidth, bottom + ProjectedCellHeight));
+                }
+
                 for (int index = 0;
                      index < projectedCells.Length;
                      index++)
                 {
                     ProjectedCellData cell = projectedCells[index];
-
-                    CacheOcclusionFace(
-                        cell,
-                        chunk.ValueRO.Coordinate,
-                        chunkPosition,
-                        direction,
-                        chunkWidth,
-                        projectionHeight);
 
                     ProjectedCellRenderData cellRenderData =
                         new ProjectedCellRenderData
@@ -380,6 +364,7 @@ namespace Game.World.Rendering
             }
 
             renderer.Upload(renderData.AsArray(), bounds);
+            renderer.UploadClipMask(clipRects.AsArray());
             renderer.UploadClipped(clippedRenderData.AsArray(), bounds);
             renderer.UploadWater(waterRenderData.AsArray(), bounds);
 
@@ -400,9 +385,6 @@ namespace Game.World.Rendering
 
             UploadedCenter = currentCenter;
             HasUploadedView = true;
-            uploadedDirection = direction;
-
-            UpdatePlayerOcclusion();
 
             if (transitionCompleted)
             {
@@ -415,139 +397,5 @@ namespace Game.World.Rendering
             }
         }
 
-        private void CacheOcclusionFace(
-            ProjectedCellData cell,
-            int2 chunkCoordinate,
-            Vector3 chunkPosition,
-            ViewDirection direction,
-            float chunkWidth,
-            float projectionHeight)
-        {
-            int faceType =
-                (int)((cell.BlockData >> 8) & 0xFFu);
-
-            int3 blockPosition =
-                ChunkUtility.ToLocalPosition(cell.SourceAirIndex);
-
-            switch (faceType)
-            {
-                case 1:
-                    blockPosition.y--;
-                    break;
-                case 2:
-                case 3:
-                {
-                    int2 towardCamera =
-                        ViewDirectionUtility.Forward(direction);
-
-                    blockPosition.x -= towardCamera.x;
-                    blockPosition.z -= towardCamera.y;
-                    break;
-                }
-
-                default:
-                    return;
-            }
-
-            blockPosition.x +=
-                chunkCoordinate.x * ChunkSettings.SizeX;
-
-            blockPosition.z +=
-                chunkCoordinate.y * ChunkSettings.SizeZ;
-
-            int projectionX =
-                (int)(cell.Position & 0xFFFFu);
-
-            int projectionY =
-                (int)(cell.Position >> 16);
-
-            float left =
-                chunkPosition.x -
-                chunkWidth * 0.5f +
-                projectionX * ProjectedCellWidth;
-
-            float bottom =
-                chunkPosition.y +
-                projectionHeight -
-                (projectionY + 1) * ProjectedCellHeight;
-
-            uploadedFaces.Add(new OcclusionFace
-            {
-                BlockPosition = blockPosition,
-
-                ProjectedRect = new Rect(
-                    left,
-                    bottom,
-                    ProjectedCellWidth,
-                    ProjectedCellHeight)
-            });
-        }
-
-        private void UpdatePlayerOcclusion()
-        {
-            if (!HasUploadedView ||
-                !SystemAPI.TryGetSingleton<PlayerWorldPosition>(
-                    out var playerWorldPosition))
-            {
-                playerOcclusionMask.Disable();
-                return;
-            }
-
-            float3 playerPosition = playerWorldPosition.Value;
-
-            float2 projectedPosition =
-                WorldPositionProjectionUtility.Project(
-                    playerPosition,
-                    uploadedDirection);
-
-            playerOcclusionMask.Begin(
-                new Vector2(
-                    projectedPosition.x,
-                    projectedPosition.y));
-
-            int clipFromBlockY = (int)math.floor(
-                playerPosition.y +
-                PlayerClipCenterOffset +
-                0.01f);
-
-            int2 playerCell =(int2)math.floor(playerPosition.xz);
-
-            int2 towardCamera = ViewDirectionUtility.Forward(uploadedDirection);
-
-            for (int i = 0; i < uploadedFaces.Count; i++)
-            {
-                OcclusionFace face = uploadedFaces[i];
-
-                if (face.BlockPosition.y >= clipFromBlockY)
-                {
-                    continue;
-                }
-
-                if (face.BlockPosition.y + 1f <= playerPosition.y + 0.01f)
-                {
-                    continue;
-                }
-
-                int2 blockCell = new int2(
-                    face.BlockPosition.x,
-                    face.BlockPosition.z);
-
-                int2 delta = blockCell - playerCell;
-
-                int depth =
-                    delta.x * towardCamera.x +
-                    delta.y * towardCamera.y;
-
-                if (depth <= 0)
-                {
-                    continue;
-                }
-
-                playerOcclusionMask.AddOccluder(
-                    face.ProjectedRect);
-            }
-
-            playerOcclusionMask.Publish();
-        }
     }
 }

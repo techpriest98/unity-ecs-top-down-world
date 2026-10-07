@@ -61,6 +61,53 @@ namespace Game.World.Rendering
         private GraphicsBuffer projectedWaterCellsBuffer;
         private GraphicsBuffer projectedClippedWaterCellsBuffer;
         private GraphicsBuffer blockDatabaseBuffer;
+        private Texture2D clipMaskTexture;
+        private Vector4 clipMaskBounds;
+        private bool clipMaskEnabled;
+
+        public void UploadClipMask(NativeArray<float4> rectangles)
+        {
+            clipMaskEnabled = rectangles.Length > 0;
+            if (!clipMaskEnabled)
+                return;
+
+            float2 minimum = rectangles[0].xy;
+            float2 maximum = rectangles[0].zw;
+            for (int i = 1; i < rectangles.Length; i++)
+            {
+                minimum = math.min(minimum, rectangles[i].xy);
+                maximum = math.max(maximum, rectangles[i].zw);
+            }
+
+            // The projection lattice has cells of width 1 and height 0.5.
+            int width = Mathf.Max(1, Mathf.RoundToInt(maximum.x - minimum.x));
+            int height = Mathf.Max(1, Mathf.RoundToInt((maximum.y - minimum.y) * 2f));
+            if (clipMaskTexture == null ||
+                clipMaskTexture.width != width || clipMaskTexture.height != height)
+            {
+                if (clipMaskTexture != null)
+                    Destroy(clipMaskTexture);
+                clipMaskTexture = new Texture2D(width, height, TextureFormat.R8, false, true)
+                {
+                    name = "Chunk Projection Clip Mask",
+                    filterMode = FilterMode.Point,
+                    wrapMode = TextureWrapMode.Clamp,
+                    hideFlags = HideFlags.HideAndDontSave
+                };
+            }
+
+            NativeArray<byte> pixels = clipMaskTexture.GetRawTextureData<byte>();
+            for (int i = 0; i < pixels.Length; i++)
+                pixels[i] = 0;
+            for (int i = 0; i < rectangles.Length; i++)
+            {
+                int x = Mathf.RoundToInt(rectangles[i].x - minimum.x);
+                int y = Mathf.RoundToInt((rectangles[i].y - minimum.y) * 2f);
+                pixels[y * width + x] = 255;
+            }
+            clipMaskTexture.Apply(false, false);
+            clipMaskBounds = new Vector4(minimum.x, minimum.y, width, height * 0.5f);
+        }
 
         private MaterialPropertyBlock opaquePropertyBlock;
         private MaterialPropertyBlock clippedPropertyBlock;
@@ -372,6 +419,10 @@ namespace Game.World.Rendering
             Texture2D normalAtlas)
         {
             layerPropertyBlock.Clear();
+            layerPropertyBlock.SetFloat("_ProjectionClipMaskEnabled", clipMaskEnabled ? 1f : 0f);
+            layerPropertyBlock.SetVector("_ProjectionClipMaskBounds", clipMaskBounds);
+            layerPropertyBlock.SetTexture("_ProjectionClipMask",
+                clipMaskTexture != null ? clipMaskTexture : Texture2D.blackTexture);
 
             layerPropertyBlock.SetFloat(
                 "_SelectionEnabled",
@@ -681,6 +732,10 @@ namespace Game.World.Rendering
 
         private void ReleaseResources()
         {
+            if (clipMaskTexture != null)
+                Destroy(clipMaskTexture);
+            clipMaskTexture = null;
+            clipMaskEnabled = false;
             projectedCellsBuffer?.Dispose();
             projectedCellsBuffer = null;
 

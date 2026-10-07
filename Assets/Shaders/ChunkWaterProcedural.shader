@@ -83,6 +83,10 @@ Shader "Game/World/ChunkWaterProcedural"
 
             StructuredBuffer<ProjectedCellRenderData> _ProjectedCells;
             StructuredBuffer<BlockGpuData> _BlockDatabase;
+            TEXTURE2D(_ProjectionClipMask);
+            SAMPLER(sampler_ProjectionClipMask);
+            float4 _ProjectionClipMaskBounds;
+            float _ProjectionClipMaskEnabled;
 
             int _BlockDatabaseCount;
 
@@ -243,6 +247,7 @@ Shader "Game/World/ChunkWaterProcedural"
             {
                 float4 PositionCS : SV_POSITION;
                 float2 LocalUv : TEXCOORD0;
+                float2 ProjectionPosition : TEXCOORD6;
 
                 nointerpolation uint BlockId : TEXCOORD1;
                 nointerpolation uint FaceIndex : TEXCOORD2;
@@ -302,6 +307,7 @@ Shader "Game/World/ChunkWaterProcedural"
                 Varyings output;
 
                 output.PositionCS = TransformWorldToHClip(worldPosition);
+                output.ProjectionPosition = worldPosition.xy;
                 output.LocalUv = corner;
                 output.BlockId = GetBlockId(cell.BlockData);
                 output.FaceIndex = faceIndex;
@@ -333,12 +339,17 @@ Shader "Game/World/ChunkWaterProcedural"
                 SV_Target
             {
                 #if defined(_PLAYER_CLIPPING)
-                    float2 clipOffset = input.PositionCS.xy - _ScreenParams.xy * 0.5;
-                    float distanceFromCenter = length(clipOffset);
-                    float fadeWidth = max(_PlayerClipFadeWidth, 0.0001);
-                    float innerRadius = max(_PlayerClipRadius - fadeWidth, 0.0);
-                    float visibility = smoothstep(0.0, 1.0, saturate((distanceFromCenter - innerRadius) / fadeWidth));
-                    clip(visibility - GetClipGrain(input.PositionCS.xy));
+                    if (_ProjectionClipMaskEnabled > 0.5)
+                    {
+                        float2 maskUv = (input.ProjectionPosition - _ProjectionClipMaskBounds.xy)
+                            / _ProjectionClipMaskBounds.zw;
+                        if (all(maskUv >= 0.0) && all(maskUv < 1.0))
+                        {
+                            float mask = SAMPLE_TEXTURE2D_LOD(
+                                _ProjectionClipMask, sampler_ProjectionClipMask, maskUv, 0).r;
+                            clip(0.5 - mask);
+                        }
+                    }
                 #endif
 
                 if (input.BlockId == 0 ||

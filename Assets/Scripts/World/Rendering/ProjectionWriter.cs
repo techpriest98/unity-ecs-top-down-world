@@ -7,13 +7,24 @@ namespace Game.World.Rendering
     {
         private ProjectionOccupancy occupancy;
         private DynamicBuffer<ProjectedCellData> result;
+        private DynamicBuffer<ProjectedClipCell> clippedCells;
 
         public ProjectionWriter(
             ProjectionOccupancy occupancy,
-            DynamicBuffer<ProjectedCellData> result)
+            DynamicBuffer<ProjectedCellData> result,
+            DynamicBuffer<ProjectedClipCell> clippedCells = default)
         {
             this.occupancy = occupancy;
             this.result = result;
+            this.clippedCells = clippedCells;
+        }
+
+        public void RecordClippedCell(ushort x, ushort y)
+        {
+            if (clippedCells.IsCreated)
+            {
+                clippedCells.Add(new ProjectedClipCell { X = x, Y = y });
+            }
         }
 
         public bool TryAddTop(

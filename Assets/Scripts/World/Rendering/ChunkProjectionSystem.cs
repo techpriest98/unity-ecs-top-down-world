@@ -214,13 +214,17 @@ namespace Game.World.Rendering
 
                 projectedCells.Clear();
                 projectedWaterCells.Clear();
+                DynamicBuffer<ProjectedClipCell> clippedCells =
+                    state.EntityManager.GetBuffer<ProjectedClipCell>(entity);
+                clippedCells.Clear();
 
                 occupancy.Clear();
                 waterOccupancy.Clear();
 
                 ProjectionWriter writer = new ProjectionWriter(
                     occupancy,
-                    projectedCells);
+                    projectedCells,
+                    clippedCells);
 
                 WaterProjectionWriter waterWriter =
                     new WaterProjectionWriter(

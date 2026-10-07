@@ -159,17 +159,6 @@ namespace Game.World.Rendering
                     intersectsClipArea;
 
                 // ========================================================
-                // Shader clipping
-                // ========================================================
-
-                if (shaderClipping.ValueRO != shouldClipInShader)
-                {
-                    shaderClipping.ValueRW = shouldClipInShader;
-                    needsRender.ValueRW = true;
-                }
-
-
-                // ========================================================
                 // Projection clipping state
                 // ========================================================
 
@@ -188,6 +177,14 @@ namespace Game.World.Rendering
                 if (shouldClipInProjection && playerCellChanged)
                 {
                     needsProjection.ValueRW = true;
+                }
+
+                // The render system publishes these modes together with the
+                // completed projection and mask, never during a partial rebuild.
+                if (shaderClipping.ValueRO != shouldClipInShader)
+                {
+                    shaderClipping.ValueRW = shouldClipInShader;
+                    needsRender.ValueRW = true;
                 }
             }
 

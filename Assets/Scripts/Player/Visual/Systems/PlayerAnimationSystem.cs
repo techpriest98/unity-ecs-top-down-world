@@ -15,6 +15,7 @@ namespace Game.Player
     public partial struct PlayerAnimationSystem : ISystem
     {
         private const float LayerDepthStep = 0.001f;
+        private const int LayerOrderCount = 5;
 
         private EntityQuery missingPostTransformQuery;
 
@@ -184,7 +185,11 @@ namespace Game.Player
                             baseTransform.Rotation,
                             offset * baseTransform.Scale);
 
-                    position.z -= frameData.ZIndex * LayerDepthStep;
+                    // Match the preview's stable draw order when ZIndex is equal.
+                    // Reserve five depth slots so ZIndex always takes priority.
+                    position.z -=
+                        ((float)frameData.ZIndex * LayerOrderCount +
+                         GetLayerOrder(part.Part)) * LayerDepthStep;
 
                     transformLookup[visualEntity] = new LocalTransform
                     {
@@ -206,6 +211,21 @@ namespace Game.Player
                             Value = float4x4.Scale(scale)
                         };
                 }
+            }
+        }
+
+        private static int GetLayerOrder(CharacterPart part)
+        {
+            switch (part)
+            {
+                case CharacterPart.Body: return 0;
+                case CharacterPart.LeftArm: return 1;
+                case CharacterPart.RightArm: return 2;
+                case CharacterPart.LeftHandTorch:
+                case CharacterPart.LeftHandIgnitedTorch: return 3;
+                case CharacterPart.RightHandTorch:
+                case CharacterPart.RightHandIgnitedTorch: return 4;
+                default: return 0;
             }
         }
 

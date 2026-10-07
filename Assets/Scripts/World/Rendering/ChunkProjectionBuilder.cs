@@ -109,6 +109,20 @@ namespace Game.World.Rendering
 
             BlockId currentBlockId = currentBlock.BlockId;
 
+            // The mask describes the clipped volume, including air and interior
+            // cells, rather than only the visible faces emitted at its boundary.
+            if (ShouldClipOpaqueFace(
+                    projectionClippingEnabled,
+                    playerPosition,
+                    GetGlobalPosition(chunkCoordinate, world, 0.5f),
+                    world.y,
+                    direction))
+            {
+                writer.RecordClippedCell(projectionX, projectionY);
+                if (projectionY >= 1)
+                    writer.RecordClippedCell(projectionX, (ushort)(projectionY - 1));
+            }
+
             ushort sourceAirIndex = checked(
                 (ushort)ChunkUtility.ToIndex(
                     world.x,
@@ -155,17 +169,17 @@ namespace Game.World.Rendering
         {
             if (IsOpaque(currentBlockId))
             {
-                TryEmitCutTop(
-                    chunkCoordinate,
-                    blockAccessor,
-                    writer,
-                    world,
-                    direction,
-                    projectionX,
-                    projectionY,
-                    sourceAirIndex,
-                    projectionClippingEnabled,
-                    playerPosition);
+                // TryEmitCutTop(
+                //     chunkCoordinate,
+                //     blockAccessor,
+                //     writer,
+                //     world,
+                //     direction,
+                //     projectionX,
+                //     projectionY,
+                //     sourceAirIndex,
+                //     projectionClippingEnabled,
+                //     playerPosition);
 
                 TryEmitCutSide(
                     chunkCoordinate,
@@ -286,6 +300,7 @@ namespace Game.World.Rendering
                     belowWorld.y,
                     direction))
             {
+                writer.RecordClippedCell(projectionX, projectionY);
                 return;
             }
 
@@ -343,6 +358,8 @@ namespace Game.World.Rendering
                     blockWorld.y,
                     direction))
             {
+                writer.RecordClippedCell(projectionX, checked((ushort)(projectionY - 2)));
+                writer.RecordClippedCell(projectionX, checked((ushort)(projectionY - 1)));
                 return;
             }
 
@@ -675,8 +692,7 @@ namespace Game.World.Rendering
             if (!projectionClippingEnabled)
                 return false;
 
-            int playerFloorY = 
-                (int)math.floor(playerPosition.y + PlayerClipCenterOffset + 0.01f);
+            int playerFloorY = (int)math.floor(playerPosition.y + 0.01f);
 
             if (blockY < playerFloorY)
                 return false;

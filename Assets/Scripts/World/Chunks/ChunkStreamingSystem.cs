@@ -42,6 +42,7 @@ namespace Game.World.Chunks
                 typeof(BlockData),
                 typeof(ChunkColumnData),
                 typeof(ProjectedCellData),
+                typeof(ProjectedClipCell),
                 typeof(ProjectedWaterCellData),
                 typeof(ChunkShaderClippingEnabled),
                 typeof(ChunkProjectionClippingEnabled),
