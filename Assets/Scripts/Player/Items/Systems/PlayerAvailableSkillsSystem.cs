@@ -13,7 +13,7 @@ namespace Game.Player
 
         protected override void OnCreate()
         {
-            libraryQuery = GetEntityQuery(ComponentType.ReadOnly<ItemDefinitionLibrary>());
+            libraryQuery = GetEntityQuery(ComponentType.ReadOnly<ItemLibrary>());
 
             RequireForUpdate(libraryQuery);
             RequireForUpdate<PlayerTag>();
@@ -23,9 +23,7 @@ namespace Game.Player
         {
             Entity libraryEntity = libraryQuery.GetSingletonEntity();
 
-            ItemDefinitionLibrary library =
-                EntityManager.GetComponentObject<ItemDefinitionLibrary>(
-                    libraryEntity);
+            ItemLibrary library = EntityManager.GetComponentData<ItemLibrary>(libraryEntity);
 
             foreach (var (slots, availableSkills) in
                      SystemAPI.Query<
@@ -59,7 +57,7 @@ namespace Game.Player
         }
 
         private static void AppendSkills(
-            ItemDefinitionLibrary library,
+            ItemLibrary library,
             DynamicBuffer<PlayerEquipmentSlot> slots,
             DynamicBuffer<PlayerAvailableSkill> destination,
             EquipmentSlot sourceSlot,
@@ -68,7 +66,7 @@ namespace Game.Player
             ItemID itemId =
                 PlayerEquipmentUtility.GetItem(slots, sourceSlot);
 
-            if (!library.TryGet(itemId, out ItemDefinition item) ||
+            if (!TryGetDefinition(ref library.Value.Value, itemId, out ItemDefinition item) ||
                 item.Skills == null)
             {
                 return;
@@ -108,6 +106,24 @@ namespace Game.Player
 
                 count++;
             }
+        }
+
+        private static bool TryGetDefinition(
+            ref ItemLibraryBlob library,
+            ItemID itemId,
+            out ItemDefinition definition)
+        {
+            for (int i = 0; i < library.Items.Length; i++)
+            {
+                if (library.Items[i].Id == itemId)
+                {
+                    definition = library.Definitions[i].Value;
+                    return definition != null;
+                }
+            }
+
+            definition = null;
+            return false;
         }
     }
 }

@@ -12,6 +12,7 @@ namespace Game.Items
     public struct ItemLibraryBlob
     {
         public BlobArray<ItemData> Items;
+        public BlobArray<UnityObjectRef<ItemDefinition>> Definitions;
     }
 
     public struct ItemData
