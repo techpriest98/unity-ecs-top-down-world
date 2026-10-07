@@ -4,11 +4,12 @@ using Game.World.Rendering;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Game.World.Interaction
 {
     [UpdateInGroup(typeof(SimulationSystemGroup))]
-    [UpdateAfter(typeof(PlayerBuildInputSystem))]
+    [UpdateAfter(typeof(PlayerMovementSystem))]
     public partial class ProjectedCellSelectionSystem : SystemBase
     {
         private const float CellWidth = 1f;
@@ -21,7 +22,6 @@ namespace Game.World.Interaction
         protected override void OnCreate()
         {
             RequireForUpdate<PlayerTag>();
-            RequireForUpdate<PlayerBuildInput>();
             RequireForUpdate<SelectedProjectedCell>();
             RequireForUpdate<ViewDirectionComponent>();
         }
@@ -41,24 +41,24 @@ namespace Game.World.Interaction
             ViewDirection direction =
                 SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
 
-            foreach (var (input, playerPosition, selection) in
+            Mouse mouse = Mouse.current;
+            foreach (var (playerPosition, selection) in
                      SystemAPI.Query<
-                             RefRO<PlayerBuildInput>,
                              RefRO<PlayerWorldPosition>,
                              RefRW<SelectedProjectedCell>>()
                          .WithAll<PlayerTag>())
             {
                 selection.ValueRW.IsValid = false;
 
-                if (!input.ValueRO.IsBuildMode)
+                if (mouse == null)
                 {
                     continue;
                 }
 
                 Vector3 pointerWorld = playerCamera.ScreenToWorldPoint(
                     new Vector3(
-                        input.ValueRO.PointerScreenPosition.x,
-                        input.ValueRO.PointerScreenPosition.y,
+                        mouse.position.ReadValue().x,
+                        mouse.position.ReadValue().y,
                         0f));
 
                 FindSelection(

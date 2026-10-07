@@ -169,17 +169,17 @@ namespace Game.World.Rendering
         {
             if (IsOpaque(currentBlockId))
             {
-                // TryEmitCutTop(
-                //     chunkCoordinate,
-                //     blockAccessor,
-                //     writer,
-                //     world,
-                //     direction,
-                //     projectionX,
-                //     projectionY,
-                //     sourceAirIndex,
-                //     projectionClippingEnabled,
-                //     playerPosition);
+                TryEmitCutTop(
+                    chunkCoordinate,
+                    blockAccessor,
+                    writer,
+                    world,
+                    direction,
+                    projectionX,
+                    projectionY,
+                    sourceAirIndex,
+                    projectionClippingEnabled,
+                    playerPosition);
 
                 TryEmitCutSide(
                     chunkCoordinate,
@@ -587,7 +587,6 @@ namespace Game.World.Rendering
                 ? rayOrigin.x
                 : rayOrigin.z;
 
-            // На межі обираємо клітинку в напрямку променя.
             int horizontalCell = horizontalStep > 0
                 ? (int)math.floor(horizontalOrigin)
                 : (int)math.ceil(horizontalOrigin) - 1;
@@ -621,7 +620,6 @@ namespace Game.World.Rendering
                     currentWorld.y,
                     currentWorld.z);
 
-                // Завершуємо на дні або при виході з води.
                 if (!IsWater(block.BlockId))
                     break;
 
@@ -728,8 +726,7 @@ namespace Game.World.Rendering
             if (!projectionClippingEnabled)
                 return;
 
-            int clipFromBlockY = (int)math.floor(
-                playerPosition.y + PlayerClipCenterOffset + 0.01f);
+            int clipFromBlockY = (int)math.floor(playerPosition.y + 0.01f);
 
             if (upperWorld.y != clipFromBlockY)
                 return;

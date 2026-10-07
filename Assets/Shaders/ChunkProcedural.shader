@@ -138,15 +138,6 @@ Shader "Game/World/ChunkProcedural"
             float _PlayerClipFadeWidth;
             float _PlayerClipGrainSize;
 
-            // ============================================================
-            // Selection
-            // ============================================================
-
-            float _SelectionEnabled;
-            float3 _SelectedChunkPosition;
-            uint _SelectedProjectionPosition;
-            float4 _SelectionColor;
-            uint _SelectedFaceType;
 
             // ============================================================
             // Packed data
@@ -267,7 +258,6 @@ Shader "Game/World/ChunkProcedural"
                 nointerpolation uint FaceIndex : TEXCOORD2;
                 nointerpolation uint NeighborMask : TEXCOORD3;
                 nointerpolation uint LightData : TEXCOORD4;
-                nointerpolation float IsSelected : TEXCOORD5;
                 nointerpolation uint FootBlockId : TEXCOORD6;
                 nointerpolation uint4 LocalLightCorners : TEXCOORD7;
 nointerpolation uint IsCutSurface : TEXCOORD8;
@@ -326,37 +316,6 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
                     cell.LocalLightBottomRight,
                     cell.LocalLightTopLeft,
                     cell.LocalLightTopRight);
-
-                uint2 selectedPosition = UnpackPosition(_SelectedProjectionPosition);
-                uint cellFaceType = GetFaceType(cell.BlockData);
-
-                bool exactPosition = all(cellPosition == selectedPosition);
-
-                bool selectedUpperMatchesLower =
-                    _SelectedFaceType == 2u &&
-                    cellFaceType == 3u &&
-                    cellPosition.x == selectedPosition.x &&
-                    cellPosition.y == selectedPosition.y + 1u;
-
-                bool selectedLowerMatchesUpper =
-                    _SelectedFaceType == 3u &&
-                    cellFaceType == 2u &&
-                    cellPosition.x == selectedPosition.x &&
-                    cellPosition.y + 1u == selectedPosition.y;
-
-                bool samePosition =
-                    exactPosition ||
-                    selectedUpperMatchesLower ||
-                    selectedLowerMatchesUpper;
-
-                bool sameChunk = all(abs(cell.ChunkPosition - _SelectedChunkPosition) < 0.0001);
-
-                output.IsSelected =
-                    _SelectionEnabled > 0.5 &&
-                    samePosition &&
-                    sameChunk
-                        ? 1.0
-                        : 0.0;
 
                 return output;
             }
@@ -651,41 +610,6 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
                     localLight +
                     directLight);
 
-                // ========================================================
-                // Selection
-                // ========================================================
-
-                if (input.IsSelected > 0.5)
-                {
-                    float2 selectionUv = input.LocalUv;
-
-
-                    if (input.FaceIndex == 1u)
-                    {
-                        selectionUv.y = 0.5 + input.LocalUv.y * 0.5;
-                    }
-                    else if (input.FaceIndex == 2u)
-                    {
-                        selectionUv.y = input.LocalUv.y * 0.5;
-                    }
-
-                    float edgeDistance = min(
-                        min(selectionUv.x, 1.0 - selectionUv.x),
-                        min(selectionUv.y, 1.0 - selectionUv.y));
-
-                    float border = 1.0 - step(0.06, edgeDistance);
-                    float fill = 1.0 - smoothstep(0.0, 0.25, edgeDistance);
-
-                    float selectionStrength = max(
-                        border * _SelectionColor.a,
-                        fill * _SelectionColor.a * 0.45);
-
-                    color.rgb = lerp(
-                        color.rgb,
-                        _SelectionColor.rgb,
-                        selectionStrength);
-                }
-                
                 color.a = 1.0;
 
                 return color;
