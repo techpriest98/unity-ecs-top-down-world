@@ -119,6 +119,9 @@ namespace Game.Items
                         {
                             Id = definition.Id,
                             AllowedSlots = definition.AllowedSlots,
+                            MaxDurability = math.max(0.001f, definition.MaxDurability),
+                            DurabilityLossAmount = math.max(0f, definition.DurabilityLossAmount),
+                            DurabilityLossInterval = math.max(0.001f, definition.DurabilityLossInterval),
                             HasLight = light != null,
                             HasAnimation = animation != null
                         };

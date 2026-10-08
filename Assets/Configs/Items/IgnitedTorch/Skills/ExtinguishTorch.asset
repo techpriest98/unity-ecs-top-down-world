@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.Skills.ItemSkillDefinition
   Id: 2
   DisplayName: Extinguish Torch
-  Description: Extinguish Torch
-  Icon: {fileID: 0}
+  Description: Save it for later
+  Icon: {fileID: 3305191282884748519, guid: 212c4fb81804b5e468a82cbfc4e61351, type: 3}
   Action: {fileID: 11400000, guid: 002b4d029a24e4d719eb097eb3cd0aaa, type: 2}

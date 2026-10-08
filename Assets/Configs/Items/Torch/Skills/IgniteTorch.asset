@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.Skills.ItemSkillDefinition
   Id: 1
   DisplayName: Ignite Torch
-  Description: Ignite Torch
-  Icon: {fileID: 0}
+  Description: Let there be light
+  Icon: {fileID: -1210938195817157235, guid: b05ac901555f2b541a262fb0354249b8, type: 3}
   Action: {fileID: 11400000, guid: 8b2ecc72dd1a44523a7156d2dfb4d95f, type: 2}

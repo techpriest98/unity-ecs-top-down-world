@@ -24,6 +24,10 @@ namespace Game.World.Saving
     {
         public int Slot;
         public int ItemId;
+        public bool HasDurability;
+        public float Durability;
+        public float MaxDurability;
+        public float DurabilityElapsed;
     }
 
     [Serializable]

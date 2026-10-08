@@ -59,7 +59,8 @@ namespace Game.Player
                         slots,
                         ref items,
                         request.Slot,
-                        request.ReplacementItem);
+                        request.ReplacementItem,
+                        preserveDurability: true);
                 }
 
                 requests.Clear();

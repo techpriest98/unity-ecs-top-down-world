@@ -9,19 +9,22 @@ namespace Game.Player
             DynamicBuffer<PlayerEquipmentSlot> slots,
             ref ItemLibraryBlob library,
             EquipmentSlot slot,
-            ItemID itemId)
+            ItemID itemId,
+            bool preserveDurability = false)
         {
             int slotIndex = FindSlot(slots, slot);
 
             if (slotIndex < 0)
                 return false;
 
+            float maximum = 0f;
             if (itemId != ItemID.None)
             {
                 int itemIndex = FindItem(ref library, itemId);
 
                 if (itemIndex < 0)
                     return false;
+                maximum = library.Items[itemIndex].MaxDurability;
 
                 EquipmentSlot allowed =
                     library.Items[itemIndex].AllowedSlots;
@@ -31,6 +34,13 @@ namespace Game.Player
             }
 
             PlayerEquipmentSlot entry = slots[slotIndex];
+            bool preserve = preserveDurability && entry.Item != ItemID.None && itemId != ItemID.None;
+            if (!preserve)
+            {
+                entry.MaxDurability = maximum;
+                entry.Durability = maximum;
+                entry.DurabilityElapsed = 0f;
+            }
             entry.Item = itemId;
             slots[slotIndex] = entry;
 

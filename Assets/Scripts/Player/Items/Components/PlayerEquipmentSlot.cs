@@ -8,5 +8,8 @@ namespace Game.Player
     {
         public EquipmentSlot Slot;
         public ItemID Item;
+        public float Durability;
+        public float MaxDurability;
+        public float DurabilityElapsed;
     }
 }

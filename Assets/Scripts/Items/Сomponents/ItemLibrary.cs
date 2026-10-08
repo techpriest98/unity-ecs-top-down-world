@@ -18,6 +18,9 @@ namespace Game.Items
     {
         public ItemID Id;
         public EquipmentSlot AllowedSlots;
+        public float MaxDurability;
+        public float DurabilityLossAmount;
+        public float DurabilityLossInterval;
 
         public bool HasLight;
         public DynamicLightSource Light;

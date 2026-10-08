@@ -239,6 +239,21 @@ namespace Game.World.Saving
                         (EquipmentSlot)saved.Slot,
                         (ItemID)saved.ItemId))
                 {
+                    if (saved.HasDurability)
+                    {
+                        for (int i = 0; i < slots.Length; i++)
+                        {
+                            if ((int)slots[i].Slot != saved.Slot)
+                                continue;
+                            var restored = slots[i];
+                            restored.MaxDurability = saved.MaxDurability;
+                            restored.Durability = saved.Durability;
+                            restored.DurabilityElapsed = saved.DurabilityElapsed;
+                            if (restored.Durability <= 0)
+                                restored.Item = ItemID.None;
+                            slots[i] = restored;
+                        }
+                    }
                     continue;
                 }
 
@@ -272,7 +287,11 @@ namespace Game.World.Saving
                 result[i] = new EquipmentSlotData
                 {
                     Slot = (int)entry.Slot,
-                    ItemId = (int)entry.Item
+                    ItemId = (int)entry.Item,
+                    HasDurability = true,
+                    Durability = entry.Durability,
+                    MaxDurability = entry.MaxDurability,
+                    DurabilityElapsed = entry.DurabilityElapsed
                 };
             }
 
