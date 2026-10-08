@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.ItemDefinition
   Id: 2
   DisplayName: Ignited Torch
-  Description: The resin slowly burns away
+  Description: Slowly burns away
   Icon: {fileID: -1210938195817157235, guid: b05ac901555f2b541a262fb0354249b8, type: 3}
   MaxDurability: 100
   DurabilityDecay: {fileID: 11400000, guid: 74d5ebc1847d4d4b9ddca7ee2c4a209b, type: 2}

@@ -51,10 +51,10 @@ namespace Game.UI
                 int id = PlayerEquipmentUtility.GetItem(slots, slot);
                 for (int j = 0; j < slots.Length; j++)
                     if (slots[j].Slot == slot)
-                        hud.SetDurability(i, slots[j].Durability, slots[j].MaxDurability);
+                        hud.SetDurability(i, slots[j].Instance.Durability, slots[j].Instance.MaxDurability);
                 for (int j = 0; j < slots.Length; j++)
                     if (slots[j].Slot == slot)
-                        hud.SetDurability(i, slots[j].Durability, slots[j].MaxDurability);
+                        hud.SetDurability(i, slots[j].Instance.Durability, slots[j].Instance.MaxDurability);
                 if (ItemDefinitionReference.TryGet(references, id, out var item))
                 {
                     hud.SetSlot(i, item.Icon, item.DisplayName);

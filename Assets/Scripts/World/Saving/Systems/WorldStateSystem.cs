@@ -223,7 +223,7 @@ namespace Game.World.Saving
                 original[i] = slots[i];
 
                 PlayerEquipmentSlot entry = slots[i];
-                entry.Item = 0;
+                entry.Instance = default;
                 slots[i] = entry;
             }
 
@@ -239,6 +239,18 @@ namespace Game.World.Saving
                         (EquipmentSlot)saved.Slot,
                         (int)saved.ItemId))
                 {
+                    for (int i = 0; i < slots.Length; i++)
+                    {
+                        if ((int)slots[i].Slot != saved.Slot)
+                            continue;
+                        var restored = slots[i];
+                        restored.Instance.PlacementSelection = new ItemPlacementSelection
+                        {
+                            Kind = (PlacementSelectionKind)saved.PlacementSelectionKind,
+                            Id = saved.PlacementSelectionId
+                        };
+                        slots[i] = restored;
+                    }
                     if (saved.HasDurability)
                     {
                         for (int i = 0; i < slots.Length; i++)
@@ -246,11 +258,11 @@ namespace Game.World.Saving
                             if ((int)slots[i].Slot != saved.Slot)
                                 continue;
                             var restored = slots[i];
-                            restored.MaxDurability = saved.MaxDurability;
-                            restored.Durability = saved.Durability;
-                            restored.DurabilityElapsed = saved.DurabilityElapsed;
-                            if (restored.Durability <= 0)
-                                restored.Item = 0;
+                            restored.Instance.MaxDurability = saved.MaxDurability;
+                            restored.Instance.Durability = saved.Durability;
+                            restored.Instance.DurabilityElapsed = saved.DurabilityElapsed;
+                            if (restored.Instance.Durability <= 0)
+                                restored.Instance = default;
                             slots[i] = restored;
                         }
                     }
@@ -287,11 +299,13 @@ namespace Game.World.Saving
                 result[i] = new EquipmentSlotData
                 {
                     Slot = (int)entry.Slot,
-                    ItemId = (int)entry.Item,
+                    ItemId = (int)entry.Instance.DefinitionId,
                     HasDurability = true,
-                    Durability = entry.Durability,
-                    MaxDurability = entry.MaxDurability,
-                    DurabilityElapsed = entry.DurabilityElapsed
+                    Durability = entry.Instance.Durability,
+                    MaxDurability = entry.Instance.MaxDurability,
+                    DurabilityElapsed = entry.Instance.DurabilityElapsed,
+                    PlacementSelectionKind = (int)entry.Instance.PlacementSelection.Kind,
+                    PlacementSelectionId = entry.Instance.PlacementSelection.Id
                 };
             }
 

@@ -7,6 +7,8 @@ namespace Game.Player
 {
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(PlayerAvailableSkillsSystem))]
+    [UpdateAfter(typeof(Game.World.Interaction.ProjectedCellSelectionSystem))]
+    [UpdateBefore(typeof(Game.World.Blocks.BlockModificationSystem))]
     public partial class PlayerSkillInputSystem : SystemBase
     {
         private EntityQuery libraryQuery;

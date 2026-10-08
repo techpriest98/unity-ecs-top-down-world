@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Game.Items;
 using Game.Items.Skills;
+using Game.World.Blocks;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEditor.UIElements;
@@ -11,11 +12,14 @@ using UnityEngine.UIElements;
 
 public sealed class ItemGraphWindow : EditorWindow
 {
+    [SerializeField] private ItemDatabase database;
     [SerializeField] private ItemDefinition selectedItem;
     private GraphView graph;
     private ScrollView itemStrip;
     private ItemNode itemNode;
     private Label selectionLabel;
+    private const string LayoutPath = "Assets/Tools/ItemGraphEditor/ItemGraphLayouts.asset";
+    private ItemGraphLayout layout;
 
     [MenuItem("Tools/Items/Item Graph")]
     public static void Open()
@@ -33,6 +37,7 @@ public sealed class ItemGraphWindow : EditorWindow
 
     private void OnDisable()
     {
+        SavePositions();
         EditorApplication.projectChanged -= RefreshItems;
         Undo.undoRedoPerformed -= ReloadGraph;
         itemNode?.Unbind();
@@ -40,11 +45,33 @@ public sealed class ItemGraphWindow : EditorWindow
 
     public void CreateGUI()
     {
+        SavePositions();
         rootVisualElement.Clear();
+        if (database == null)
+        {
+            database = Selection.activeObject as ItemDatabase;
+            if (database == null)
+            {
+                string[] databases = AssetDatabase.FindAssets("t:ItemDatabase");
+                if (databases.Length == 1)
+                    database = AssetDatabase.LoadAssetAtPath<ItemDatabase>(AssetDatabase.GUIDToAssetPath(databases[0]));
+            }
+        }
         var toolbar = new Toolbar();
+        var databaseField = new ObjectField("Item Database")
+        {
+            objectType = typeof(ItemDatabase),
+            allowSceneObjects = false,
+            value = database
+        };
+        databaseField.style.width = 300;
+        databaseField.RegisterValueChangedCallback(evt =>
+        {
+            database = evt.newValue as ItemDatabase;
+            ShowItem(null);
+        });
+        toolbar.Add(databaseField);
         toolbar.Add(new ToolbarButton(RefreshItems) { text = "Refresh" });
-        toolbar.Add(new ToolbarButton(AddSkillMenu) { text = "Add skill node" });
-        toolbar.Add(new ToolbarButton(AddActionMenu) { text = "Add action node" });
         toolbar.Add(new ToolbarButton(() =>
         {
             if (selectedItem != null)
@@ -89,20 +116,52 @@ public sealed class ItemGraphWindow : EditorWindow
         ShowItem(selectedItem);
     }
 
+    private void CreateItem(Vector2 position)
+    {
+        if (database == null)
+            return;
+        string path = EditorUtility.SaveFilePanelInProject(
+            "Create item", "NewItem", "asset", "Choose an item asset location.");
+        if (string.IsNullOrEmpty(path))
+            return;
+
+        Undo.IncrementCurrentGroup();
+        int undoGroup = Undo.GetCurrentGroup();
+        Undo.SetCurrentGroupName("Create item in database");
+        var item = CreateInstance<ItemDefinition>();
+        item.DisplayName = System.IO.Path.GetFileNameWithoutExtension(path);
+        AssetDatabase.CreateAsset(item, path);
+        Undo.RegisterCreatedObjectUndo(item, "Create item");
+        Undo.RecordObject(database, "Add item to database");
+        var items = new List<ItemDefinition>(database.Items ?? Array.Empty<ItemDefinition>());
+        items.Add(item);
+        database.Items = items.ToArray();
+        EditorUtility.SetDirty(database);
+        ItemIdAllocator.EnsureIds();
+        Undo.CollapseUndoOperations(undoGroup);
+        ShowItem(item);
+        PlaceNode(itemNode, position);
+        EditorGUIUtility.PingObject(item);
+    }
+
     private void RefreshItems()
     {
         if (itemStrip == null)
             return;
         itemStrip.Clear();
-        string[] guids = AssetDatabase.FindAssets("t:ItemDefinition");
-        Array.Sort(guids, (a, b) => string.Compare(
-            AssetDatabase.GUIDToAssetPath(a), AssetDatabase.GUIDToAssetPath(b),
-            StringComparison.OrdinalIgnoreCase));
-        foreach (string guid in guids)
+        if (database == null)
         {
-            var item = AssetDatabase.LoadAssetAtPath<ItemDefinition>(AssetDatabase.GUIDToAssetPath(guid));
-            if (item == null)
-                continue;
+            itemStrip.Add(new Label("Assign an Item Database above."));
+            return;
+        }
+        var items = (database.Items ?? Array.Empty<ItemDefinition>()).Where(item => item != null).Distinct().ToArray();
+        if (selectedItem != null && !items.Contains(selectedItem))
+        {
+            ShowItem(null);
+            return;
+        }
+        foreach (var item in items)
+        {
             var button = new Button(() => ShowItem(item));
             button.tooltip = AssetDatabase.GetAssetPath(item);
             button.style.width = 100;
@@ -131,12 +190,15 @@ public sealed class ItemGraphWindow : EditorWindow
             button.Add(label);
             itemStrip.Add(button);
         }
-        if (guids.Length == 0)
-            itemStrip.Add(new Label("No ItemDefinition assets found."));
+        if (items.Length == 0)
+            itemStrip.Add(new Label("This database has no items. Right-click the graph → Create/Item."));
     }
 
     private void ShowItem(ItemDefinition item)
     {
+        SavePositions();
+        if (database == null || !(database.Items ?? Array.Empty<ItemDefinition>()).Contains(item))
+            item = null;
         selectedItem = item;
         foreach (var node in graph.nodes.ToList())
         {
@@ -175,7 +237,84 @@ public sealed class ItemGraphWindow : EditorWindow
                 graph.AddElement(skillNode.Output.ConnectTo(itemNode.SkillPorts[i]));
             }
         }
+        RestorePositions();
         RefreshItems();
+    }
+
+    private IEnumerable<string> NodeKeys(Node node)
+    {
+        if (node is AssetNode assetNode)
+        {
+            string guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(assetNode.AssetObject));
+            if (!string.IsNullOrEmpty(guid)) yield return "asset:" + guid;
+        }
+        else if (node is CursorNode) yield return "cursor";
+        else if (node is SelectionNode) yield return "item-selection";
+        else if (node is BlockNode block)
+        {
+            // The constant is serialized on each consuming action. Use those
+            // stable asset GUIDs rather than its editable value as layout keys.
+            foreach (var edge in block.Output.connections)
+                if (edge.input.node is ActionNode action)
+                    yield return "block:" + AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(action.Action));
+        }
+    }
+
+    private void SavePositions()
+    {
+        if (graph == null || selectedItem == null) return;
+        string itemGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(selectedItem));
+        if (string.IsNullOrEmpty(itemGuid)) return;
+        if (layout == null) layout = AssetDatabase.LoadAssetAtPath<ItemGraphLayout>(LayoutPath);
+        bool changed = false;
+        foreach (var node in graph.nodes.ToList())
+            foreach (string key in NodeKeys(node))
+            {
+                if (layout == null)
+                {
+                    layout = CreateInstance<ItemGraphLayout>();
+                    AssetDatabase.CreateAsset(layout, LayoutPath);
+                }
+                var entry = layout.Entries.FirstOrDefault(e => e.ItemGuid == itemGuid && e.NodeKey == key);
+                Vector2 position = node.GetPosition().position;
+                if (entry == null)
+                {
+                    layout.Entries.Add(new ItemGraphLayout.Entry { ItemGuid = itemGuid, NodeKey = key, Position = position });
+                    changed = true;
+                }
+                else if (entry.Position != position)
+                {
+                    entry.Position = position;
+                    changed = true;
+                }
+            }
+        if (changed)
+        {
+            EditorUtility.SetDirty(layout);
+            AssetDatabase.SaveAssetIfDirty(layout);
+        }
+    }
+
+    private void RestorePosition(Node node)
+    {
+        if (selectedItem == null) return;
+        if (layout == null) layout = AssetDatabase.LoadAssetAtPath<ItemGraphLayout>(LayoutPath);
+        if (layout == null) return;
+        string itemGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(selectedItem));
+        foreach (string key in NodeKeys(node))
+        {
+            var entry = layout.Entries.FirstOrDefault(e => e.ItemGuid == itemGuid && e.NodeKey == key);
+            if (entry == null) continue;
+            var rect = node.GetPosition();
+            rect.position = entry.Position;
+            node.SetPosition(rect);
+            break;
+        }
+    }
+
+    private void RestorePositions()
+    {
+        foreach (var node in graph.nodes.ToList()) RestorePosition(node);
     }
 
     private void ReloadGraph()
@@ -205,6 +344,7 @@ public sealed class ItemGraphWindow : EditorWindow
             (actionIndex, offset) => MoveAction(skill, actionIndex, offset));
         node.SetPosition(new Rect(60, 70 + index * 320, 350, 280));
         graph.AddElement(node);
+        RestorePosition(node);
         for (int i = 0; i < node.ActionPorts.Count; i++)
         {
             var action = skill.Actions[i];
@@ -235,6 +375,8 @@ public sealed class ItemGraphWindow : EditorWindow
         var node = new ActionNode(action);
         node.SetPosition(new Rect(-360, 70 + graph.nodes.OfType<ActionNode>().Count() * 220, 320, 180));
         graph.AddElement(node);
+        RestorePosition(node);
+        RestoreDataConnections(node);
         return node;
     }
 
@@ -252,28 +394,6 @@ public sealed class ItemGraphWindow : EditorWindow
         rootVisualElement.schedule.Execute(ReloadGraph);
     }
 
-    private void AddActionMenu()
-    {
-        if (selectedItem == null)
-            return;
-        var menu = new GenericMenu();
-        menu.AddItem(new GUIContent("Create/ReplaceItem…"), false, () =>
-        {
-            CreateActionNode(null);
-        });
-        foreach (var guid in AssetDatabase.FindAssets("t:ItemSkillAction"))
-        {
-            string path = AssetDatabase.GUIDToAssetPath(guid);
-            var action = AssetDatabase.LoadAssetAtPath<ItemSkillAction>(path);
-            menu.AddItem(new GUIContent("Existing/" + path), false, () =>
-            {
-                if (!graph.nodes.OfType<ActionNode>().Any(n => n.Action == action))
-                    AddActionNode(action);
-            });
-        }
-        menu.ShowAsContext();
-    }
-
     private static void SetAction(ActionSlot slot, ItemSkillAction action)
     {
         if (slot.Index < 0 || slot.Index >= (slot.Skill.Actions?.Length ?? 0))
@@ -281,29 +401,6 @@ public sealed class ItemGraphWindow : EditorWindow
         Undo.RecordObject(slot.Skill, "Connect skill action");
         slot.Skill.Actions[slot.Index] = action;
         EditorUtility.SetDirty(slot.Skill);
-    }
-
-    private void AddSkillMenu()
-    {
-        if (selectedItem == null)
-            return;
-        var menu = new GenericMenu();
-        menu.AddItem(new GUIContent("Create new skill asset…"), false, () =>
-        {
-            CreateSkillNode(null);
-        });
-        menu.AddSeparator("");
-        foreach (var guid in AssetDatabase.FindAssets("t:ItemSkillDefinition"))
-        {
-            var path = AssetDatabase.GUIDToAssetPath(guid);
-            var skill = AssetDatabase.LoadAssetAtPath<ItemSkillDefinition>(path);
-            menu.AddItem(new GUIContent("Existing/" + path), false, () =>
-            {
-                if (!graph.nodes.OfType<SkillNode>().Any(n => n.Skill == skill))
-                    AddSkillNode(skill, graph.nodes.OfType<SkillNode>().Count());
-            });
-        }
-        menu.ShowAsContext();
     }
 
     private void CreateSkillNode(Vector2? position)
@@ -317,24 +414,25 @@ public sealed class ItemGraphWindow : EditorWindow
         PlaceNode(AddSkillNode(skill, graph.nodes.OfType<SkillNode>().Count()), position);
     }
 
-    private void CreateActionNode(Vector2? position)
+    private void CreateActionNode<T>(string name, Vector2? position) where T : ItemSkillAction
     {
-        string path = EditorUtility.SaveFilePanelInProject("Create ReplaceItem action", "ReplaceItem", "asset", "Choose an action asset location.");
+        string path = EditorUtility.SaveFilePanelInProject("Create " + name + " action", name, "asset", "Choose an action asset location.");
         if (string.IsNullOrEmpty(path))
             return;
-        var action = CreateInstance<ReplaceEquippedItemAction>();
+        var action = CreateInstance<T>();
         AssetDatabase.CreateAsset(action, path);
-        Undo.RegisterCreatedObjectUndo(action, "Create ReplaceItem action");
+        Undo.RegisterCreatedObjectUndo(action, "Create " + name + " action");
         PlaceNode(AddActionNode(action), position);
     }
 
-    private static void PlaceNode(Node node, Vector2? position)
+    private void PlaceNode(Node node, Vector2? position)
     {
         if (!position.HasValue)
             return;
         var rect = node.GetPosition();
         rect.position = position.Value;
         node.SetPosition(rect);
+        SavePositions();
     }
 
     private void PopulateGraphMenu(ContextualMenuPopulateEvent evt)
@@ -343,8 +441,15 @@ public sealed class ItemGraphWindow : EditorWindow
         Vector2 position = graph.contentViewContainer.WorldToLocal(evt.mousePosition);
         var status = selectedItem != null ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled;
         evt.menu.AppendSeparator();
+        evt.menu.AppendAction("Create/Item", _ => CreateItem(position),
+            database != null ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
         evt.menu.AppendAction("Create/Skill", _ => CreateSkillNode(position), status);
-        evt.menu.AppendAction("Create/Actions/ReplaceItem", _ => CreateActionNode(position), status);
+        evt.menu.AppendAction("Create/Actions/ReplaceItem", _ => CreateActionNode<ReplaceEquippedItemAction>("ReplaceItem", position), status);
+        evt.menu.AppendAction("Create/Actions/Pick Selection", _ => CreateActionNode<PickPlacementSelectionAction>("PickSelection", position), status);
+        evt.menu.AppendAction("Create/Actions/Set World Block", _ => CreateActionNode<SetWorldBlockAction>("SetWorldBlock", position), status);
+        evt.menu.AppendAction("Create/Data/Cursor", _ => PlaceNode(GetCursorNode(), position), status);
+        evt.menu.AppendAction("Create/Data/Item.Selection", _ => PlaceNode(GetSelectionNode(), position), status);
+        evt.menu.AppendAction("Create/Data/Block", _ => AddBlockNode(BlockId.Air, position), status);
         evt.menu.AppendAction("Create/Durability/Decay over time", _ => CreateBehaviourNode<ItemDurabilityDecayDefinition>("DurabilityDecay", position), status);
         evt.menu.AppendAction("Create/Durability/Player light", _ => CreateBehaviourNode<ItemLightDefinition>("ItemLight", position), status);
         if (selectedItem == null)
@@ -381,6 +486,8 @@ public sealed class ItemGraphWindow : EditorWindow
 
     private GraphViewChange OnGraphChanged(GraphViewChange change)
     {
+        if (change.movedElements != null && change.movedElements.Count > 0)
+            rootVisualElement.schedule.Execute(SavePositions);
         if (selectedItem == null)
             return change;
         var skills = (selectedItem.Skills ?? Array.Empty<ItemSkillDefinition>()).ToArray();
@@ -390,7 +497,12 @@ public sealed class ItemGraphWindow : EditorWindow
             foreach (var element in change.elementsToRemove)
             {
                 if (element is Edge behaviourEdge)
+                {
                     SetBehaviourConnection(behaviourEdge, false);
+                    if (!change.elementsToRemove.Contains(behaviourEdge.input.node) &&
+                        !(behaviourEdge.output.node is ActionNode && change.elementsToRemove.Contains(behaviourEdge.output.node)))
+                        SetDataConnection(behaviourEdge, false);
+                }
                 if (element is BehaviourNode behaviourNode)
                     behaviourNode.Unbind();
                 if (element is Edge actionEdge && actionEdge.input.userData is ActionSlot slot &&
@@ -425,6 +537,7 @@ public sealed class ItemGraphWindow : EditorWindow
             foreach (var edge in change.edgesToCreate)
             {
                 SetBehaviourConnection(edge, true);
+                SetDataConnection(edge, true);
                 if (edge.input.userData is ActionSlot slot && edge.output.node is ActionNode actionNode)
                     SetAction(slot, actionNode.Action);
                 if (edge.input.userData is int index && index < skills.Length && edge.output.node is SkillNode node)
@@ -447,6 +560,7 @@ public sealed class ItemGraphWindow : EditorWindow
         var node = new BehaviourNode(asset);
         node.SetPosition(new Rect(position, new Vector2(320, 200)));
         graph.AddElement(node);
+        RestorePosition(node);
         return node;
     }
 
@@ -483,6 +597,179 @@ public sealed class ItemGraphWindow : EditorWindow
         }
     }
 
+    private CursorNode GetCursorNode()
+    {
+        var node = graph.nodes.OfType<CursorNode>().FirstOrDefault();
+        if (node != null) return node;
+        node = new CursorNode();
+        node.SetPosition(new Rect(-820, -200, 300, 180));
+        graph.AddElement(node);
+        RestorePosition(node);
+        return node;
+    }
+
+    private SelectionNode GetSelectionNode()
+    {
+        var node = graph.nodes.OfType<SelectionNode>().FirstOrDefault();
+        if (node != null) return node;
+        node = new SelectionNode();
+        node.SetPosition(new Rect(-820, 80, 300, 180));
+        graph.AddElement(node);
+        RestorePosition(node);
+        return node;
+    }
+
+    private void RestoreDataConnections(ActionNode node)
+    {
+        if (node.Action is SetWorldBlockAction set)
+        {
+            if (set.Position != CursorWorldPosition.Disconnected)
+                graph.AddElement((set.Position == CursorWorldPosition.Behind ? GetCursorNode().Behind : GetCursorNode().Before).ConnectTo(node.PositionInput));
+            if (set.BlockSource == BlockValueSource.ItemSelection)
+                graph.AddElement(GetSelectionNode().Value.ConnectTo(node.BlockInput));
+            else if (set.BlockSource == BlockValueSource.Constant)
+            {
+                var block = graph.nodes.OfType<BlockNode>().FirstOrDefault(n => n.Value == set.ConstantBlock)
+                    ?? AddBlockNode(set.ConstantBlock, new Vector2(-820, 340 + graph.nodes.OfType<BlockNode>().Count() * 180));
+                graph.AddElement(block.Output.ConnectTo(node.BlockInput));
+                RestorePosition(block);
+            }
+        }
+        else if (node.Action is PickPlacementSelectionAction pick)
+        {
+            if (pick.Position != CursorWorldPosition.Disconnected)
+                graph.AddElement((pick.Position == CursorWorldPosition.Behind ? GetCursorNode().Behind : GetCursorNode().Before).ConnectTo(node.PositionInput));
+            if (pick.ItemSelectionConnected)
+                graph.AddElement(node.SelectionOutput.ConnectTo(GetSelectionNode().State));
+        }
+    }
+
+    private static void SetDataConnection(Edge edge, bool connected)
+    {
+        if (edge.input.node is SelectionNode && edge.output.node is ActionNode writer &&
+            writer.Action is PickPlacementSelectionAction writeAction && edge.output == writer.SelectionOutput)
+        {
+            Undo.RecordObject(writeAction, "Connect Pick state");
+            writeAction.ItemSelectionConnected = connected;
+            EditorUtility.SetDirty(writeAction);
+            return;
+        }
+        if (!(edge.input.node is ActionNode node)) return;
+        if (node.Action is SetWorldBlockAction set)
+        {
+            if (edge.input == node.PositionInput && edge.output.node is CursorNode cursor)
+            {
+                Undo.RecordObject(set, "Connect cursor position");
+                set.Position = !connected ? CursorWorldPosition.Disconnected :
+                    edge.output == cursor.Behind ? CursorWorldPosition.Behind : CursorWorldPosition.Before;
+            }
+            else if (edge.input == node.BlockInput)
+            {
+                Undo.RecordObject(set, "Connect block source");
+                set.BlockSource = !connected ? BlockValueSource.Disconnected :
+                    edge.output.node is SelectionNode ? BlockValueSource.ItemSelection : BlockValueSource.Constant;
+                if (connected && edge.output.node is BlockNode block)
+                    set.ConstantBlock = block.Value;
+            }
+            else return;
+            EditorUtility.SetDirty(set);
+        }
+        else if (node.Action is PickPlacementSelectionAction pick)
+        {
+            Undo.RecordObject(pick, "Connect Pick data");
+            if (edge.input == node.PositionInput && edge.output.node is CursorNode cursor)
+                pick.Position = !connected ? CursorWorldPosition.Disconnected :
+                    edge.output == cursor.Behind ? CursorWorldPosition.Behind : CursorWorldPosition.Before;
+            else return;
+            EditorUtility.SetDirty(pick);
+        }
+    }
+
+    private BlockNode AddBlockNode(BlockId value, Vector2 position)
+    {
+        var node = new BlockNode(value);
+        node.SetPosition(new Rect(position, new Vector2(260, 140)));
+        graph.AddElement(node);
+        return node;
+    }
+
+    private sealed class BlockNode : Node
+    {
+        public BlockId Value { get; private set; }
+        public readonly Port Output;
+
+        public BlockNode(BlockId value)
+        {
+            Value = value;
+            title = "Data — Block";
+            style.width = 260;
+            Output = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(BlockSignal));
+            Output.portName = "Block";
+            outputContainer.Add(Output);
+            var field = new EnumField("Type", value);
+            field.RegisterValueChangedCallback(evt =>
+            {
+                Value = (BlockId)evt.newValue;
+                foreach (var edge in Output.connections.ToList())
+                {
+                    if (!(edge.input.node is ActionNode node) || !(node.Action is SetWorldBlockAction set))
+                        continue;
+                    Undo.RecordObject(set, "Change constant block");
+                    set.ConstantBlock = Value;
+                    EditorUtility.SetDirty(set);
+                }
+            });
+            extensionContainer.Add(field);
+            RefreshExpandedState();
+            RefreshPorts();
+        }
+    }
+
+    private sealed class PositionSignal { }
+    private sealed class BlockSignal { }
+    private sealed class SelectionStateSignal { }
+
+    private sealed class CursorNode : Node
+    {
+        public readonly Port Before, Behind;
+        public CursorNode()
+        {
+            title = "Data — Cursor";
+            style.width = 300;
+            Before = AddOutput("Before cursor", typeof(PositionSignal));
+            Behind = AddOutput("Behind cursor", typeof(PositionSignal));
+            extensionContainer.Add(new Label("Current valid target of the skill's player"));
+            RefreshExpandedState();
+            RefreshPorts();
+        }
+        private Port AddOutput(string name, Type type)
+        {
+            var port = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, type);
+            port.portName = name;
+            outputContainer.Add(port);
+            return port;
+        }
+    }
+
+    private sealed class SelectionNode : Node
+    {
+        public readonly Port Value, State;
+        public SelectionNode()
+        {
+            title = "Data — Item.Selection";
+            style.width = 300;
+            Value = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(BlockSignal));
+            Value.portName = "Selected block";
+            State = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(SelectionStateSignal));
+            State.portName = "State";
+            outputContainer.Add(Value);
+            inputContainer.Add(State);
+            extensionContainer.Add(new Label("State belongs to the item invoking the skill.\nEach equipped instance has its own selection."));
+            RefreshExpandedState();
+            RefreshPorts();
+        }
+    }
+
     private sealed class ItemGraphView : GraphView
     {
         public Action<ContextualMenuPopulateEvent> PopulateMenu;
@@ -495,7 +782,8 @@ public sealed class ItemGraphWindow : EditorWindow
 
         public override List<Port> GetCompatiblePorts(Port startPort, NodeAdapter adapter)
         {
-            return ports.Where(port => port != startPort && port.node != startPort.node &&
+            return ports.Where(port => port != startPort &&
+                port.node != startPort.node &&
                 port.direction != startPort.direction && port.portType == startPort.portType).ToList();
         }
     }
@@ -530,13 +818,31 @@ public sealed class ItemGraphWindow : EditorWindow
         preview.TrackPropertyValue(iconProperty, UpdatePreview);
     }
 
-    private sealed class ItemNode : Node
+    private abstract class AssetNode : Node
+    {
+        private readonly ScriptableObject asset;
+        public ScriptableObject AssetObject => asset;
+
+        protected AssetNode(ScriptableObject asset)
+        {
+            this.asset = asset;
+        }
+
+        public override void OnSelected()
+        {
+            base.OnSelected();
+            if (asset != null)
+                Selection.activeObject = asset;
+        }
+    }
+
+    private sealed class ItemNode : AssetNode
     {
         public readonly List<Port> SkillPorts = new List<Port>();
         public readonly Port DurabilityInput;
         public readonly Port DurabilityOutput;
 
-        public ItemNode(ItemDefinition item, Action<int> changeSlots)
+        public ItemNode(ItemDefinition item, Action<int> changeSlots) : base(item)
         {
             title = "Item — " + item.name + " (ID " + item.Id + ")";
             capabilities = Capabilities.Movable | Capabilities.Selectable;
@@ -584,13 +890,13 @@ public sealed class ItemGraphWindow : EditorWindow
         }
     }
 
-    private sealed class SkillNode : Node
+    private sealed class SkillNode : AssetNode
     {
         public readonly ItemSkillDefinition Skill;
         public readonly Port Output;
         public readonly List<Port> ActionPorts = new List<Port>();
 
-        public SkillNode(ItemSkillDefinition skill, Action<int> changeActions, Action<int, int> moveAction)
+        public SkillNode(ItemSkillDefinition skill, Action<int> changeActions, Action<int, int> moveAction) : base(skill)
         {
             Skill = skill;
             title = "Skill — " + skill.name + " (ID " + skill.Id + ")";
@@ -637,12 +943,12 @@ public sealed class ItemGraphWindow : EditorWindow
     // Port types describe allowed graph connections, not runtime-managed data.
     private sealed class DurabilitySignal { }
 
-    private sealed class BehaviourNode : Node
+    private sealed class BehaviourNode : AssetNode
     {
         public readonly ScriptableObject Asset;
         public readonly Port Connection;
 
-        public BehaviourNode(ScriptableObject asset)
+        public BehaviourNode(ScriptableObject asset) : base(asset)
         {
             Asset = asset;
             bool decay = asset is ItemDurabilityDecayDefinition;
@@ -663,22 +969,36 @@ public sealed class ItemGraphWindow : EditorWindow
         }
     }
 
-    private sealed class ActionNode : Node
+    private sealed class ActionNode : AssetNode
     {
         public readonly ItemSkillAction Action;
         public readonly Port Output;
+        public readonly Port PositionInput, BlockInput, SelectionOutput;
 
-        public ActionNode(ItemSkillAction action)
+        public ActionNode(ItemSkillAction action) : base(action)
         {
             Action = action;
-            title = action is ReplaceEquippedItemAction ? "ReplaceItem — " + action.name : action.name;
+            title = "Action — " + (action is ReplaceEquippedItemAction ? "ReplaceItem — " : "") + action.name;
             style.width = 320;
             var serialized = new SerializedObject(action);
+            if (action is SetWorldBlockAction)
+            {
+                BlockInput = AddDataInput("Block", typeof(BlockSignal));
+                PositionInput = AddDataInput("World position", typeof(PositionSignal));
+            }
+            else if (action is PickPlacementSelectionAction)
+            {
+                PositionInput = AddDataInput("World position", typeof(PositionSignal));
+                SelectionOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(SelectionStateSignal));
+                SelectionOutput.portName = "State";
+                outputContainer.Add(SelectionOutput);
+            }
             var property = serialized.GetIterator();
             if (property.NextVisible(true))
                 do
                 {
-                    if (property.name != "m_Script")
+                    if (property.name != "m_Script" && property.name != "Position" && property.name != "BlockSource" && property.name != "ConstantBlock" &&
+                        property.name != "ItemSelectionConnected")
                         extensionContainer.Add(new PropertyField(property.Copy()));
                 } while (property.NextVisible(false));
             Output = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(ItemSkillAction));
@@ -687,6 +1007,14 @@ public sealed class ItemGraphWindow : EditorWindow
             extensionContainer.Bind(serialized);
             RefreshExpandedState();
             RefreshPorts();
+        }
+
+        private Port AddDataInput(string name, Type type)
+        {
+            var port = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, type);
+            port.portName = name;
+            inputContainer.Add(port);
+            return port;
         }
     }
 }

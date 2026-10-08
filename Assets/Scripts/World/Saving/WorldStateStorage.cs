@@ -242,6 +242,11 @@ namespace Game.World.Saving
                 // Existence is validated against the baked library on restore.
                 if (entry.ItemId < 0)
                     throw new InvalidDataException("Invalid saved item ID.");
+                if (entry.PlacementSelectionKind < 0 || entry.PlacementSelectionKind > 2 ||
+                    entry.PlacementSelectionId < 0 ||
+                    (entry.PlacementSelectionKind == 0 && entry.PlacementSelectionId != 0) ||
+                    (entry.PlacementSelectionKind != 0 && entry.PlacementSelectionId == 0))
+                    throw new InvalidDataException("Invalid item placement selection.");
             }
         }
 

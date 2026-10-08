@@ -133,14 +133,14 @@ namespace Game.Player
         {
             light = default;
 
-            if (equipment.Item == 0)
+            if (equipment.Instance.DefinitionId == 0)
                 return false;
 
             for (int i = 0; i < library.Items.Length; i++)
             {
                 ref ItemData item = ref library.Items[i];
 
-                if (item.Id != equipment.Item)
+                if (item.Id != equipment.Instance.DefinitionId)
                     continue;
 
                 if (!item.HasLight ||
@@ -154,8 +154,8 @@ namespace Game.Player
                 light = item.Light;
                 if (item.LightRadiusFromDurability)
                 {
-                    float fraction = equipment.MaxDurability > 0f
-                        ? math.saturate(equipment.Durability / equipment.MaxDurability) : 0f;
+                    float fraction = equipment.Instance.MaxDurability > 0f
+                        ? math.saturate(equipment.Instance.Durability / equipment.Instance.MaxDurability) : 0f;
                     light.Radius = math.lerp(item.LightRadiusAtZeroDurability,
                         item.Light.Radius, fraction);
                 }

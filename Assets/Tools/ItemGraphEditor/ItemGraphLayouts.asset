@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d50b991455344e6b75a24604fdce6c4, type: 3}
+  m_Name: ItemGraphLayouts
+  m_EditorClassIdentifier: Assembly-CSharp-Editor::ItemGraphLayout
+  Entries:
+  - ItemGuid: 128e9d667dff51a44bb431a867628517
+    NodeKey: asset:128e9d667dff51a44bb431a867628517
+    Position: {x: 540, y: 70.399994}
+  - ItemGuid: 128e9d667dff51a44bb431a867628517
+    NodeKey: asset:973b765b4ef459c429958fb831d61235
+    Position: {x: 60, y: 70.399994}
+  - ItemGuid: 128e9d667dff51a44bb431a867628517
+    NodeKey: asset:dfaf68e2811103745a1d2270bc5a87c2
+    Position: {x: -360, y: 70.399994}
+  - ItemGuid: 128e9d667dff51a44bb431a867628517
+    NodeKey: cursor
+    Position: {x: -1508, y: 384.80002}
+  - ItemGuid: 128e9d667dff51a44bb431a867628517
+    NodeKey: block:dfaf68e2811103745a1d2270bc5a87c2
+    Position: {x: -647.2, y: -32.8}
+  - ItemGuid: 128e9d667dff51a44bb431a867628517
+    NodeKey: asset:f0fe880d6a3e99e438ffb5da8d728ac0
+    Position: {x: 60, y: 390.40002}
+  - ItemGuid: 128e9d667dff51a44bb431a867628517
+    NodeKey: asset:9c7aacf8e287b6a4089234e3435b02ea
+    Position: {x: -356.8, y: 389.6}
+  - ItemGuid: 128e9d667dff51a44bb431a867628517
+    NodeKey: item-selection
+    Position: {x: -676, y: 590.4}
+  - ItemGuid: 128e9d667dff51a44bb431a867628517
+    NodeKey: asset:9c0ba1af52136a7439d432f603cf2b08
+    Position: {x: 60, y: 710.4}
+  - ItemGuid: 128e9d667dff51a44bb431a867628517
+    NodeKey: asset:8f51382ad7f84f848af5348451e6b547
+    Position: {x: -1022.39996, y: 680}
+  - ItemGuid: 128e9d667dff51a44bb431a867628517
+    NodeKey: asset:959569d7ad1e3cd4ab115039816f700d
+    Position: {x: 1035.2, y: 406.40002}
+  - ItemGuid: 22b3719fb2c9947c28e5c2258dc66c34
+    NodeKey: asset:22b3719fb2c9947c28e5c2258dc66c34
+    Position: {x: 540, y: 70.399994}
+  - ItemGuid: 22b3719fb2c9947c28e5c2258dc66c34
+    NodeKey: asset:74d5ebc1847d4d4b9ddca7ee2c4a209b
+    Position: {x: 90.399994, y: 361.6}
+  - ItemGuid: 22b3719fb2c9947c28e5c2258dc66c34
+    NodeKey: asset:77adb5827fab8460a86489397cb98f59
+    Position: {x: 1008.8, y: 362.40002}
+  - ItemGuid: 22b3719fb2c9947c28e5c2258dc66c34
+    NodeKey: asset:8402cdd43bb1b4a2292bccb46ec042db
+    Position: {x: 62.4, y: 44.8}
+  - ItemGuid: 22b3719fb2c9947c28e5c2258dc66c34
+    NodeKey: asset:002b4d029a24e4d719eb097eb3cd0aaa
+    Position: {x: -324, y: 44.8}
+  - ItemGuid: 21863c02d6dcf45e395849a4c0b02231
+    NodeKey: asset:21863c02d6dcf45e395849a4c0b02231
+    Position: {x: 540, y: 70.399994}
+  - ItemGuid: 21863c02d6dcf45e395849a4c0b02231
+    NodeKey: asset:8b2ecc72dd1a44523a7156d2dfb4d95f
+    Position: {x: -348.8, y: 49.600002}
+  - ItemGuid: 21863c02d6dcf45e395849a4c0b02231
+    NodeKey: asset:6915bc3950696455c8f38b7f7667f5da
+    Position: {x: 79.2, y: 49.600002}

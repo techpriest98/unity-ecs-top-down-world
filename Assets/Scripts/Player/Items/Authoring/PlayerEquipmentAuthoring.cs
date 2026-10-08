@@ -23,14 +23,12 @@ namespace Game.Player
 
                 slots.Add(new PlayerEquipmentSlot
                 {
-                    Slot = EquipmentSlot.LeftHand,
-                    Item = 0
+                    Slot = EquipmentSlot.LeftHand
                 });
 
                 slots.Add(new PlayerEquipmentSlot
                 {
-                    Slot = EquipmentSlot.RightHand,
-                    Item = 0
+                    Slot = EquipmentSlot.RightHand
                 });
 
                 CreateHandLight(player, EquipmentSlot.LeftHand);

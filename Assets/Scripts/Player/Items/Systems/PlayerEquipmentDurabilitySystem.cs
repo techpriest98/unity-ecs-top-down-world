@@ -26,32 +26,30 @@ namespace Game.Player
                 for (int i = 0; i < slots.Length; i++)
                 {
                     var entry = slots[i];
-                    if (entry.Item == 0)
+                    if (entry.Instance.DefinitionId == 0)
                         continue;
                     for (int j = 0; j < items.Length; j++)
                     {
-                        if (items[j].Id != entry.Item)
+                        if (items[j].Id != entry.Instance.DefinitionId)
                             continue;
                         if (items[j].DurabilityLossAmount > 0f)
                         {
                             float interval = items[j].DurabilityLossInterval;
-                            entry.DurabilityElapsed += delta;
-                            float ticks = math.floor(entry.DurabilityElapsed / interval);
+                            entry.Instance.DurabilityElapsed += delta;
+                            float ticks = math.floor(entry.Instance.DurabilityElapsed / interval);
                             if (ticks > 0f)
                             {
-                                entry.DurabilityElapsed = math.max(0f,
-                                    entry.DurabilityElapsed - ticks * interval);
-                                entry.Durability = math.max(0f, entry.Durability -
+                                entry.Instance.DurabilityElapsed = math.max(0f,
+                                    entry.Instance.DurabilityElapsed - ticks * interval);
+                                entry.Instance.Durability = math.max(0f, entry.Instance.Durability -
                                     ticks * items[j].DurabilityLossAmount);
                             }
                         }
                         break;
                     }
-                    if (entry.Durability <= 0f)
+                    if (entry.Instance.Durability <= 0f)
                     {
-                        entry.Item = 0;
-                        entry.Durability = entry.MaxDurability = 0f;
-                        entry.DurabilityElapsed = 0f;
+                        entry.Instance = default;
                     }
                     slots[i] = entry;
                 }

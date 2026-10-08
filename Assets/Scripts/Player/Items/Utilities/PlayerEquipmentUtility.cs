@@ -34,14 +34,15 @@ namespace Game.Player
             }
 
             PlayerEquipmentSlot entry = slots[slotIndex];
-            bool preserve = preserveDurability && entry.Item != 0 && itemId != 0;
+            bool preserve = preserveDurability && entry.Instance.DefinitionId != 0 && itemId != 0;
             if (!preserve)
             {
-                entry.MaxDurability = maximum;
-                entry.Durability = maximum;
-                entry.DurabilityElapsed = 0f;
+                entry.Instance = default;
+                entry.Instance.MaxDurability = maximum;
+                entry.Instance.Durability = maximum;
+                entry.Instance.DurabilityElapsed = 0f;
             }
-            entry.Item = itemId;
+            entry.Instance.DefinitionId = itemId;
             slots[slotIndex] = entry;
 
             return true;
@@ -54,8 +55,52 @@ namespace Game.Player
             int index = FindSlot(slots, slot);
 
             return index >= 0
-                ? slots[index].Item
+                ? slots[index].Instance.DefinitionId
                 : 0;
+        }
+
+        public static ItemInstance GetInstance(DynamicBuffer<PlayerEquipmentSlot> slots, EquipmentSlot slot)
+        {
+            int index = FindSlot(slots, slot);
+            return index >= 0 ? slots[index].Instance : default;
+        }
+
+        public static bool SetPlacementSelection(DynamicBuffer<PlayerEquipmentSlot> slots,
+            EquipmentSlot slot, ItemPlacementSelection selection)
+        {
+            int index = FindSlot(slots, slot);
+            if (index < 0 || slots[index].Instance.DefinitionId == 0)
+                return false;
+            var entry = slots[index];
+            entry.Instance.PlacementSelection = selection;
+            slots[index] = entry;
+            return true;
+        }
+
+        public static bool TrySwap(DynamicBuffer<PlayerEquipmentSlot> slots,
+            ref ItemLibraryBlob library, EquipmentSlot first, EquipmentSlot second)
+        {
+            int a = FindSlot(slots, first), b = FindSlot(slots, second);
+            if (a < 0 || b < 0 || a == b)
+                return false;
+            var left = slots[a];
+            var right = slots[b];
+            if (!CanEquip(ref library, right.Instance.DefinitionId, first) ||
+                !CanEquip(ref library, left.Instance.DefinitionId, second))
+                return false;
+            var instance = left.Instance;
+            left.Instance = right.Instance;
+            right.Instance = instance;
+            slots[a] = left;
+            slots[b] = right;
+            return true;
+        }
+
+        private static bool CanEquip(ref ItemLibraryBlob library, int id, EquipmentSlot slot)
+        {
+            if (id == 0) return true;
+            int index = FindItem(ref library, id);
+            return index >= 0 && (library.Items[index].AllowedSlots & slot) == slot;
         }
 
         private static int FindSlot(

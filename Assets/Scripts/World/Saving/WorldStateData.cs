@@ -28,6 +28,8 @@ namespace Game.World.Saving
         public float Durability;
         public float MaxDurability;
         public float DurabilityElapsed;
+        public int PlacementSelectionKind;
+        public int PlacementSelectionId;
     }
 
     [Serializable]
