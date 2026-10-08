@@ -191,9 +191,7 @@ namespace Game.World.Interaction
                         cell.SourceAirIndex;
 
                     selection.FaceType =
-                        (ProjectedFaceType)(
-                            (cell.BlockData >> 8) &
-                            0xFFu);
+                        cell.FaceType;
 
                     selection.IsValid = true;
 

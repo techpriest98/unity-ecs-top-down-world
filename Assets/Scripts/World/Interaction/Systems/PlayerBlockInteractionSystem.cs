@@ -52,7 +52,7 @@ namespace Game.World.Interaction
 
                 if (input.ValueRO.PickPressed)
                 {
-                    BlockId blockId = (BlockId)(selected.BlockData & 0xFFu);
+                    BlockId blockId = selected.BlockId;
 
                     if (!BlockUtility.IsAir(blockId))
                     {

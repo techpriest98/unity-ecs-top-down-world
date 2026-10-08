@@ -17,12 +17,19 @@ namespace Game.World.Rendering
         /// </summary>
         public uint BlockData;
 
+        public BlockId BlockId => ProjectedCellPacking.GetBlockId(BlockData);
+        public ProjectedFaceType FaceType => ProjectedCellPacking.GetFaceType(BlockData);
+        public byte Durability => ProjectedCellPacking.GetDurability(BlockData);
+        public byte MaxDurability => ProjectedCellPacking.GetMaxDurability(BlockData);
+
         /// <summary>
         /// Bits:
         /// 0-15  X
         /// 16-31 Y
         /// </summary>
         public uint Position;
+        public ushort ProjectionX => ProjectedCellPacking.GetX(Position);
+        public ushort ProjectionY => ProjectedCellPacking.GetY(Position);
 
         /// <summary>
         /// Packed cell lighting, written by ChunkLightingSystem through LightDataUtility.
@@ -55,6 +62,13 @@ namespace Game.World.Rendering
         /// bit 8 TopInset.
         /// </summary>
         public ushort FaceData;
+        // Interpret according to face type and block category.
+        public byte NeighborMask => ProjectedCellPacking.GetNeighborMask(FaceData);
+        public BlockId FootBlockId => ProjectedCellPacking.GetFootBlockId(FaceData);
+        public byte OpticalDepth => ProjectedCellPacking.GetOpticalDepth(FaceData);
+        public bool WaterTopInset => ProjectedCellPacking.HasWaterTopInset(FaceData);
+        public bool IsCutTop => FaceType == ProjectedFaceType.Top && (FaceData & CutTopFlag) != 0;
+        public bool IsCutSide => FaceType != ProjectedFaceType.Top && (FaceData & CutSideFlag) != 0;
 
         /// <summary>
         /// Local light at the four corners of this projection quad, relative to screen.
@@ -101,15 +115,9 @@ namespace Game.World.Rendering
             ushort x,
             ushort y)
         {
-            BlockData =
-                (uint)block.BlockId |
-                ((uint)faceType << 8) |
-                ((uint)block.Durability << 16) |
-                ((uint)maximumDurability << 24);
+            BlockData = ProjectedCellPacking.PackBlock(block, faceType, maximumDurability);
 
-            Position =
-                (uint)x |
-                ((uint)y << 16);
+            Position = ProjectedCellPacking.PackPosition(x, y);
 
             LightData =
                 byte.MaxValue |
@@ -136,15 +144,9 @@ namespace Game.World.Rendering
             byte lightG,
             byte lightB)
         {
-            BlockData =
-                (uint)block.BlockId |
-                ((uint)faceType << 8) |
-                ((uint)block.Durability << 16) |
-                ((uint)maximumDurability << 24);
+            BlockData = ProjectedCellPacking.PackBlock(block, faceType, maximumDurability);
 
-            Position =
-                (uint)x |
-                ((uint)y << 16);
+            Position = ProjectedCellPacking.PackPosition(x, y);
 
             LightData =
                 lightLevel |

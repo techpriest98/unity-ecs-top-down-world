@@ -10,6 +10,10 @@ namespace Game.World.Rendering
         public uint Position;
         public uint LightData;
         public uint FaceData;
+        public Game.World.Blocks.BlockId BlockId => ProjectedCellPacking.GetBlockId(BlockData);
+        public ProjectedFaceType FaceType => ProjectedCellPacking.GetFaceType(BlockData);
+        public ushort ProjectionX => ProjectedCellPacking.GetX(Position);
+        public ushort ProjectionY => ProjectedCellPacking.GetY(Position);
 
         public float3 ChunkPosition;
         public float Padding;

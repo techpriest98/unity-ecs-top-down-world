@@ -34,8 +34,8 @@ namespace Game.World.Interaction
             ViewDirection direction = SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
             float3 chunkPosition = ChunkRenderPositionUtility.GetPosition(
                 selection.ChunkCoordinate, direction, 1f, 0.5f, 0.01f);
-            int x = (int)(selection.ProjectionPosition & 0xFFFFu);
-            int y = (int)(selection.ProjectionPosition >> 16);
+            int x = selection.ProjectionX;
+            int y = selection.ProjectionY;
             bool side = selection.FaceType == ProjectedFaceType.SideUpper ||
                 selection.FaceType == ProjectedFaceType.SideLower;
             if (selection.FaceType == ProjectedFaceType.SideLower)

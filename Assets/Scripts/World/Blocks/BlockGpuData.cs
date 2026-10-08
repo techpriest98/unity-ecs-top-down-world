@@ -7,6 +7,8 @@ namespace Game.World.Blocks
     {
         public uint AtlasPosition;
         public uint Flags;
+        public byte AtlasColumn => (byte)AtlasPosition;
+        public byte AtlasRow => (byte)(AtlasPosition >> 8);
 
         public BlockGpuData(
             byte atlasColumn,

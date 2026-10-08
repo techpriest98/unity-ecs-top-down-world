@@ -59,27 +59,7 @@ Shader "Game/World/ChunkWaterProcedural"
             // GPU data
             // ============================================================
 
-            struct ProjectedCellRenderData
-            {
-                uint BlockData;
-                uint Position;
-                uint LightData;
-                uint FaceData;
-
-                float3 ChunkPosition;
-                float Padding;
-
-                uint LocalLightBottomLeft;
-                uint LocalLightBottomRight;
-                uint LocalLightTopLeft;
-                uint LocalLightTopRight;
-            };
-
-            struct BlockGpuData
-            {
-                uint AtlasPosition;
-                uint Flags;
-            };
+            #include "ProjectedCellPacking.hlsl"
 
             StructuredBuffer<ProjectedCellRenderData> _ProjectedCells;
             StructuredBuffer<BlockGpuData> _BlockDatabase;
@@ -134,20 +114,8 @@ Shader "Game/World/ChunkWaterProcedural"
             // Packed data
             // ============================================================
 
-            uint2 UnpackPosition(uint packedPosition)
-            {
-                return uint2(packedPosition & 0xFFFF, (packedPosition >> 16) & 0xFFFF);
-            }
 
-            uint GetBlockId(uint packedBlockData)
-            {
-                return packedBlockData & 0xFF;
-            }
 
-            uint GetFaceType(uint packedBlockData)
-            {
-                return (packedBlockData >> 8) & 0xFF;
-            }
 
             uint GetOpticalDepth(uint reserved)
             {
@@ -159,13 +127,6 @@ Shader "Game/World/ChunkWaterProcedural"
                 return (reserved & TOP_INSET_FLAG) != 0;
             }
 
-            uint2 UnpackAtlasPosition(uint atlasPosition)
-            {
-                uint column = atlasPosition & 0xFF;
-                uint row = (atlasPosition >> 8) & 0xFF;
-
-                return uint2(column, row);
-            }
 
             float GetSunVisibility(uint packedLightData)
             {
@@ -173,14 +134,6 @@ Shader "Game/World/ChunkWaterProcedural"
                 return (packedLightData >> shift) & 0x01u;
             }
 
-            float4 GetCornerLight(uint packedLight)
-            {
-                return float4(
-                    packedLight & 0xFFu,
-                    (packedLight >> 8) & 0xFFu,
-                    (packedLight >> 16) & 0xFFu,
-                    (packedLight >> 24) & 0xFFu) / 255.0;
-            }
 
             // ============================================================
             // Faces

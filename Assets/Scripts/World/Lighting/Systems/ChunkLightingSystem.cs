@@ -281,7 +281,7 @@ namespace Game.World.Lighting
                 _ => new int3(1, 0, 0)
             };
 
-            ProjectedFaceType face = (ProjectedFaceType)((cell.BlockData >> 8) & 0xFF);
+            ProjectedFaceType face = cell.FaceType;
             bool isTop = face == ProjectedFaceType.Top;
             int3 up = isTop
                 ? ViewDirectionUtility.GetAwayFromCameraOffset(direction)
