@@ -109,6 +109,7 @@ Shader "Game/World/ChunkProcedural"
             float _DirectionalLightIntensity;
             float3 _AmbientColor;
             float3 _SideFaceNormal;
+            int _SunShadowMaskIndex;
 
             // ============================================================
             // Clipping
@@ -132,7 +133,7 @@ Shader "Game/World/ChunkProcedural"
 
             float GetSunVisibility(uint packedLightData)
             {
-                return GetPackedSunVisibility(packedLightData, 0u);
+                return GetPackedSunVisibility(packedLightData, (uint)_SunShadowMaskIndex);
             }
 
             // ============================================================
