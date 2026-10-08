@@ -320,24 +320,7 @@ namespace Game.World.Lighting
 
         private static uint AverageCornerLight(uint a, uint b)
         {
-            uint r = ((a & 0xFFu) + (b & 0xFFu) + 1u) >> 1;
-
-            uint g = (
-                ((a >> 8) & 0xFFu) +
-                ((b >> 8) & 0xFFu) + 1u) >> 1;
-
-            uint blue = (
-                ((a >> 16) & 0xFFu) +
-                ((b >> 16) & 0xFFu) + 1u) >> 1;
-
-            uint sky = (
-                ((a >> 24) & 0xFFu) +
-                ((b >> 24) & 0xFFu) + 1u) >> 1;
-
-            return r |
-                (g << 8) |
-                (blue << 16) |
-                (sky << 24);
+            return LightDataUtility.AverageCornerLight(a, b);
         }
 
         private static void UpdateChunkShadowMask(

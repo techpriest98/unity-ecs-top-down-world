@@ -94,6 +94,18 @@ namespace Game.World.Lighting
                    ((uint)ToByte(localLight.z) << 16);
         }
 
+        // Average all four packed bytes, preserving the existing rounding.
+        public static uint AverageCornerLight(uint a, uint b)
+        {
+            uint result = 0;
+            for (int shift = 0; shift < 32; shift += 8)
+            {
+                uint channel = (((a >> shift) & 255u) + ((b >> shift) & 255u) + 1u) >> 1;
+                result |= channel << shift;
+            }
+            return result;
+        }
+
         private static byte ToByte(float value)
         {
             return (byte)math.round(

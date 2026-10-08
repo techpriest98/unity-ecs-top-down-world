@@ -64,4 +64,14 @@ float GetSkyVisibility(uint packedLightData)
 {
     return ((packedLightData >> 24) & 0x0Fu) / 15.0;
 }
+uint GetNeighborMask(uint faceData) { return faceData & 0xFFu; }
+uint GetFootBlockId(uint faceData) { return (faceData >> 8) & 0xFFu; }
+bool HasCutTop(uint faceData) { return (faceData & 0x8000u) != 0u; }
+bool HasCutSide(uint faceData) { return (faceData & 0x0004u) != 0u; }
+uint GetOpticalDepth(uint faceData) { return faceData & 0xFFu; }
+bool HasTopInset(uint faceData) { return (faceData & 0x100u) != 0u; }
+float GetPackedSunVisibility(uint lightData, uint maskIndex)
+{
+    return (lightData >> (maskIndex == 0u ? 28u : 29u)) & 1u;
+}
 #endif

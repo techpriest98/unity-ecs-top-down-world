@@ -117,21 +117,12 @@ Shader "Game/World/ChunkWaterProcedural"
 
 
 
-            uint GetOpticalDepth(uint reserved)
-            {
-                return reserved & OPTICAL_DEPTH_MASK;
-            }
 
-            bool HasTopInset(uint reserved)
-            {
-                return (reserved & TOP_INSET_FLAG) != 0;
-            }
 
 
             float GetSunVisibility(uint packedLightData)
             {
-                uint shift = _SunShadowMaskIndex == 0 ? 28u : 29u;
-                return (packedLightData >> shift) & 0x01u;
+                return GetPackedSunVisibility(packedLightData, (uint)_SunShadowMaskIndex);
             }
 
 

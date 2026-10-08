@@ -132,7 +132,7 @@ Shader "Game/World/ChunkProcedural"
 
             float GetSunVisibility(uint packedLightData)
             {
-                return (packedLightData >> 28) & 0x01u;
+                return GetPackedSunVisibility(packedLightData, 0u);
             }
 
             // ============================================================
@@ -238,17 +238,17 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
 
                 bool isCutTop =
                     faceType == 1u &&
-                    (cell.FaceData & 0x8000u) != 0u;
+                    HasCutTop(cell.FaceData);
 
                 bool isCutSide =
                     (faceType == 2u || faceType == 3u) &&
-                    (cell.FaceData & 0x0004u) != 0u;
+                    HasCutSide(cell.FaceData);
 
                 output.IsCutSurface =
                     (isCutTop || isCutSide) ? 1u : 0u;
 
-                output.NeighborMask = cell.FaceData & 0xFF;
-                output.FootBlockId = (cell.FaceData >> 8) & 0xFF;
+                output.NeighborMask = GetNeighborMask(cell.FaceData);
+                output.FootBlockId = GetFootBlockId(cell.FaceData);
                 output.LightData = cell.LightData;
 
                 output.LocalLightCorners = uint4(
