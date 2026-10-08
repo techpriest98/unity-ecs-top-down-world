@@ -9,6 +9,7 @@ namespace Game.Player
     [BurstCompile]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(PlayerLightDebugSystem))]
+    [UpdateAfter(typeof(PlayerSkillInputSystem))]
     [UpdateAfter(typeof(PlayerMovementSystem))]
     [UpdateBefore(typeof(DynamicLightSystem))]
     [UpdateBefore(typeof(PlayerAnimationSystem))]
@@ -73,14 +74,14 @@ namespace Game.Player
                 if (equipmentLookup.HasBuffer(owner) &&
                     positionLookup.HasComponent(owner))
                 {
-                    ItemID itemId = PlayerEquipmentUtility.GetItem(
-                        equipmentLookup[owner],
-                        slot);
-
-                    shouldEnable = TryGetLight(
-                        ref items,
-                        itemId,
-                        out nextSource);
+                    var slots = equipmentLookup[owner];
+                    for (int i = 0; i < slots.Length; i++)
+                    {
+                        if (slots[i].Slot != slot)
+                            continue;
+                        shouldEnable = TryGetLight(ref items, slots[i], out nextSource);
+                        break;
+                    }
 
                     float3 worldPosition = positionLookup[owner].Value;
 
@@ -127,19 +128,19 @@ namespace Game.Player
 
         private static bool TryGetLight(
             ref ItemLibraryBlob library,
-            ItemID itemId,
+            PlayerEquipmentSlot equipment,
             out DynamicLightSource light)
         {
             light = default;
 
-            if (itemId == ItemID.None)
+            if (equipment.Item == 0)
                 return false;
 
             for (int i = 0; i < library.Items.Length; i++)
             {
                 ref ItemData item = ref library.Items[i];
 
-                if (item.Id != itemId)
+                if (item.Id != equipment.Item)
                     continue;
 
                 if (!item.HasLight ||
@@ -151,7 +152,14 @@ namespace Game.Player
                 }
 
                 light = item.Light;
-                return true;
+                if (item.LightRadiusFromDurability)
+                {
+                    float fraction = equipment.MaxDurability > 0f
+                        ? math.saturate(equipment.Durability / equipment.MaxDurability) : 0f;
+                    light.Radius = math.lerp(item.LightRadiusAtZeroDurability,
+                        item.Light.Radius, fraction);
+                }
+                return light.Radius > 0f;
             }
 
             return false;

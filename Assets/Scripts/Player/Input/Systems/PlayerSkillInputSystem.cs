@@ -32,7 +32,7 @@ namespace Game.Player
             DynamicBuffer<ItemDefinitionReference> library =
                 EntityManager.GetBuffer<ItemDefinitionReference>(libraryEntity, true);
 
-            ItemSkillAction action = null;
+            ItemSkillDefinition selectedDefinition = null;
             Entity player = Entity.Null;
             PlayerAvailableSkill selectedSkill = default;
 
@@ -48,7 +48,7 @@ namespace Game.Player
 
                 PlayerAvailableSkill entry = skills[pressedIndex];
 
-                ItemID equippedItem = PlayerEquipmentUtility.GetItem(
+                int equippedItem = PlayerEquipmentUtility.GetItem(
                     slots,
                     entry.SourceSlot);
 
@@ -72,23 +72,31 @@ namespace Game.Player
                 ItemSkillDefinition skill =
                     item.Skills[entry.SkillIndex];
 
-                if (skill == null || skill.Action == null)
+                if (skill == null || !skill.HasActions)
                     continue;
 
-                action = skill.Action;
+                selectedDefinition = skill;
                 player = entity;
                 selectedSkill = entry;
                 break;
             }
 
             // Викликаємо після виходу з обходу ECS-буферів.
-            if (action != null)
+            if (selectedDefinition != null)
             {
-                action.Execute(
-                    EntityManager,
-                    player,
-                    selectedSkill.SourceSlot,
-                    selectedSkill.SourceItem);
+                foreach (var action in selectedDefinition.Actions)
+                {
+                    if (action == null)
+                        continue;
+                    if (!EntityManager.Exists(player) ||
+                        !EntityManager.HasBuffer<PlayerEquipmentSlot>(player))
+                        break;
+                    var currentSlots = EntityManager.GetBuffer<PlayerEquipmentSlot>(player, true);
+                    int currentItem = PlayerEquipmentUtility.GetItem(currentSlots, selectedSkill.SourceSlot);
+                    if (currentItem == 0)
+                        break;
+                    action.Execute(EntityManager, player, selectedSkill.SourceSlot, currentItem);
+                }
             }
         }
 

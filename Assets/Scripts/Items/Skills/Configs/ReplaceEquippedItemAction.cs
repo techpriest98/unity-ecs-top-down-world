@@ -16,26 +16,29 @@ namespace Game.Items.Skills
             EntityManager entityManager,
             Entity player,
             EquipmentSlot sourceSlot,
-            ItemID sourceItem)
+            int sourceItem)
         {
             if (replacementItem == null)
                 return;
 
             if (!entityManager.Exists(player) ||
-                !entityManager.HasBuffer<PlayerEquipmentChangeRequest>(player))
+                !entityManager.HasBuffer<PlayerEquipmentSlot>(player))
             {
                 return;
             }
 
-            DynamicBuffer<PlayerEquipmentChangeRequest> requests =
-                entityManager.GetBuffer<PlayerEquipmentChangeRequest>(player);
-
-            requests.Add(new PlayerEquipmentChangeRequest
-            {
-                Slot = sourceSlot,
-                ExpectedItem = sourceItem,
-                ReplacementItem = replacementItem.Id
-            });
+            var slots = entityManager.GetBuffer<PlayerEquipmentSlot>(player);
+            if (PlayerEquipmentUtility.GetItem(slots, sourceSlot) != sourceItem)
+                return;
+            using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<ItemLibrary>());
+            if (query.CalculateEntityCount() != 1)
+                return;
+            var library = query.GetSingleton<ItemLibrary>();
+            if (!library.Value.IsCreated)
+                return;
+            // Apply before the next action executes; retain the item's resource.
+            PlayerEquipmentUtility.TryEquip(slots, ref library.Value.Value,
+                sourceSlot, replacementItem.Id, preserveDurability: true);
         }
     }
 }

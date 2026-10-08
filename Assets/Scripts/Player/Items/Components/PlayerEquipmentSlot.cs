@@ -7,7 +7,7 @@ namespace Game.Player
     public struct PlayerEquipmentSlot : IBufferElementData
     {
         public EquipmentSlot Slot;
-        public ItemID Item;
+        public int Item;
         public float Durability;
         public float MaxDurability;
         public float DurabilityElapsed;

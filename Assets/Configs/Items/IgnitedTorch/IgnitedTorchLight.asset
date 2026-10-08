@@ -14,4 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.ItemLightDefinition
   Color: {r: 1, g: 0.7137255, b: 0.34901962, a: 1}
   Radius: 4
+  RadiusFromDurability: 1
+  RadiusAtZeroDurability: 0
   Intensity: 1

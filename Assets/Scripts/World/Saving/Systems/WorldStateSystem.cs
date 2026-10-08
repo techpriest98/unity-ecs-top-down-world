@@ -223,7 +223,7 @@ namespace Game.World.Saving
                 original[i] = slots[i];
 
                 PlayerEquipmentSlot entry = slots[i];
-                entry.Item = ItemID.None;
+                entry.Item = 0;
                 slots[i] = entry;
             }
 
@@ -237,7 +237,7 @@ namespace Game.World.Saving
                         slots,
                         ref library,
                         (EquipmentSlot)saved.Slot,
-                        (ItemID)saved.ItemId))
+                        (int)saved.ItemId))
                 {
                     if (saved.HasDurability)
                     {
@@ -250,7 +250,7 @@ namespace Game.World.Saving
                             restored.Durability = saved.Durability;
                             restored.DurabilityElapsed = saved.DurabilityElapsed;
                             if (restored.Durability <= 0)
-                                restored.Item = ItemID.None;
+                                restored.Item = 0;
                             slots[i] = restored;
                         }
                     }

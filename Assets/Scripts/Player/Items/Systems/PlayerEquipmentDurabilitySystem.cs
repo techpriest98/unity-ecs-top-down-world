@@ -26,7 +26,7 @@ namespace Game.Player
                 for (int i = 0; i < slots.Length; i++)
                 {
                     var entry = slots[i];
-                    if (entry.Item == ItemID.None)
+                    if (entry.Item == 0)
                         continue;
                     for (int j = 0; j < items.Length; j++)
                     {
@@ -49,7 +49,7 @@ namespace Game.Player
                     }
                     if (entry.Durability <= 0f)
                     {
-                        entry.Item = ItemID.None;
+                        entry.Item = 0;
                         entry.Durability = entry.MaxDurability = 0f;
                         entry.DurabilityElapsed = 0f;
                     }

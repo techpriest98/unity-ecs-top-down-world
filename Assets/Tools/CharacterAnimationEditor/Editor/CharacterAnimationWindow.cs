@@ -25,8 +25,8 @@ public sealed class CharacterAnimationWindow : EditorWindow
     [SerializeField] private ItemDatabase itemDatabase;
 
     [SerializeField] private int selectedState;
-    [SerializeField] private ItemID leftItem;
-    [SerializeField] private ItemID rightItem;
+    [SerializeField] private int leftItem;
+    [SerializeField] private int rightItem;
 
     [SerializeField] private bool[] visible =
     {
@@ -344,7 +344,7 @@ public sealed class CharacterAnimationWindow : EditorWindow
     private void DrawItemRow(
         int layerIndex,
         List<ItemDefinition> options,
-        ref ItemID selection)
+        ref int selection)
     {
         string[] names = new string[options.Count + 1];
         names[0] = "None";
@@ -380,7 +380,7 @@ public sealed class CharacterAnimationWindow : EditorWindow
         if (next != current)
         {
             selection = next == 0
-                ? ItemID.None
+                ? 0
                 : options[next - 1].Id;
 
             ResolveLayers();
@@ -532,7 +532,7 @@ public sealed class CharacterAnimationWindow : EditorWindow
             }
         }
 
-        var itemIds = new HashSet<ItemID>();
+        var itemIds = new HashSet<int>();
 
         if (itemDatabase != null && itemDatabase.Items != null)
         {
@@ -545,10 +545,10 @@ public sealed class CharacterAnimationWindow : EditorWindow
                     continue;
                 }
 
-                if (item.Id == ItemID.None || !itemIds.Add(item.Id))
+                if (item.Id == 0 || !itemIds.Add(item.Id))
                 {
                     databaseWarnings.Add(
-                        $"{item.name}: invalid or duplicate ItemID {item.Id}.");
+                        $"{item.name}: invalid or duplicate int {item.Id}.");
                     continue;
                 }
 
@@ -561,10 +561,10 @@ public sealed class CharacterAnimationWindow : EditorWindow
         }
 
         if (FindItem(leftOptions, leftItem) == null)
-            leftItem = ItemID.None;
+            leftItem = 0;
 
         if (FindItem(rightOptions, rightItem) == null)
-            rightItem = ItemID.None;
+            rightItem = 0;
 
         ResolveLayers();
 
@@ -671,9 +671,9 @@ public sealed class CharacterAnimationWindow : EditorWindow
 
     private static ItemDefinition FindItem(
         List<ItemDefinition> options,
-        ItemID id)
+        int id)
     {
-        if (id == ItemID.None)
+        if (id == 0)
             return null;
 
         foreach (ItemDefinition item in options)

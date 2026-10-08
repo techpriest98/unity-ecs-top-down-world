@@ -64,7 +64,7 @@ namespace Game.Player
             EquipmentSlot sourceSlot,
             ref int count)
         {
-            ItemID itemId =
+            int itemId =
                 PlayerEquipmentUtility.GetItem(slots, sourceSlot);
 
             if (!ItemDefinitionReference.TryGet(library, itemId, out ItemDefinition item) ||
@@ -79,7 +79,7 @@ namespace Game.Player
             {
                 var skill = item.Skills[i];
 
-                if (skill == null || skill.Action == null)
+                if (skill == null || !skill.HasActions)
                     continue;
 
                 var entry = new PlayerAvailableSkill

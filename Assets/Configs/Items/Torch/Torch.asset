@@ -14,11 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.ItemDefinition
   Id: 1
   DisplayName: Torch
-  MaxDurability: 100
-  DurabilityLossAmount: 0
-  DurabilityLossInterval: 1
   Description: The stick wrapped in cloth soaked in pine resin
   Icon: {fileID: 3305191282884748519, guid: 212c4fb81804b5e468a82cbfc4e61351, type: 3}
+  MaxDurability: 100
+  DurabilityDecay: {fileID: 0}
   AllowedSlots: -1
   Light: {fileID: 0}
   Animation: {fileID: 11400000, guid: 4c8b339d9e64f456d95169fc1213c7df, type: 2}

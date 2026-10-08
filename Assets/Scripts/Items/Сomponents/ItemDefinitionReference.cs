@@ -4,17 +4,17 @@ namespace Game.Items
 {
     public struct ItemDefinitionReference : IBufferElementData
     {
-        public ItemID Id;
+        public int Id;
         public UnityObjectRef<ItemDefinition> Definition;
 
         // Resolving UnityEngine.Objects is a main-thread operation.
         public static bool TryGet(
             DynamicBuffer<ItemDefinitionReference> references,
-            ItemID id,
+            int id,
             out ItemDefinition definition)
         {
             definition = null;
-            if (id == ItemID.None)
+            if (id == 0)
                 return false;
             for (int i = 0; i < references.Length; i++)
             {

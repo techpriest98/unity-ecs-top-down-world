@@ -9,7 +9,7 @@ namespace Game.Player
             DynamicBuffer<PlayerEquipmentSlot> slots,
             ref ItemLibraryBlob library,
             EquipmentSlot slot,
-            ItemID itemId,
+            int itemId,
             bool preserveDurability = false)
         {
             int slotIndex = FindSlot(slots, slot);
@@ -18,7 +18,7 @@ namespace Game.Player
                 return false;
 
             float maximum = 0f;
-            if (itemId != ItemID.None)
+            if (itemId != 0)
             {
                 int itemIndex = FindItem(ref library, itemId);
 
@@ -34,7 +34,7 @@ namespace Game.Player
             }
 
             PlayerEquipmentSlot entry = slots[slotIndex];
-            bool preserve = preserveDurability && entry.Item != ItemID.None && itemId != ItemID.None;
+            bool preserve = preserveDurability && entry.Item != 0 && itemId != 0;
             if (!preserve)
             {
                 entry.MaxDurability = maximum;
@@ -47,7 +47,7 @@ namespace Game.Player
             return true;
         }
 
-        public static ItemID GetItem(
+        public static int GetItem(
             DynamicBuffer<PlayerEquipmentSlot> slots,
             EquipmentSlot slot)
         {
@@ -55,7 +55,7 @@ namespace Game.Player
 
             return index >= 0
                 ? slots[index].Item
-                : ItemID.None;
+                : 0;
         }
 
         private static int FindSlot(
@@ -78,7 +78,7 @@ namespace Game.Player
 
         private static int FindItem(
             ref ItemLibraryBlob library,
-            ItemID itemId)
+            int itemId)
         {
             for (int i = 0; i < library.Items.Length; i++)
             {

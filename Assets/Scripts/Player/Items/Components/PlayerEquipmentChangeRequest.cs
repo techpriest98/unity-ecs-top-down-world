@@ -7,7 +7,7 @@ namespace Game.Player
     public struct PlayerEquipmentChangeRequest : IBufferElementData
     {
         public EquipmentSlot Slot;
-        public ItemID ExpectedItem;
-        public ItemID ReplacementItem;
+        public int ExpectedItem;
+        public int ReplacementItem;
     }
 }

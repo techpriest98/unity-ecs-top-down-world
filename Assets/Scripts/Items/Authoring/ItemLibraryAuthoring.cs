@@ -26,6 +26,10 @@ namespace Game.Items
                 }
 
                 DependsOn(database);
+                if (database.DebugLeftItem != null)
+                    DependsOn(database.DebugLeftItem);
+                if (database.DebugRightItem != null)
+                    DependsOn(database.DebugRightItem);
 
                 ItemDefinition[] definitions = database.Items;
 
@@ -44,6 +48,9 @@ namespace Game.Items
 
                     DependsOn(definition);
 
+                    if (definition.DurabilityDecay != null)
+                        DependsOn(definition.DurabilityDecay);
+
                     if (definition.Light != null)
                         DependsOn(definition.Light);
 
@@ -51,7 +58,7 @@ namespace Game.Items
                         DependsOn(definition.Animation);
                 }
 
-                var ids = new HashSet<ItemID>();
+                var ids = new HashSet<int>();
 
                 foreach (ItemDefinition definition in definitions)
                 {
@@ -63,7 +70,7 @@ namespace Game.Items
                         return;
                     }
 
-                    if (definition.Id == ItemID.None)
+                    if (definition.Id <= 0)
                     {
                         Debug.LogError(
                             $"{definition.name}: None is reserved for an empty slot.",
@@ -76,6 +83,15 @@ namespace Game.Items
                         Debug.LogError(
                             $"Duplicate item ID: {definition.Id}.",
                             database);
+                        return;
+                    }
+
+                    if (definition.DurabilityDecay != null &&
+                        (!IsNonNegativeFinite(definition.DurabilityDecay.LossAmount) ||
+                         !IsNonNegativeFinite(definition.DurabilityDecay.Interval) ||
+                         definition.DurabilityDecay.Interval <= 0f))
+                    {
+                        Debug.LogError($"{definition.DurabilityDecay.name}: loss must be finite and non-negative; interval must be finite and positive.", definition.DurabilityDecay);
                         return;
                     }
 
@@ -103,6 +119,8 @@ namespace Game.Items
                 {
                     ref ItemLibraryBlob root =
                         ref builder.ConstructRoot<ItemLibraryBlob>();
+                    root.DebugLeftItemId = database.DebugLeftItem != null ? database.DebugLeftItem.Id : 0;
+                    root.DebugRightItemId = database.DebugRightItem != null ? database.DebugRightItem.Id : 0;
 
                     BlobBuilderArray<ItemData> items =
                         builder.Allocate(
@@ -120,14 +138,18 @@ namespace Game.Items
                             Id = definition.Id,
                             AllowedSlots = definition.AllowedSlots,
                             MaxDurability = math.max(0.001f, definition.MaxDurability),
-                            DurabilityLossAmount = math.max(0f, definition.DurabilityLossAmount),
-                            DurabilityLossInterval = math.max(0.001f, definition.DurabilityLossInterval),
+                            DurabilityLossAmount = definition.DurabilityDecay != null
+                                ? math.max(0f, definition.DurabilityDecay.LossAmount) : 0f,
+                            DurabilityLossInterval = definition.DurabilityDecay != null
+                                ? math.max(0.001f, definition.DurabilityDecay.Interval) : 1f,
                             HasLight = light != null,
                             HasAnimation = animation != null
                         };
 
                         if (light != null)
                         {
+                            item.LightRadiusFromDurability = light.RadiusFromDurability;
+                            item.LightRadiusAtZeroDurability = light.RadiusAtZeroDurability;
                             item.Light = new DynamicLightSource
                             {
                                 Color = new float3(
@@ -196,6 +218,7 @@ namespace Game.Items
             private static bool ValidateLight(ItemLightDefinition light)
             {
                 if (!IsNonNegativeFinite(light.Radius) ||
+                    !IsNonNegativeFinite(light.RadiusAtZeroDurability) ||
                     !IsNonNegativeFinite(light.Intensity) ||
                     !IsNonNegativeFinite(light.Color.r) ||
                     !IsNonNegativeFinite(light.Color.g) ||

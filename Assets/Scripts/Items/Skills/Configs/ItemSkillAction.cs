@@ -9,6 +9,6 @@ namespace Game.Items.Skills
             EntityManager entityManager,
             Entity player,
             EquipmentSlot sourceSlot,
-            ItemID sourceItem);
+            int sourceItem);
     }
 }

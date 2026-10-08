@@ -7,7 +7,7 @@ namespace Game.Player
     public struct PlayerAvailableSkill : IBufferElementData
     {
         public EquipmentSlot SourceSlot;
-        public ItemID SourceItem;
+        public int SourceItem;
         public int SkillIndex;
     }
 }

@@ -44,8 +44,8 @@ namespace Game.Player
                 bool isMoving =
                     math.lengthsq(moveInput.ValueRO.Value) > 0.0001f;
 
-                ItemID leftItem = ItemID.None;
-                ItemID rightItem = ItemID.None;
+                int leftItem = 0;
+                int rightItem = 0;
 
                 if (equipmentLookup.HasBuffer(entity))
                 {
@@ -145,13 +145,13 @@ namespace Game.Player
 
         private static bool TryGetVisual(
             ref ItemLibraryBlob library,
-            ItemID itemId,
+            int itemId,
             bool isLeftHand,
             out ItemHandAnimationData hand)
         {
             hand = default;
 
-            if (itemId == ItemID.None)
+            if (itemId == 0)
                 return false;
 
             for (int i = 0; i < library.Items.Length; i++)

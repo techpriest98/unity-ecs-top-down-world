@@ -48,7 +48,7 @@ namespace Game.UI
             for (int i = 0; i < 2; i++)
             {
                 var slot = i == 0 ? EquipmentSlot.LeftHand : EquipmentSlot.RightHand;
-                ItemID id = PlayerEquipmentUtility.GetItem(slots, slot);
+                int id = PlayerEquipmentUtility.GetItem(slots, slot);
                 for (int j = 0; j < slots.Length; j++)
                     if (slots[j].Slot == slot)
                         hud.SetDurability(i, slots[j].Durability, slots[j].MaxDurability);

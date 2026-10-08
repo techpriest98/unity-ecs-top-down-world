@@ -38,11 +38,11 @@ namespace Game.Player
                          .WithAll<PlayerTag>())
             {
                 if (toggleLeft) {
-                    ItemID currentItem = PlayerEquipmentUtility.GetItem(slots, EquipmentSlot.LeftHand);
-                    ItemID nextItem = ItemID.None;
+                    int currentItem = PlayerEquipmentUtility.GetItem(slots, EquipmentSlot.LeftHand);
+                    int nextItem = 0;
 
-                    if (currentItem == ItemID.None)
-                        nextItem = ItemID.Torch;
+                    if (currentItem == 0)
+                        nextItem = items.DebugLeftItemId;
 
                     PlayerEquipmentUtility.TryEquip(
                         slots,
@@ -53,11 +53,11 @@ namespace Game.Player
 
                 if (toggleRight)
                 {
-                    ItemID currentItem = PlayerEquipmentUtility.GetItem(slots, EquipmentSlot.RightHand);
-                    ItemID nextItem = ItemID.None;
+                    int currentItem = PlayerEquipmentUtility.GetItem(slots, EquipmentSlot.RightHand);
+                    int nextItem = 0;
 
-                    if (currentItem == ItemID.None)
-                        nextItem = ItemID.IgnitedTorch;
+                    if (currentItem == 0)
+                        nextItem = items.DebugRightItemId;
 
                     PlayerEquipmentUtility.TryEquip(
                         slots,

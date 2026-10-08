@@ -12,11 +12,13 @@ namespace Game.Items
     public struct ItemLibraryBlob
     {
         public BlobArray<ItemData> Items;
+        public int DebugLeftItemId;
+        public int DebugRightItemId;
     }
 
     public struct ItemData
     {
-        public ItemID Id;
+        public int Id;
         public EquipmentSlot AllowedSlots;
         public float MaxDurability;
         public float DurabilityLossAmount;
@@ -24,6 +26,8 @@ namespace Game.Items
 
         public bool HasLight;
         public DynamicLightSource Light;
+        public bool LightRadiusFromDurability;
+        public float LightRadiusAtZeroDurability;
 
         public bool HasAnimation;
         public ItemHandAnimationData LeftHand;

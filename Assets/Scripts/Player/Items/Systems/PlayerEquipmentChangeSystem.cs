@@ -45,7 +45,7 @@ namespace Game.Player
                     if (!slotExists)
                         continue;
 
-                    ItemID currentItem = PlayerEquipmentUtility.GetItem(
+                    int currentItem = PlayerEquipmentUtility.GetItem(
                         slots,
                         request.Slot);
 

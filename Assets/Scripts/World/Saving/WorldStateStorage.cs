@@ -239,23 +239,9 @@ namespace Game.World.Saving
                         "Invalid or duplicate equipment slot.");
                 }
 
-                // Compare integer values without narrowing an unknown ID.
-                bool knownItem = false;
-
-                foreach (ItemID item in Enum.GetValues(typeof(ItemID)))
-                {
-                    if (Convert.ToInt32(item) == entry.ItemId)
-                    {
-                        knownItem = true;
-                        break;
-                    }
-                }
-
-                if (!knownItem)
-                {
-                    throw new InvalidDataException(
-                        "Unknown saved item ID.");
-                }
+                // Existence is validated against the baked library on restore.
+                if (entry.ItemId < 0)
+                    throw new InvalidDataException("Invalid saved item ID.");
             }
         }
 

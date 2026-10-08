@@ -46,8 +46,8 @@ namespace Game.Player
                 bool isMoving =
                     math.lengthsq(moveInput.ValueRO.Value) > 0.0001f;
 
-                ItemID leftItem = ItemID.None;
-                ItemID rightItem = ItemID.None;
+                int leftItem = 0;
+                int rightItem = 0;
 
                 if (equipmentLookup.HasBuffer(entity))
                 {
@@ -107,7 +107,7 @@ namespace Game.Player
 
         private static AnimationID SelectAnimation(
             ref ItemLibraryBlob library,
-            ItemID itemId,
+            int itemId,
             bool isLeftHand,
             bool isMoving)
         {
@@ -115,7 +115,7 @@ namespace Game.Player
                 ? AnimationID.Walk
                 : AnimationID.Idle;
 
-            if (itemId == ItemID.None)
+            if (itemId == 0)
                 return defaultAnimation;
 
             for (int i = 0; i < library.Items.Length; i++)
