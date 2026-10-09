@@ -15,8 +15,13 @@ namespace Game.Items.Skills
         public BlockValueSource BlockSource = BlockValueSource.ItemSelection;
         public BlockId ConstantBlock = BlockId.Air;
 
+        public override bool IsAvailable(EntityManager manager, Entity player, EquipmentSlot slot, int item)
+            => Distance == null || (CursorWorldUtility.TryGetPosition(manager, player, Position, out var cell) &&
+                WithinDistance(manager, player, (Unity.Mathematics.float3)cell + new Unity.Mathematics.float3(0.5f, 0.5f, 0.5f)));
+
         public override void Execute(EntityManager manager, Entity player, EquipmentSlot sourceSlot, int sourceItem)
         {
+            if (!IsAvailable(manager, player, sourceSlot, sourceItem)) return;
             if (Position == CursorWorldPosition.Disconnected ||
                 (BlockSource != BlockValueSource.Constant && BlockSource != BlockValueSource.ItemSelection))
                 return;

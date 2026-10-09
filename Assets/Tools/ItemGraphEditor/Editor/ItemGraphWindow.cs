@@ -14,6 +14,13 @@ public sealed class ItemGraphWindow : EditorWindow
 {
     [SerializeField] private ItemDatabase database;
     [SerializeField] private ItemDefinition selectedItem;
+    [SerializeField] private bool editingEmptyHand;
+    private ScriptableObject Producer => editingEmptyHand ? database?.EmptyHand : selectedItem;
+    private ItemSkillDefinition[] ProducerSkills
+    {
+        get => editingEmptyHand ? database.EmptyHand.Skills : selectedItem.Skills;
+        set { if (editingEmptyHand) database.EmptyHand.Skills = value; else selectedItem.Skills = value; }
+    }
     private GraphView graph;
     private ScrollView itemStrip;
     private ItemNode itemNode;
@@ -74,8 +81,8 @@ public sealed class ItemGraphWindow : EditorWindow
         toolbar.Add(new ToolbarButton(RefreshItems) { text = "Refresh" });
         toolbar.Add(new ToolbarButton(() =>
         {
-            if (selectedItem != null)
-                EditorGUIUtility.PingObject(selectedItem);
+            if (Producer != null)
+                EditorGUIUtility.PingObject(Producer);
         }) { text = "Ping asset" });
         toolbar.Add(new ToolbarButton(() =>
         {
@@ -113,7 +120,7 @@ public sealed class ItemGraphWindow : EditorWindow
         footer.Add(itemStrip);
         rootVisualElement.Add(footer);
         RefreshItems();
-        ShowItem(selectedItem);
+        ShowItem(selectedItem, editingEmptyHand);
     }
 
     private void CreateItem(Vector2 position)
@@ -155,6 +162,7 @@ public sealed class ItemGraphWindow : EditorWindow
             return;
         }
         var items = (database.Items ?? Array.Empty<ItemDefinition>()).Where(item => item != null).Distinct().ToArray();
+        itemStrip.Add(new Button(() => ShowItem(null, true)) { text = "Empty Hand" });
         if (selectedItem != null && !items.Contains(selectedItem))
         {
             ShowItem(null);
@@ -194,9 +202,10 @@ public sealed class ItemGraphWindow : EditorWindow
             itemStrip.Add(new Label("This database has no items. Right-click the graph → Create/Item."));
     }
 
-    private void ShowItem(ItemDefinition item)
+    private void ShowItem(ItemDefinition item, bool emptyHand = false)
     {
         SavePositions();
+        editingEmptyHand = emptyHand && database != null && database.EmptyHand != null;
         if (database == null || !(database.Items ?? Array.Empty<ItemDefinition>()).Contains(item))
             item = null;
         selectedItem = item;
@@ -210,7 +219,7 @@ public sealed class ItemGraphWindow : EditorWindow
         selectionLabel.text = item == null ? "Select an item below" : AssetDatabase.GetAssetPath(item);
         if (item != null)
         {
-            itemNode = new ItemNode(item, ChangeSlotCount);
+            itemNode = new ItemNode(item, ChangeSlotCount, MoveSkill);
             itemNode.SetPosition(new Rect(540, 70, 380, 340));
             graph.AddElement(itemNode);
             if (item.DurabilityDecay != null)
@@ -235,6 +244,22 @@ public sealed class ItemGraphWindow : EditorWindow
                     nodes.Add(skill, skillNode);
                 }
                 graph.AddElement(skillNode.Output.ConnectTo(itemNode.SkillPorts[i]));
+            }
+        }
+        else if (editingEmptyHand)
+        {
+            itemNode = new ItemNode(database.EmptyHand, ChangeSlotCount, MoveSkill);
+            itemNode.SetPosition(new Rect(540, 70, 380, 200));
+            graph.AddElement(itemNode);
+            selectionLabel.text = AssetDatabase.GetAssetPath(database.EmptyHand);
+            var nodes = new Dictionary<ItemSkillDefinition, SkillNode>();
+            for (int i = 0; i < itemNode.SkillPorts.Count; i++)
+            {
+                var skill = ProducerSkills[i];
+                if (skill == null) continue;
+                if (!nodes.TryGetValue(skill, out var node))
+                { node = AddSkillNode(skill, nodes.Count); nodes.Add(skill, node); }
+                graph.AddElement(node.Output.ConnectTo(itemNode.SkillPorts[i]));
             }
         }
         RestorePositions();
@@ -262,8 +287,8 @@ public sealed class ItemGraphWindow : EditorWindow
 
     private void SavePositions()
     {
-        if (graph == null || selectedItem == null) return;
-        string itemGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(selectedItem));
+        if (graph == null || Producer == null) return;
+        string itemGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(Producer));
         if (string.IsNullOrEmpty(itemGuid)) return;
         if (layout == null) layout = AssetDatabase.LoadAssetAtPath<ItemGraphLayout>(LayoutPath);
         bool changed = false;
@@ -297,10 +322,10 @@ public sealed class ItemGraphWindow : EditorWindow
 
     private void RestorePosition(Node node)
     {
-        if (selectedItem == null) return;
+        if (Producer == null) return;
         if (layout == null) layout = AssetDatabase.LoadAssetAtPath<ItemGraphLayout>(LayoutPath);
         if (layout == null) return;
-        string itemGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(selectedItem));
+        string itemGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(Producer));
         foreach (string key in NodeKeys(node))
         {
             var entry = layout.Entries.FirstOrDefault(e => e.ItemGuid == itemGuid && e.NodeKey == key);
@@ -320,21 +345,36 @@ public sealed class ItemGraphWindow : EditorWindow
     private void ReloadGraph()
     {
         if (graph != null)
-            ShowItem(selectedItem);
+            ShowItem(selectedItem, editingEmptyHand);
     }
 
     private void ChangeSlotCount(int removeIndex)
     {
-        if (selectedItem == null)
+        if (Producer == null)
             return;
-        Undo.RecordObject(selectedItem, "Edit item skill slots");
-        var skills = new List<ItemSkillDefinition>(selectedItem.Skills ?? Array.Empty<ItemSkillDefinition>());
+        Undo.RecordObject(Producer, "Edit producer skill slots");
+        var skills = new List<ItemSkillDefinition>(ProducerSkills ?? Array.Empty<ItemSkillDefinition>());
         if (removeIndex < 0)
             skills.Add(null);
         else if (removeIndex < skills.Count)
             skills.RemoveAt(removeIndex);
-        selectedItem.Skills = skills.ToArray();
-        EditorUtility.SetDirty(selectedItem);
+        ProducerSkills = skills.ToArray();
+        EditorUtility.SetDirty(Producer);
+        rootVisualElement.schedule.Execute(ReloadGraph);
+    }
+
+    private void MoveSkill(int index, int offset)
+    {
+        if (Producer == null) return;
+        var skills = ProducerSkills;
+        int target = index + offset;
+        if (skills == null || index < 0 || index >= skills.Length || target < 0 || target >= skills.Length) return;
+        Undo.RecordObject(Producer, "Reorder producer skills");
+        var reordered = skills.ToArray();
+        reordered[index] = skills[target];
+        reordered[target] = skills[index];
+        ProducerSkills = reordered;
+        EditorUtility.SetDirty(Producer);
         rootVisualElement.schedule.Execute(ReloadGraph);
     }
 
@@ -439,7 +479,7 @@ public sealed class ItemGraphWindow : EditorWindow
     {
         // Convert the pointer to graph-content coordinates, including pan and zoom.
         Vector2 position = graph.contentViewContainer.WorldToLocal(evt.mousePosition);
-        var status = selectedItem != null ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled;
+        var status = Producer != null ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled;
         evt.menu.AppendSeparator();
         evt.menu.AppendAction("Create/Item", _ => CreateItem(position),
             database != null ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
@@ -447,12 +487,21 @@ public sealed class ItemGraphWindow : EditorWindow
         evt.menu.AppendAction("Create/Actions/ReplaceItem", _ => CreateActionNode<ReplaceEquippedItemAction>("ReplaceItem", position), status);
         evt.menu.AppendAction("Create/Actions/Pick Selection", _ => CreateActionNode<PickPlacementSelectionAction>("PickSelection", position), status);
         evt.menu.AppendAction("Create/Actions/Set World Block", _ => CreateActionNode<SetWorldBlockAction>("SetWorldBlock", position), status);
+        evt.menu.AppendAction("Create/Actions/Throw Item", _ => CreateActionNode<ThrowItemAction>("ThrowItem", position), status);
+        evt.menu.AppendAction("Create/Actions/Pick Up Item", _ => CreateActionNode<PickUpItemAction>("PickUpItem", position), status);
         evt.menu.AppendAction("Create/Data/Cursor", _ => PlaceNode(GetCursorNode(), position), status);
         evt.menu.AppendAction("Create/Data/Item.Selection", _ => PlaceNode(GetSelectionNode(), position), status);
         evt.menu.AppendAction("Create/Data/Block", _ => AddBlockNode(BlockId.Air, position), status);
+        evt.menu.AppendAction("Create/Data/Distance", _ => CreateDistanceNode(position), status);
+        foreach (string guid in AssetDatabase.FindAssets("t:ActionDistanceDefinition"))
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<ActionDistanceDefinition>(AssetDatabase.GUIDToAssetPath(guid));
+            evt.menu.AppendAction("Add existing/Data/Distance/" + asset.name,
+                _ => PlaceNode(GetDistanceNode(asset), position), status);
+        }
         evt.menu.AppendAction("Create/Durability/Decay over time", _ => CreateBehaviourNode<ItemDurabilityDecayDefinition>("DurabilityDecay", position), status);
         evt.menu.AppendAction("Create/Durability/Player light", _ => CreateBehaviourNode<ItemLightDefinition>("ItemLight", position), status);
-        if (selectedItem == null)
+        if (Producer == null)
             return;
         foreach (string filter in new[] { "t:ItemDurabilityDecayDefinition", "t:ItemLightDefinition" })
             foreach (string guid in AssetDatabase.FindAssets(filter))
@@ -488,9 +537,9 @@ public sealed class ItemGraphWindow : EditorWindow
     {
         if (change.movedElements != null && change.movedElements.Count > 0)
             rootVisualElement.schedule.Execute(SavePositions);
-        if (selectedItem == null)
+        if (Producer == null)
             return change;
-        var skills = (selectedItem.Skills ?? Array.Empty<ItemSkillDefinition>()).ToArray();
+        var skills = (ProducerSkills ?? Array.Empty<ItemSkillDefinition>()).ToArray();
         bool changed = false;
         if (change.elementsToRemove != null)
         {
@@ -505,6 +554,11 @@ public sealed class ItemGraphWindow : EditorWindow
                 }
                 if (element is BehaviourNode behaviourNode)
                     behaviourNode.Unbind();
+                if (element is DistanceNode distanceNode)
+                {
+                    foreach (var distanceEdge in distanceNode.Output.connections.ToList()) SetDataConnection(distanceEdge, false);
+                    distanceNode.Unbind();
+                }
                 if (element is Edge actionEdge && actionEdge.input.userData is ActionSlot slot &&
                     !change.elementsToRemove.OfType<SkillNode>().Any(n => n.Skill == slot.Skill))
                     SetAction(slot, null);
@@ -548,9 +602,9 @@ public sealed class ItemGraphWindow : EditorWindow
             }
         if (changed)
         {
-            Undo.RecordObject(selectedItem, "Connect item skill");
-            selectedItem.Skills = skills;
-            EditorUtility.SetDirty(selectedItem);
+            Undo.RecordObject(Producer, "Connect producer skill");
+            ProducerSkills = skills;
+            EditorUtility.SetDirty(Producer);
         }
         return change;
     }
@@ -621,6 +675,10 @@ public sealed class ItemGraphWindow : EditorWindow
 
     private void RestoreDataConnections(ActionNode node)
     {
+        if (node.DistanceInput != null && node.Action.Distance != null)
+            graph.AddElement(GetDistanceNode(node.Action.Distance).Output.ConnectTo(node.DistanceInput));
+        if (node.Action is ThrowItemAction thrown && thrown.Position == CursorWorldPosition.Before)
+            graph.AddElement(GetCursorNode().Before.ConnectTo(node.PositionInput));
         if (node.Action is SetWorldBlockAction set)
         {
             if (set.Position != CursorWorldPosition.Disconnected)
@@ -655,6 +713,22 @@ public sealed class ItemGraphWindow : EditorWindow
             return;
         }
         if (!(edge.input.node is ActionNode node)) return;
+        if (edge.input == node.DistanceInput && edge.output.node is DistanceNode distance)
+        {
+            if (!connected && node.Action.Distance != distance.Asset) return;
+            Undo.RecordObject(node.Action, "Connect action distance");
+            node.Action.Distance = connected ? distance.Asset : null;
+            EditorUtility.SetDirty(node.Action);
+            return;
+        }
+        if (node.Action is ThrowItemAction thrown && edge.input == node.PositionInput && edge.output.node is CursorNode throwCursor)
+        {
+            Undo.RecordObject(thrown, "Connect throw target");
+            thrown.Position = connected && edge.output == throwCursor.Before
+                ? CursorWorldPosition.Before : CursorWorldPosition.Disconnected;
+            EditorUtility.SetDirty(thrown);
+            return;
+        }
         if (node.Action is SetWorldBlockAction set)
         {
             if (edge.input == node.PositionInput && edge.output.node is CursorNode cursor)
@@ -691,6 +765,46 @@ public sealed class ItemGraphWindow : EditorWindow
         node.SetPosition(new Rect(position, new Vector2(260, 140)));
         graph.AddElement(node);
         return node;
+    }
+
+    private void CreateDistanceNode(Vector2 position)
+    {
+        string path = EditorUtility.SaveFilePanelInProject("Create distance", "Distance", "asset", "Choose a distance asset location.");
+        if (string.IsNullOrEmpty(path)) return;
+        var asset = CreateInstance<ActionDistanceDefinition>();
+        AssetDatabase.CreateAsset(asset, path);
+        Undo.RegisterCreatedObjectUndo(asset, "Create distance");
+        PlaceNode(GetDistanceNode(asset), position);
+    }
+
+    private DistanceNode GetDistanceNode(ActionDistanceDefinition asset)
+    {
+        var existing = graph.nodes.OfType<DistanceNode>().FirstOrDefault(n => n.Asset == asset);
+        if (existing != null) return existing;
+        var node = new DistanceNode(asset);
+        node.SetPosition(new Rect(-820, 500, 260, 140));
+        graph.AddElement(node);
+        RestorePosition(node);
+        return node;
+    }
+
+    private sealed class DistanceNode : AssetNode
+    {
+        public readonly ActionDistanceDefinition Asset;
+        public readonly Port Output;
+        public DistanceNode(ActionDistanceDefinition asset) : base(asset)
+        {
+            Asset = asset;
+            title = "Data — Distance — " + asset.name;
+            style.width = 260;
+            Output = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(ActionDistanceDefinition));
+            Output.portName = "Distance";
+            outputContainer.Add(Output);
+            var serialized = new SerializedObject(asset);
+            extensionContainer.Add(new PropertyField(serialized.FindProperty("MaxDistance"), "Max distance (blocks)"));
+            extensionContainer.Bind(serialized);
+            RefreshExpandedState(); RefreshPorts();
+        }
     }
 
     private sealed class BlockNode : Node
@@ -784,6 +898,10 @@ public sealed class ItemGraphWindow : EditorWindow
         {
             return ports.Where(port => port != startPort &&
                 port.node != startPort.node &&
+                (!(port.node is ActionNode throwNode && throwNode.Action is ThrowItemAction) ||
+                    !(startPort.node is CursorNode sourceCursor) || startPort == sourceCursor.Before) &&
+                (!(startPort.node is ActionNode startThrow && startThrow.Action is ThrowItemAction) ||
+                    !(port.node is CursorNode targetCursor) || port == targetCursor.Before) &&
                 port.direction != startPort.direction && port.portType == startPort.portType).ToList();
         }
     }
@@ -842,7 +960,28 @@ public sealed class ItemGraphWindow : EditorWindow
         public readonly Port DurabilityInput;
         public readonly Port DurabilityOutput;
 
-        public ItemNode(ItemDefinition item, Action<int> changeSlots) : base(item)
+        public ItemNode(EmptyHandDefinition hand, Action<int> changeSlots, Action<int, int> moveSkill) : base(hand)
+        {
+            title = "Producer — Empty Hand";
+            capabilities = Capabilities.Movable | Capabilities.Selectable;
+            style.width = 380;
+            extensionContainer.Add(new Label("Skills supplied by each empty hand"));
+            extensionContainer.Add(new Button(() => changeSlots(-1)) { text = "+ Skill slot" });
+            for (int i = 0; i < (hand.Skills?.Length ?? 0); i++)
+            {
+                int index = i;
+                var port = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(ItemSkillDefinition));
+                port.portName = "Skill " + (i + 1);
+                port.userData = i;
+                AddSkillMoveButtons(port, index, hand.Skills.Length, moveSkill);
+                port.Add(new Button(() => changeSlots(index)) { text = "−" });
+                SkillPorts.Add(port);
+                inputContainer.Add(port);
+            }
+            RefreshExpandedState(); RefreshPorts();
+        }
+
+        public ItemNode(ItemDefinition item, Action<int> changeSlots, Action<int, int> moveSkill) : base(item)
         {
             title = "Item — " + item.name + " (ID " + item.Id + ")";
             capabilities = Capabilities.Movable | Capabilities.Selectable;
@@ -852,6 +991,7 @@ public sealed class ItemGraphWindow : EditorWindow
             AddField(serialized, "DisplayName", "Name");
             AddField(serialized, "Description", "Description");
             AddField(serialized, "Icon", "Icon");
+            AddField(serialized, "WorldSprite", "World Sprite");
             AddField(serialized, "MaxDurability", "Max Durability");
             var durabilityRow = new VisualElement();
             durabilityRow.style.flexDirection = FlexDirection.Row;
@@ -871,6 +1011,7 @@ public sealed class ItemGraphWindow : EditorWindow
                 var port = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(ItemSkillDefinition));
                 port.portName = "Skill " + (i + 1);
                 port.userData = i;
+                AddSkillMoveButtons(port, index, item.Skills.Length, moveSkill);
                 port.Add(new Button(() => changeSlots(index)) { text = "−", tooltip = "Remove this skill slot" });
                 SkillPorts.Add(port);
                 inputContainer.Add(port);
@@ -880,6 +1021,16 @@ public sealed class ItemGraphWindow : EditorWindow
             extensionContainer.Bind(serialized);
             RefreshExpandedState();
             RefreshPorts();
+        }
+
+        private static void AddSkillMoveButtons(Port port, int index, int count, Action<int, int> moveSkill)
+        {
+            var up = new Button(() => moveSkill(index, -1)) { text = "↑", tooltip = "Show earlier" };
+            up.SetEnabled(index > 0);
+            port.Add(up);
+            var down = new Button(() => moveSkill(index, 1)) { text = "↓", tooltip = "Show later" };
+            down.SetEnabled(index + 1 < count);
+            port.Add(down);
         }
 
         private void AddField(SerializedObject serialized, string property, string label)
@@ -973,7 +1124,7 @@ public sealed class ItemGraphWindow : EditorWindow
     {
         public readonly ItemSkillAction Action;
         public readonly Port Output;
-        public readonly Port PositionInput, BlockInput, SelectionOutput;
+        public readonly Port PositionInput, BlockInput, SelectionOutput, DistanceInput;
 
         public ActionNode(ItemSkillAction action) : base(action)
         {
@@ -981,10 +1132,16 @@ public sealed class ItemGraphWindow : EditorWindow
             title = "Action — " + (action is ReplaceEquippedItemAction ? "ReplaceItem — " : "") + action.name;
             style.width = 320;
             var serialized = new SerializedObject(action);
+            if (action is PickUpItemAction || action is ThrowItemAction || action is SetWorldBlockAction || action is PickPlacementSelectionAction)
+                DistanceInput = AddDataInput("Distance", typeof(ActionDistanceDefinition));
             if (action is SetWorldBlockAction)
             {
                 BlockInput = AddDataInput("Block", typeof(BlockSignal));
                 PositionInput = AddDataInput("World position", typeof(PositionSignal));
+            }
+            else if (action is ThrowItemAction)
+            {
+                PositionInput = AddDataInput("World position (Top only)", typeof(PositionSignal));
             }
             else if (action is PickPlacementSelectionAction)
             {
@@ -997,7 +1154,7 @@ public sealed class ItemGraphWindow : EditorWindow
             if (property.NextVisible(true))
                 do
                 {
-                    if (property.name != "m_Script" && property.name != "Position" && property.name != "BlockSource" && property.name != "ConstantBlock" &&
+                    if (property.name != "m_Script" && !(property.name == "Distance" && DistanceInput != null) && property.name != "Position" && property.name != "BlockSource" && property.name != "ConstantBlock" &&
                         property.name != "ItemSelectionConnected")
                         extensionContainer.Add(new PropertyField(property.Copy()));
                 } while (property.NextVisible(false));

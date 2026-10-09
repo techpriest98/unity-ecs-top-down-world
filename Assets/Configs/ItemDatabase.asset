@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c33638c1700c6408080b76a3b370be89, type: 3}
   m_Name: ItemDatabase
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.ItemDatabase
+  EmptyHand: {fileID: 11400000, guid: cc91d2a1afe34a3da2d588a88e917311, type: 2}
   Items:
   - {fileID: 11400000, guid: 21863c02d6dcf45e395849a4c0b02231, type: 2}
   - {fileID: 11400000, guid: 22b3719fb2c9947c28e5c2258dc66c34, type: 2}

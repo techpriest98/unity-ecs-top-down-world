@@ -32,19 +32,7 @@ namespace Game.Player
                     {
                         if (items[j].Id != entry.Instance.DefinitionId)
                             continue;
-                        if (items[j].DurabilityLossAmount > 0f)
-                        {
-                            float interval = items[j].DurabilityLossInterval;
-                            entry.Instance.DurabilityElapsed += delta;
-                            float ticks = math.floor(entry.Instance.DurabilityElapsed / interval);
-                            if (ticks > 0f)
-                            {
-                                entry.Instance.DurabilityElapsed = math.max(0f,
-                                    entry.Instance.DurabilityElapsed - ticks * interval);
-                                entry.Instance.Durability = math.max(0f, entry.Instance.Durability -
-                                    ticks * items[j].DurabilityLossAmount);
-                            }
-                        }
+                        ItemRuntimeUtility.TickDurability(ref entry.Instance, items[j], delta);
                         break;
                     }
                     if (entry.Instance.Durability <= 0f)

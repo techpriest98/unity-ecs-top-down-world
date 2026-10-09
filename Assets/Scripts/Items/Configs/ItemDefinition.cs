@@ -13,6 +13,7 @@ namespace Game.Items
         [TextArea(3, 8)]
         public string Description;
         public Sprite Icon;
+        public Sprite WorldSprite;
         [Min(0.001f)] public float MaxDurability = 100f;
         public ItemDurabilityDecayDefinition DurabilityDecay;
         public EquipmentSlot AllowedSlots;

@@ -12,7 +12,7 @@ namespace Game.World.Saving
 {
     public static class WorldStateStorage
     {
-        public const int CurrentVersion = 3;
+        public const int CurrentVersion = 4;
 
         public static bool TryRead(
             string id,
@@ -139,6 +139,23 @@ namespace Game.World.Saving
             }
 
             ValidateEquipment(data);
+            if (data.WorldItems != null)
+                foreach (var item in data.WorldItems)
+                {
+                    if (item == null || item.Instance.DefinitionId <= 0 ||
+                        !Finite(item.X) || !Finite(item.Y) || !Finite(item.Z) ||
+                        !Finite(item.Vx) || !Finite(item.Vy) || !Finite(item.Vz) ||
+                        !Finite(item.Gravity) || item.Gravity <= 0f || item.Gravity > 100f ||
+                        !Finite(item.CollisionRadius) || item.CollisionRadius < 0.01f || item.CollisionRadius > 0.2f ||
+                        !Finite(item.Instance.Durability) || !Finite(item.Instance.MaxDurability) ||
+                        item.Instance.Durability <= 0f || item.Instance.MaxDurability <= 0f ||
+                        item.Instance.Durability > item.Instance.MaxDurability ||
+                        !Finite(item.Instance.DurabilityElapsed) || item.Instance.DurabilityElapsed < 0f ||
+                        (int)item.Instance.PlacementSelection.Kind > 2 || item.Instance.PlacementSelection.Id < 0 ||
+                        (item.Instance.PlacementSelection.Kind == Game.Items.PlacementSelectionKind.None && item.Instance.PlacementSelection.Id != 0) ||
+                        (item.Instance.PlacementSelection.Kind != Game.Items.PlacementSelectionKind.None && item.Instance.PlacementSelection.Id == 0))
+                        throw new InvalidDataException("Invalid saved world item.");
+                }
 
             // Version 1 has no saved block changes.
             if (data.Version == 1)

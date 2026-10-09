@@ -26,6 +26,21 @@ namespace Game.Items
                 }
 
                 DependsOn(database);
+                if (database.EmptyHand != null)
+                {
+                    DependsOn(database.EmptyHand);
+                    foreach (var skill in database.EmptyHand.Skills ?? System.Array.Empty<Game.Items.Skills.ItemSkillDefinition>())
+                    {
+                        if (skill == null) continue;
+                        DependsOn(skill);
+                        foreach (var action in skill.Actions ?? System.Array.Empty<Game.Items.Skills.ItemSkillAction>())
+                            if (action != null)
+                            {
+                                DependsOn(action);
+                                if (action.Distance != null) DependsOn(action.Distance);
+                            }
+                    }
+                }
                 if (database.DebugLeftItem != null)
                     DependsOn(database.DebugLeftItem);
                 if (database.DebugRightItem != null)
@@ -47,6 +62,17 @@ namespace Game.Items
                         continue;
 
                     DependsOn(definition);
+                    foreach (var skill in definition.Skills ?? System.Array.Empty<Game.Items.Skills.ItemSkillDefinition>())
+                    {
+                        if (skill == null) continue;
+                        DependsOn(skill);
+                        foreach (var action in skill.Actions ?? System.Array.Empty<Game.Items.Skills.ItemSkillAction>())
+                        {
+                            if (action == null) continue;
+                            DependsOn(action);
+                            if (action.Distance != null) DependsOn(action.Distance);
+                        }
+                    }
 
                     if (definition.DurabilityDecay != null)
                         DependsOn(definition.DurabilityDecay);
@@ -177,6 +203,7 @@ namespace Game.Items
                     AddBlobAsset(ref blob, out _);
 
                     Entity entity = GetEntity(TransformUsageFlags.None);
+                    AddComponent(entity, new EmptyHandReference { Definition = database.EmptyHand });
 
                     AddComponent(entity, new ItemLibrary
                     {

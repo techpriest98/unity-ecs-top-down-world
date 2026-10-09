@@ -57,22 +57,16 @@ namespace Game.Player
                 if (equippedItem != entry.SourceItem)
                     continue;
 
-                if (!ItemDefinitionReference.TryGet(library,
-                        entry.SourceItem,
-                        out ItemDefinition item))
-                {
-                    continue;
-                }
-
-                if (item.Skills == null ||
+                var producerSkills = SkillProducerUtility.GetSkills(EntityManager, libraryEntity, library, entry.SourceItem);
+                if (producerSkills == null ||
                     entry.SkillIndex < 0 ||
-                    entry.SkillIndex >= item.Skills.Length)
+                    entry.SkillIndex >= producerSkills.Length)
                 {
                     continue;
                 }
 
                 ItemSkillDefinition skill =
-                    item.Skills[entry.SkillIndex];
+                    producerSkills[entry.SkillIndex];
 
                 if (skill == null || !skill.HasActions)
                     continue;
@@ -95,8 +89,9 @@ namespace Game.Player
                         break;
                     var currentSlots = EntityManager.GetBuffer<PlayerEquipmentSlot>(player, true);
                     int currentItem = PlayerEquipmentUtility.GetItem(currentSlots, selectedSkill.SourceSlot);
-                    if (currentItem == 0)
+                    if (selectedSkill.SourceItem == 0 ? currentItem != 0 : currentItem == 0)
                         break;
+                    if (!action.IsAvailable(EntityManager, player, selectedSkill.SourceSlot, currentItem)) break;
                     action.Execute(EntityManager, player, selectedSkill.SourceSlot, currentItem);
                 }
             }

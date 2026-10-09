@@ -71,10 +71,10 @@ namespace Game.UI
                 if (i < skills.Length)
                 {
                     var entry = skills[i];
-                    if (ItemDefinitionReference.TryGet(references, entry.SourceItem, out var item) &&
-                        item.Skills != null && entry.SkillIndex >= 0 && entry.SkillIndex < item.Skills.Length)
+                    var producerSkills = SkillProducerUtility.GetSkills(EntityManager, libraryQuery.GetSingletonEntity(), references, entry.SourceItem);
+                    if (producerSkills != null && entry.SkillIndex >= 0 && entry.SkillIndex < producerSkills.Length)
                     {
-                        var skill = item.Skills[entry.SkillIndex];
+                        var skill = producerSkills[entry.SkillIndex];
                         if (skill != null)
                         {
                             hud.SetSlot(i + 2, skill.Icon, skill.DisplayName);

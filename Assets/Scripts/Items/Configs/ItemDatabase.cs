@@ -8,6 +8,7 @@ namespace Game.Items
     public sealed class ItemDatabase : ScriptableObject
     {
         public ItemDefinition[] Items;
+        public EmptyHandDefinition EmptyHand;
         [Header("Debug equipment (K / L)")]
         public ItemDefinition DebugLeftItem;
         public ItemDefinition DebugRightItem;

@@ -17,6 +17,16 @@ namespace Game.World.Saving
         public int ChunkSizeX, ChunkSizeY, ChunkSizeZ;
         public ChunkChangesData[] Chunks;
         public EquipmentSlotData[] Equipment;
+        public WorldItemData[] WorldItems;
+    }
+
+    [Serializable]
+    public sealed class WorldItemData
+    {
+        public Game.Items.ItemInstance Instance;
+        public float X, Y, Z, Vx, Vy, Vz;
+        public float Gravity, CollisionRadius;
+        public bool Grounded;
     }
 
     [Serializable]

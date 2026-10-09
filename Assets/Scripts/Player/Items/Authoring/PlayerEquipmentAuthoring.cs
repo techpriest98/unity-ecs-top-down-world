@@ -20,6 +20,7 @@ namespace Game.Player
                 
                 AddBuffer<PlayerEquipmentChangeRequest>(player);
                 AddBuffer<PlayerAvailableSkill>(player);
+                AddBuffer<WorldItemThrowRequest>(player);
 
                 slots.Add(new PlayerEquipmentSlot
                 {

@@ -2,6 +2,7 @@ namespace Game.Items
 {
     // Mutable state of ONE item. Copy/move this value when transferring the item,
     // never reconstruct it from ItemDefinition unless spawning a new instance.
+    [System.Serializable]
     public struct ItemInstance
     {
         public int DefinitionId;
@@ -18,6 +19,7 @@ namespace Game.Items
         Decoration
     }
 
+    [System.Serializable]
     public struct ItemPlacementSelection
     {
         public PlacementSelectionKind Kind;

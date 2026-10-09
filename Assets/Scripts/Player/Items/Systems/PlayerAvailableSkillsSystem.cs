@@ -5,6 +5,7 @@ namespace Game.Player
 {
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(PlayerEquipmentChangeSystem))]
+    [UpdateAfter(typeof(Game.World.Interaction.ProjectedCellSelectionSystem))]
     public partial class PlayerAvailableSkillsSystem : SystemBase
     {
         private const int MaxSkills = 10;
@@ -26,15 +27,16 @@ namespace Game.Player
             DynamicBuffer<ItemDefinitionReference> library =
                 EntityManager.GetBuffer<ItemDefinitionReference>(libraryEntity, true);
 
-            foreach (var (slots, availableSkills) in
+            foreach (var (slots, availableSkills, player) in
                      SystemAPI.Query<
                              DynamicBuffer<PlayerEquipmentSlot>,
                              DynamicBuffer<PlayerAvailableSkill>>()
-                         .WithAll<PlayerTag>())
+                         .WithAll<PlayerTag>().WithEntityAccess())
             {
                 int count = 0;
 
                 AppendSkills(
+                    EntityManager, player, libraryEntity,
                     library,
                     slots,
                     availableSkills,
@@ -42,6 +44,7 @@ namespace Game.Player
                     ref count);
 
                 AppendSkills(
+                    EntityManager, player, libraryEntity,
                     library,
                     slots,
                     availableSkills,
@@ -58,6 +61,7 @@ namespace Game.Player
         }
 
         private static void AppendSkills(
+            EntityManager manager, Entity player, Entity libraryEntity,
             DynamicBuffer<ItemDefinitionReference> library,
             DynamicBuffer<PlayerEquipmentSlot> slots,
             DynamicBuffer<PlayerAvailableSkill> destination,
@@ -67,20 +71,30 @@ namespace Game.Player
             int itemId =
                 PlayerEquipmentUtility.GetItem(slots, sourceSlot);
 
-            if (!ItemDefinitionReference.TryGet(library, itemId, out ItemDefinition item) ||
-                item.Skills == null)
+            var skills = SkillProducerUtility.GetSkills(manager, libraryEntity, library, itemId);
+            if (skills == null)
             {
                 return;
             }
 
             for (int i = 0;
-                 i < item.Skills.Length && count < MaxSkills;
+                 i < skills.Length && count < MaxSkills;
                  i++)
             {
-                var skill = item.Skills[i];
+                var skill = skills[i];
 
                 if (skill == null || !skill.HasActions)
                     continue;
+                bool available = true;
+                foreach (var action in skill.Actions)
+                    if (action != null && ((!action.IsAvailable(manager, player, sourceSlot, itemId)) ||
+                        (action is Game.Items.Skills.ThrowItemAction &&
+                         (!ItemDefinitionReference.TryGet(library, itemId, out var item) || item.WorldSprite == null))))
+                    {
+                        available = false;
+                        break;
+                    }
+                if (!available) continue;
 
                 var entry = new PlayerAvailableSkill
                 {

@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b99e4abb27354441ca65f2405f2ef8e4, type: 3}
+  m_Name: Throw
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Items.Skills.ItemSkillDefinition
+  Id: 10
+  DisplayName: Throw
+  Description: Free your hand
+  Icon: {fileID: -6559549409133317034, guid: 89f11d956e2a8d34d93cc2fb05ec3fc3, type: 3}
+  Actions:
+  - {fileID: 11400000, guid: 210ad8a429254697b109e68082b04f12, type: 2}

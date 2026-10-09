@@ -126,6 +126,24 @@ namespace Game.World.Saving
                 EntityManager.GetComponentData<WorldBlockChanges>(
                     changesEntity);
 
+            if (data.WorldItems != null)
+            {
+                foreach (var saved in data.WorldItems)
+                    if (ItemRuntimeUtility.Find(ref itemLibrary.Value.Value, saved.Instance.DefinitionId) < 0)
+                    {
+                        MarkLoadFailed($"Could not restore world item {saved.Instance.DefinitionId}. Check the item database.");
+                        return;
+                    }
+                foreach (var saved in data.WorldItems)
+                    WorldItemEntityUtility.Create(EntityManager, new WorldItem
+                    {
+                        Instance = saved.Instance,
+                        Position = new float3(saved.X, saved.Y, saved.Z),
+                        Velocity = new float3(saved.Vx, saved.Vy, saved.Vz),
+                        Gravity = saved.Gravity, CollisionRadius = saved.CollisionRadius, Grounded = saved.Grounded
+                    });
+            }
+
             if (data.Chunks != null)
             {
                 int count = 0;
@@ -345,6 +363,25 @@ namespace Game.World.Saving
                 changes.Dispose();
         }
 
+        private WorldItemData[] CaptureWorldItems()
+        {
+            using var query = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<WorldItem>());
+            using var items = query.ToComponentDataArray<WorldItem>(Allocator.Temp);
+            var result = new WorldItemData[items.Length];
+            for (int i = 0; i < items.Length; i++)
+            {
+                var item = items[i];
+                result[i] = new WorldItemData
+                {
+                    Instance = item.Instance,
+                    X = item.Position.x, Y = item.Position.y, Z = item.Position.z,
+                    Vx = item.Velocity.x, Vy = item.Velocity.y, Vz = item.Velocity.z,
+                    Gravity = item.Gravity, CollisionRadius = item.CollisionRadius, Grounded = item.Grounded
+                };
+            }
+            return result;
+        }
+
         private ChunkChangesData[] CaptureChanges()
         {
             var grouped =
@@ -460,7 +497,8 @@ namespace Game.World.Saving
                     ChunkSizeZ = ChunkSettings.SizeZ,
 
                     Chunks = CaptureChanges(),
-                    Equipment = CaptureEquipment(player)
+                    Equipment = CaptureEquipment(player),
+                    WorldItems = CaptureWorldItems()
                 },
                 out error);
         }
