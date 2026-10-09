@@ -1,37 +1,37 @@
 fileFormatVersion: 2
-guid: 98a7812048b7847ddb76916082908caa
+guid: cc06a9ed83e5346e493a8905cadbe5fc
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -1829993530546773002
-    second: right_arm_torch_idle_0
+      213: -3979284461575878122
+    second: right_hand_off_torch_idle_0
   - first:
-      213: 1514082226960565729
-    second: right_arm_torch_idle_1
+      213: -7843616005743720532
+    second: right_hand_off_torch_idle_1
   - first:
-      213: -8863229748173494360
-    second: right_arm_torch_idle_2
+      213: 5829628654007784171
+    second: right_hand_off_torch_idle_2
   - first:
-      213: -869455425497538421
-    second: right_arm_torch_idle_3
+      213: -5330890309211156577
+    second: right_hand_off_torch_idle_3
   - first:
-      213: -3366888950895531323
-    second: right_arm_torch_idle_4
+      213: -4380454211291406702
+    second: right_hand_off_torch_idle_4
   - first:
-      213: 787096802291098148
-    second: right_arm_torch_idle_5
+      213: -8061245607173769889
+    second: right_hand_off_torch_idle_5
   - first:
-      213: 4540199755838471872
-    second: right_arm_torch_idle_6
+      213: 1618798713119172324
+    second: right_hand_off_torch_idle_6
   - first:
-      213: -6464882861527512559
-    second: right_arm_torch_idle_7
+      213: 450888036780535233
+    second: right_hand_off_torch_idle_7
   - first:
-      213: 7607624567626917802
-    second: right_arm_torch_idle_8
+      213: 7324354604972022257
+    second: right_hand_off_torch_idle_8
   - first:
-      213: -1053598333669715099
-    second: right_arm_torch_idle_9
+      213: -1881830764502127207
+    second: right_hand_off_torch_idle_9
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -83,7 +83,9 @@ TextureImporter:
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 1
+  spriteTessellationMethod: 0
   spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
   textureType: 8
   textureShape: 1
   singleChannelComponent: 0
@@ -140,13 +142,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: right_arm_torch_idle_0
+      name: right_hand_off_torch_idle_0
       rect:
         serializedVersion: 2
-        x: 49
+        x: 10
         y: 443
         width: 8
-        height: 36
+        height: 34
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -155,20 +157,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 6f32f76649e8a96e0800000000000000
-      internalID: -1829993530546773002
+      spriteID: 61ac9878dddb6c8c0800000000000000
+      internalID: -3979284461575878122
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: right_arm_torch_idle_1
+      name: right_hand_off_torch_idle_1
       rect:
         serializedVersion: 2
-        x: 113
+        x: 74
         y: 442
         width: 8
-        height: 36
+        height: 34
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -177,42 +179,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 1e587b273c9130510800000000000000
-      internalID: 1514082226960565729
+      spriteID: ca7c31fccc0e52390800000000000000
+      internalID: -7843616005743720532
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: right_arm_torch_idle_2
+      name: right_hand_off_torch_idle_2
       rect:
         serializedVersion: 2
-        x: 6
-        y: 334
-        width: 8
-        height: 24
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 8a7a171e08b7ff480800000000000000
-      internalID: -8863229748173494360
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: right_arm_torch_idle_3
-      rect:
-        serializedVersion: 2
-        x: 70
+        x: 50
         y: 333
         width: 8
-        height: 24
+        height: 23
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -221,17 +201,39 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b80ee27a5e21fe3f0800000000000000
-      internalID: -869455425497538421
+      spriteID: be29296cf5007e050800000000000000
+      internalID: 5829628654007784171
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: right_arm_torch_idle_4
+      name: right_hand_off_torch_idle_3
       rect:
         serializedVersion: 2
-        x: 7
+        x: 114
+        y: 332
+        width: 8
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f9f85ee028fd406b0800000000000000
+      internalID: -5330890309211156577
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_off_torch_idle_4
+      rect:
+        serializedVersion: 2
+        x: 51
         y: 322
         width: 6
         height: 7
@@ -243,17 +245,17 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 5ca2fa376586641d0800000000000000
-      internalID: -3366888950895531323
+      spriteID: 29e9c1d7a108533c0800000000000000
+      internalID: -4380454211291406702
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: right_arm_torch_idle_5
+      name: right_hand_off_torch_idle_5
       rect:
         serializedVersion: 2
-        x: 71
+        x: 115
         y: 321
         width: 6
         height: 7
@@ -265,20 +267,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 42228681f545cea00800000000000000
-      internalID: 787096802291098148
+      spriteID: f55ba31a4d3b02090800000000000000
+      internalID: -8061245607173769889
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: right_arm_torch_idle_6
+      name: right_hand_off_torch_idle_6
       rect:
         serializedVersion: 2
-        x: 18
-        y: 188
+        x: 13
+        y: 190
         width: 8
-        height: 36
+        height: 33
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -287,20 +289,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0ce31187f97020f30800000000000000
-      internalID: 4540199755838471872
+      spriteID: 4e6e3525ad0277610800000000000000
+      internalID: 1618798713119172324
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: right_arm_torch_idle_7
+      name: right_hand_off_torch_idle_7
       rect:
         serializedVersion: 2
-        x: 82
-        y: 187
+        x: 77
+        y: 189
         width: 8
-        height: 36
+        height: 33
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -309,20 +311,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 11a44243a4f1846a0800000000000000
-      internalID: -6464882861527512559
+      spriteID: 1cde6c1d740e14600800000000000000
+      internalID: 450888036780535233
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: right_arm_torch_idle_8
+      name: right_hand_off_torch_idle_8
       rect:
         serializedVersion: 2
-        x: 43
-        y: 63
+        x: 38
+        y: 60
         width: 8
-        height: 35
+        height: 34
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -331,20 +333,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: aa7efe1cc36b39960800000000000000
-      internalID: 7607624567626917802
+      spriteID: 1f99a5605b555a560800000000000000
+      internalID: 7324354604972022257
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: right_arm_torch_idle_9
+      name: right_hand_off_torch_idle_9
       rect:
         serializedVersion: 2
-        x: 107
-        y: 62
+        x: 102
+        y: 59
         width: 8
-        height: 35
+        height: 34
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -353,8 +355,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 5635ca1d5edd061f0800000000000000
-      internalID: -1053598333669715099
+      spriteID: 99de27ad3e462e5e0800000000000000
+      internalID: -1881830764502127207
       vertices: []
       indices: 
       edges: []
@@ -373,16 +375,16 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      right_arm_torch_idle_0: -1829993530546773002
-      right_arm_torch_idle_1: 1514082226960565729
-      right_arm_torch_idle_2: -8863229748173494360
-      right_arm_torch_idle_3: -869455425497538421
-      right_arm_torch_idle_4: -3366888950895531323
-      right_arm_torch_idle_5: 787096802291098148
-      right_arm_torch_idle_6: 4540199755838471872
-      right_arm_torch_idle_7: -6464882861527512559
-      right_arm_torch_idle_8: 7607624567626917802
-      right_arm_torch_idle_9: -1053598333669715099
+      right_hand_off_torch_idle_0: -3979284461575878122
+      right_hand_off_torch_idle_1: -7843616005743720532
+      right_hand_off_torch_idle_2: 5829628654007784171
+      right_hand_off_torch_idle_3: -5330890309211156577
+      right_hand_off_torch_idle_4: -4380454211291406702
+      right_hand_off_torch_idle_5: -8061245607173769889
+      right_hand_off_torch_idle_6: 1618798713119172324
+      right_hand_off_torch_idle_7: 450888036780535233
+      right_hand_off_torch_idle_8: 7324354604972022257
+      right_hand_off_torch_idle_9: -1881830764502127207
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

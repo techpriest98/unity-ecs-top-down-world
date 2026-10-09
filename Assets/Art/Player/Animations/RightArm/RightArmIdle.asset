@@ -14,59 +14,59 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.AnimationDefinition
   Part: 2
   Id: 0
-  SpriteSheet: {fileID: 2800000, guid: 23ae9f2ca5a6e4c09b8066cf79aa0457, type: 3}
+  SpriteSheet: {fileID: 2800000, guid: 13535e394a8574995ba3d86de2fe950b, type: 3}
   FrameCount: 2
   FrameDuration: 1
   Loop: 1
   Down:
   - ZIndex: 0
     PackedRect:
-      x: 46
+      x: 10
       y: 52
-      width: 11
-      height: 42
+      width: 10
+      height: 43
   - ZIndex: 0
     PackedRect:
-      x: 46
+      x: 10
       y: 51
-      width: 11
-      height: 42
+      width: 10
+      height: 43
   Up:
   - ZIndex: 0
     PackedRect:
-      x: 9
+      x: 45
       y: 52
       width: 10
       height: 42
   - ZIndex: 0
     PackedRect:
-      x: 9
+      x: 45
       y: 51
       width: 10
       height: 42
   Left:
+  - ZIndex: -1
+    PackedRect:
+      x: 0
+      y: 0
+      width: 0
+      height: 0
+  - ZIndex: -1
+    PackedRect:
+      x: 0
+      y: 0
+      width: 0
+      height: 0
+  Right:
   - ZIndex: 1
     PackedRect:
-      x: 33
+      x: 19
       y: 53
       width: 12
       height: 42
   - ZIndex: 1
     PackedRect:
-      x: 33
+      x: 19
       y: 53
       width: 12
       height: 41
-  Right:
-  - ZIndex: -1
-    PackedRect:
-      x: 0
-      y: 0
-      width: 0
-      height: 0
-  - ZIndex: -1
-    PackedRect:
-      x: 0
-      y: 0
-      width: 0
-      height: 0

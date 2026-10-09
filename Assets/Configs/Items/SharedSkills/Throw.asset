@@ -16,5 +16,7 @@ MonoBehaviour:
   DisplayName: Throw
   Description: Free your hand
   Icon: {fileID: -6559549409133317034, guid: 89f11d956e2a8d34d93cc2fb05ec3fc3, type: 3}
-  Actions:
-  - {fileID: 11400000, guid: 210ad8a429254697b109e68082b04f12, type: 2}
+  UseChain: 1
+  FirstNode: {fileID: 11400000, guid: 1106c7415cf54edc903fb8765e612ac1, type: 2}
+  Conditions: []
+  Actions: []

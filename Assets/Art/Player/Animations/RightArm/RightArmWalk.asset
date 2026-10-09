@@ -14,91 +14,66 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.AnimationDefinition
   Part: 2
   Id: 1
-  SpriteSheet: {fileID: 2800000, guid: 156832cc355ac4e15bbe7fa86b650273, type: 3}
+  SpriteSheet: {fileID: 2800000, guid: f5c4cd7da0356400ab4069a056d71553, type: 3}
   FrameCount: 4
   FrameDuration: 0.18
   Loop: 1
   Down:
-  - ZIndex: 1
-    PackedRect:
-      x: 42
-      y: 51
-      width: 9
-      height: 43
-  - ZIndex: 0
-    PackedRect:
-      x: 46
-      y: 52
-      width: 11
-      height: 43
   - ZIndex: -1
-    PackedRect:
-      x: 44
-      y: 54
-      width: 9
-      height: 38
-  - ZIndex: 0
-    PackedRect:
-      x: 46
-      y: 52
-      width: 11
-      height: 43
-  Up:
-  - ZIndex: 1
     PackedRect:
       x: 13
-      y: 49
-      width: 11
-      height: 45
-  - ZIndex: 0
-    PackedRect:
-      x: 9
-      y: 52
-      width: 10
-      height: 42
-  - ZIndex: -1
-    PackedRect:
-      x: 12
-      y: 54
+      y: 53
       width: 9
       height: 40
   - ZIndex: 0
     PackedRect:
-      x: 9
+      x: 10
+      y: 52
+      width: 10
+      height: 43
+  - ZIndex: 1
+    PackedRect:
+      x: 14
+      y: 51
+      width: 10
+      height: 42
+  - ZIndex: 0
+    PackedRect:
+      x: 10
+      y: 52
+      width: 10
+      height: 43
+  Up:
+  - ZIndex: -1
+    PackedRect:
+      x: 44
+      y: 53
+      width: 9
+      height: 41
+  - ZIndex: 0
+    PackedRect:
+      x: 45
+      y: 52
+      width: 10
+      height: 42
+  - ZIndex: 1
+    PackedRect:
+      x: 41
+      y: 50
+      width: 10
+      height: 44
+  - ZIndex: 0
+    PackedRect:
+      x: 45
       y: 52
       width: 10
       height: 42
   Left:
-  - ZIndex: 1
-    PackedRect:
-      x: 34
-      y: 52
-      width: 15
-      height: 41
-  - ZIndex: 1
-    PackedRect:
-      x: 33
-      y: 53
-      width: 12
-      height: 42
-  - ZIndex: 1
-    PackedRect:
-      x: 29
-      y: 52
-      width: 15
-      height: 41
-  - ZIndex: 1
-    PackedRect:
-      x: 33
-      y: 53
-      width: 12
-      height: 42
-  Right:
   - ZIndex: -1
     PackedRect:
-      x: 37
+      x: 17
       y: 55
-      width: 10
+      width: 11
       height: 32
   - ZIndex: -1
     PackedRect:
@@ -118,3 +93,28 @@ MonoBehaviour:
       y: 0
       width: 0
       height: 0
+  Right:
+  - ZIndex: 1
+    PackedRect:
+      x: 15
+      y: 52
+      width: 15
+      height: 41
+  - ZIndex: 1
+    PackedRect:
+      x: 19
+      y: 53
+      width: 12
+      height: 42
+  - ZIndex: 1
+    PackedRect:
+      x: 19
+      y: 53
+      width: 16
+      height: 41
+  - ZIndex: 1
+    PackedRect:
+      x: 19
+      y: 53
+      width: 12
+      height: 42

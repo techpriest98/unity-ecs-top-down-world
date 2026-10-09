@@ -16,5 +16,7 @@ MonoBehaviour:
   DisplayName: Pick Terrain
   Description: Pick Terrain
   Icon: {fileID: 0}
+  Conditions:
+  - {fileID: 11400000, guid: a396a045900a4dc30000000000000006, type: 2}
   Actions:
   - {fileID: 11400000, guid: 8f51382ad7f84f848af5348451e6b547, type: 2}

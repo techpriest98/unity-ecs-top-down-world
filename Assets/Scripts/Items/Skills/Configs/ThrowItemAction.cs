@@ -23,23 +23,71 @@ namespace Game.Items.Skills
                 !manager.HasComponent<PlayerWorldPosition>(player) ||
                 !manager.HasBuffer<WorldItemThrowRequest>(player)) return false;
             var selection = manager.GetComponentData<SelectedProjectedCell>(player);
-            return selection.IsValid && selection.FaceType == ProjectedFaceType.Top &&
-                (Distance == null || (CursorWorldUtility.TryGetPosition(manager, player, Position, out var cell) &&
-                    WithinDistance(manager, player, new float3(cell.x + 0.5f, cell.y, cell.z + 0.5f))));
+            if (!selection.IsValid || selection.FaceType != ProjectedFaceType.Top ||
+                !TryGetTarget(manager, player, slot, item, out var target) || !WithinDistance(manager, player, target)) return false;
+            return CanThrowAt(manager, player, slot, item, (int3)math.floor(target));
+        }
+
+        public bool CanThrowAt(EntityManager manager, Entity player, EquipmentSlot slot, int item, int3 cell)
+        {
+            if (!manager.Exists(player) || !manager.HasComponent<PlayerWorldPosition>(player) ||
+                !manager.HasBuffer<WorldItemThrowRequest>(player) || !manager.HasBuffer<PlayerEquipmentSlot>(player) ||
+                PlayerEquipmentUtility.GetItem(manager.GetBuffer<PlayerEquipmentSlot>(player, true), slot) != item || item == 0)
+                return false;
+            if (!CursorWorldUtility.TryGetBlock(manager, cell, out var block) || !BlockUtility.IsAir(block) ||
+                !CursorWorldUtility.TryGetBlock(manager, cell + new int3(0, -1, 0), out var support) ||
+                !BlockUtility.IsSolid(support)) return false;
+            using var query = manager.CreateEntityQuery(ComponentType.ReadOnly<ItemDefinitionReference>());
+            if (query.CalculateEntityCount() != 1 ||
+                !ItemDefinitionReference.TryGet(manager.GetBuffer<ItemDefinitionReference>(query.GetSingletonEntity(), true),
+                    item, out var definition) || definition.WorldSprite == null) return false;
+            if (!math.isfinite(FlightTime) || !math.isfinite(Gravity) || !math.isfinite(CollisionRadius)) return false;
+            float radius = math.clamp(CollisionRadius, 0.01f, 0.2f);
+            float3 start = manager.GetComponentData<PlayerWorldPosition>(player).Value;
+            start.y += manager.HasComponent<PlayerCollisionShape>(player)
+                ? manager.GetComponentData<PlayerCollisionShape>(player).Height * 0.6f : 0.7f;
+            for (int x = -1; x <= 1; x += 2)
+            for (int y = -1; y <= 1; y += 2)
+            for (int z = -1; z <= 1; z += 2)
+                if (!CursorWorldUtility.TryGetBlock(manager, (int3)math.floor(start + new float3(x, y, z) * radius), out var atStart) ||
+                    BlockUtility.IsSolid(atStart)) return false;
+            return true;
+        }
+
+        // Configuration failures are not dialogue: expose a diagnostic to the chain runner.
+        public string GetConfigurationError(EntityManager manager, Entity player, int item)
+        {
+            if (!manager.Exists(player) || !manager.HasComponent<PlayerWorldPosition>(player) ||
+                !manager.HasBuffer<WorldItemThrowRequest>(player) || !manager.HasBuffer<PlayerEquipmentSlot>(player))
+                return "Player is missing components required for throwing items.";
+            if (!math.isfinite(FlightTime) || !math.isfinite(Gravity) || !math.isfinite(CollisionRadius))
+                return "Flight Time, Gravity and Collision Radius must be finite numbers.";
+            if (item == 0) return null; // Empty hand is a gameplay refusal.
+            using var query = manager.CreateEntityQuery(ComponentType.ReadOnly<ItemDefinitionReference>());
+            if (query.CalculateEntityCount() != 1) return "Expected exactly one item library.";
+            if (!ItemDefinitionReference.TryGet(manager.GetBuffer<ItemDefinitionReference>(query.GetSingletonEntity(), true),
+                item, out var definition)) return $"Item ID {item} is missing from the item library.";
+            return definition.WorldSprite == null ? $"Item '{definition.name}' has no World Sprite." : null;
+        }
+
+        public override bool TryGetTarget(EntityManager manager, Entity player, EquipmentSlot slot, int item, out float3 position)
+        {
+            position = default;
+            if (!CursorWorldUtility.TryGetPosition(manager, player, Position, out var cell)) return false;
+            position = new float3(cell.x + 0.5f, cell.y, cell.z + 0.5f);
+            return true;
         }
 
         public override void Execute(EntityManager manager, Entity player, EquipmentSlot slot, int item)
         {
             if (!IsAvailable(manager, player, slot, item) ||
-                !manager.HasBuffer<PlayerEquipmentSlot>(player) ||
-                !CursorWorldUtility.TryGetPosition(manager, player, Position, out var cell) ||
-                !CursorWorldUtility.TryGetBlock(manager, cell, out var block) || !BlockUtility.IsAir(block) ||
-                !CursorWorldUtility.TryGetBlock(manager, cell + new int3(0, -1, 0), out var support) ||
-                !BlockUtility.IsSolid(support)) return;
-            using var query = manager.CreateEntityQuery(ComponentType.ReadOnly<ItemDefinitionReference>());
-            if (query.CalculateEntityCount() != 1 ||
-                !ItemDefinitionReference.TryGet(manager.GetBuffer<ItemDefinitionReference>(query.GetSingletonEntity(), true),
-                    item, out var definition) || definition.WorldSprite == null) return;
+                !CursorWorldUtility.TryGetPosition(manager, player, Position, out var cell)) return;
+            ExecuteAtPosition(manager, player, slot, item, cell);
+        }
+
+        public bool ExecuteAtPosition(EntityManager manager, Entity player, EquipmentSlot slot, int item, int3 cell)
+        {
+            if (!CanThrowAt(manager, player, slot, item, cell)) return false;
             var slots = manager.GetBuffer<PlayerEquipmentSlot>(player);
             for (int i = 0; i < slots.Length; i++)
             {
@@ -50,13 +98,6 @@ namespace Game.Items.Skills
                 start.y += manager.HasComponent<PlayerCollisionShape>(player)
                     ? manager.GetComponentData<PlayerCollisionShape>(player).Height * 0.6f : 0.7f;
                 float3 target = new float3(cell.x + 0.5f, cell.y + radius, cell.z + 0.5f);
-                if (!math.isfinite(FlightTime) || !math.isfinite(Gravity) || !math.isfinite(CollisionRadius)) return;
-                // Do not spawn overlapping terrain (for example, next to a wall).
-                for (int x = -1; x <= 1; x += 2)
-                for (int y = -1; y <= 1; y += 2)
-                for (int z = -1; z <= 1; z += 2)
-                    if (!CursorWorldUtility.TryGetBlock(manager, (int3)math.floor(start + new float3(x, y, z) * radius), out var atStart) ||
-                        BlockUtility.IsSolid(atStart)) return;
                 float time = math.clamp(FlightTime, 0.1f, 5f), gravity = math.clamp(Gravity, 0.1f, 100f);
                 manager.GetBuffer<WorldItemThrowRequest>(player).Add(new WorldItemThrowRequest
                 {
@@ -69,8 +110,9 @@ namespace Game.Items.Skills
                 });
                 entry.Instance = default;
                 slots[i] = entry;
-                return;
+                return true;
             }
+            return false;
         }
     }
 }

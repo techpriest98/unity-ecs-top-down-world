@@ -4,34 +4,34 @@ TextureImporter:
   internalIDToNameTable:
   - first:
       213: -1829993530546773002
-    second: right_arm_torch_idle_0
+    second: left_arm_torch_idle_0
   - first:
       213: 1514082226960565729
-    second: right_arm_torch_idle_1
+    second: left_arm_torch_idle_1
   - first:
       213: -8863229748173494360
-    second: right_arm_torch_idle_2
+    second: left_arm_torch_idle_2
   - first:
       213: -869455425497538421
-    second: right_arm_torch_idle_3
+    second: left_arm_torch_idle_3
   - first:
       213: -3366888950895531323
-    second: right_arm_torch_idle_4
+    second: left_arm_torch_idle_4
   - first:
       213: 787096802291098148
-    second: right_arm_torch_idle_5
+    second: left_arm_torch_idle_5
   - first:
       213: 4540199755838471872
-    second: right_arm_torch_idle_6
+    second: left_arm_torch_idle_6
   - first:
       213: -6464882861527512559
-    second: right_arm_torch_idle_7
+    second: left_arm_torch_idle_7
   - first:
       213: 7607624567626917802
-    second: right_arm_torch_idle_8
+    second: left_arm_torch_idle_8
   - first:
       213: -1053598333669715099
-    second: right_arm_torch_idle_9
+    second: left_arm_torch_idle_9
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -83,7 +83,9 @@ TextureImporter:
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 1
+  spriteTessellationMethod: 0
   spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
   textureType: 8
   textureShape: 1
   singleChannelComponent: 0
@@ -140,7 +142,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: right_arm_torch_idle_0
+      name: left_arm_torch_idle_0
       rect:
         serializedVersion: 2
         x: 49
@@ -162,7 +164,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: right_arm_torch_idle_1
+      name: left_arm_torch_idle_1
       rect:
         serializedVersion: 2
         x: 113
@@ -184,7 +186,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: right_arm_torch_idle_2
+      name: left_arm_torch_idle_2
       rect:
         serializedVersion: 2
         x: 6
@@ -206,7 +208,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: right_arm_torch_idle_3
+      name: left_arm_torch_idle_3
       rect:
         serializedVersion: 2
         x: 70
@@ -228,7 +230,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: right_arm_torch_idle_4
+      name: left_arm_torch_idle_4
       rect:
         serializedVersion: 2
         x: 7
@@ -250,7 +252,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: right_arm_torch_idle_5
+      name: left_arm_torch_idle_5
       rect:
         serializedVersion: 2
         x: 71
@@ -272,7 +274,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: right_arm_torch_idle_6
+      name: left_arm_torch_idle_6
       rect:
         serializedVersion: 2
         x: 18
@@ -294,7 +296,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: right_arm_torch_idle_7
+      name: left_arm_torch_idle_7
       rect:
         serializedVersion: 2
         x: 82
@@ -316,7 +318,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: right_arm_torch_idle_8
+      name: left_arm_torch_idle_8
       rect:
         serializedVersion: 2
         x: 43
@@ -338,7 +340,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: right_arm_torch_idle_9
+      name: left_arm_torch_idle_9
       rect:
         serializedVersion: 2
         x: 107
@@ -373,16 +375,16 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      right_arm_torch_idle_0: -1829993530546773002
-      right_arm_torch_idle_1: 1514082226960565729
-      right_arm_torch_idle_2: -8863229748173494360
-      right_arm_torch_idle_3: -869455425497538421
-      right_arm_torch_idle_4: -3366888950895531323
-      right_arm_torch_idle_5: 787096802291098148
-      right_arm_torch_idle_6: 4540199755838471872
-      right_arm_torch_idle_7: -6464882861527512559
-      right_arm_torch_idle_8: 7607624567626917802
-      right_arm_torch_idle_9: -1053598333669715099
+      left_arm_torch_idle_0: -1829993530546773002
+      left_arm_torch_idle_1: 1514082226960565729
+      left_arm_torch_idle_2: -8863229748173494360
+      left_arm_torch_idle_3: -869455425497538421
+      left_arm_torch_idle_4: -3366888950895531323
+      left_arm_torch_idle_5: 787096802291098148
+      left_arm_torch_idle_6: 4540199755838471872
+      left_arm_torch_idle_7: -6464882861527512559
+      left_arm_torch_idle_8: 7607624567626917802
+      left_arm_torch_idle_9: -1053598333669715099
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

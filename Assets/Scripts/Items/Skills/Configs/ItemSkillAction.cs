@@ -7,6 +7,13 @@ namespace Game.Items.Skills
     {
         public ActionDistanceDefinition Distance;
 
+        public virtual bool TryGetTarget(EntityManager manager, Entity player, EquipmentSlot slot, int item,
+            out Unity.Mathematics.float3 position)
+        {
+            position = default;
+            return false;
+        }
+
         protected bool WithinDistance(EntityManager manager, Entity player, Unity.Mathematics.float3 target)
             => Distance == null || Distance.Allows(manager, player, target);
 

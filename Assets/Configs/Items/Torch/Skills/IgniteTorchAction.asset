@@ -12,4 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df67add3116d04a6aaaed3bd65637253, type: 3}
   m_Name: IgniteTorchAction
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.Skills.ReplaceEquippedItemAction
+  Distance: {fileID: 0}
   replacementItem: {fileID: 11400000, guid: 22b3719fb2c9947c28e5c2258dc66c34, type: 2}

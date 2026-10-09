@@ -12,4 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df67add3116d04a6aaaed3bd65637253, type: 3}
   m_Name: ExtinguishAction
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.Skills.ReplaceEquippedItemAction
+  Distance: {fileID: 0}
   replacementItem: {fileID: 11400000, guid: 21863c02d6dcf45e395849a4c0b02231, type: 2}

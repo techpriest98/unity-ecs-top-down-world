@@ -33,6 +33,7 @@ namespace Game.Items
                     {
                         if (skill == null) continue;
                         DependsOn(skill);
+                        DependOnConditions(skill);
                         foreach (var action in skill.Actions ?? System.Array.Empty<Game.Items.Skills.ItemSkillAction>())
                             if (action != null)
                             {
@@ -66,6 +67,7 @@ namespace Game.Items
                     {
                         if (skill == null) continue;
                         DependsOn(skill);
+                        DependOnConditions(skill);
                         foreach (var action in skill.Actions ?? System.Array.Empty<Game.Items.Skills.ItemSkillAction>())
                         {
                             if (action == null) continue;
@@ -169,6 +171,7 @@ namespace Game.Items
                             DurabilityLossInterval = definition.DurabilityDecay != null
                                 ? math.max(0.001f, definition.DurabilityDecay.Interval) : 1f,
                             HasLight = light != null,
+                            IgnitionSource = definition.IgnitionSource,
                             HasAnimation = animation != null
                         };
 
@@ -203,6 +206,7 @@ namespace Game.Items
                     AddBlobAsset(ref blob, out _);
 
                     Entity entity = GetEntity(TransformUsageFlags.None);
+                    AddBuffer<IgnitableCell>(entity);
                     AddComponent(entity, new EmptyHandReference { Definition = database.EmptyHand });
 
                     AddComponent(entity, new ItemLibrary
@@ -225,6 +229,35 @@ namespace Game.Items
                 finally
                 {
                     builder.Dispose();
+                }
+            }
+
+            private void DependOnConditions(Game.Items.Skills.ItemSkillDefinition skill)
+            {
+                var visited = new HashSet<Game.Items.Skills.SkillChainNode>();
+                var pending = new Stack<Game.Items.Skills.SkillChainNode>();
+                if (skill.FirstNode != null) pending.Push(skill.FirstNode);
+                while (pending.Count > 0)
+                {
+                    var node = pending.Pop();
+                    if (!visited.Add(node)) continue;
+                    DependsOn(node);
+                    if (node.Distance != null) DependsOn(node.Distance);
+                    if (node.Action != null) DependsOn(node.Action);
+                    if (node.Next != null) pending.Push(node.Next);
+                    if (node.PositionSource != null) pending.Push(node.PositionSource);
+                }
+                foreach (var condition in skill.Conditions ?? System.Array.Empty<Game.Items.Skills.ItemSkillCondition>())
+                {
+                    if (condition == null) continue;
+                    DependsOn(condition);
+                    if (condition is Game.Items.Skills.WithinDistanceCondition range)
+                    {
+                        if (range.Distance != null) DependsOn(range.Distance);
+                        if (range.Target != null) DependsOn(range.Target);
+                    }
+                    else if (condition is Game.Items.Skills.ActionAvailableCondition available && available.Action != null)
+                        DependsOn(available.Action);
                 }
             }
 

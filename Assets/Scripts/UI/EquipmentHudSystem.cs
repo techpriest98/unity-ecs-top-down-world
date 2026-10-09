@@ -41,6 +41,8 @@ namespace Game.UI
                 ownsHud = true;
             }
             Entity player = playerQuery.GetSingletonEntity();
+            hud.SetActiveHand(EntityManager.HasComponent<PlayerActiveHand>(player)
+                ? EntityManager.GetComponentData<PlayerActiveHand>(player).Slot : EquipmentSlot.RightHand);
             var slots = EntityManager.GetBuffer<PlayerEquipmentSlot>(player, true);
             var skills = EntityManager.GetBuffer<PlayerAvailableSkill>(player, true);
             var references = EntityManager.GetBuffer<ItemDefinitionReference>(
@@ -66,7 +68,7 @@ namespace Game.UI
                     hud.SetHandItem(i, null);
                 }
             }
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < PlayerAvailableSkill.SlotCount; i++)
             {
                 if (i < skills.Length)
                 {

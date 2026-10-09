@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42c9d03c04c74f1690c4d23112052d04, type: 3}
+  m_Name: IgniteTorchAction1Condition
+  m_EditorClassIdentifier: 
+  FailureMessage: I can't light this.
+  Action: {fileID: 11400000, guid: 8b2ecc72dd1a44523a7156d2dfb4d95f, type: 2}

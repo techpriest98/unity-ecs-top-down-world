@@ -16,5 +16,7 @@ MonoBehaviour:
   DisplayName: Place Terrain
   Description: Place Terrain
   Icon: {fileID: 0}
+  Conditions:
+  - {fileID: 11400000, guid: a396a045900a4dc30000000000000007, type: 2}
   Actions:
   - {fileID: 11400000, guid: 9c7aacf8e287b6a4089234e3435b02ea, type: 2}

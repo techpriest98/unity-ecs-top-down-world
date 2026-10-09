@@ -78,7 +78,7 @@ public sealed class ItemGraphWindow : EditorWindow
             ShowItem(null);
         });
         toolbar.Add(databaseField);
-        toolbar.Add(new ToolbarButton(RefreshItems) { text = "Refresh" });
+        toolbar.Add(new ToolbarButton(RefreshGraph) { text = "Refresh" });
         toolbar.Add(new ToolbarButton(() =>
         {
             if (Producer != null)
@@ -202,6 +202,15 @@ public sealed class ItemGraphWindow : EditorWindow
             itemStrip.Add(new Label("This database has no items. Right-click the graph → Create/Item."));
     }
 
+    private void RefreshGraph()
+    {
+        SavePositions();
+        AssetDatabase.Refresh();
+        RefreshItems();
+        ReloadGraph();
+    }
+
+
     private void ShowItem(ItemDefinition item, bool emptyHand = false)
     {
         SavePositions();
@@ -243,7 +252,7 @@ public sealed class ItemGraphWindow : EditorWindow
                     skillNode = AddSkillNode(skill, nodes.Count);
                     nodes.Add(skill, skillNode);
                 }
-                graph.AddElement(skillNode.Output.ConnectTo(itemNode.SkillPorts[i]));
+                graph.AddElement(itemNode.SkillPorts[i].ConnectTo(skillNode.SkillInput));
             }
         }
         else if (editingEmptyHand)
@@ -259,7 +268,7 @@ public sealed class ItemGraphWindow : EditorWindow
                 if (skill == null) continue;
                 if (!nodes.TryGetValue(skill, out var node))
                 { node = AddSkillNode(skill, nodes.Count); nodes.Add(skill, node); }
-                graph.AddElement(node.Output.ConnectTo(itemNode.SkillPorts[i]));
+                graph.AddElement(itemNode.SkillPorts[i].ConnectTo(node.SkillInput));
             }
         }
         RestorePositions();
@@ -348,6 +357,11 @@ public sealed class ItemGraphWindow : EditorWindow
             ShowItem(selectedItem, editingEmptyHand);
     }
 
+    public static void ReloadOpenGraphs()
+    {
+        foreach (var window in Resources.FindObjectsOfTypeAll<ItemGraphWindow>()) window.ReloadGraph();
+    }
+
     private void ChangeSlotCount(int removeIndex)
     {
         if (Producer == null)
@@ -381,10 +395,17 @@ public sealed class ItemGraphWindow : EditorWindow
     private SkillNode AddSkillNode(ItemSkillDefinition skill, int index)
     {
         var node = new SkillNode(skill, removeIndex => ChangeActionSlots(skill, removeIndex),
-            (actionIndex, offset) => MoveAction(skill, actionIndex, offset));
+            (actionIndex, offset) => MoveAction(skill, actionIndex, offset),
+            removeIndex => ChangeConditionSlots(skill, removeIndex), (indexToMove, offset) => MoveCondition(skill, indexToMove, offset));
         node.SetPosition(new Rect(60, 70 + index * 320, 350, 280));
         graph.AddElement(node);
         RestorePosition(node);
+        if (skill.UseChain)
+        {
+            if (skill.FirstNode != null)
+                graph.AddElement(node.FlowOutput.ConnectTo(GetChainNode(skill.FirstNode).FlowInput));
+            return node;
+        }
         for (int i = 0; i < node.ActionPorts.Count; i++)
         {
             var action = skill.Actions[i];
@@ -394,7 +415,44 @@ public sealed class ItemGraphWindow : EditorWindow
                 ?? AddActionNode(action);
             graph.AddElement(actionNode.Output.ConnectTo(node.ActionPorts[i]));
         }
+        for (int i = 0; i < node.ConditionPorts.Count; i++)
+        {
+            var condition = skill.Conditions[i];
+            if (condition == null) continue;
+            graph.AddElement(GetConditionNode(condition).Output.ConnectTo(node.ConditionPorts[i]));
+        }
         return node;
+    }
+
+    private void ChangeConditionSlots(ItemSkillDefinition skill, int removeIndex)
+    {
+        Undo.RecordObject(skill, "Edit skill conditions");
+        var values = new List<ItemSkillCondition>(skill.Conditions ?? Array.Empty<ItemSkillCondition>());
+        if (removeIndex < 0) values.Add(null);
+        else if (removeIndex < values.Count) values.RemoveAt(removeIndex);
+        skill.Conditions = values.ToArray();
+        EditorUtility.SetDirty(skill);
+        rootVisualElement.schedule.Execute(ReloadGraph);
+    }
+
+    private void MoveCondition(ItemSkillDefinition skill, int index, int offset)
+    {
+        int target = index + offset;
+        if (skill.Conditions == null || index < 0 || index >= skill.Conditions.Length || target < 0 || target >= skill.Conditions.Length) return;
+        Undo.RecordObject(skill, "Reorder skill conditions");
+        var values = skill.Conditions.ToArray();
+        values[index] = skill.Conditions[target]; values[target] = skill.Conditions[index];
+        skill.Conditions = values;
+        EditorUtility.SetDirty(skill);
+        rootVisualElement.schedule.Execute(ReloadGraph);
+    }
+
+    private static void SetCondition(ConditionSlot slot, ItemSkillCondition condition)
+    {
+        if (slot.Index < 0 || slot.Index >= (slot.Skill.Conditions?.Length ?? 0)) return;
+        Undo.RecordObject(slot.Skill, "Connect skill condition");
+        slot.Skill.Conditions[slot.Index] = condition;
+        EditorUtility.SetDirty(slot.Skill);
     }
 
     private void ChangeActionSlots(ItemSkillDefinition skill, int removeIndex)
@@ -493,6 +551,24 @@ public sealed class ItemGraphWindow : EditorWindow
         evt.menu.AppendAction("Create/Data/Item.Selection", _ => PlaceNode(GetSelectionNode(), position), status);
         evt.menu.AppendAction("Create/Data/Block", _ => AddBlockNode(BlockId.Air, position), status);
         evt.menu.AppendAction("Create/Data/Distance", _ => CreateDistanceNode(position), status);
+        evt.menu.AppendAction("Create/Conditions/Within Distance", _ => CreateConditionNode<WithinDistanceCondition>(position), status);
+        evt.menu.AppendAction("Create/Conditions/Action Available", _ => CreateConditionNode<ActionAvailableCondition>(position), status);
+        evt.menu.AppendAction("Create/Chain/Valid Top Target", _ => CreateChainNode(SkillChainNodeKind.ValidTopTarget, position), status);
+        evt.menu.AppendAction("Create/Chain/Ground Item Target", _ => CreateChainNode(SkillChainNodeKind.GroundItemTarget, position), status);
+        evt.menu.AppendAction("Create/Chain/Ignitable", _ => CreateChainNode(SkillChainNodeKind.Ignitable, position), status);
+        evt.menu.AppendAction("Create/Chain/Within Distance", _ => CreateChainNode(SkillChainNodeKind.WithinDistance, position), status);
+        evt.menu.AppendAction("Create/Chain/Action", _ => CreateChainNode(SkillChainNodeKind.Action, position), status);
+        foreach (string guid in AssetDatabase.FindAssets("t:SkillChainNode"))
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<SkillChainNode>(AssetDatabase.GUIDToAssetPath(guid));
+            evt.menu.AppendAction("Add existing/Chain/" + asset.name, _ => PlaceNode(GetChainNode(asset), position), status);
+        }
+        foreach (string guid in AssetDatabase.FindAssets("t:ItemSkillCondition"))
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<ItemSkillCondition>(AssetDatabase.GUIDToAssetPath(guid));
+            evt.menu.AppendAction("Add existing/Conditions/" + asset.name,
+                _ => PlaceNode(GetConditionNode(asset), position), status);
+        }
         foreach (string guid in AssetDatabase.FindAssets("t:ActionDistanceDefinition"))
         {
             var asset = AssetDatabase.LoadAssetAtPath<ActionDistanceDefinition>(AssetDatabase.GUIDToAssetPath(guid));
@@ -554,10 +630,29 @@ public sealed class ItemGraphWindow : EditorWindow
                 }
                 if (element is BehaviourNode behaviourNode)
                     behaviourNode.Unbind();
+                if (element is ChainNode chainNode)
+                {
+                    foreach (var connection in chainNode.inputContainer.Query<Port>().ToList()
+                                 .Concat(chainNode.outputContainer.Query<Port>().ToList())
+                                 .SelectMany(port => port.connections).Distinct().ToList())
+                        SetChainConnection(connection, false);
+                    chainNode.Unbind();
+                }
                 if (element is DistanceNode distanceNode)
                 {
                     foreach (var distanceEdge in distanceNode.Output.connections.ToList()) SetDataConnection(distanceEdge, false);
                     distanceNode.Unbind();
+                }
+                if (element is Edge conditionEdge && conditionEdge.input.userData is ConditionSlot conditionSlot &&
+                    !change.elementsToRemove.OfType<SkillNode>().Any(n => n.Skill == conditionSlot.Skill))
+                    SetCondition(conditionSlot, null);
+                if (element is ConditionNode conditionNode)
+                {
+                    foreach (var skillNode in graph.nodes.OfType<SkillNode>())
+                        for (int i = 0; i < (skillNode.Skill.Conditions?.Length ?? 0); i++)
+                            if (skillNode.Skill.Conditions[i] == conditionNode.Asset)
+                                SetCondition(new ConditionSlot(skillNode.Skill, i), null);
+                    conditionNode.Unbind();
                 }
                 if (element is Edge actionEdge && actionEdge.input.userData is ActionSlot slot &&
                     !change.elementsToRemove.OfType<SkillNode>().Any(n => n.Skill == slot.Skill))
@@ -570,7 +665,7 @@ public sealed class ItemGraphWindow : EditorWindow
                                 SetAction(new ActionSlot(skillNode.Skill, i), null);
                     actionNode.Unbind();
                 }
-                if (element is Edge edge && edge.input.userData is int index && index < skills.Length)
+                if (element is Edge edge && edge.output.node == itemNode && edge.output.userData is int index && index < skills.Length)
                 {
                     skills[index] = null;
                     changed = true;
@@ -588,13 +683,17 @@ public sealed class ItemGraphWindow : EditorWindow
             }
         }
         if (change.edgesToCreate != null)
+            change.edgesToCreate = change.edgesToCreate.Where(IsValidChainConnection).ToList();
+        if (change.edgesToCreate != null)
             foreach (var edge in change.edgesToCreate)
             {
                 SetBehaviourConnection(edge, true);
                 SetDataConnection(edge, true);
                 if (edge.input.userData is ActionSlot slot && edge.output.node is ActionNode actionNode)
                     SetAction(slot, actionNode.Action);
-                if (edge.input.userData is int index && index < skills.Length && edge.output.node is SkillNode node)
+                if (edge.input.userData is ConditionSlot conditionSlot && edge.output.node is ConditionNode conditionNode)
+                    SetCondition(conditionSlot, conditionNode.Asset);
+                if (edge.output.node == itemNode && edge.output.userData is int index && index < skills.Length && edge.input.node is SkillNode node)
                 {
                     skills[index] = node.Skill;
                     changed = true;
@@ -704,6 +803,22 @@ public sealed class ItemGraphWindow : EditorWindow
 
     private static void SetDataConnection(Edge edge, bool connected)
     {
+        if (SetChainConnection(edge, connected)) return;
+        if (edge.input.node is ConditionNode condition)
+        {
+            Undo.RecordObject(condition.Asset, "Connect condition data");
+            if (condition.Asset is WithinDistanceCondition range)
+            {
+                if (edge.input == condition.DistanceInput && edge.output.node is DistanceNode distanceSource)
+                    range.Distance = connected ? distanceSource.Asset : null;
+                else if (edge.input == condition.ActionInput && edge.output.node is ActionNode targetSource)
+                    range.Target = connected ? targetSource.Action : null;
+            }
+            else if (condition.Asset is ActionAvailableCondition available && edge.output.node is ActionNode source)
+                available.Action = connected ? source.Action : null;
+            EditorUtility.SetDirty(condition.Asset);
+            return;
+        }
         if (edge.input.node is SelectionNode && edge.output.node is ActionNode writer &&
             writer.Action is PickPlacementSelectionAction writeAction && edge.output == writer.SelectionOutput)
         {
@@ -775,6 +890,204 @@ public sealed class ItemGraphWindow : EditorWindow
         AssetDatabase.CreateAsset(asset, path);
         Undo.RegisterCreatedObjectUndo(asset, "Create distance");
         PlaceNode(GetDistanceNode(asset), position);
+    }
+
+    private void CreateChainNode(SkillChainNodeKind kind, Vector2 position)
+    {
+        string path = EditorUtility.SaveFilePanelInProject("Create chain node", kind.ToString(), "asset", "Choose a chain node asset location.");
+        if (string.IsNullOrEmpty(path)) return;
+        var asset = CreateInstance<SkillChainNode>(); asset.Kind = kind;
+        AssetDatabase.CreateAsset(asset, path);
+        Undo.RegisterCreatedObjectUndo(asset, "Create chain node");
+        PlaceNode(GetChainNode(asset), position);
+    }
+
+    private ChainNode GetChainNode(SkillChainNode asset)
+    {
+        var existing = graph.nodes.OfType<ChainNode>().FirstOrDefault(n => n.Asset == asset);
+        if (existing != null) return existing;
+        var node = new ChainNode(asset);
+        node.SetPosition(new Rect(460 + graph.nodes.OfType<ChainNode>().Count() * 360, -300, 320, 200));
+        graph.AddElement(node); RestorePosition(node);
+        if (asset.Next != null) graph.AddElement(node.FlowOutput.ConnectTo(GetChainNode(asset.Next).FlowInput));
+        if (asset.Kind == SkillChainNodeKind.ValidTopTarget || asset.Kind == SkillChainNodeKind.GroundItemTarget)
+        {
+            if (asset.Cursor == CursorWorldPosition.Before)
+                graph.AddElement(GetCursorNode().Before.ConnectTo(node.PositionInput));
+        }
+        else if (asset.PositionSource != null && node.PositionInput != null)
+        {
+            var source = GetChainNode(asset.PositionSource).PositionOutput;
+            if (source != null) graph.AddElement(source.ConnectTo(node.PositionInput));
+        }
+        if (asset.Kind == SkillChainNodeKind.WithinDistance && asset.Distance != null)
+            graph.AddElement(GetDistanceNode(asset.Distance).Output.ConnectTo(node.DistanceInput));
+        return node;
+    }
+
+    private static bool IsValidChainConnection(Edge edge)
+    {
+        if (!(edge.input.node is ChainNode target)) return true;
+        if (edge.input == target.PositionInput && (target.Asset.Kind == SkillChainNodeKind.ValidTopTarget || target.Asset.Kind == SkillChainNodeKind.GroundItemTarget))
+            return edge.output.node is CursorNode cursor && edge.output == cursor.Before;
+        if (edge.input == target.PositionInput && !(edge.output.node is ChainNode)) return false;
+        if (!(edge.output.node is ChainNode source)) return true;
+        if (edge.input == target.FlowInput)
+        {
+            if (source.Asset.Kind == SkillChainNodeKind.Action && target.Asset.Kind != SkillChainNodeKind.Action) return false;
+            var visited = new HashSet<SkillChainNode>();
+            for (var current = target.Asset; current != null; current = current.Next)
+                if (current == source.Asset || !visited.Add(current)) return false;
+        }
+        if (edge.input == target.PositionInput)
+        {
+            var visited = new HashSet<SkillChainNode>();
+            for (var current = source.Asset; current != null; current = current.PositionSource)
+                if (current == target.Asset || !visited.Add(current)) return false;
+        }
+        return true;
+    }
+
+    private static bool SetChainConnection(Edge edge, bool connected)
+    {
+        if (edge.input.node is ChainNode target)
+        {
+            if (edge.input == target.FlowInput && edge.output.node is SkillNode skill)
+            {
+                if (!connected && skill.Skill.FirstNode != target.Asset) return true;
+                Undo.RecordObject(skill.Skill, "Connect skill chain");
+                skill.Skill.FirstNode = connected ? target.Asset : null;
+                EditorUtility.SetDirty(skill.Skill); return true;
+            }
+            if (edge.input == target.FlowInput && edge.output.node is ChainNode source)
+            {
+                if (!connected && source.Asset.Next != target.Asset) return true;
+                Undo.RecordObject(source.Asset, "Connect chain flow");
+                source.Asset.Next = connected ? target.Asset : null;
+                EditorUtility.SetDirty(source.Asset); return true;
+            }
+            Undo.RecordObject(target.Asset, "Connect chain data");
+            if (edge.input == target.PositionInput && edge.output.node is CursorNode cursor)
+            {
+                target.Asset.Cursor = connected && edge.output == cursor.Before ? CursorWorldPosition.Before : CursorWorldPosition.Disconnected;
+            }
+            else if (edge.input == target.PositionInput && edge.output.node is ChainNode positionSource)
+            {
+                if (!connected && target.Asset.PositionSource != positionSource.Asset) return true;
+                target.Asset.PositionSource = connected ? positionSource.Asset : null;
+            }
+            else if (edge.input == target.DistanceInput && edge.output.node is DistanceNode distance)
+            {
+                if (!connected && target.Asset.Distance != distance.Asset) return true;
+                target.Asset.Distance = connected ? distance.Asset : null;
+            }
+            else return false;
+            EditorUtility.SetDirty(target.Asset); return true;
+        }
+        return false;
+    }
+
+    private sealed class ChainFlowSignal { }
+
+    private sealed class ChainNode : AssetNode
+    {
+        public readonly SkillChainNode Asset;
+        public readonly Port FlowInput, FlowOutput, PositionInput, PositionOutput, DistanceInput;
+        public ChainNode(SkillChainNode asset) : base(asset)
+        {
+            Asset = asset;
+            title = asset.Kind == SkillChainNodeKind.Action && asset.Action is ReplaceEquippedItemAction
+                ? "Action — Replace Item"
+                : (asset.Kind == SkillChainNodeKind.Action ? "Action — " : "Condition — ") + ObjectNames.NicifyVariableName(asset.Kind.ToString());
+            style.width = 320;
+            FlowInput = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(ChainFlowSignal));
+            FlowInput.portName = "Flow"; inputContainer.Add(FlowInput);
+            FlowOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(ChainFlowSignal));
+            FlowOutput.portName = "Flow"; outputContainer.Add(FlowOutput);
+            if (!(asset.Kind == SkillChainNodeKind.Action && asset.Action is ReplaceEquippedItemAction))
+            {
+                PositionInput = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(PositionSignal));
+                PositionInput.portName = asset.Kind == SkillChainNodeKind.ValidTopTarget || asset.Kind == SkillChainNodeKind.GroundItemTarget ? "Cursor position" : "Position";
+                PositionInput.portColor = new Color(0.4f, 0.7f, 1f); inputContainer.Add(PositionInput);
+                PositionOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(PositionSignal));
+                PositionOutput.portName = "Position"; PositionOutput.portColor = PositionInput.portColor; outputContainer.Add(PositionOutput);
+            }
+            var serialized = new SerializedObject(asset);
+            if (asset.Kind == SkillChainNodeKind.WithinDistance)
+            {
+                DistanceInput = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(ActionDistanceDefinition));
+                DistanceInput.portName = "Distance"; inputContainer.Add(DistanceInput);
+            }
+            if (asset.Kind == SkillChainNodeKind.Action)
+                extensionContainer.Add(new PropertyField(serialized.FindProperty("Action"), "Action asset"));
+            extensionContainer.Add(new PropertyField(serialized.FindProperty("FailureMessage"), "Failure message"));
+            extensionContainer.Bind(serialized);
+            if (asset.Kind == SkillChainNodeKind.Action && asset.Action != null)
+            {
+                var actionSerialized = new SerializedObject(asset.Action);
+                foreach (string name in new[] { "replacementItem", "FlightTime", "Gravity", "CollisionRadius" })
+                {
+                    var property = actionSerialized.FindProperty(name);
+                    if (property == null) continue;
+                    var field = new PropertyField(property); field.Bind(actionSerialized); extensionContainer.Add(field);
+                }
+            }
+            RefreshExpandedState(); RefreshPorts();
+        }
+    }
+
+    private void CreateConditionNode<T>(Vector2 position) where T : ItemSkillCondition
+    {
+        string path = EditorUtility.SaveFilePanelInProject("Create condition", typeof(T).Name, "asset", "Choose a condition asset location.");
+        if (string.IsNullOrEmpty(path)) return;
+        var asset = CreateInstance<T>();
+        AssetDatabase.CreateAsset(asset, path);
+        Undo.RegisterCreatedObjectUndo(asset, "Create condition");
+        PlaceNode(GetConditionNode(asset), position);
+    }
+
+    private ConditionNode GetConditionNode(ItemSkillCondition asset)
+    {
+        var existing = graph.nodes.OfType<ConditionNode>().FirstOrDefault(n => n.Asset == asset);
+        if (existing != null) return existing;
+        var node = new ConditionNode(asset);
+        node.SetPosition(new Rect(-360, -250 - graph.nodes.OfType<ConditionNode>().Count() * 180, 320, 160));
+        graph.AddElement(node); RestorePosition(node);
+        var action = asset is WithinDistanceCondition range ? range.Target : (asset as ActionAvailableCondition)?.Action;
+        if (action != null)
+        {
+            var source = graph.nodes.OfType<ActionNode>().FirstOrDefault(n => n.Action == action) ?? AddActionNode(action);
+            graph.AddElement(source.Output.ConnectTo(node.ActionInput));
+        }
+        if (asset is WithinDistanceCondition distance && distance.Distance != null)
+            graph.AddElement(GetDistanceNode(distance.Distance).Output.ConnectTo(node.DistanceInput));
+        return node;
+    }
+
+    private sealed class ConditionNode : AssetNode
+    {
+        public readonly ItemSkillCondition Asset;
+        public readonly Port Output, ActionInput, DistanceInput;
+        public ConditionNode(ItemSkillCondition asset) : base(asset)
+        {
+            Asset = asset;
+            title = "Condition — " + asset.name;
+            style.width = 320;
+            ActionInput = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(ItemSkillAction));
+            ActionInput.portName = asset is WithinDistanceCondition ? "Target of action" : "Action";
+            inputContainer.Add(ActionInput);
+            if (asset is WithinDistanceCondition)
+            {
+                DistanceInput = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(ActionDistanceDefinition));
+                DistanceInput.portName = "Distance"; inputContainer.Add(DistanceInput);
+            }
+            Output = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(ItemSkillCondition));
+            Output.portName = "Condition"; outputContainer.Add(Output);
+            var serialized = new SerializedObject(asset);
+            extensionContainer.Add(new PropertyField(serialized.FindProperty("FailureMessage"), "Failure message"));
+            extensionContainer.Bind(serialized);
+            RefreshExpandedState(); RefreshPorts();
+        }
     }
 
     private DistanceNode GetDistanceNode(ActionDistanceDefinition asset)
@@ -970,13 +1283,13 @@ public sealed class ItemGraphWindow : EditorWindow
             for (int i = 0; i < (hand.Skills?.Length ?? 0); i++)
             {
                 int index = i;
-                var port = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(ItemSkillDefinition));
+                var port = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(ItemSkillDefinition));
                 port.portName = "Skill " + (i + 1);
                 port.userData = i;
                 AddSkillMoveButtons(port, index, hand.Skills.Length, moveSkill);
                 port.Add(new Button(() => changeSlots(index)) { text = "−" });
                 SkillPorts.Add(port);
-                inputContainer.Add(port);
+                outputContainer.Add(port);
             }
             RefreshExpandedState(); RefreshPorts();
         }
@@ -993,6 +1306,7 @@ public sealed class ItemGraphWindow : EditorWindow
             AddField(serialized, "Icon", "Icon");
             AddField(serialized, "WorldSprite", "World Sprite");
             AddField(serialized, "MaxDurability", "Max Durability");
+            AddField(serialized, "IgnitionSource", "Ignition Source");
             var durabilityRow = new VisualElement();
             durabilityRow.style.flexDirection = FlexDirection.Row;
             durabilityRow.style.justifyContent = Justify.SpaceBetween;
@@ -1008,13 +1322,13 @@ public sealed class ItemGraphWindow : EditorWindow
             for (int i = 0; i < (item.Skills?.Length ?? 0); i++)
             {
                 int index = i;
-                var port = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(ItemSkillDefinition));
+                var port = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(ItemSkillDefinition));
                 port.portName = "Skill " + (i + 1);
                 port.userData = i;
                 AddSkillMoveButtons(port, index, item.Skills.Length, moveSkill);
                 port.Add(new Button(() => changeSlots(index)) { text = "−", tooltip = "Remove this skill slot" });
                 SkillPorts.Add(port);
-                inputContainer.Add(port);
+                outputContainer.Add(port);
             }
             // Binding edits the actual ScriptableObject, with Undo and dirty
             // tracking supplied by Unity's serialized-property editor.
@@ -1044,10 +1358,13 @@ public sealed class ItemGraphWindow : EditorWindow
     private sealed class SkillNode : AssetNode
     {
         public readonly ItemSkillDefinition Skill;
-        public readonly Port Output;
+        public readonly Port SkillInput;
         public readonly List<Port> ActionPorts = new List<Port>();
+        public readonly List<Port> ConditionPorts = new List<Port>();
+        public readonly Port FlowOutput;
 
-        public SkillNode(ItemSkillDefinition skill, Action<int> changeActions, Action<int, int> moveAction) : base(skill)
+        public SkillNode(ItemSkillDefinition skill, Action<int> changeActions, Action<int, int> moveAction,
+            Action<int> changeConditions, Action<int, int> moveCondition) : base(skill)
         {
             Skill = skill;
             title = "Skill — " + skill.name + " (ID " + skill.Id + ")";
@@ -1056,6 +1373,25 @@ public sealed class ItemGraphWindow : EditorWindow
             AddIconPreview(this, serialized);
             foreach (var property in new[] { "DisplayName", "Description", "Icon" })
                 extensionContainer.Add(new PropertyField(serialized.FindProperty(property)));
+            if (skill.UseChain)
+            {
+                FlowOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(ChainFlowSignal));
+                FlowOutput.portName = "Flow"; outputContainer.Add(FlowOutput);
+            }
+            if (!skill.UseChain)
+            {
+            extensionContainer.Add(new Label("Conditions: first failure speaks; no actions run"));
+            extensionContainer.Add(new Button(() => changeConditions(-1)) { text = "+ Condition slot" });
+            for (int i = 0; i < (skill.Conditions?.Length ?? 0); i++)
+            {
+                int index = i;
+                var port = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(ItemSkillCondition));
+                port.portName = "Condition " + (i + 1); port.userData = new ConditionSlot(skill, i);
+                var up = new Button(() => moveCondition(index, -1)) { text = "↑" }; up.SetEnabled(i > 0); port.Add(up);
+                var down = new Button(() => moveCondition(index, 1)) { text = "↓" }; down.SetEnabled(i + 1 < skill.Conditions.Length); port.Add(down);
+                port.Add(new Button(() => changeConditions(index)) { text = "−" });
+                ConditionPorts.Add(port); inputContainer.Add(port);
+            }
             extensionContainer.Add(new Label("Actions execute from top to bottom"));
             extensionContainer.Add(new Button(() => changeActions(-1)) { text = "+ Action slot" });
             for (int i = 0; i < (skill.Actions?.Length ?? 0); i++)
@@ -1074,10 +1410,10 @@ public sealed class ItemGraphWindow : EditorWindow
                 ActionPorts.Add(port);
                 inputContainer.Add(port);
             }
-            Output = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(ItemSkillDefinition));
-            Output.portName = "Skill";
-            // Output direction is logical; its visual placement is on the left.
-            inputContainer.Add(Output);
+            }
+            SkillInput = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(ItemSkillDefinition));
+            SkillInput.portName = "Skill";
+            inputContainer.Insert(0, SkillInput);
             extensionContainer.Bind(serialized);
             RefreshExpandedState();
             RefreshPorts();
@@ -1089,6 +1425,13 @@ public sealed class ItemGraphWindow : EditorWindow
         public readonly ItemSkillDefinition Skill;
         public readonly int Index;
         public ActionSlot(ItemSkillDefinition skill, int index) { Skill = skill; Index = index; }
+    }
+
+    private sealed class ConditionSlot
+    {
+        public readonly ItemSkillDefinition Skill;
+        public readonly int Index;
+        public ConditionSlot(ItemSkillDefinition skill, int index) { Skill = skill; Index = index; }
     }
 
     // Port types describe allowed graph connections, not runtime-managed data.

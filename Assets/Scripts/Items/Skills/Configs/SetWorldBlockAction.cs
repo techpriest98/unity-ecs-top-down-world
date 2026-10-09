@@ -16,8 +16,23 @@ namespace Game.Items.Skills
         public BlockId ConstantBlock = BlockId.Air;
 
         public override bool IsAvailable(EntityManager manager, Entity player, EquipmentSlot slot, int item)
-            => Distance == null || (CursorWorldUtility.TryGetPosition(manager, player, Position, out var cell) &&
-                WithinDistance(manager, player, (Unity.Mathematics.float3)cell + new Unity.Mathematics.float3(0.5f, 0.5f, 0.5f)));
+        {
+            if (!TryGetTarget(manager, player, slot, item, out var target) || !WithinDistance(manager, player, target)) return false;
+            if (BlockSource == BlockValueSource.Constant) return true;
+            if (BlockSource != BlockValueSource.ItemSelection || !manager.HasBuffer<PlayerEquipmentSlot>(player)) return false;
+            var selection = PlayerEquipmentUtility.GetInstance(manager.GetBuffer<PlayerEquipmentSlot>(player, true), slot).PlacementSelection;
+            return selection.Kind == PlacementSelectionKind.Block && selection.Id > 0 && selection.Id <= byte.MaxValue &&
+                System.Enum.IsDefined(typeof(BlockId), (BlockId)selection.Id);
+        }
+
+        public override bool TryGetTarget(EntityManager manager, Entity player, EquipmentSlot slot, int item,
+            out Unity.Mathematics.float3 position)
+        {
+            position = default;
+            if (!CursorWorldUtility.TryGetPosition(manager, player, Position, out var cell)) return false;
+            position = (Unity.Mathematics.float3)cell + 0.5f;
+            return true;
+        }
 
         public override void Execute(EntityManager manager, Entity player, EquipmentSlot sourceSlot, int sourceItem)
         {

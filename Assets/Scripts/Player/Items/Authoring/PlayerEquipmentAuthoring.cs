@@ -14,6 +14,7 @@ namespace Game.Player
             public override void Bake(PlayerEquipmentAuthoring authoring)
             {
                 Entity player = GetEntity(TransformUsageFlags.Dynamic);
+                AddComponent(player, new PlayerActiveHand { Slot = EquipmentSlot.RightHand });
 
                 DynamicBuffer<PlayerEquipmentSlot> slots =
                     AddBuffer<PlayerEquipmentSlot>(player);

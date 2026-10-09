@@ -16,11 +16,12 @@ MonoBehaviour:
   DisplayName: Ignited Torch
   Description: Slowly burns away
   Icon: {fileID: -1210938195817157235, guid: b05ac901555f2b541a262fb0354249b8, type: 3}
-  MaxDurability: 100
   WorldSprite: {fileID: -4771726919913344934, guid: 7898f01ac649f69498bc9b556413e918, type: 3}
+  MaxDurability: 100
   DurabilityDecay: {fileID: 11400000, guid: 74d5ebc1847d4d4b9ddca7ee2c4a209b, type: 2}
   AllowedSlots: -1
   Light: {fileID: 11400000, guid: 77adb5827fab8460a86489397cb98f59, type: 2}
+  IgnitionSource: 1
   Animation: {fileID: 11400000, guid: 2b2257e3800f4413cbc0d337c701d614, type: 2}
   Skills:
   - {fileID: 11400000, guid: 8402cdd43bb1b4a2292bccb46ec042db, type: 2}

@@ -1,6 +1,9 @@
 using Game.Items;
 using Game.Items.Skills;
 using UnityEditor;
+using UnityEngine;
+using System.IO;
+using System.Text.RegularExpressions;
 
 public abstract class AutomaticIdInspector : Editor
 {
@@ -23,4 +26,47 @@ public abstract class AutomaticIdInspector : Editor
 public sealed class ItemDefinitionInspector : AutomaticIdInspector { }
 
 [CustomEditor(typeof(ItemSkillDefinition))]
-public sealed class ItemSkillDefinitionInspector : AutomaticIdInspector { }
+public sealed class ItemSkillDefinitionInspector : AutomaticIdInspector
+{
+    public override void OnInspectorGUI()
+    {
+        base.OnInspectorGUI();
+        if (GUILayout.Button("Apply saved chain")) ApplySavedChain((ItemSkillDefinition)target);
+    }
+
+    [MenuItem("CONTEXT/ItemSkillDefinition/Apply saved chain")]
+    private static void ApplySavedChainMenu(MenuCommand command)
+        => ApplySavedChain((ItemSkillDefinition)command.context);
+
+    private static void ApplySavedChain(ItemSkillDefinition skill)
+    {
+        string assetPath = AssetDatabase.GetAssetPath(skill);
+        string diskPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", assetPath));
+        if (!File.Exists(diskPath)) return;
+        string saved = File.ReadAllText(diskPath);
+        var first = Regex.Match(saved, @"(?m)^\s*FirstNode:.*guid:\s*([a-fA-F0-9]{32})\b");
+        if (!Regex.IsMatch(saved, @"(?m)^\s*UseChain:\s*1\s*$") || !first.Success ||
+            !Regex.IsMatch(saved, @"(?m)^\s*Conditions:\s*\[\]\s*$") ||
+            !Regex.IsMatch(saved, @"(?m)^\s*Actions:\s*\[\]\s*$"))
+        {
+            Debug.LogError($"'{assetPath}' has no saved chain migration with empty legacy lists. No changes applied.", skill);
+            return;
+        }
+        string nodePath = AssetDatabase.GUIDToAssetPath(first.Groups[1].Value);
+        var node = AssetDatabase.LoadAssetAtPath<SkillChainNode>(nodePath);
+        if (node == null)
+        {
+            Debug.LogError($"Cannot load First Node from '{nodePath}'. No changes applied.", skill);
+            return;
+        }
+        Undo.RecordObject(skill, "Apply saved skill chain");
+        skill.UseChain = true;
+        skill.FirstNode = node;
+        skill.Conditions = System.Array.Empty<ItemSkillCondition>();
+        skill.Actions = System.Array.Empty<ItemSkillAction>();
+        EditorUtility.SetDirty(skill);
+        AssetDatabase.SaveAssetIfDirty(skill);
+        ItemGraphWindow.ReloadOpenGraphs();
+        Debug.Log($"Applied saved chain to '{assetPath}': {node.name}. Name, description and icon preserved.", skill);
+    }
+}

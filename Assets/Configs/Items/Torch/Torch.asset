@@ -16,6 +16,7 @@ MonoBehaviour:
   DisplayName: Torch
   Description: The stick wrapped in cloth soaked in pine resin
   Icon: {fileID: 3305191282884748519, guid: 212c4fb81804b5e468a82cbfc4e61351, type: 3}
+  WorldSprite: {fileID: -5983094515489727769, guid: a262ae1dd34bd42429d17bc510e83124, type: 3}
   MaxDurability: 100
   DurabilityDecay: {fileID: 0}
   AllowedSlots: -1
@@ -23,3 +24,4 @@ MonoBehaviour:
   Animation: {fileID: 11400000, guid: 4c8b339d9e64f456d95169fc1213c7df, type: 2}
   Skills:
   - {fileID: 11400000, guid: 6915bc3950696455c8f38b7f7667f5da, type: 2}
+  - {fileID: 11400000, guid: 7dc7a1efda854d5290b14046cb14914a, type: 2}

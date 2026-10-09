@@ -19,6 +19,7 @@ namespace Game.Items
         public EquipmentSlot AllowedSlots;
 
         public ItemLightDefinition Light;
+        public bool IgnitionSource;
         public ItemAnimationDefinition Animation;
 
         public ItemSkillDefinition[] Skills =

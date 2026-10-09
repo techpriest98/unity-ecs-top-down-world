@@ -19,8 +19,41 @@ namespace Game.UI
         [SerializeField] private Sprite emptyLeftHandIcon;
         [SerializeField] private Sprite emptyRightHandIcon;
 
-        [SerializeField] private Image[] icons = new Image[12];
-        [SerializeField] private TMP_Text[] names = new TMP_Text[12];
+        [SerializeField] private Image[] icons = new Image[7];
+        [SerializeField] private TMP_Text[] names = new TMP_Text[7];
+
+        [Header("Active hand")]
+        [SerializeField] private float activeHandBorderPadding = 4f;
+        [SerializeField] private Color activeHandBorderColor = new Color(1f, 0.9f, 0.65f, 1f);
+        private readonly Image[] activeHandBorders = new Image[2];
+
+        public void SetActiveHand(EquipmentSlot hand)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                if (icons[i] == null) continue;
+                if (activeHandBorders[i] == null)
+                {
+                    var slot = icons[i].transform.parent;
+                    var original = slot.GetComponent<Image>();
+                    var rect = new GameObject("Active hand border", typeof(RectTransform)).GetComponent<RectTransform>();
+                    rect.SetParent(slot, false);
+                    rect.anchorMin = Vector2.zero;
+                    rect.anchorMax = Vector2.one;
+                    rect.offsetMin = Vector2.one * -activeHandBorderPadding;
+                    rect.offsetMax = Vector2.one * activeHandBorderPadding;
+                    var frame = rect.gameObject.AddComponent<Image>();
+                    frame.sprite = original.sprite;
+                    frame.type = Image.Type.Sliced;
+                    frame.fillCenter = false;
+                    frame.pixelsPerUnitMultiplier = original.pixelsPerUnitMultiplier;
+                    frame.color = activeHandBorderColor;
+                    frame.raycastTarget = false;
+                    activeHandBorders[i] = frame;
+                }
+                activeHandBorders[i].gameObject.SetActive(hand == (i == 0 ? EquipmentSlot.LeftHand : EquipmentSlot.RightHand));
+            }
+        }
 
         [Header("Item tooltip")]
         [SerializeField] private float tooltipWidth = 300f;
@@ -54,8 +87,8 @@ namespace Game.UI
                 Mathf.Clamp01(maximum > 0 ? current / maximum : 0), 5);
         }
 
-        private readonly ItemSkillDefinition[] skillItems = new ItemSkillDefinition[10];
-        private readonly EquipmentSlot[] skillSources = new EquipmentSlot[10];
+        private readonly ItemSkillDefinition[] skillItems = new ItemSkillDefinition[5];
+        private readonly EquipmentSlot[] skillSources = new EquipmentSlot[5];
         private RectTransform tooltip;
         private TMP_Text tooltipTitle;
         private TMP_Text tooltipDescription;
@@ -92,7 +125,7 @@ namespace Game.UI
             Camera camera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
             if (mouse != null && Time.timeScale > 0f)
             {
-                for (int i = 0; i < 12 && i < icons.Length; i++)
+                for (int i = 0; i < 7 && i < icons.Length; i++)
                     if (icons[i] != null && (i < 2 ? handItems[i] != null : skillItems[i - 2] != null) &&
                         RectTransformUtility.RectangleContainsScreenPoint(
                             (RectTransform)icons[i].transform.parent, mouse.position.ReadValue(), camera))

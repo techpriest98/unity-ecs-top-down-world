@@ -39,9 +39,9 @@ namespace Game.Player
                 mouse != null &&
                 mouse.rightButton.wasPressedThisFrame;
 
-            foreach (RefRW<PlayerBuildInput> input in SystemAPI
+            foreach (var (input, entity) in SystemAPI
                          .Query<RefRW<PlayerBuildInput>>()
-                         .WithAll<PlayerTag>())
+                         .WithAll<PlayerTag>().WithEntityAccess())
             {
                 if (togglePressed)
                 {
@@ -56,10 +56,10 @@ namespace Game.Player
                     pointerPosition.y);
 
                 input.ValueRW.RemovePressed =
-                    isBuildMode && removePressed;
+                    isBuildMode && removePressed && !EntityManager.HasComponent<PlayerActiveHand>(entity);
 
                 input.ValueRW.PlacePressed =
-                    isBuildMode && placePressed;
+                    isBuildMode && placePressed && !EntityManager.HasComponent<PlayerActiveHand>(entity);
 
                 input.ValueRW.PickPressed =
                     isBuildMode && mouse != null && pickPressed;

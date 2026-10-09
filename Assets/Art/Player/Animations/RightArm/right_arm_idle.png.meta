@@ -1,18 +1,18 @@
 fileFormatVersion: 2
-guid: 23ae9f2ca5a6e4c09b8066cf79aa0457
+guid: 13535e394a8574995ba3d86de2fe950b
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -3460701750660851815
+      213: -8800198736753260312
     second: rightarmidle_0
   - first:
-      213: -8327897412125316645
+      213: 6461693526160669657
     second: rightarmidle_1
   - first:
-      213: -4649479345376910941
+      213: -5041230161789341741
     second: rightarmidle_2
   - first:
-      213: -3463432495670945414
+      213: 309972605055590719
     second: rightarmidle_3
   externalObjects: {}
   serializedVersion: 13
@@ -55,7 +55,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 2
+  spriteMode: 1
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -65,7 +65,9 @@ TextureImporter:
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 1
+  spriteTessellationMethod: 0
   spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
   textureType: 8
   textureShape: 1
   singleChannelComponent: 0
@@ -84,7 +86,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -125,9 +127,9 @@ TextureImporter:
       name: rightarmidle_0
       rect:
         serializedVersion: 2
-        x: 44
+        x: 9
         y: 179
-        width: 13
+        width: 12
         height: 45
       alignment: 0
       pivot: {x: 0, y: 0}
@@ -137,8 +139,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 9979946e71e19ffc0800000000000000
-      internalID: -3460701750660851815
+      spriteID: 8e80bf6dfd96fd580800000000000000
+      internalID: -8800198736753260312
       vertices: []
       indices: 
       edges: []
@@ -147,10 +149,10 @@ TextureImporter:
       name: rightarmidle_1
       rect:
         serializedVersion: 2
-        x: 108
-        y: 177
-        width: 13
-        height: 46
+        x: 73
+        y: 178
+        width: 12
+        height: 45
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -159,8 +161,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: bd920604d6d5d6c80800000000000000
-      internalID: -8327897412125316645
+      spriteID: 9db7f3ac60c8ca950800000000000000
+      internalID: 6461693526160669657
       vertices: []
       indices: 
       edges: []
@@ -169,7 +171,7 @@ TextureImporter:
       name: rightarmidle_2
       rect:
         serializedVersion: 2
-        x: 44
+        x: 8
         y: 51
         width: 12
         height: 44
@@ -181,8 +183,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3a12b4c5b2bb97fb0800000000000000
-      internalID: -4649479345376910941
+      spriteID: 3dfaf8f90e3f90ab0800000000000000
+      internalID: -5041230161789341741
       vertices: []
       indices: 
       edges: []
@@ -191,7 +193,7 @@ TextureImporter:
       name: rightarmidle_3
       rect:
         serializedVersion: 2
-        x: 108
+        x: 72
         y: 50
         width: 12
         height: 44
@@ -203,8 +205,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: a791df7ce7a6fefc0800000000000000
-      internalID: -3463432495670945414
+      spriteID: f31e076217e3d4400800000000000000
+      internalID: 309972605055590719
       vertices: []
       indices: 
       edges: []
@@ -213,7 +215,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 5e97eb03825dee720800000000000000
     internalID: 0
     vertices: []
     indices: 
@@ -223,10 +225,10 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      rightarmidle_0: -3460701750660851815
-      rightarmidle_1: -8327897412125316645
-      rightarmidle_2: -4649479345376910941
-      rightarmidle_3: -3463432495670945414
+      rightarmidle_0: -8800198736753260312
+      rightarmidle_1: 6461693526160669657
+      rightarmidle_2: -5041230161789341741
+      rightarmidle_3: 309972605055590719
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

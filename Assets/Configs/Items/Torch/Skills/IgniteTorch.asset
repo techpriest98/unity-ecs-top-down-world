@@ -16,5 +16,7 @@ MonoBehaviour:
   DisplayName: Ignite Torch
   Description: Let there be light
   Icon: {fileID: -1210938195817157235, guid: b05ac901555f2b541a262fb0354249b8, type: 3}
-  Actions:
-  - {fileID: 11400000, guid: 8b2ecc72dd1a44523a7156d2dfb4d95f, type: 2}
+  UseChain: 1
+  FirstNode: {fileID: 11400000, guid: 91ac67415cf54edc903fb8765e612ac1, type: 2}
+  Conditions: []
+  Actions: []

@@ -1,12 +1,12 @@
 fileFormatVersion: 2
-guid: aad1864070d7e4206b4ab6e4c1f93f49
+guid: 2a6932d890b0243d8a2d1c6a9e1b5aaf
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 2443415454716190838
+      213: -1829993530546773002
     second: left_arm_torch_idle_0
   - first:
-      213: 1673343142667217975
+      213: 1514082226960565729
     second: left_arm_torch_idle_1
   externalObjects: {}
   serializedVersion: 13
@@ -49,7 +49,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -59,7 +59,9 @@ TextureImporter:
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 1
+  spriteTessellationMethod: 0
   spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
   textureType: 8
   textureShape: 1
   singleChannelComponent: 0
@@ -119,10 +121,10 @@ TextureImporter:
       name: left_arm_torch_idle_0
       rect:
         serializedVersion: 2
-        x: 9
-        y: 446
-        width: 13
-        height: 34
+        x: 44
+        y: 436
+        width: 14
+        height: 44
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -131,8 +133,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 670ee090961c8e120800000000000000
-      internalID: 2443415454716190838
+      spriteID: 6f32f76649e8a96e0800000000000000
+      internalID: -1829993530546773002
       vertices: []
       indices: 
       edges: []
@@ -141,10 +143,10 @@ TextureImporter:
       name: left_arm_torch_idle_1
       rect:
         serializedVersion: 2
-        x: 73
-        y: 445
-        width: 13
-        height: 34
+        x: 108
+        y: 435
+        width: 14
+        height: 44
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -153,8 +155,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 73ce306f8b8e83710800000000000000
-      internalID: 1673343142667217975
+      spriteID: 1e587b273c9130510800000000000000
+      internalID: 1514082226960565729
       vertices: []
       indices: 
       edges: []
@@ -163,7 +165,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -173,8 +175,8 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      left_arm_torch_idle_0: 2443415454716190838
-      left_arm_torch_idle_1: 1673343142667217975
+      left_arm_torch_idle_0: -1829993530546773002
+      left_arm_torch_idle_1: 1514082226960565729
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

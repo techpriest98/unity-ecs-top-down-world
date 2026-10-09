@@ -1,7 +1,10 @@
 using Game.World.Rendering;
 using Game.World.Chunks;
+using Game.World.Lighting;
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Game.Items
@@ -13,6 +16,8 @@ namespace Game.Items
         private MaterialPropertyBlock properties;
         private EntityQuery library;
         private EntityQuery chunks;
+        private readonly Dictionary<int2, Entity> lightingChunks = new Dictionary<int2, Entity>();
+        private readonly Dictionary<int3, ProjectedCellData> lightingTiles = new Dictionary<int3, ProjectedCellData>();
         private readonly WorldItemOcclusionCache occlusion = new WorldItemOcclusionCache();
         protected override void OnCreate()
         {
@@ -43,6 +48,8 @@ namespace Game.Items
             foreach (var item in SystemAPI.Query<RefRO<WorldItem>>())
                 if (item.ValueRO.Grounded) { hasGrounded = true; break; }
             occlusion.BeginFrame();
+            lightingChunks.Clear();
+            lightingTiles.Clear();
             if (hasGrounded)
             {
                 var cellsLookup = SystemAPI.GetBufferLookup<ProjectedCellData>(true);
@@ -53,6 +60,7 @@ namespace Game.Items
                 ulong signature = (ulong)entities.Length;
                 foreach (var entity in entities)
                 {
+                    lightingChunks[chunkLookup[entity].Coordinate] = entity;
                     bool enabled = clippingLookup.IsComponentEnabled(entity);
                     ulong hash = occlusion.HashChunk(entity, cellsLookup[entity], clipsLookup[entity],
                         chunkLookup[entity].Coordinate, false,
@@ -97,6 +105,7 @@ namespace Game.Items
                 properties.SetVector("_SpriteUv", new Vector4(uv.x / texture.width, uv.y / texture.height,
                     uv.width / texture.width, uv.height / texture.height));
                 properties.SetFloat("_SpriteDepth", depth);
+                ApplyGroundLighting(item.ValueRO.Grounded, surfacePosition, direction);
                 Graphics.RenderPrimitives(new RenderParams(material)
                 {
                     matProps = properties,
@@ -106,5 +115,45 @@ namespace Game.Items
             }
             occlusion.EndFrame();
         }
+
+        private void ApplyGroundLighting(bool grounded, float3 surface, ViewDirection direction)
+        {
+            properties.SetFloat("_GroundLightingEnabled", 0f);
+            if (!grounded) return;
+            int3 key = new int3((int)math.floor(surface.x), (int)math.round(surface.y), (int)math.floor(surface.z));
+            if (!lightingTiles.TryGetValue(key, out var tile))
+            {
+                int2 coordinate = (int2)math.floor(new float2(key.x, key.z) /
+                    new float2(ChunkSettings.SizeX, ChunkSettings.SizeZ));
+                if (!lightingChunks.TryGetValue(coordinate, out var chunk)) return;
+                int3 local = new int3(key.x - coordinate.x * ChunkSettings.SizeX, key.y,
+                    key.z - coordinate.y * ChunkSettings.SizeZ);
+                bool found = false;
+                foreach (var cell in EntityManager.GetBuffer<ProjectedCellData>(chunk, true))
+                {
+                    if (cell.FaceType != ProjectedFaceType.Top || cell.IsCutTop ||
+                        math.any(ChunkUtility.ToLocalPosition(cell.SourceAirIndex) != local)) continue;
+                    tile = cell; found = true; break;
+                }
+                if (!found) return;
+                lightingTiles[key] = tile;
+            }
+            if (!SystemAPI.TryGetSingleton<SunShadowState>(out var shadow)) return;
+            float2 centre = WorldPositionProjectionUtility.Project(new float3(key.x + 0.5f, key.y, key.z + 0.5f), direction);
+            properties.SetVector("_LightTileRect", new Vector4(centre.x - 0.5f, centre.y, 1f, 0.5f));
+            properties.SetVector("_LightBottomLeft", UnpackCorner(tile.LocalLightBottomLeft));
+            properties.SetVector("_LightBottomRight", UnpackCorner(tile.LocalLightBottomRight));
+            properties.SetVector("_LightTopLeft", UnpackCorner(tile.LocalLightTopLeft));
+            properties.SetVector("_LightTopRight", UnpackCorner(tile.LocalLightTopRight));
+            var light = shadow.ActiveLight;
+            properties.SetVector("_ItemAmbient", new Vector4(light.AmbientColor.x, light.AmbientColor.y, light.AmbientColor.z, 0));
+            float sunlight = light.Intensity * math.saturate(math.normalizesafe(light.DirectionToLight).y) *
+                LightDataUtility.UnpackSunVisibility(tile.LightData, shadow.ActiveMaskIndex);
+            properties.SetVector("_ItemSunlight", new Vector4(light.Color.x * sunlight, light.Color.y * sunlight, light.Color.z * sunlight, 0));
+            properties.SetFloat("_GroundLightingEnabled", 1f);
+        }
+
+        private static Vector4 UnpackCorner(uint packed) => new Vector4(
+            packed & 255u, (packed >> 8) & 255u, (packed >> 16) & 255u, (packed >> 24) & 255u) / 255f;
     }
 }

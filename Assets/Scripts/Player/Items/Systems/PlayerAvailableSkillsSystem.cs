@@ -5,17 +5,15 @@ namespace Game.Player
 {
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(PlayerEquipmentChangeSystem))]
+    [UpdateAfter(typeof(PlayerActiveHandInputSystem))]
     [UpdateAfter(typeof(Game.World.Interaction.ProjectedCellSelectionSystem))]
     public partial class PlayerAvailableSkillsSystem : SystemBase
     {
-        private const int MaxSkills = 10;
-
         private EntityQuery libraryQuery;
 
         protected override void OnCreate()
         {
             libraryQuery = GetEntityQuery(ComponentType.ReadOnly<ItemDefinitionReference>());
-
             RequireForUpdate(libraryQuery);
             RequireForUpdate<PlayerTag>();
         }
@@ -23,105 +21,48 @@ namespace Game.Player
         protected override void OnUpdate()
         {
             Entity libraryEntity = libraryQuery.GetSingletonEntity();
-
-            DynamicBuffer<ItemDefinitionReference> library =
-                EntityManager.GetBuffer<ItemDefinitionReference>(libraryEntity, true);
-
-            foreach (var (slots, availableSkills, player) in
-                     SystemAPI.Query<
-                             DynamicBuffer<PlayerEquipmentSlot>,
-                             DynamicBuffer<PlayerAvailableSkill>>()
-                         .WithAll<PlayerTag>().WithEntityAccess())
+            var library = EntityManager.GetBuffer<ItemDefinitionReference>(libraryEntity, true);
+            foreach (var (slots, availableSkills, activeHand) in SystemAPI.Query<
+                         DynamicBuffer<PlayerEquipmentSlot>, DynamicBuffer<PlayerAvailableSkill>, RefRO<PlayerActiveHand>>().WithAll<PlayerTag>())
             {
-                int count = 0;
-
-                AppendSkills(
-                    EntityManager, player, libraryEntity,
-                    library,
-                    slots,
-                    availableSkills,
-                    EquipmentSlot.LeftHand,
-                    ref count);
-
-                AppendSkills(
-                    EntityManager, player, libraryEntity,
-                    library,
-                    slots,
-                    availableSkills,
-                    EquipmentSlot.RightHand,
-                    ref count);
-
-                if (availableSkills.Length > count)
+                var destination = availableSkills;
+                if (destination.Length != PlayerAvailableSkill.SlotCount)
                 {
-                    availableSkills.RemoveRange(
-                        count,
-                        availableSkills.Length - count);
+                    destination.ResizeUninitialized(PlayerAvailableSkill.SlotCount);
+                    for (int i = 0; i < destination.Length; i++)
+                        destination[i] = new PlayerAvailableSkill { SkillIndex = -1 };
                 }
+                FillHand(EntityManager, libraryEntity, library, slots, destination, activeHand.ValueRO.Slot, 0);
             }
         }
 
-        private static void AppendSkills(
-            EntityManager manager, Entity player, Entity libraryEntity,
-            DynamicBuffer<ItemDefinitionReference> library,
-            DynamicBuffer<PlayerEquipmentSlot> slots,
-            DynamicBuffer<PlayerAvailableSkill> destination,
-            EquipmentSlot sourceSlot,
-            ref int count)
+        private static void FillHand(EntityManager manager, Entity libraryEntity,
+            DynamicBuffer<ItemDefinitionReference> library, DynamicBuffer<PlayerEquipmentSlot> slots,
+            DynamicBuffer<PlayerAvailableSkill> destination, EquipmentSlot sourceSlot, int offset)
         {
-            int itemId =
-                PlayerEquipmentUtility.GetItem(slots, sourceSlot);
-
+            int itemId = PlayerEquipmentUtility.GetItem(slots, sourceSlot);
             var skills = SkillProducerUtility.GetSkills(manager, libraryEntity, library, itemId);
-            if (skills == null)
-            {
-                return;
-            }
-
-            for (int i = 0;
-                 i < skills.Length && count < MaxSkills;
-                 i++)
-            {
-                var skill = skills[i];
-
-                if (skill == null || !skill.HasActions)
-                    continue;
-                bool available = true;
-                foreach (var action in skill.Actions)
-                    if (action != null && ((!action.IsAvailable(manager, player, sourceSlot, itemId)) ||
-                        (action is Game.Items.Skills.ThrowItemAction &&
-                         (!ItemDefinitionReference.TryGet(library, itemId, out var item) || item.WorldSprite == null))))
-                    {
-                        available = false;
-                        break;
-                    }
-                if (!available) continue;
-
-                var entry = new PlayerAvailableSkill
+            int next = 0;
+            if (skills != null)
+                for (int i = 0; i < skills.Length && next < PlayerAvailableSkill.SkillsPerHand; i++)
                 {
-                    SourceSlot = sourceSlot,
-                    SourceItem = itemId,
-                    SkillIndex = i
-                };
-
-                if (count < destination.Length)
-                {
-                    PlayerAvailableSkill current = destination[count];
-
-                    if (current.SourceSlot != entry.SourceSlot ||
-                        current.SourceItem != entry.SourceItem ||
-                        current.SkillIndex != entry.SkillIndex)
-                    {
-                        destination[count] = entry;
-                    }
+                    if (skills[i] == null || !skills[i].HasActions) continue;
+                    SetEntry(destination, offset + next++, sourceSlot, itemId, i);
                 }
-                else
-                {
-                    destination.Add(entry);
-                }
-
-                count++;
-            }
+            // Empty slots stay at their own key; they never borrow the other hand's skills.
+            while (next < PlayerAvailableSkill.SkillsPerHand)
+                SetEntry(destination, offset + next++, sourceSlot, itemId, -1);
         }
 
+        private static void SetEntry(DynamicBuffer<PlayerAvailableSkill> destination, int index,
+            EquipmentSlot slot, int item, int skillIndex)
+        {
+            var current = destination[index];
+            if (current.SourceSlot == slot && current.SourceItem == item && current.SkillIndex == skillIndex) return;
+            destination[index] = new PlayerAvailableSkill
+            {
+                SourceSlot = slot, SourceItem = item, SkillIndex = skillIndex
+            };
+        }
     }
 }

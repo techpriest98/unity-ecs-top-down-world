@@ -25,6 +25,7 @@ namespace Game.Items
         public float DurabilityLossInterval;
 
         public bool HasLight;
+        public bool IgnitionSource;
         public DynamicLightSource Light;
         public bool LightRadiusFromDurability;
         public float LightRadiusAtZeroDurability;

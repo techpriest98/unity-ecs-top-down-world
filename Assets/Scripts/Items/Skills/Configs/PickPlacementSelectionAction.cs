@@ -13,8 +13,18 @@ namespace Game.Items.Skills
         public bool ItemSelectionConnected = true;
 
         public override bool IsAvailable(EntityManager manager, Entity player, EquipmentSlot slot, int item)
-            => Distance == null || (CursorWorldUtility.TryGetPosition(manager, player, Position, out var cell) &&
-                WithinDistance(manager, player, (Unity.Mathematics.float3)cell + new Unity.Mathematics.float3(0.5f, 0.5f, 0.5f)));
+            => ItemSelectionConnected && CursorWorldUtility.TryGetPosition(manager, player, Position, out var cell) &&
+                CursorWorldUtility.TryGetBlock(manager, cell, out var block) && !BlockUtility.IsAir(block) &&
+                WithinDistance(manager, player, (Unity.Mathematics.float3)cell + new Unity.Mathematics.float3(0.5f, 0.5f, 0.5f));
+
+        public override bool TryGetTarget(EntityManager manager, Entity player, EquipmentSlot slot, int item,
+            out Unity.Mathematics.float3 position)
+        {
+            position = default;
+            if (!CursorWorldUtility.TryGetPosition(manager, player, Position, out var cell)) return false;
+            position = (Unity.Mathematics.float3)cell + 0.5f;
+            return true;
+        }
 
         public override void Execute(EntityManager manager, Entity player, EquipmentSlot sourceSlot, int sourceItem)
         {

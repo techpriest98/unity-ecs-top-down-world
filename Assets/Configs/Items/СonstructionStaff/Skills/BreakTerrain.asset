@@ -16,5 +16,7 @@ MonoBehaviour:
   DisplayName: Break Terrain
   Description: Break Terrain
   Icon: {fileID: 0}
+  Conditions:
+  - {fileID: 11400000, guid: a396a045900a4dc30000000000000005, type: 2}
   Actions:
   - {fileID: 11400000, guid: dfaf68e2811103745a1d2270bc5a87c2, type: 2}
