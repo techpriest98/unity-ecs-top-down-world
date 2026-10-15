@@ -40,6 +40,27 @@ namespace Game.World.Rendering
         [SerializeField]
         private BlockDatabase blockDatabase;
 
+        public bool TryGetBlockSideIcon(BlockId id, out Texture2D texture, out Rect uv)
+        {
+            texture = blockAtlas;
+            uv = default;
+            if (texture == null || blockDatabase == null || blockDatabase.Blocks == null || BlockUtility.IsAir(id)) return false;
+            foreach (var block in blockDatabase.Blocks)
+            {
+                if (block.BlockId != id) continue;
+                int x = block.AtlasColumn * BlockAtlasSettings.GroupWidth;
+                int top = block.AtlasRow * BlockAtlasSettings.GroupHeight + BlockAtlasSettings.TileHeight;
+                int width = BlockAtlasSettings.TileWidth;
+                int height = BlockAtlasSettings.TileHeight * 2;
+                int bottom = texture.height - top - height;
+                if (x < 0 || bottom < 0 || x + width > texture.width || bottom + height > texture.height) return false;
+                uv = new Rect((float)x / texture.width, (float)bottom / texture.height,
+                    (float)width / texture.width, (float)height / texture.height);
+                return true;
+            }
+            return false;
+        }
+
         private float3 directionToLight;
         private float3 directionalLightColor;
         private float directionalLightIntensity;

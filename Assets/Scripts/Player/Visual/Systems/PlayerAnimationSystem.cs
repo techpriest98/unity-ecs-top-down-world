@@ -222,9 +222,11 @@ namespace Game.Player
                 case CharacterPart.LeftArm: return 1;
                 case CharacterPart.RightArm: return 2;
                 case CharacterPart.LeftHandTorch:
-                case CharacterPart.LeftHandIgnitedTorch: return 3;
+                case CharacterPart.LeftHandIgnitedTorch:
+                case CharacterPart.LeftHandWorldShaper: return 3;
                 case CharacterPart.RightHandTorch:
-                case CharacterPart.RightHandIgnitedTorch: return 4;
+                case CharacterPart.RightHandIgnitedTorch:
+                case CharacterPart.RightHandWorldShaper: return 4;
                 default: return 0;
             }
         }

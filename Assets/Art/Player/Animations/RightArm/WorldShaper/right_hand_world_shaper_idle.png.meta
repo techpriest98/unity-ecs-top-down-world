@@ -1,0 +1,548 @@
+fileFormatVersion: 2
+guid: ebf9e00ab90a80842b7278bc012aca07
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 1232067647504304343
+    second: right_hand_world_shaper_idle_0
+  - first:
+      213: -922797595736100700
+    second: right_hand_world_shaper_idle_1
+  - first:
+      213: 1362945527306841969
+    second: right_hand_world_shaper_idle_2
+  - first:
+      213: 7577257580275498090
+    second: right_hand_world_shaper_idle_3
+  - first:
+      213: -4326524391322923370
+    second: right_hand_world_shaper_idle_4
+  - first:
+      213: 2862835267980369455
+    second: right_hand_world_shaper_idle_5
+  - first:
+      213: 6345279021573631646
+    second: right_hand_world_shaper_idle_6
+  - first:
+      213: -5606659470674479757
+    second: right_hand_world_shaper_idle_7
+  - first:
+      213: -8672028986350381804
+    second: right_hand_world_shaper_idle_8
+  - first:
+      213: -5162466323756225631
+    second: right_hand_world_shaper_idle_9
+  - first:
+      213: 6235566040780283169
+    second: right_hand_world_shaper_idle_10
+  - first:
+      213: -626530804098069616
+    second: right_hand_world_shaper_idle_11
+  - first:
+      213: -1561454073264641489
+    second: right_hand_world_shaper_idle_12
+  - first:
+      213: -4286345350073681608
+    second: right_hand_world_shaper_idle_13
+  - first:
+      213: -2750670331525093167
+    second: right_hand_world_shaper_idle_14
+  - first:
+      213: 997854211358382485
+    second: right_hand_world_shaper_idle_15
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 1
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: right_hand_world_shaper_idle_0
+      rect:
+        serializedVersion: 2
+        x: 8
+        y: 455
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7d8ceb46ffe291110800000000000000
+      internalID: 1232067647504304343
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_idle_1
+      rect:
+        serializedVersion: 2
+        x: 72
+        y: 454
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4a0b092d9709133f0800000000000000
+      internalID: -922797595736100700
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_idle_2
+      rect:
+        serializedVersion: 2
+        x: 11
+        y: 427
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 17fe4536cb72ae210800000000000000
+      internalID: 1362945527306841969
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_idle_3
+      rect:
+        serializedVersion: 2
+        x: 75
+        y: 426
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a6cf4fb8f93d72960800000000000000
+      internalID: 7577257580275498090
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_idle_4
+      rect:
+        serializedVersion: 2
+        x: 48
+        y: 333
+        width: 12
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 69e422f2df815f3c0800000000000000
+      internalID: -4326524391322923370
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_idle_5
+      rect:
+        serializedVersion: 2
+        x: 112
+        y: 332
+        width: 12
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f2e1e6e1285dab720800000000000000
+      internalID: 2862835267980369455
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_idle_6
+      rect:
+        serializedVersion: 2
+        x: 51
+        y: 306
+        width: 6
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e9e62a1c6a5fe0850800000000000000
+      internalID: 6345279021573631646
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_idle_7
+      rect:
+        serializedVersion: 2
+        x: 115
+        y: 305
+        width: 6
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3753ed1bae42132b0800000000000000
+      internalID: -5606659470674479757
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_idle_8
+      rect:
+        serializedVersion: 2
+        x: 11
+        y: 201
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 415d1b25593c6a780800000000000000
+      internalID: -8672028986350381804
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_idle_9
+      rect:
+        serializedVersion: 2
+        x: 75
+        y: 200
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1abe79ffa3c3b58b0800000000000000
+      internalID: -5162466323756225631
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_idle_10
+      rect:
+        serializedVersion: 2
+        x: 14
+        y: 174
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 12d9232d64e298650800000000000000
+      internalID: 6235566040780283169
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_idle_11
+      rect:
+        serializedVersion: 2
+        x: 78
+        y: 173
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 09b05ec9d8d1e47f0800000000000000
+      internalID: -626530804098069616
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_idle_12
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 72
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f2a69f51bc9945ae0800000000000000
+      internalID: -1561454073264641489
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_idle_13
+      rect:
+        serializedVersion: 2
+        x: 100
+        y: 71
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 839f5383d97d384c0800000000000000
+      internalID: -4286345350073681608
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_idle_14
+      rect:
+        serializedVersion: 2
+        x: 39
+        y: 44
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1d8ad3b38e7a3d9d0800000000000000
+      internalID: -2750670331525093167
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_idle_15
+      rect:
+        serializedVersion: 2
+        x: 103
+        y: 43
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 599d4ad4e1719dd00800000000000000
+      internalID: 997854211358382485
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      right_hand_world_shaper_idle_0: 1232067647504304343
+      right_hand_world_shaper_idle_1: -922797595736100700
+      right_hand_world_shaper_idle_10: 6235566040780283169
+      right_hand_world_shaper_idle_11: -626530804098069616
+      right_hand_world_shaper_idle_12: -1561454073264641489
+      right_hand_world_shaper_idle_13: -4286345350073681608
+      right_hand_world_shaper_idle_14: -2750670331525093167
+      right_hand_world_shaper_idle_15: 997854211358382485
+      right_hand_world_shaper_idle_2: 1362945527306841969
+      right_hand_world_shaper_idle_3: 7577257580275498090
+      right_hand_world_shaper_idle_4: -4326524391322923370
+      right_hand_world_shaper_idle_5: 2862835267980369455
+      right_hand_world_shaper_idle_6: 6345279021573631646
+      right_hand_world_shaper_idle_7: -5606659470674479757
+      right_hand_world_shaper_idle_8: -8672028986350381804
+      right_hand_world_shaper_idle_9: -5162466323756225631
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

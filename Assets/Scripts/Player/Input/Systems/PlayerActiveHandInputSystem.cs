@@ -13,15 +13,11 @@ namespace Game.Player
 
         protected override void OnUpdate()
         {
-            if (UnityEngine.Time.timeScale <= 0f || Mouse.current == null) return;
-            var mouse = Mouse.current;
-            EquipmentSlot hand;
-            // If both buttons arrive in the same frame, the right hand wins.
-            if (mouse.rightButton.wasPressedThisFrame) hand = EquipmentSlot.RightHand;
-            else if (mouse.leftButton.wasPressedThisFrame) hand = EquipmentSlot.LeftHand;
-            else return;
+            if (UnityEngine.Time.timeScale <= 0f || Keyboard.current == null ||
+                !Keyboard.current.qKey.wasPressedThisFrame) return;
             foreach (var active in SystemAPI.Query<RefRW<PlayerActiveHand>>().WithAll<PlayerTag>())
-                active.ValueRW.Slot = hand;
+                active.ValueRW.Slot = active.ValueRO.Slot == EquipmentSlot.RightHand
+                    ? EquipmentSlot.LeftHand : EquipmentSlot.RightHand;
         }
     }
 }

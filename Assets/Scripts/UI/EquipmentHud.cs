@@ -4,6 +4,8 @@ using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using Game.Items;
 using Game.Items.Skills;
+using Game.World.Blocks;
+using Game.World.Rendering;
 
 namespace Game.UI
 {
@@ -26,6 +28,58 @@ namespace Game.UI
         [SerializeField] private float activeHandBorderPadding = 4f;
         [SerializeField] private Color activeHandBorderColor = new Color(1f, 0.9f, 0.65f, 1f);
         private readonly Image[] activeHandBorders = new Image[2];
+
+        [Header("Selected block")]
+        [SerializeField] private float selectedBlockGap = 12f;
+        [SerializeField] private Color selectedBlockBorderColor = new Color(0.35f, 0.95f, 0.8f, 1f);
+        private readonly RectTransform[] selectionFrames = new RectTransform[2];
+        private readonly RawImage[] selectionIcons = new RawImage[2];
+
+        public void SetSelectedBlock(int index, ItemPlacementSelection selection)
+        {
+            if (index < 0 || index >= 2) return;
+            var renderer = ChunkProceduralRenderer.Instance;
+            Texture2D atlas = null;
+            Rect uv = default;
+            bool visible = selection.Kind == PlacementSelectionKind.Block && selection.Id > 0 && selection.Id <= byte.MaxValue &&
+                renderer != null && renderer.TryGetBlockSideIcon((BlockId)selection.Id, out atlas, out uv);
+            if (!visible)
+            {
+                if (selectionFrames[index] != null) selectionFrames[index].gameObject.SetActive(false);
+                return;
+            }
+            if (selectionFrames[index] == null)
+            {
+                var hand = (RectTransform)icons[index].transform.parent;
+                var panel = (RectTransform)hand.parent;
+                var original = icons[2].transform.parent.GetComponent<Image>();
+                var frame = new GameObject("Selected block", typeof(RectTransform)).GetComponent<RectTransform>();
+                frame.SetParent(panel, false);
+                frame.anchorMin = frame.anchorMax = new Vector2(0f, 1f);
+                frame.pivot = new Vector2(0.5f, 0f);
+                frame.sizeDelta = ((RectTransform)original.transform).rect.size;
+                frame.anchoredPosition = new Vector2(hand.anchorMin.x * panel.rect.width + hand.anchoredPosition.x + hand.rect.center.x,
+                    panelBorderPadding.y + selectedBlockGap);
+                var border = frame.gameObject.AddComponent<Image>();
+                border.sprite = original.sprite;
+                border.type = original.type;
+                border.pixelsPerUnitMultiplier = original.pixelsPerUnitMultiplier;
+                border.color = selectedBlockBorderColor;
+                border.raycastTarget = false;
+                var picture = new GameObject("Block icon", typeof(RectTransform)).GetComponent<RectTransform>();
+                picture.SetParent(frame, false);
+                picture.anchorMin = picture.anchorMax = new Vector2(0.5f, 0.5f);
+                float size = Mathf.Max(1f, Mathf.Min(frame.rect.width, frame.rect.height) - 16f);
+                picture.sizeDelta = new Vector2(size, size);
+                var icon = picture.gameObject.AddComponent<RawImage>();
+                icon.raycastTarget = false;
+                selectionFrames[index] = frame;
+                selectionIcons[index] = icon;
+            }
+            selectionIcons[index].texture = atlas;
+            selectionIcons[index].uvRect = uv;
+            selectionFrames[index].gameObject.SetActive(true);
+        }
 
         public void SetActiveHand(EquipmentSlot hand)
         {

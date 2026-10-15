@@ -8,6 +8,8 @@ namespace Game.Player
         LeftHandTorch = 3,
         RightHandTorch = 4,
         LeftHandIgnitedTorch = 5,
-        RightHandIgnitedTorch = 6
+        RightHandIgnitedTorch = 6,
+        LeftHandWorldShaper = 7,
+        RightHandWorldShaper = 8
     }
 }

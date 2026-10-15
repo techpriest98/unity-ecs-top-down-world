@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace Game.Items.Skills
 {
-    public enum SkillChainNodeKind { ValidTopTarget, WithinDistance, Action, GroundItemTarget, Ignitable }
+    public enum SkillChainNodeKind { ValidTopTarget, WithinDistance, Action, GroundItemTarget, Ignitable, ValidTerrainTarget, ValidCursorTarget }
 
     [CreateAssetMenu(menuName = "Game/Items/Skills/Chain Node")]
     public sealed class SkillChainNode : ScriptableObject
@@ -55,6 +55,16 @@ namespace Game.Items.Skills
                 bool valid;
                 switch (node.Kind)
                 {
+                    case SkillChainNodeKind.ValidCursorTarget:
+                    case SkillChainNodeKind.ValidTerrainTarget:
+                        if (node.Cursor != CursorWorldPosition.Before && node.Cursor != CursorWorldPosition.Behind)
+                            return ConfigurationFailure(node, "Cursor position input is not connected.", out failure);
+                        if (!CursorWorldUtility.TryGetPosition(manager, player, node.Cursor, out var terrainCell) ||
+                            !CursorWorldUtility.TryGetBlock(manager, terrainCell, out var terrain) ||
+                            (node.Kind == SkillChainNodeKind.ValidTerrainTarget && BlockUtility.IsAir(terrain)))
+                        { failure = node.FailureMessage; return false; }
+                        positions[node] = (float3)terrainCell + 0.5f;
+                        break;
                     case SkillChainNodeKind.GroundItemTarget:
                         if (node.Cursor != CursorWorldPosition.Before)
                             return ConfigurationFailure(node, "Connect the Before Cursor position input.", out failure);
@@ -122,6 +132,26 @@ namespace Game.Items.Skills
                         }
                         if (node.PositionSource == null || !positions.TryGetValue(node.PositionSource, out position))
                             return ConfigurationFailure(node, "Position must come from an earlier node in this flow.", out failure);
+                        if (node.Action is SetWorldBlockAction setBlock)
+                        {
+                            var error = setBlock.GetConfigurationError(manager);
+                            if (error != null) return ConfigurationFailure(node, error, out failure);
+                            if (!setBlock.CanSetAt(manager, player, slot, item, (int3)math.floor(position)))
+                            { failure = node.FailureMessage; return false; }
+                            actions.Add((setBlock, position, Entity.Null, node.FailureMessage));
+                            positions[node] = position;
+                            break;
+                        }
+                        if (node.Action is PickPlacementSelectionAction pickSelection)
+                        {
+                            if (!pickSelection.ItemSelectionConnected)
+                                return ConfigurationFailure(node, "Connect the State output to Item Selection.", out failure);
+                            if (!pickSelection.CanPickAt(manager, player, slot, item, (int3)math.floor(position)))
+                            { failure = node.FailureMessage; return false; }
+                            actions.Add((pickSelection, position, Entity.Null, node.FailureMessage));
+                            positions[node] = position;
+                            break;
+                        }
                         if (!(node.Action is ThrowItemAction) && !(node.Action is PickUpItemAction))
                             return ConfigurationFailure(node, "Action asset is missing or unsupported by this chain runner.", out failure);
                         if (node.Action is ThrowItemAction throwConfig)
@@ -158,7 +188,11 @@ namespace Game.Items.Skills
                     ? currentItem != 0 && thrown.ExecuteAtPosition(manager, player, slot, currentItem, (int3)math.floor(step.position))
                     : step.action is PickUpItemAction picked
                         ? currentItem == 0 && picked.ExecuteTarget(manager, player, slot, step.target, step.position)
-                        : step.action is ReplaceEquippedItemAction replacement && replacement.ExecuteReplacement(manager, player, slot, currentItem);
+                        : step.action is ReplaceEquippedItemAction replacement
+                            ? replacement.ExecuteReplacement(manager, player, slot, currentItem)
+                            : step.action is SetWorldBlockAction setBlock
+                                ? setBlock.ExecuteAtPosition(manager, player, slot, currentItem, (int3)math.floor(step.position))
+                                : step.action is PickPlacementSelectionAction pickSelection && pickSelection.ExecuteAtPosition(manager, player, slot, currentItem, (int3)math.floor(step.position));
                 if (!executed) { failure = step.failure; return false; }
             }
             failure = null;

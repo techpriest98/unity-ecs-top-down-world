@@ -1,0 +1,964 @@
+fileFormatVersion: 2
+guid: d44bc7f0aba76044ab25ebbeec9fdd73
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -565310383376653298
+    second: right_hand_world_shaper_walk_0
+  - first:
+      213: -7265938797221994502
+    second: right_hand_world_shaper_walk_1
+  - first:
+      213: 8855366152905828897
+    second: right_hand_world_shaper_walk_2
+  - first:
+      213: 1487136369819608288
+    second: right_hand_world_shaper_walk_3
+  - first:
+      213: 8627831097789889836
+    second: right_hand_world_shaper_walk_4
+  - first:
+      213: 1271541381873657836
+    second: right_hand_world_shaper_walk_5
+  - first:
+      213: -7081872443817068201
+    second: right_hand_world_shaper_walk_6
+  - first:
+      213: -6104941267667693937
+    second: right_hand_world_shaper_walk_7
+  - first:
+      213: 8464458026665595613
+    second: right_hand_world_shaper_walk_8
+  - first:
+      213: -7722469296965048283
+    second: right_hand_world_shaper_walk_9
+  - first:
+      213: 841797774336221335
+    second: right_hand_world_shaper_walk_10
+  - first:
+      213: -7116671532720518017
+    second: right_hand_world_shaper_walk_11
+  - first:
+      213: 3322009814228684984
+    second: right_hand_world_shaper_walk_12
+  - first:
+      213: -8472168665646499261
+    second: right_hand_world_shaper_walk_13
+  - first:
+      213: -8850704230205591116
+    second: right_hand_world_shaper_walk_14
+  - first:
+      213: -7626498416425081539
+    second: right_hand_world_shaper_walk_15
+  - first:
+      213: 3186782503007540580
+    second: right_hand_world_shaper_walk_16
+  - first:
+      213: 7219832200737607022
+    second: right_hand_world_shaper_walk_17
+  - first:
+      213: -8858563162130879222
+    second: right_hand_world_shaper_walk_18
+  - first:
+      213: 4449927112628873146
+    second: right_hand_world_shaper_walk_19
+  - first:
+      213: 6233663953837765080
+    second: right_hand_world_shaper_walk_20
+  - first:
+      213: -4290324873798351166
+    second: right_hand_world_shaper_walk_21
+  - first:
+      213: -1736658358763943220
+    second: right_hand_world_shaper_walk_22
+  - first:
+      213: 4879518235701676448
+    second: right_hand_world_shaper_walk_23
+  - first:
+      213: -2630963372783793614
+    second: right_hand_world_shaper_walk_24
+  - first:
+      213: -6883751911340520930
+    second: right_hand_world_shaper_walk_25
+  - first:
+      213: -5650058931988242433
+    second: right_hand_world_shaper_walk_26
+  - first:
+      213: -6116740744662189986
+    second: right_hand_world_shaper_walk_27
+  - first:
+      213: -2964191588258015251
+    second: right_hand_world_shaper_walk_28
+  - first:
+      213: -1356984021945102204
+    second: right_hand_world_shaper_walk_29
+  - first:
+      213: -6268606640771532089
+    second: right_hand_world_shaper_walk_30
+  - first:
+      213: 5590870314472744420
+    second: right_hand_world_shaper_walk_31
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 1
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_0
+      rect:
+        serializedVersion: 2
+        x: 10
+        y: 454
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e04aef2933d9728f0800000000000000
+      internalID: -565310383376653298
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_1
+      rect:
+        serializedVersion: 2
+        x: 72
+        y: 455
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aff9ad719233a2b90800000000000000
+      internalID: -7265938797221994502
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_2
+      rect:
+        serializedVersion: 2
+        x: 139
+        y: 454
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 12a28fb299494ea70800000000000000
+      internalID: 8855366152905828897
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_3
+      rect:
+        serializedVersion: 2
+        x: 200
+        y: 455
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0e469af26ae53a410800000000000000
+      internalID: 1487136369819608288
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_4
+      rect:
+        serializedVersion: 2
+        x: 13
+        y: 426
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c2db5d5dba63cb770800000000000000
+      internalID: 8627831097789889836
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_5
+      rect:
+        serializedVersion: 2
+        x: 75
+        y: 427
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ce7e9cf562c65a110800000000000000
+      internalID: 1271541381873657836
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_6
+      rect:
+        serializedVersion: 2
+        x: 142
+        y: 426
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 759f7a1a88228bd90800000000000000
+      internalID: -7081872443817068201
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_7
+      rect:
+        serializedVersion: 2
+        x: 203
+        y: 427
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f8e4b0e2344e64ba0800000000000000
+      internalID: -6104941267667693937
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_8
+      rect:
+        serializedVersion: 2
+        x: 47
+        y: 333
+        width: 12
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dd25b978abbc77570800000000000000
+      internalID: 8464458026665595613
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_9
+      rect:
+        serializedVersion: 2
+        x: 112
+        y: 333
+        width: 12
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 528a98df61744d490800000000000000
+      internalID: -7722469296965048283
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_10
+      rect:
+        serializedVersion: 2
+        x: 174
+        y: 333
+        width: 12
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7906600ad9aaeab00800000000000000
+      internalID: 841797774336221335
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_11
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 333
+        width: 12
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f7c0f0d52f08c3d90800000000000000
+      internalID: -7116671532720518017
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_12
+      rect:
+        serializedVersion: 2
+        x: 50
+        y: 306
+        width: 6
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8b0567543562a1e20800000000000000
+      internalID: 3322009814228684984
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_13
+      rect:
+        serializedVersion: 2
+        x: 115
+        y: 306
+        width: 6
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 34af1fe6c7fcc6a80800000000000000
+      internalID: -8472168665646499261
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_14
+      rect:
+        serializedVersion: 2
+        x: 177
+        y: 306
+        width: 6
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4b17c8a456bfb2580800000000000000
+      internalID: -8850704230205591116
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_15
+      rect:
+        serializedVersion: 2
+        x: 243
+        y: 306
+        width: 6
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d3567e0e81c392690800000000000000
+      internalID: -7626498416425081539
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_16
+      rect:
+        serializedVersion: 2
+        x: 11
+        y: 198
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 465d13c5dc9b93c20800000000000000
+      internalID: 3186782503007540580
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_17
+      rect:
+        serializedVersion: 2
+        x: 75
+        y: 202
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e6d44ee522ff13460800000000000000
+      internalID: 7219832200737607022
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_18
+      rect:
+        serializedVersion: 2
+        x: 140
+        y: 199
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a0de3dc1dbf001580800000000000000
+      internalID: -8858563162130879222
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_19
+      rect:
+        serializedVersion: 2
+        x: 203
+        y: 201
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ab7af98d12151cd30800000000000000
+      internalID: 4449927112628873146
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_20
+      rect:
+        serializedVersion: 2
+        x: 14
+        y: 171
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8d138a1b65c628650800000000000000
+      internalID: 6233663953837765080
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_21
+      rect:
+        serializedVersion: 2
+        x: 78
+        y: 175
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2c60a362244b574c0800000000000000
+      internalID: -4290324873798351166
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_22
+      rect:
+        serializedVersion: 2
+        x: 143
+        y: 172
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cca89a58c6626e7e0800000000000000
+      internalID: -1736658358763943220
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_23
+      rect:
+        serializedVersion: 2
+        x: 206
+        y: 174
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0a90a0a8bf787b340800000000000000
+      internalID: 4879518235701676448
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_24
+      rect:
+        serializedVersion: 2
+        x: 35
+        y: 69
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 23a882c70c0fc7bd0800000000000000
+      internalID: -2630963372783793614
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_25
+      rect:
+        serializedVersion: 2
+        x: 100
+        y: 72
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e1ac1aabb100870a0800000000000000
+      internalID: -6883751911340520930
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_26
+      rect:
+        serializedVersion: 2
+        x: 164
+        y: 70
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fff51de2655f691b0800000000000000
+      internalID: -5650058931988242433
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_27
+      rect:
+        serializedVersion: 2
+        x: 228
+        y: 72
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e58704b53b8fc1ba0800000000000000
+      internalID: -6116740744662189986
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_28
+      rect:
+        serializedVersion: 2
+        x: 38
+        y: 41
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: de71ea794731dd6d0800000000000000
+      internalID: -2964191588258015251
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_29
+      rect:
+        serializedVersion: 2
+        x: 103
+        y: 44
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 480d41eb8360b2de0800000000000000
+      internalID: -1356984021945102204
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_30
+      rect:
+        serializedVersion: 2
+        x: 167
+        y: 42
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7ca7824097f6109a0800000000000000
+      internalID: -6268606640771532089
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_hand_world_shaper_walk_31
+      rect:
+        serializedVersion: 2
+        x: 231
+        y: 44
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4e5ac67ede2c69d40800000000000000
+      internalID: 5590870314472744420
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      right_hand_world_shaper_walk_0: -565310383376653298
+      right_hand_world_shaper_walk_1: -7265938797221994502
+      right_hand_world_shaper_walk_10: 841797774336221335
+      right_hand_world_shaper_walk_11: -7116671532720518017
+      right_hand_world_shaper_walk_12: 3322009814228684984
+      right_hand_world_shaper_walk_13: -8472168665646499261
+      right_hand_world_shaper_walk_14: -8850704230205591116
+      right_hand_world_shaper_walk_15: -7626498416425081539
+      right_hand_world_shaper_walk_16: 3186782503007540580
+      right_hand_world_shaper_walk_17: 7219832200737607022
+      right_hand_world_shaper_walk_18: -8858563162130879222
+      right_hand_world_shaper_walk_19: 4449927112628873146
+      right_hand_world_shaper_walk_2: 8855366152905828897
+      right_hand_world_shaper_walk_20: 6233663953837765080
+      right_hand_world_shaper_walk_21: -4290324873798351166
+      right_hand_world_shaper_walk_22: -1736658358763943220
+      right_hand_world_shaper_walk_23: 4879518235701676448
+      right_hand_world_shaper_walk_24: -2630963372783793614
+      right_hand_world_shaper_walk_25: -6883751911340520930
+      right_hand_world_shaper_walk_26: -5650058931988242433
+      right_hand_world_shaper_walk_27: -6116740744662189986
+      right_hand_world_shaper_walk_28: -2964191588258015251
+      right_hand_world_shaper_walk_29: -1356984021945102204
+      right_hand_world_shaper_walk_3: 1487136369819608288
+      right_hand_world_shaper_walk_30: -6268606640771532089
+      right_hand_world_shaper_walk_31: 5590870314472744420
+      right_hand_world_shaper_walk_4: 8627831097789889836
+      right_hand_world_shaper_walk_5: 1271541381873657836
+      right_hand_world_shaper_walk_6: -7081872443817068201
+      right_hand_world_shaper_walk_7: -6104941267667693937
+      right_hand_world_shaper_walk_8: 8464458026665595613
+      right_hand_world_shaper_walk_9: -7722469296965048283
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

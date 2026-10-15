@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b99e4abb27354441ca65f2405f2ef8e4, type: 3}
-  m_Name: Pick
+  m_Name: BreakTerrain
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.Skills.ItemSkillDefinition
-  Id: 9
-  DisplayName: Pick Terrain
-  Description: Pick Terrain
+  Id: 7
+  DisplayName: Nigredo
+  Description: Let decomposition begin
   Icon: {fileID: 0}
-  Conditions:
-  - {fileID: 11400000, guid: a396a045900a4dc30000000000000006, type: 2}
-  Actions:
-  - {fileID: 11400000, guid: 8f51382ad7f84f848af5348451e6b547, type: 2}
+  UseChain: 1
+  FirstNode: {fileID: 11400000, guid: b1fc67415cf54edc903fb8765e612ac1, type: 2}
+  Conditions: []
+  Actions: []

@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b99e4abb27354441ca65f2405f2ef8e4, type: 3}
-  m_Name: BreakTerrain
+  m_Name: Pick
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.Skills.ItemSkillDefinition
-  Id: 7
-  DisplayName: Break Terrain
-  Description: Break Terrain
+  Id: 9
+  DisplayName: Discern
+  Description: Reveal the nature of matter
   Icon: {fileID: 0}
-  Conditions:
-  - {fileID: 11400000, guid: a396a045900a4dc30000000000000005, type: 2}
-  Actions:
-  - {fileID: 11400000, guid: dfaf68e2811103745a1d2270bc5a87c2, type: 2}
+  UseChain: 1
+  FirstNode: {fileID: 11400000, guid: d1fc67415cf54edc903fb8765e612ac1, type: 2}
+  Conditions: []
+  Actions: []

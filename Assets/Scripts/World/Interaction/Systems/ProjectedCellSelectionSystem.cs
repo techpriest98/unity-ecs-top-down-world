@@ -87,11 +87,12 @@ namespace Game.World.Interaction
 
             float nearestDepth = float.MaxValue;
 
-            foreach (var (chunk, projectedCells) in
+            var waterLookup = SystemAPI.GetBufferLookup<ProjectedWaterCellData>(true);
+            foreach (var (chunk, projectedCells, entity) in
                      SystemAPI.Query<
                              RefRO<ChunkComponent>,
                              DynamicBuffer<ProjectedCellData>>()
-                         .WithAll<ChunkGenerated>())
+                         .WithAll<ChunkGenerated>().WithEntityAccess())
             {
                 float3 chunkPosition =
                     ChunkRenderPositionUtility.GetPosition(
@@ -129,75 +130,38 @@ namespace Game.World.Interaction
                     (uint)cellX |
                     ((uint)cellY << 16);
 
-                for (int i = 0; i < projectedCells.Length; i++)
-                {
-                    ProjectedCellData cell = projectedCells[i];
+                // Water can overlap the visible floor. Equal-depth solid faces
+                // must not replace the water surface under the pointer.
+                if (waterLookup.HasBuffer(entity))
+                    foreach (var water in waterLookup[entity])
+                        TrySelectCell(water.Value, packedPosition, chunk.ValueRO.Coordinate,
+                            chunkPosition, playerPosition, maximumDistanceSquared, ref nearestDepth, ref selection);
 
-                    if (cell.Position != packedPosition)
-                    {
-                        continue;
-                    }
-
-                    int3 sourceLocalPosition =
-                        ChunkUtility.ToLocalPosition(
-                            cell.SourceAirIndex);
-
-                    float3 sourceWorldPosition = new float3(
-                        chunk.ValueRO.Coordinate.x *
-                            ChunkSettings.SizeX +
-                        sourceLocalPosition.x +
-                        0.5f,
-
-                        sourceLocalPosition.y +
-                        0.5f,
-
-                        chunk.ValueRO.Coordinate.y *
-                            ChunkSettings.SizeZ +
-                        sourceLocalPosition.z +
-                        0.5f);
-
-                    if (math.distancesq(
-                            playerPosition,
-                            sourceWorldPosition) >
-                        maximumDistanceSquared)
-                    {
-                        break;
-                    }
-
-                    float depth = playerCamera.WorldToScreenPoint(
-                        new Vector3(
-                            chunkPosition.x,
-                            chunkPosition.y,
-                            chunkPosition.z)).z;
-
-                    if (depth < 0f ||
-                        depth >= nearestDepth)
-                    {
-                        break;
-                    }
-
-                    nearestDepth = depth;
-
-                    selection.ChunkCoordinate =
-                        chunk.ValueRO.Coordinate;
-
-                    selection.ProjectionPosition =
-                        cell.Position;
-
-                    selection.BlockData =
-                        cell.BlockData;
-
-                    selection.SourceAirIndex =
-                        cell.SourceAirIndex;
-
-                    selection.FaceType =
-                        cell.FaceType;
-
-                    selection.IsValid = true;
-
-                    break;
-                }
+                foreach (var cell in projectedCells)
+                    TrySelectCell(cell, packedPosition, chunk.ValueRO.Coordinate,
+                        chunkPosition, playerPosition, maximumDistanceSquared, ref nearestDepth, ref selection);
             }
+        }
+
+        private void TrySelectCell(in ProjectedCellData cell, uint packedPosition,
+            int2 coordinate, float3 chunkPosition, float3 playerPosition, float maximumDistanceSquared,
+            ref float nearestDepth, ref SelectedProjectedCell selection)
+        {
+            if (cell.Position != packedPosition) return;
+            int3 local = ChunkUtility.ToLocalPosition(cell.SourceAirIndex);
+            float3 source = new float3(coordinate.x * ChunkSettings.SizeX + local.x + 0.5f,
+                local.y + 0.5f, coordinate.y * ChunkSettings.SizeZ + local.z + 0.5f);
+            if (math.distancesq(playerPosition, source) > maximumDistanceSquared) return;
+            float depth = playerCamera.WorldToScreenPoint(
+                new Vector3(chunkPosition.x, chunkPosition.y, chunkPosition.z)).z;
+            if (depth < 0f || depth >= nearestDepth) return;
+            nearestDepth = depth;
+            selection.ChunkCoordinate = coordinate;
+            selection.ProjectionPosition = cell.Position;
+            selection.BlockData = cell.BlockData;
+            selection.SourceAirIndex = cell.SourceAirIndex;
+            selection.FaceType = cell.FaceType;
+            selection.IsValid = true;
         }
     }
 }

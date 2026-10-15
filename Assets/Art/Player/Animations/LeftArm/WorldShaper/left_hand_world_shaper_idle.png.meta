@@ -1,0 +1,548 @@
+fileFormatVersion: 2
+guid: 17bd39fd506aba64aae060cb8e68b976
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 23954656494321046
+    second: left_hand_construction_staff_idle_0
+  - first:
+      213: -796793671645524059
+    second: left_hand_construction_staff_idle_1
+  - first:
+      213: -170728271843014757
+    second: left_hand_construction_staff_idle_2
+  - first:
+      213: -2179684510061834388
+    second: left_hand_construction_staff_idle_3
+  - first:
+      213: 721945912794066433
+    second: left_hand_construction_staff_idle_4
+  - first:
+      213: -4020211554824829254
+    second: left_hand_construction_staff_idle_5
+  - first:
+      213: 6874430271784049310
+    second: left_hand_construction_staff_idle_6
+  - first:
+      213: -2492494714248343881
+    second: left_hand_construction_staff_idle_7
+  - first:
+      213: -5531886404326753233
+    second: left_hand_construction_staff_idle_8
+  - first:
+      213: -50616284574936816
+    second: left_hand_construction_staff_idle_9
+  - first:
+      213: -2987829223705005196
+    second: left_hand_construction_staff_idle_10
+  - first:
+      213: -4604614188218410354
+    second: left_hand_construction_staff_idle_11
+  - first:
+      213: -1725410717229006744
+    second: left_hand_construction_staff_idle_12
+  - first:
+      213: 2127918266227226239
+    second: left_hand_construction_staff_idle_13
+  - first:
+      213: -4164735633171324417
+    second: left_hand_construction_staff_idle_14
+  - first:
+      213: 3233993690226256008
+    second: left_hand_construction_staff_idle_15
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 1
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: left_hand_construction_staff_idle_0
+      rect:
+        serializedVersion: 2
+        x: 47
+        y: 455
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 69d7f0712aa155000800000000000000
+      internalID: 23954656494321046
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_construction_staff_idle_1
+      rect:
+        serializedVersion: 2
+        x: 111
+        y: 454
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5af0a42906831f4f0800000000000000
+      internalID: -796793671645524059
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_construction_staff_idle_2
+      rect:
+        serializedVersion: 2
+        x: 50
+        y: 427
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b974ea39a8371adf0800000000000000
+      internalID: -170728271843014757
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_construction_staff_idle_3
+      rect:
+        serializedVersion: 2
+        x: 114
+        y: 426
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c6fc75f8c7430c1e0800000000000000
+      internalID: -2179684510061834388
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_construction_staff_idle_4
+      rect:
+        serializedVersion: 2
+        x: 4
+        y: 333
+        width: 12
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 10ea22f8bfdd40a00800000000000000
+      internalID: 721945912794066433
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_construction_staff_idle_5
+      rect:
+        serializedVersion: 2
+        x: 68
+        y: 332
+        width: 12
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ab6ceb014e65538c0800000000000000
+      internalID: -4020211554824829254
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_construction_staff_idle_6
+      rect:
+        serializedVersion: 2
+        x: 7
+        y: 306
+        width: 6
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e9a51eee8e1e66f50800000000000000
+      internalID: 6874430271784049310
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_construction_staff_idle_7
+      rect:
+        serializedVersion: 2
+        x: 71
+        y: 305
+        width: 6
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7be40b06341e86dd0800000000000000
+      internalID: -2492494714248343881
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_construction_staff_idle_8
+      rect:
+        serializedVersion: 2
+        x: 16
+        y: 200
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f2c7a4cdf9aca33b0800000000000000
+      internalID: -5531886404326753233
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_construction_staff_idle_9
+      rect:
+        serializedVersion: 2
+        x: 80
+        y: 199
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0119f02e1cc2c4ff0800000000000000
+      internalID: -50616284574936816
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_construction_staff_idle_10
+      rect:
+        serializedVersion: 2
+        x: 19
+        y: 172
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4733887b6291986d0800000000000000
+      internalID: -2987829223705005196
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_construction_staff_idle_11
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 171
+        width: 6
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e8a9487cacf1910c0800000000000000
+      internalID: -4604614188218410354
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_construction_staff_idle_12
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 74
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 860c9e3281c1e08e0800000000000000
+      internalID: -1725410717229006744
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_construction_staff_idle_13
+      rect:
+        serializedVersion: 2
+        x: 105
+        y: 73
+        width: 12
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f76f9819362e78d10800000000000000
+      internalID: 2127918266227226239
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_construction_staff_idle_14
+      rect:
+        serializedVersion: 2
+        x: 44
+        y: 46
+        width: 6
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ff16961e103e336c0800000000000000
+      internalID: -4164735633171324417
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_hand_construction_staff_idle_15
+      rect:
+        serializedVersion: 2
+        x: 108
+        y: 45
+        width: 6
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8886ac7702471ec20800000000000000
+      internalID: 3233993690226256008
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      left_hand_construction_staff_idle_0: 23954656494321046
+      left_hand_construction_staff_idle_1: -796793671645524059
+      left_hand_construction_staff_idle_10: -2987829223705005196
+      left_hand_construction_staff_idle_11: -4604614188218410354
+      left_hand_construction_staff_idle_12: -1725410717229006744
+      left_hand_construction_staff_idle_13: 2127918266227226239
+      left_hand_construction_staff_idle_14: -4164735633171324417
+      left_hand_construction_staff_idle_15: 3233993690226256008
+      left_hand_construction_staff_idle_2: -170728271843014757
+      left_hand_construction_staff_idle_3: -2179684510061834388
+      left_hand_construction_staff_idle_4: 721945912794066433
+      left_hand_construction_staff_idle_5: -4020211554824829254
+      left_hand_construction_staff_idle_6: 6874430271784049310
+      left_hand_construction_staff_idle_7: -2492494714248343881
+      left_hand_construction_staff_idle_8: -5531886404326753233
+      left_hand_construction_staff_idle_9: -50616284574936816
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

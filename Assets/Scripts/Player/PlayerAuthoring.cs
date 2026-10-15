@@ -79,14 +79,6 @@ namespace Game.Player
                     Value = float2.zero
                 });
 
-                AddComponent(entity, new PlayerBuildInput
-                {
-                    PointerScreenPosition = float2.zero,
-                    IsBuildMode = false,
-                    RemovePressed = false,
-                    PlacePressed = false
-                });
-
                 AddComponent(entity, new PlayerJumpInput
                 {
                     IsPressed = false
@@ -143,11 +135,6 @@ namespace Game.Player
                 AddComponent(entity, new PlayerLightColor
                 {
                     Value = new float4(1f, 1f, 1f, 1f)
-                });
-
-                AddComponent(entity, new PlayerSelectedBlock
-                {
-                    Value = Game.World.Blocks.BlockId.Stone
                 });
 
                 DynamicBuffer<PlayerVisualPart> parts =

@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Place
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.Skills.ItemSkillDefinition
   Id: 8
-  DisplayName: Place Terrain
-  Description: Place Terrain
+  DisplayName: Albedo
+  Description: Let matter take form
   Icon: {fileID: 0}
-  Conditions:
-  - {fileID: 11400000, guid: a396a045900a4dc30000000000000007, type: 2}
-  Actions:
-  - {fileID: 11400000, guid: 9c7aacf8e287b6a4089234e3435b02ea, type: 2}
+  UseChain: 1
+  FirstNode: {fileID: 11400000, guid: c1fc67415cf54edc903fb8765e612ac1, type: 2}
+  Conditions: []
+  Actions: []
