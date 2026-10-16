@@ -122,6 +122,11 @@ MonoBehaviour:
   activeHandBorderColor: {r: 1, g: 0.9, b: 0.65, a: 1}
   selectedBlockGap: 12
   blockPickerSeparator: {fileID: 21300000, guid: e74123a50e9cf46c7a5d5b94759eda1b, type: 3}
+  menuFont: {fileID: 11400000, guid: 69dfe637f91eb4f13acbf1ec3d8835b5, type: 2}
+  minimapWorldSpan: 128
+  minimapBackground: {fileID: 21300000, guid: c7d30d50c63a14b46b21751e30c60abd, type: 3}
+  minimapSize: 240
+  minimapMargin: {x: 24, y: 24}
   tooltipWidth: 300
   tooltipGap: 12
 --- !u!1 &2004

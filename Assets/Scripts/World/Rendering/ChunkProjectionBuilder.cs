@@ -52,7 +52,8 @@ namespace Game.World.Rendering
 
             int3 away = ViewDirectionUtility.GetAwayFromCameraOffset(direction);
             bool splitPath = blockAccessor.HasSplitCells(chunkCoordinate) ||
-                blockAccessor.HasSplitCells(chunkCoordinate + new int2(away.x, away.z));
+                blockAccessor.HasSplitCells(chunkCoordinate + new int2(away.x, away.z)) ||
+                (projectionClippingEnabled && GetClippingHeight(playerPosition) % 1f != 0f);
 
             for (int u = 0; u < bounds.Width; u++)
             {
@@ -117,17 +118,8 @@ namespace Game.World.Rendering
 
             // The mask describes the clipped volume, including air and interior
             // cells, rather than only the visible faces emitted at its boundary.
-            if (ShouldClipOpaqueFace(
-                    projectionClippingEnabled,
-                    playerPosition,
-                    GetGlobalPosition(chunkCoordinate, world, 0.5f),
-                    world.y,
-                    direction))
-            {
-                writer.RecordClippedCell(projectionX, projectionY);
-                if (projectionY >= 1)
-                    writer.RecordClippedCell(projectionX, (ushort)(projectionY - 1));
-            }
+            RecordClippedVolume(writer, chunkCoordinate, world, projectionX, projectionY,
+                projectionClippingEnabled, playerPosition, direction);
 
             ushort sourceAirIndex = checked(
                 (ushort)ChunkUtility.ToIndex(
@@ -744,6 +736,19 @@ namespace Game.World.Rendering
                 localPosition.z + 0.5f);
         }
 
+        public static float GetClippingHeight(float3 playerPosition) =>
+            math.floor((playerPosition.y + .01f) * 2f) * .5f;
+
+        private static void RecordClippedVolume(ProjectionWriter writer, int2 coordinate, int3 position,
+            ushort x, ushort y, bool clipping, float3 player, ViewDirection direction)
+        {
+            if (!clipping) return;
+            if (ShouldClipOpaqueFace(clipping, player, GetGlobalPosition(coordinate, position, .25f), position.y, direction))
+                writer.RecordClippedCell(x, y);
+            if (y > 0 && ShouldClipOpaqueFace(clipping, player, GetGlobalPosition(coordinate, position, .75f), position.y, direction))
+                writer.RecordClippedCell(x, (ushort)(y - 1));
+        }
+
         private static bool ShouldClipOpaqueFace(
             bool projectionClippingEnabled,
             float3 playerPosition,
@@ -754,9 +759,7 @@ namespace Game.World.Rendering
             if (!projectionClippingEnabled)
                 return false;
 
-            int playerFloorY = (int)math.floor(playerPosition.y + 0.01f);
-
-            if (blockY < playerFloorY)
+            if (facePosition.y <= GetClippingHeight(playerPosition) + .001f)
                 return false;
 
             int depthDistance = GetDepthDistance(
@@ -790,10 +793,25 @@ namespace Game.World.Rendering
             if (!projectionClippingEnabled)
                 return;
 
-            int clipFromBlockY = (int)math.floor(playerPosition.y + 0.01f);
+            float clipHeight = GetClippingHeight(playerPosition);
+            int clipFromBlockY = (int)math.floor(clipHeight);
 
             if (upperWorld.y != clipFromBlockY)
                 return;
+
+            if (clipHeight > clipFromBlockY)
+            {
+                CellContents contents = blockAccessor.GetContentsOrAir(chunkCoordinate, upperWorld.x, upperWorld.y, upperWorld.z);
+                // A real lower-half surface is already emitted. Only cap a solid
+                // volume crossing the half-height cut plane.
+                if (!IsOpaque(contents.Lower.Id) || !IsOpaque(contents.Upper.Id) || projectionY == 0 ||
+                    upperWorld.y + 1 >= ChunkSettings.SizeY ||
+                    !ShouldClipOpaqueFace(true, playerPosition, GetGlobalPosition(chunkCoordinate, upperWorld, .75f),
+                        upperWorld.y, direction)) return;
+                writer.TryAddCutTop(new BlockData(contents.Lower.Id, contents.Lower.Durability, BlockShape.LowerHalf),
+                    (ushort)ChunkUtility.ToIndex(upperWorld + new int3(0, 1, 0)), projectionX, (ushort)(projectionY - 1));
+                return;
+            }
 
             int3 belowWorld = upperWorld + new int3(0, -1, 0);
 
@@ -867,6 +885,8 @@ namespace Game.World.Rendering
             bool half = behindBlock.Shape == BlockShape.LowerHalf;
             bool upperOnly = blockAccessor.GetBlockOrAir(chunkCoordinate, world.x, world.y, world.z).Shape == BlockShape.LowerHalf;
             if (half && upperOnly) return;
+            float clipHeight = GetClippingHeight(playerPosition);
+            if (behindWorld.y + (half ? .5f : 1f) <= clipHeight + .001f) return;
 
             float3 facePosition = GetGlobalPosition(
                 chunkCoordinate,
@@ -899,6 +919,7 @@ namespace Game.World.Rendering
                 checked((ushort)(projectionY - (half ? 1 : 2))));
 
             if (half || upperOnly) return;
+            if (behindWorld.y + .5f <= clipHeight + .001f) return;
             writer.TryAddCutSideLower(
                 behindBlock,
                 sourceCellIndex,

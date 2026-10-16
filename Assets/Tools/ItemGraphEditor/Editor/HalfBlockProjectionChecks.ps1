@@ -138,7 +138,7 @@ public static class HalfProjectionChecks {
  static void Check(bool ok,string label) {if(!ok)throw new Exception(label);}
  static (List<Game.World.Rendering.ProjectedCellData> solid,List<Game.World.Rendering.ProjectedCellData> water) Build(
   Dictionary<Unity.Mathematics.int3,Game.World.Blocks.BlockData> map,Game.World.Rendering.ViewDirection view,bool clip=false,
-  Dictionary<Unity.Mathematics.int3,Game.World.Blocks.CellContents> contents=null) {
+  Dictionary<Unity.Mathematics.int3,Game.World.Blocks.CellContents> contents=null,float playerHeight=7f) {
   map=new Dictionary<Unity.Mathematics.int3,Game.World.Blocks.BlockData>(map);
   if(contents!=null) foreach(var pair in contents) map[pair.Key]=new Game.World.Blocks.BlockData {Shape=Game.World.Blocks.SplitCellUtility.ReferenceShape};
   var source=new List<Game.World.Blocks.BlockData>(new Game.World.Blocks.BlockData[16*256*16]);
@@ -151,11 +151,12 @@ public static class HalfProjectionChecks {
    Unity.Mathematics.int2.zero,new Game.World.Chunks.ChunkBlockAccessor(map,contents),
    new Game.World.Rendering.ProjectionWriter(opaque,new Unity.Entities.DynamicBuffer<Game.World.Rendering.ProjectedCellData>(solid),clips),
    new Game.World.Rendering.WaterProjectionWriter(opaque,translucent,new Unity.Entities.DynamicBuffer<Game.World.Rendering.ProjectedWaterCellData>(water)),
-   view,clip,new Unity.Mathematics.float3(7,7,7));
+   view,clip,new Unity.Mathematics.float3(7,playerHeight,7));
   return (solid,water.Select(x=>x.Value).ToList());
  }
  public static string Run() {
   CheckRockyShore();
+  CheckTerrainMinimap();
   CheckSplitStorage();
   CheckSaveValidation();
   CheckPlacement();
@@ -175,6 +176,21 @@ public static class HalfProjectionChecks {
   Check(Game.World.Lighting.BlockLightGeometry.Intersects(half,Unity.Mathematics.int3.zero,
    new Unity.Mathematics.float3(.5f,2f,.5f),new Unity.Mathematics.float3(0,-1,0),3f),"Downward light leaked through half");
   foreach(Game.World.Rendering.ViewDirection view in Enum.GetValues(typeof(Game.World.Rendering.ViewDirection))) {
+   var floorPosition=new Unity.Mathematics.int3(7,7,7)-Game.World.Rendering.ViewDirectionUtility.GetAwayFromCameraOffset(view)*2;
+   foreach(var floorMaterial in new[]{BlockId.Sand,BlockId.OceanWater}) {
+    var floorMap=new Dictionary<Unity.Mathematics.int3,Game.World.Blocks.BlockData>{{floorPosition,new Game.World.Blocks.BlockData(floorMaterial,255,Game.World.Blocks.BlockShape.LowerHalf)}};
+    var visible=Build(floorMap,view,playerHeight:7.5f);
+    var clippedFloor=Build(floorMap,view,true,playerHeight:7.5f);
+    var originalFaces=floorMaterial==BlockId.Sand?visible.solid:visible.water;
+    var remainingFaces=floorMaterial==BlockId.Sand?clippedFloor.solid:clippedFloor.water;
+    Check(remainingFaces.Count==originalFaces.Count && remainingFaces.Any(c=>c.FaceType==ProjectedFaceType.Top && !c.IsCutTop),
+     $"Half floor at feet was clipped: {view}, {floorMaterial}");
+   }
+   var wallMap=new Dictionary<Unity.Mathematics.int3,Game.World.Blocks.BlockData>{{floorPosition,new Game.World.Blocks.BlockData(BlockId.Stone,255)}};
+   var cutWall=Build(wallMap,view,true,playerHeight:7.5f).solid;
+   Check(cutWall.Any(c=>c.FaceType==ProjectedFaceType.SideLower && !c.IsCutSide) &&
+    !cutWall.Any(c=>c.FaceType==ProjectedFaceType.SideUpper && !c.IsCutSide) && cutWall.Any(c=>c.IsCutTop),
+    $"Full wall did not clip at half height: {view}");
    var clipPosition=new Unity.Mathematics.int3(7,8,7)-Game.World.Rendering.ViewDirectionUtility.GetAwayFromCameraOffset(view)*2;
    foreach(var clipShape in new[]{Game.World.Blocks.BlockShape.Full,Game.World.Blocks.BlockShape.LowerHalf}) {
     var waterMap=new Dictionary<Unity.Mathematics.int3,Game.World.Blocks.BlockData>{{clipPosition,new Game.World.Blocks.BlockData(Game.World.Blocks.BlockId.OceanWater,255,clipShape)}};
@@ -269,6 +285,46 @@ public static class HalfProjectionChecks {
   changes.Record(Unity.Mathematics.int2.zero,5,new Game.World.Blocks.CellContents(stone,stone));
   changes.Apply(Unity.Mathematics.int2.zero,cells,splits);
   Check(changes.Values.Count()==1 && splits.Length==0 && cells[5].BlockId==stone.Id,"Registry overwrite left stale split data");
+ }
+ static void CheckTerrainMinimap() {
+  var blocks=new Unity.Entities.DynamicBuffer<BlockData>(new List<BlockData>(new BlockData[16*256*16]));
+  var splits=new Unity.Entities.DynamicBuffer<SplitCellData>(new List<SplitCellData>());
+  var surface=new Unity.Entities.DynamicBuffer<ChunkSurfaceSample>(new List<ChunkSurfaceSample>(new ChunkSurfaceSample[256]));
+  var sand=new BlockPart(BlockId.Sand,255);var water=new BlockPart(BlockId.OceanWater,255);var air=default(BlockPart);
+  foreach(int x in new[]{0,7,15}) foreach(int z in new[]{0,7,15}) {
+   int column=z*16+x,index=Game.World.Chunks.ChunkUtility.ToIndex(x,7,z);
+   SplitCellUtility.Set(blocks,splits,index,new CellContents(sand,water));
+   Check(TerrainMinimapUtility.UpdateColumn(blocks,splits,surface,x,z),"Initial surface not marked changed");
+   Check(surface[column].Material==BlockId.OceanWater && surface[column].HeightHalf==16,"Surface must see water above sand");
+   SplitCellUtility.Set(blocks,splits,index,new CellContents(sand,air));
+   Check(TerrainMinimapUtility.UpdateColumn(blocks,splits,surface,x,z,7) &&
+    surface[column].Material==BlockId.Sand && surface[column].HeightHalf==15,"Water removal must expose half sand");
+   blocks[Game.World.Chunks.ChunkUtility.ToIndex(x,2,z)]=new BlockData(BlockId.Stone,255);
+   Check(!TerrainMinimapUtility.UpdateColumn(blocks,splits,surface,x,z,7),"Underground change repainted unchanged surface");
+   blocks[Game.World.Chunks.ChunkUtility.ToIndex(x,9,z)]=new BlockData(BlockId.MeadowGrass,255);
+   Check(TerrainMinimapUtility.UpdateColumn(blocks,splits,surface,x,z,9) && surface[column].HeightHalf==20 &&
+    surface[column].Material==BlockId.MeadowGrass,"Placement above surface not reflected");
+   blocks[Game.World.Chunks.ChunkUtility.ToIndex(x,9,z)]=default;
+   TerrainMinimapUtility.UpdateColumn(blocks,splits,surface,x,z,9);
+   Check(surface[column].Material==BlockId.Sand && surface[column].HeightHalf==15,"Removal lost lower half floor");
+   SplitCellUtility.Set(blocks,splits,index,new CellContents(air,water));
+   TerrainMinimapUtility.UpdateColumn(blocks,splits,surface,x,z,7);
+   Check(surface[column].Material==BlockId.OceanWater && surface[column].HeightHalf==16,"Upper-only water lost surface");
+   SplitCellUtility.Set(blocks,splits,index,default);
+   TerrainMinimapUtility.UpdateColumn(blocks,splits,surface,x,z,7);
+   Check(surface[column].Material==BlockId.Stone && surface[column].HeightHalf==6,"Removing top must reveal next sky-visible block");
+  }
+  Check(System.Runtime.InteropServices.Marshal.SizeOf<ChunkSurfaceSample>()<=4,"Surface cache exceeds four bytes per column");
+  foreach(int centre in new[]{-33,-17,-1,0,15,16,33}) {
+   var used=new HashSet<int>();
+   for(int z=centre-8;z<centre+8;z++) for(int x=centre-8;x<centre+8;x++) {
+    int px=TerrainMinimapUtility.RingTileOffset(x),pz=TerrainMinimapUtility.RingTileOffset(z);
+    Check(px>=0 && px<=240 && pz>=0 && pz<=240 && used.Add(px+pz*256),"Ring cache overlaps or leaves texture at negative chunk edges");
+    var uv=TerrainMinimapUtility.RingUv(new float2(x*16+.5f,z*16+.5f));
+    Check(math.distance(uv*256,new float2(px+.5f,pz+.5f))<.001f,"Scrolling UV does not match world column texel centre");
+   }
+  }
+  Console.WriteLine("Terrain minimap PASS: sky-visible material, water over half sand, upper-only water, edits, hidden changes and 4-byte columns");
  }
  static void CheckRockyShore() {
   var settings=new Game.World.Generation.Biomes.RockyShore.RockyShoreSettingsComponent {

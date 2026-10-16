@@ -166,6 +166,15 @@ namespace Game.World.Blocks
                     SplitCellUtility.SetLegacy(blocks, splits, blockIndex, request.Value);
                 }
                 worldChanged = true;
+                var surface = state.EntityManager.GetBuffer<ChunkSurfaceSample>(chunkEntity);
+                int previousTop = (surface[localZ * ChunkSettings.SizeX + localX].HeightHalf - 1) / 2;
+                if (TerrainMinimapUtility.UpdateColumn(blocks, splits, surface, localX, localZ,
+                        math.max(previousTop, request.WorldPosition.y)))
+                {
+                    var revision = state.EntityManager.GetComponentData<ChunkSurfaceRevision>(chunkEntity);
+                    revision.Value++;
+                    state.EntityManager.SetComponentData(chunkEntity, revision);
+                }
 
                 AddDirtyChunk(
                     chunkCoordinate,

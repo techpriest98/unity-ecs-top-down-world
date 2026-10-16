@@ -1,5 +1,9 @@
 using Game.Items;
 using Game.Player;
+using Game.World.Generation;
+using Game.World.Rendering;
+using Game.World.Blocks;
+using Game.World.Chunks;
 using Unity.Entities;
 using UnityEngine;
 
@@ -10,6 +14,7 @@ namespace Game.UI
     {
         private EntityQuery playerQuery;
         private EntityQuery libraryQuery;
+        private EntityQuery minimapQuery;
         private EquipmentHud hud;
         private bool ownsHud;
 
@@ -19,6 +24,7 @@ namespace Game.UI
                 ComponentType.ReadOnly<PlayerEquipmentSlot>(),
                 ComponentType.ReadOnly<PlayerAvailableSkill>());
             libraryQuery = GetEntityQuery(ComponentType.ReadOnly<ItemDefinitionReference>());
+            minimapQuery = GetEntityQuery(ComponentType.ReadOnly<WorldMinimapInfo>(), ComponentType.ReadOnly<WorldMinimapCell>());
             RequireForUpdate(playerQuery);
             RequireForUpdate(libraryQuery);
         }
@@ -41,6 +47,23 @@ namespace Game.UI
                 ownsHud = true;
             }
             Entity player = playerQuery.GetSingletonEntity();
+            if (minimapQuery.CalculateEntityCount() == 1 && EntityManager.HasComponent<PlayerWorldPosition>(player))
+            {
+                Entity map = minimapQuery.GetSingletonEntity();
+                var view = SystemAPI.TryGetSingleton<ViewDirectionComponent>(out var viewDirection)
+                    ? viewDirection.Value : ViewDirection.Front;
+                if (SystemAPI.TryGetSingleton<ViewDirectionTransitionComponent>(out var transition) && transition.IsActive)
+                    view = transition.TargetDirection;
+                hud.SetMinimap(EntityManager.GetComponentData<WorldMinimapInfo>(map),
+                    EntityManager.GetBuffer<WorldMinimapCell>(map, true),
+                    EntityManager.GetComponentData<PlayerWorldPosition>(player).Value,
+                    view);
+                foreach (var (chunk, revision, surface, entity) in SystemAPI.Query<RefRO<ChunkComponent>,
+                             RefRO<ChunkSurfaceRevision>, DynamicBuffer<ChunkSurfaceSample>>()
+                             .WithAll<ChunkGenerated>().WithEntityAccess())
+                    hud.SetMinimapChunk(chunk.ValueRO.Coordinate, entity, revision.ValueRO.Value, surface);
+                hud.EndMinimapFrame();
+            }
             hud.SetActiveHand(EntityManager.HasComponent<PlayerActiveHand>(player)
                 ? EntityManager.GetComponentData<PlayerActiveHand>(player).Slot : EquipmentSlot.RightHand);
             var slots = EntityManager.GetBuffer<PlayerEquipmentSlot>(player, true);

@@ -7,9 +7,34 @@ using Game.Player;
 using Game.Items.Skills;
 using Game.World.Blocks;
 using Game.World.Rendering;
+using Game.World.Generation;
 
 namespace Game.UI
 {
+    // Runtime-only UI geometry: no texture asset is needed for the view cone.
+    [RequireComponent(typeof(CanvasRenderer))]
+    public sealed class MinimapViewSector : MaskableGraphic
+    {
+        protected override void OnPopulateMesh(VertexHelper mesh)
+        {
+            mesh.Clear();
+            const int segments = 24;
+            const float halfAngle = 35f;
+            float radius = Mathf.Min(rectTransform.rect.width, rectTransform.rect.height) * .5f;
+            Vector2 centre = rectTransform.rect.center;
+            mesh.AddVert(centre, color, Vector2.zero);
+            Color edge = color;
+            edge.a = 0f;
+            for (int i = 0; i <= segments; i++)
+            {
+                float angle = Mathf.Lerp(-halfAngle, halfAngle, (float)i / segments) * Mathf.Deg2Rad;
+                var point = centre + new Vector2(Mathf.Sin(angle), Mathf.Cos(angle)) * radius;
+                mesh.AddVert(point, edge, Vector2.zero);
+                if (i > 0) mesh.AddTriangle(0, i, i + 1);
+            }
+        }
+    }
+
     [ExecuteAlways]
     public sealed class EquipmentHud : MonoBehaviour
     {
@@ -33,7 +58,19 @@ namespace Game.UI
         [Header("Selected block")]
         [SerializeField] private float selectedBlockGap = 12f;
         [Header("Block picker")]
+        [SerializeField] private TMP_FontAsset menuFont;
         [SerializeField] private Sprite blockPickerSeparator;
+        [Header("Minimap")]
+        [SerializeField] private Sprite minimapBackground;
+        [SerializeField, Range(16f, 224f)] private float minimapWorldSpan = 128f;
+        [SerializeField, Min(120f)] private float minimapSize = 240f;
+        [SerializeField] private Vector2 minimapMargin = new Vector2(24f, 24f);
+        private RectTransform minimapRoot, minimapViewport, minimapViewSector;
+        private RawImage minimapImage;
+        private TMP_Text minimapBiome;
+        private Texture2D minimapTexture;
+        private uint minimapRevision;
+        private int minimapLastBiome = -1;
         private readonly RectTransform[] selectionFrames = new RectTransform[2];
         private readonly RawImage[] selectionIcons = new RawImage[2];
 
@@ -405,7 +442,7 @@ namespace Game.UI
             var rect = PickerRect(value, parent);
             var text = rect.gameObject.AddComponent<TextMeshProUGUI>();
             text.text = value;
-            text.font = names[0].font;
+            text.font = menuFont != null ? menuFont : names[0].font;
             text.fontSize = size;
             text.color = names[0].color;
             text.alignment = TextAlignmentOptions.Center;
@@ -536,6 +573,231 @@ namespace Game.UI
                 "\n" + mode, cell, 14f);
             label.rectTransform.anchorMin = label.rectTransform.anchorMax = new Vector2(.5f, 0f);
             label.rectTransform.pivot = new Vector2(.5f, 0f); label.rectTransform.sizeDelta = new Vector2(100f, 42f);
+        }
+
+        private const int TerrainMapSize = 256;
+        private static readonly Color32 UnknownTerrain = new Color32(22, 25, 25, 255);
+        private sealed class MinimapChunk
+        {
+            public Unity.Entities.Entity Entity;
+            public uint Revision, Seen;
+            public readonly ChunkSurfaceSample[] Surface = new ChunkSurfaceSample[256];
+            public readonly Color32[] Pixels = new Color32[256];
+        }
+        private readonly System.Collections.Generic.Dictionary<Unity.Mathematics.int2, MinimapChunk> minimapChunks = new();
+        private readonly System.Collections.Generic.HashSet<Unity.Mathematics.int2> minimapDirty = new();
+        private readonly System.Collections.Generic.List<Unity.Mathematics.int2> minimapRemoved = new();
+        private readonly Color32[] minimapEmptyTile = new Color32[256];
+        private Unity.Mathematics.int2 minimapChunkMinimum;
+        private uint minimapFrame;
+        private bool minimapUploadPending;
+
+        private void ResetTerrainMinimap(uint revision)
+        {
+            minimapChunks.Clear(); minimapDirty.Clear();
+            if (minimapTexture == null)
+                minimapTexture = new Texture2D(TerrainMapSize, TerrainMapSize, TextureFormat.RGBA32, false)
+                {
+                    name = "Sky-visible terrain minimap", filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Repeat
+                };
+            var empty = new Color32[TerrainMapSize * TerrainMapSize];
+            for (int i = 0; i < empty.Length; i++) empty[i] = UnknownTerrain;
+            for (int i = 0; i < minimapEmptyTile.Length; i++) minimapEmptyTile[i] = UnknownTerrain;
+            minimapTexture.SetPixels32(empty);
+            minimapImage.texture = minimapTexture;
+            minimapUploadPending = true;
+            minimapRevision = revision;
+        }
+
+        private void DirtyMinimapChunk(Unity.Mathematics.int2 coordinate)
+        {
+            minimapDirty.Add(coordinate);
+            minimapDirty.Add(coordinate + new Unity.Mathematics.int2(1, 0));
+            minimapDirty.Add(coordinate + new Unity.Mathematics.int2(-1, 0));
+            minimapDirty.Add(coordinate + new Unity.Mathematics.int2(0, 1));
+            minimapDirty.Add(coordinate + new Unity.Mathematics.int2(0, -1));
+        }
+
+        public void SetMinimapChunk(Unity.Mathematics.int2 coordinate, Unity.Entities.Entity entity, uint revision,
+            Unity.Entities.DynamicBuffer<ChunkSurfaceSample> surface)
+        {
+            var local = coordinate - minimapChunkMinimum;
+            if (minimapTexture == null || surface.Length != 256 ||
+                Unity.Mathematics.math.any(local < 0) || Unity.Mathematics.math.any(local >= 16)) return;
+            bool added = !minimapChunks.TryGetValue(coordinate, out var cached);
+            if (added) minimapChunks.Add(coordinate, cached = new MinimapChunk());
+            cached.Seen = minimapFrame;
+            if (!added && cached.Entity == entity && cached.Revision == revision) return;
+            cached.Entity = entity; cached.Revision = revision;
+            for (int i = 0; i < 256; i++) cached.Surface[i] = surface[i];
+            DirtyMinimapChunk(coordinate);
+        }
+
+        private float MinimapHeightAt(int x, int z, float fallback)
+        {
+            var coordinate = new Unity.Mathematics.int2(Mathf.FloorToInt(x / 16f), Mathf.FloorToInt(z / 16f));
+            if (!minimapChunks.TryGetValue(coordinate, out var cached)) return fallback;
+            var sample = cached.Surface[(z - coordinate.y * 16) * 16 + x - coordinate.x * 16];
+            return sample.Material == BlockId.Air ? fallback : sample.HeightHalf * .5f;
+        }
+
+        private void UploadMinimapTile(Unity.Mathematics.int2 coordinate, Color32[] pixels)
+        {
+            // A fixed-size ring avoids moving/rebuilding terrain pixels while
+            // walking. The viewport scrolls through this texture using UVs.
+            int x = TerrainMinimapUtility.RingTileOffset(coordinate.x);
+            int z = TerrainMinimapUtility.RingTileOffset(coordinate.y);
+            minimapTexture.SetPixels32(x, z, 16, 16, pixels);
+            minimapUploadPending = true;
+        }
+
+        public void EndMinimapFrame()
+        {
+            if (minimapTexture == null) return;
+            minimapRemoved.Clear();
+            foreach (var pair in minimapChunks)
+                if (pair.Value.Seen != minimapFrame) minimapRemoved.Add(pair.Key);
+            foreach (var coordinate in minimapRemoved)
+            {
+                minimapChunks.Remove(coordinate);
+                UploadMinimapTile(coordinate, minimapEmptyTile);
+                DirtyMinimapChunk(coordinate);
+            }
+            foreach (var coordinate in minimapDirty)
+            {
+                if (!minimapChunks.TryGetValue(coordinate, out var cached)) continue;
+                for (int z = 0; z < 16; z++) for (int x = 0; x < 16; x++)
+                {
+                    int i = z * 16 + x;
+                    var sample = cached.Surface[i];
+                    Color baseColor = TerrainMinimapColor(sample.Material);
+                    float height = sample.HeightHalf * .5f;
+                    int worldX = coordinate.x * 16 + x, worldZ = coordinate.y * 16 + z;
+                    float gradient = height - MinimapHeightAt(worldX - 1, worldZ, height) +
+                        height - MinimapHeightAt(worldX, worldZ + 1, height);
+                    float shade = Mathf.Clamp(1f + gradient * .09f, .65f, 1.2f);
+                    cached.Pixels[i] = new Color(baseColor.r * shade, baseColor.g * shade, baseColor.b * shade, 1f);
+                }
+                UploadMinimapTile(coordinate, cached.Pixels);
+            }
+            minimapDirty.Clear();
+            if (minimapUploadPending)
+            {
+                minimapTexture.Apply(false, false);
+                minimapUploadPending = false;
+            }
+        }
+
+        private static Color32 TerrainMinimapColor(BlockId material) => material switch
+        {
+            BlockId.Dirt => new Color32(117, 91, 66, 255),
+            BlockId.Stone => new Color32(105, 112, 110, 255),
+            BlockId.Sand => new Color32(180, 169, 125, 255),
+            BlockId.OceanWater => new Color32(35, 78, 98, 255),
+            BlockId.RiverWater => new Color32(49, 95, 110, 255),
+            BlockId.Snow => new Color32(205, 220, 225, 255),
+            BlockId.PlainsGrass or BlockId.PlainsHighGrass => new Color32(126, 145, 75, 255),
+            BlockId.MeadowGrass or BlockId.MeadowHighGrass => new Color32(100, 155, 85, 255),
+            BlockId.DarkForestGrass => new Color32(49, 95, 61, 255),
+            _ => UnknownTerrain
+        };
+
+        public void SetMinimap(WorldMinimapInfo info,
+            Unity.Entities.DynamicBuffer<WorldMinimapCell> cells, Unity.Mathematics.float3 player,
+            ViewDirection view)
+        {
+            if (info.Resolution < 2 || info.WorldSize <= 0 || cells.Length != info.Resolution * info.Resolution) return;
+            if (minimapRoot == null) CreateMinimap();
+            var intoWorld = ViewDirectionUtility.GetAwayFromCameraOffset(view);
+            float facingAngle = Mathf.Atan2(-intoWorld.x, intoWorld.z) * Mathf.Rad2Deg;
+            minimapViewSector.localRotation = Quaternion.Euler(0f, 0f, facingAngle);
+            if (minimapTexture == null || minimapRevision != info.Revision) ResetTerrainMinimap(info.Revision);
+            // Only move the cached image. Neither sampling nor texture upload
+            // depends on player movement, camera zoom, or view rotation.
+            float side = Mathf.Max(120f, minimapSize);
+            minimapRoot.sizeDelta = new Vector2(side, side + 68f);
+            minimapRoot.anchoredPosition = -minimapMargin;
+            minimapFrame++;
+            minimapChunkMinimum = (Unity.Mathematics.int2)Unity.Mathematics.math.floor(player.xz / 16f) - 8;
+            float uvSpan = Mathf.Clamp(minimapWorldSpan, 16f, 224f) / TerrainMapSize;
+            minimapImage.rectTransform.sizeDelta = Vector2.one * (side - 36f);
+            var terrainUv = TerrainMinimapUtility.RingUv(player.xz);
+            minimapImage.uvRect = new Rect(terrainUv.x - uvSpan * .5f, terrainUv.y - uvSpan * .5f, uvSpan, uvSpan);
+            var uv = info.ToWorldUv(player.xz);
+            WorldBiome biome = WorldBiome.Ocean;
+            if (Unity.Mathematics.math.all(uv >= 0f) && Unity.Mathematics.math.all(uv <= 1f))
+            {
+                var sample = (Unity.Mathematics.int2)Unity.Mathematics.math.round(uv * (info.Resolution - 1));
+                biome = cells[sample.x + sample.y * info.Resolution].Biome;
+            }
+            if (minimapLastBiome != (int)biome)
+            {
+                minimapBiome.text = System.Text.RegularExpressions.Regex.Replace(biome.ToString(), "([a-z])([A-Z])", "$1 $2");
+                minimapLastBiome = (int)biome;
+            }
+        }
+
+        private void CreateMinimap()
+        {
+            minimapRoot = PickerRect("Minimap", transform);
+            minimapRoot.anchorMin = minimapRoot.anchorMax = minimapRoot.pivot = Vector2.one;
+            var background = minimapRoot.gameObject.AddComponent<Image>();
+            background.sprite = minimapBackground != null ? minimapBackground : panelBorder.parent.GetComponent<Image>().sprite;
+            background.color = new Color(1f, 1f, 1f, .9411765f);
+            background.raycastTarget = false;
+            var mapArea = PickerRect("Map area", minimapRoot);
+            mapArea.anchorMin = new Vector2(0f, 0f); mapArea.anchorMax = Vector2.one;
+            mapArea.offsetMin = new Vector2(18f, 52f); mapArea.offsetMax = new Vector2(-18f, -52f);
+            minimapViewport = PickerRect("Viewport", mapArea);
+            minimapViewport.anchorMin = Vector2.zero; minimapViewport.anchorMax = Vector2.one;
+            minimapViewport.offsetMin = minimapViewport.offsetMax = Vector2.zero;
+            var ocean = minimapViewport.gameObject.AddComponent<Image>();
+            ocean.color = DiamondSquarePreview.GetBiomeColor(WorldBiome.Ocean); ocean.raycastTarget = false;
+            minimapViewport.gameObject.AddComponent<RectMask2D>();
+            var picture = PickerRect("Cached terrain", minimapViewport);
+            picture.anchorMin = picture.anchorMax = new Vector2(.5f, .5f);
+            minimapImage = picture.gameObject.AddComponent<RawImage>(); minimapImage.raycastTarget = false;
+            var frame = PickerRect("Frame", minimapRoot);
+            frame.anchorMin = Vector2.zero; frame.anchorMax = Vector2.one;
+            frame.offsetMin = frame.offsetMax = Vector2.zero;
+            var original = panelBorder.GetComponent<Image>();
+            var border = frame.gameObject.AddComponent<Image>();
+            border.sprite = original.sprite; border.type = original.type; border.color = original.color;
+            border.pixelsPerUnitMultiplier = original.pixelsPerUnitMultiplier; border.raycastTarget = false;
+            minimapViewSector = PickerRect("Camera view sector", mapArea);
+            minimapViewSector.anchorMin = minimapViewSector.anchorMax = new Vector2(.5f, .5f);
+            minimapViewSector.sizeDelta = new Vector2(108f, 108f);
+            var sector = minimapViewSector.gameObject.AddComponent<MinimapViewSector>();
+            Color sectorColor = names[0].color;
+            sectorColor.a = .55f;
+            sector.color = sectorColor;
+            sector.raycastTarget = false;
+            foreach (float size in new[] { 11f, 7f })
+            {
+                var marker = PickerRect(size > 7f ? "Marker outline" : "Player marker", mapArea);
+                marker.anchorMin = marker.anchorMax = new Vector2(.5f, .5f);
+                marker.sizeDelta = Vector2.one * size;
+                marker.localRotation = Quaternion.Euler(0f, 0f, 45f);
+                var image = marker.gameObject.AddComponent<Image>();
+                image.color = size > 7f ? new Color(.08f, .08f, .06f, 1f) : names[0].color;
+                image.raycastTarget = false;
+            }
+            var north = PickerText("N", mapArea, 16f);
+            north.rectTransform.anchorMin = north.rectTransform.anchorMax = new Vector2(.5f, 1f);
+            north.rectTransform.anchoredPosition = new Vector2(0f, 18f);
+            north.rectTransform.sizeDelta = new Vector2(28f, 24f);
+            minimapBiome = PickerText("", minimapRoot, 17f);
+            minimapBiome.rectTransform.anchorMin = minimapBiome.rectTransform.anchorMax = new Vector2(.5f, 0f);
+            minimapBiome.rectTransform.pivot = new Vector2(.5f, 0f);
+            minimapBiome.rectTransform.anchoredPosition = new Vector2(0f, 18f);
+            minimapBiome.rectTransform.sizeDelta = new Vector2(240f, 28f);
+            if (blockPicker != null) blockPicker.SetAsLastSibling();
+        }
+
+        private void OnDestroy()
+        {
+            CloseBlockPicker();
+            if (minimapTexture != null) Destroy(minimapTexture);
         }
 
         private void OnEnable() => ApplyBorderPadding();

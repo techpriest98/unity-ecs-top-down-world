@@ -106,6 +106,45 @@ namespace Game.World.Blocks
         }
     }
 
+    public struct ChunkSurfaceRevision : IComponentData { public uint Value; }
+
+    [InternalBufferCapacity(0)]
+    public struct ChunkSurfaceSample : IBufferElementData
+    {
+        public BlockId Material;
+        public ushort HeightHalf;
+    }
+
+    public static class TerrainMinimapUtility
+    {
+        public static int RingTileOffset(int coordinate) => ((coordinate % 16) + 16) % 16 * 16;
+        public static float2 RingUv(float2 player) => math.frac(player / 256f);
+
+        public static bool UpdateColumn(DynamicBuffer<BlockData> blocks, DynamicBuffer<SplitCellData> splits,
+            DynamicBuffer<ChunkSurfaceSample> surface, int x, int z, int startY = ChunkSettings.SizeY - 1)
+        {
+            int column = z * ChunkSettings.SizeX + x;
+            var next = default(ChunkSurfaceSample);
+            for (int y = math.min(startY, ChunkSettings.SizeY - 1); y >= 0; y--)
+            {
+                int index = ChunkUtility.ToIndex(x, y, z);
+                var raw = blocks[index];
+                if (!SplitCellUtility.IsSplit(raw) && raw.BlockId == BlockId.Air) continue;
+                var contents = SplitCellUtility.Get(blocks, splits, index);
+                bool upper = contents.Upper.Id != BlockId.Air;
+                BlockId material = upper ? contents.Upper.Id : contents.Lower.Id;
+                if (material == BlockId.Air) continue;
+                next.Material = material;
+                next.HeightHalf = (ushort)(y * 2 + (upper ? 2 : 1));
+                break;
+            }
+            var previous = surface[column];
+            if (previous.Material == next.Material && previous.HeightHalf == next.HeightHalf) return false;
+            surface[column] = next;
+            return true;
+        }
+    }
+
     public static class WorldItemCollisionUtility
     {
         public static bool Sweep(in ChunkBlockAccessor accessor, float3 start, float3 end, float radius,

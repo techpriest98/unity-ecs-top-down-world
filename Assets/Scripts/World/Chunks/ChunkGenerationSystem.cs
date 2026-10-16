@@ -31,6 +31,7 @@ namespace Game.World.Chunks
         private uint loadedSeed;
         private WorldGenerationSettingsComponent loadedWorldSettings;
         private bool hasLoadedWorld;
+        private Entity minimapEntity;
 
         public void OnCreate(ref SystemState state)
         {
@@ -52,11 +53,15 @@ namespace Game.World.Chunks
             loadedSeed = 0;
             loadedWorldSettings = default;
             hasLoadedWorld = false;
+            minimapEntity = state.EntityManager.CreateEntity();
+            state.EntityManager.AddComponentData(minimapEntity, default(WorldMinimapInfo));
+            state.EntityManager.AddBuffer<WorldMinimapCell>(minimapEntity);
         }
 
         public void OnDestroy(ref SystemState state)
         {
             DisposeWorldData();
+            if (state.EntityManager.Exists(minimapEntity)) state.EntityManager.DestroyEntity(minimapEntity);
         }
 
         [BurstCompile]
@@ -77,7 +82,7 @@ namespace Game.World.Chunks
             BlockDatabaseComponent blockDatabase =
                 SystemAPI.GetSingleton<BlockDatabaseComponent>();
 
-            EnsureWorldData(worldSeed, worldSettings);
+            if (EnsureWorldData(worldSeed, worldSettings)) PublishMinimap(ref state, worldSeed, worldSettings);
             int chunkCount = SystemAPI.QueryBuilder()
                 .WithAll<ChunkComponent>()
                 .Build()
@@ -130,6 +135,16 @@ namespace Game.World.Chunks
                     blockDatabase);
 
                 changes.Apply(coordinate, blocks, state.EntityManager.GetBuffer<SplitCellData>(entity));
+                var surface = state.EntityManager.GetBuffer<ChunkSurfaceSample>(entity);
+                surface.ResizeUninitialized(ChunkSettings.SizeX * ChunkSettings.SizeZ);
+                var surfaceSplits = state.EntityManager.GetBuffer<SplitCellData>(entity, true);
+                for (int z = 0; z < ChunkSettings.SizeZ; z++)
+                    for (int x = 0; x < ChunkSettings.SizeX; x++)
+                    {
+                        surface[z * ChunkSettings.SizeX + x] = default;
+                        TerrainMinimapUtility.UpdateColumn(blocks, surfaceSplits, surface, x, z);
+                    }
+                state.EntityManager.SetComponentData(entity, new ChunkSurfaceRevision { Value = 1 });
 
                 ecb.AddComponent<ChunkGenerated>(entity);
                 ecb.SetComponentEnabled<ChunkNeedsProjection>(
@@ -154,7 +169,7 @@ namespace Game.World.Chunks
         // World data
         // ================================================================
 
-        private void EnsureWorldData(
+        private bool EnsureWorldData(
             uint worldSeed,
             in WorldGenerationSettingsComponent worldSettings)
         {
@@ -166,7 +181,7 @@ namespace Game.World.Chunks
                 landmassMap.IsCreated;
 
             if (sameWorld)
-                return;
+                return false;
 
             DisposeWorldData();
 
@@ -210,6 +225,27 @@ namespace Game.World.Chunks
             loadedSeed = worldSeed;
             loadedWorldSettings = worldSettings;
             hasLoadedWorld = true;
+            return true;
+        }
+
+        private void PublishMinimap(ref SystemState state, uint seed, in WorldGenerationSettingsComponent settings)
+        {
+            using var map = WorldBiomeMap.Create(worldHeightMap, coastDistanceMap, landmassMap,
+                worldAnchors, settings.MacroSeaLevel, seed, Allocator.Temp);
+            var pixels = state.EntityManager.GetBuffer<WorldMinimapCell>(minimapEntity);
+            pixels.ResizeUninitialized(map.Resolution * map.Resolution);
+            for (int z = 0; z < map.Resolution; z++)
+                for (int x = 0; x < map.Resolution; x++)
+                    pixels[x + z * map.Resolution] = new WorldMinimapCell { Biome = map.Get(x, z) };
+            uint revision = state.EntityManager.GetComponentData<WorldMinimapInfo>(minimapEntity).Revision + 1;
+            state.EntityManager.SetComponentData(minimapEntity, new WorldMinimapInfo
+            {
+                Resolution = map.Resolution,
+                WorldMinimum = new int2(worldHeightMap.WorldMinX, worldHeightMap.WorldMinZ),
+                WorldSize = worldHeightMap.WorldSizeInBlocks,
+                MacroOrigin = macroSampleOrigin,
+                Revision = revision
+            });
         }
 
         private void DisposeWorldData()

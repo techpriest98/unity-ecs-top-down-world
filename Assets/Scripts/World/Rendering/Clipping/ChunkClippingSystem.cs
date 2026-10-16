@@ -48,6 +48,7 @@ namespace Game.World.Rendering
             int3 playerCell =
                 (int3)math.floor(
                     playerPosition);
+            playerCell.y = (int)(ChunkProjectionBuilder.GetClippingHeight(playerPosition) * 2f);
 
 
             bool playerCellChanged =

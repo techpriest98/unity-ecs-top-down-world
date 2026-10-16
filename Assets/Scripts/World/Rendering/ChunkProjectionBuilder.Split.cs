@@ -26,7 +26,8 @@ namespace Game.World.Rendering
             BlockData currentRaw = blocks[ChunkUtility.ToIndex(position)];
             BlockData belowRaw = position.y > 0 ? blocks[ChunkUtility.ToIndex(belowPosition)] : default;
             BlockData behindRaw = RawAt(blocks, coordinate, accessor, behindPosition);
-            if (!SplitCellUtility.IsSplit(currentRaw) && !SplitCellUtility.IsSplit(belowRaw) &&
+            bool halfCut = clipping && GetClippingHeight(player) == position.y + .5f;
+            if (!halfCut && !SplitCellUtility.IsSplit(currentRaw) && !SplitCellUtility.IsSplit(belowRaw) &&
                 !SplitCellUtility.IsSplit(behindRaw)) return false;
 
             CellContents current = Contents(currentRaw, coordinate, position, accessor);
@@ -34,11 +35,7 @@ namespace Game.World.Rendering
             CellContents behind = Contents(behindRaw, coordinate, behindPosition, accessor);
             ushort source = (ushort)ChunkUtility.ToIndex(position);
 
-            if (ShouldClipOpaqueFace(clipping, player, GetGlobalPosition(coordinate, position, .5f), position.y, direction))
-            {
-                writer.RecordClippedCell(x, y);
-                if (y > 0) writer.RecordClippedCell(x, (ushort)(y - 1));
-            }
+            RecordClippedVolume(writer, coordinate, position, x, y, clipping, player, direction);
 
             if (position.y > 0)
             {

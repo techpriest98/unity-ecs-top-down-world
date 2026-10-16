@@ -410,8 +410,11 @@ namespace Game.World.Generation
                 biomeMap.Get(
                     x,
                     z);
+            return GetBiomeColor(biome);
+        }
 
-
+        public static Color32 GetBiomeColor(WorldBiome biome)
+        {
             return biome switch
             {
                 WorldBiome.Ocean =>

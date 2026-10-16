@@ -1,9 +1,28 @@
 using System;
 using Unity.Collections;
 using Unity.Mathematics;
+using Unity.Entities;
 
 namespace Game.World.Generation
 {
+    public struct WorldMinimapInfo : IComponentData
+    {
+        public int Resolution;
+        public int2 WorldMinimum;
+        public int WorldSize;
+        public int2 MacroOrigin;
+        public uint Revision;
+
+        public float2 ToWorldUv(float2 player) =>
+            (player + (float2)MacroOrigin - (float2)WorldMinimum) / math.max(1, WorldSize);
+    }
+
+    [InternalBufferCapacity(0)]
+    public struct WorldMinimapCell : IBufferElementData
+    {
+        public WorldBiome Biome;
+    }
+
     public struct WorldBiomeMap : IDisposable
     {
         private NativeArray<byte> biomes;
