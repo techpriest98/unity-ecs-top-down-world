@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: 12
   DisplayName: Rubedo
   Description: Perfect the shape
-  Icon: {fileID: 0}
+  Icon: {fileID: 8019212828100123809, guid: da41d8272f6e0044680e5be0ace74335, type: 3}
   UseChain: 1
   FirstNode: {fileID: 11400000, guid: 89cd57cb9c2f4a49bb678cc510c2dc13, type: 2}
   Conditions: []

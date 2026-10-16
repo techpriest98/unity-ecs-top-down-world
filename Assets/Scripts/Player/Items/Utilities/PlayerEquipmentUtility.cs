@@ -65,30 +65,6 @@ namespace Game.Player
             return index >= 0 ? slots[index].Instance : default;
         }
 
-        public static bool SetPlacementSelection(DynamicBuffer<PlayerEquipmentSlot> slots,
-            EquipmentSlot slot, ItemPlacementSelection selection)
-        {
-            int index = FindSlot(slots, slot);
-            if (index < 0 || slots[index].Instance.DefinitionId == 0)
-                return false;
-            var entry = slots[index];
-            entry.Instance.PlacementSelection = selection;
-            slots[index] = entry;
-            return true;
-        }
-
-        public static bool SetPlacementSelection(DynamicBuffer<PlayerEquipmentSlot> slots,
-            EquipmentSlot slot, ItemPlacementSelection selection, BlockPlacementMode mode)
-        {
-            int index = FindSlot(slots, slot);
-            if (index < 0 || slots[index].Instance.DefinitionId == 0) return false;
-            var entry = slots[index];
-            entry.Instance.PlacementSelection = selection;
-            entry.Instance.PlacementMode = mode;
-            slots[index] = entry;
-            return true;
-        }
-
         public static bool TrySwap(DynamicBuffer<PlayerEquipmentSlot> slots,
             ref ItemLibraryBlob library, EquipmentSlot first, EquipmentSlot second)
         {

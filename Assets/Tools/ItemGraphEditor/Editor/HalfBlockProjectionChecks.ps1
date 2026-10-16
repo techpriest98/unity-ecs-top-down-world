@@ -9,6 +9,10 @@ $halfFiles = @(
  'Scripts/World/Blocks/BlockId.cs','Scripts/World/Blocks/BlockShape.cs','Scripts/World/Blocks/BlockUtility.cs',
  'Scripts/World/Blocks/Components/BlockData.cs','Scripts/World/Blocks/SplitCellUtility.cs',
  'Scripts/Items/BlockPlacementMode.cs',
+ 'Scripts/World/Generation/WorldBiome.cs','Scripts/World/Generation/Components/WorldGenerationSettingsComponent.cs',
+ 'Scripts/World/Generation/Biomes/BiomeTerrainSample.cs',
+ 'Scripts/World/Generation/Biomes/RockyShore/RockyShoreTerrain.cs',
+ 'Scripts/World/Generation/Biomes/RockyShore/Components/RockyShoreSettingsComponent.cs',
  'Scripts/World/Chunks/ChunkSettings.cs','Scripts/World/Chunks/ChunkUtility.cs',
  'Scripts/World/Rendering/ProjectedFaceType.cs','Scripts/World/Rendering/Components/ProjectedCellData.cs',
  'Scripts/World/Rendering/ProjectedCellPacking.cs','Scripts/World/Rendering/Components/ProjectedWaterCellData.cs',
@@ -151,6 +155,7 @@ public static class HalfProjectionChecks {
   return (solid,water.Select(x=>x.Value).ToList());
  }
  public static string Run() {
+  CheckRockyShore();
   CheckSplitStorage();
   CheckSaveValidation();
   CheckPlacement();
@@ -170,6 +175,13 @@ public static class HalfProjectionChecks {
   Check(Game.World.Lighting.BlockLightGeometry.Intersects(half,Unity.Mathematics.int3.zero,
    new Unity.Mathematics.float3(.5f,2f,.5f),new Unity.Mathematics.float3(0,-1,0),3f),"Downward light leaked through half");
   foreach(Game.World.Rendering.ViewDirection view in Enum.GetValues(typeof(Game.World.Rendering.ViewDirection))) {
+   var clipPosition=new Unity.Mathematics.int3(7,8,7)-Game.World.Rendering.ViewDirectionUtility.GetAwayFromCameraOffset(view)*2;
+   foreach(var clipShape in new[]{Game.World.Blocks.BlockShape.Full,Game.World.Blocks.BlockShape.LowerHalf}) {
+    var waterMap=new Dictionary<Unity.Mathematics.int3,Game.World.Blocks.BlockData>{{clipPosition,new Game.World.Blocks.BlockData(Game.World.Blocks.BlockId.OceanWater,255,clipShape)}};
+    var visibleWater=Build(waterMap,view).water;
+    var cutWater=Build(waterMap,view,true).water;
+    Check(visibleWater.Count>0 && cutWater.Count==0,$"Water ignored near clipping: {view}, {clipShape}");
+   }
    Game.World.Chunks.ChunkBlockAccessor.ReadCount=0;
    var a=Build(new Dictionary<Unity.Mathematics.int3,Game.World.Blocks.BlockData>{{p,full}},view).solid;
    long fullReads=Game.World.Chunks.ChunkBlockAccessor.ReadCount;
@@ -257,6 +269,38 @@ public static class HalfProjectionChecks {
   changes.Record(Unity.Mathematics.int2.zero,5,new Game.World.Blocks.CellContents(stone,stone));
   changes.Apply(Unity.Mathematics.int2.zero,cells,splits);
   Check(changes.Values.Count()==1 && splits.Length==0 && cells[5].BlockId==stone.Id,"Registry overwrite left stale split data");
+ }
+ static void CheckRockyShore() {
+  var settings=new Game.World.Generation.Biomes.RockyShore.RockyShoreSettingsComponent {
+   CliffWidth=20,CliffWidthVariation=.35f,CliffWidthNoiseScale=.006f,
+   CliffMinHeight=10,CliffMaxHeight=24,CliffSharpness=3,CliffNoiseScale=.02f,
+   GrassDepth=3,RampNoiseScale=.008f,RampThreshold=.65f,RampStrength=.8f
+  };
+  var terrain=new Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain(settings);
+  var world=new Game.World.Generation.WorldGenerationSettingsComponent {SeaLevelHeight=64};
+  var beach=terrain.Sample(0,0,63.5f,0,1,123,world);
+  Check(beach.Height==64 && beach.HalfSurface && terrain.GetBlock(63,beach.Zone,beach.Height)==BlockId.Sand,
+   "Beach lost fractional sand surface");
+  var whole=terrain.Sample(0,0,64f,0,1,123,world);
+  Check(whole.Height==64 && !whole.HalfSurface,"Integer beach unexpectedly became half");
+  int halves=0,grassHalves=0;
+  foreach(uint seed in new uint[]{1,123,777})
+   for(int x=-32;x<=32;x+=4) for(int z=-16;z<=16;z+=4) for(int d=1;d<=48;d+=3) {
+    var sample=terrain.Sample(x,z,65.25f,d,1,seed,world);
+    var again=terrain.Sample(x,z,65.25f,d,1,seed,world);
+    Check(sample.Height==again.Height && sample.HalfSurface==again.HalfSurface && sample.Zone==again.Zone,
+     "Rocky Shore generation is nondeterministic");
+    Check(sample.Height>=1 && sample.Height<256,"Rocky Shore height outside chunk");
+    if(!sample.HalfSurface) continue;
+    halves++;
+    var material=terrain.GetBlock(sample.Height-1,sample.Zone,sample.Height);
+    if(sample.Zone==(byte)Game.World.Generation.Biomes.RockyShore.RockyShoreZone.GrassTop) {
+     Check(material==BlockId.MeadowGrass,"Half cliff summit lost grass cap");grassHalves++;
+    }
+    Check(terrain.GetBlock(sample.Height,sample.Zone,sample.Height)==BlockId.Air,"Terrain exceeds half surface");
+   }
+  Check(halves>0 && grassHalves>0,"Rocky Shore produced no half slopes or grass summits");
+  Console.WriteLine("Rocky Shore PASS: fractional beach, integer heights, half slopes, grass caps and deterministic seeds");
  }
  static void CheckPlacement() {
   var selection=new Game.World.Interaction.SelectedProjectedCell {

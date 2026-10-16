@@ -196,6 +196,7 @@ namespace Game.World.Rendering
                 new NativeList<ProjectedCellRenderData>(
                     totalWaterCellCount,
                     Allocator.Temp);
+            using var clippedWaterRenderData = new NativeList<ProjectedCellRenderData>(Allocator.Temp);
 
             bool hasBounds = false;
             using var clipRects = new NativeList<float4>(Allocator.Temp);
@@ -293,7 +294,8 @@ namespace Game.World.Rendering
                     ProjectedCellData cell =
                         projectedWaterCells[index].Value;
 
-                    waterRenderData.Add(
+                    var waterTarget = clippingEnabled.ValueRO ? clippedWaterRenderData : waterRenderData;
+                    waterTarget.Add(
                         new ProjectedCellRenderData
                         {
                             BlockData = cell.BlockData,
@@ -367,6 +369,7 @@ namespace Game.World.Rendering
             renderer.UploadClipMask(clipRects.AsArray());
             renderer.UploadClipped(clippedRenderData.AsArray(), bounds);
             renderer.UploadWater(waterRenderData.AsArray(), bounds);
+            renderer.UploadClippedWater(clippedWaterRenderData.AsArray(), bounds);
 
             using NativeArray<Entity> dirtyEntities =
                 dirtyQuery.ToEntityArray(Allocator.Temp);

@@ -24,7 +24,7 @@ namespace Game.World.Generation.Biomes.RockyShore
         public BiomeTerrainSample Sample(
             int worldX,
             int worldZ,
-            int baseHeight,
+            float baseHeight,
             float shoreDistance,
             float biomeInfluence,
             uint worldSeed,
@@ -163,7 +163,7 @@ namespace Game.World.Generation.Biomes.RockyShore
                     cliffTopHeight,
                     heightProfile);
 
-                int height = BlendHeight(
+                float height = BlendHeight(
                     baseHeight,
                     shapedHeight,
                     biomeInfluence);
@@ -208,7 +208,7 @@ namespace Game.World.Generation.Biomes.RockyShore
                 baseHeight,
                 inlandProgress);
 
-            int blendedHeight = BlendHeight(
+            float blendedHeight = BlendHeight(
                 baseHeight,
                 targetHeight,
                 biomeInfluence);
@@ -290,18 +290,18 @@ namespace Game.World.Generation.Biomes.RockyShore
         // Height
         // ================================================================
 
-        private static int BlendHeight(
-            int baseHeight,
+        private static float BlendHeight(
+            float baseHeight,
             float targetHeight,
             float influence)
         {
-            return (int)math.round(math.lerp(
+            return math.lerp(
                 baseHeight,
                 targetHeight,
-                influence));
+                influence);
         }
 
-        private static int ClampHeight(int height)
+        private static float ClampHeight(float height)
         {
             return math.clamp(
                 height,

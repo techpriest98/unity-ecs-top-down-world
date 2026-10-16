@@ -37,6 +37,14 @@ namespace Game.World.Generation.Terrain
             uint worldSeed,
             in WorldGenerationSettingsComponent settings)
         {
+            return math.clamp((int)math.round(SampleContinuous(worldX, worldZ,
+                macroElevation, heightMap, worldSeed, settings)), 1, ChunkSettings.SizeY - 1);
+        }
+
+        public static float SampleContinuous(
+            int worldX, int worldZ, float macroElevation, WorldHeightMap heightMap,
+            uint worldSeed, in WorldGenerationSettingsComponent settings)
+        {
             if (!WorldSamplingUtility.IsInsideWorld(
                     worldX,
                     worldZ,
@@ -80,9 +88,9 @@ namespace Game.World.Generation.Terrain
                 detail;
 
             return math.clamp(
-                (int)math.round(finalHeight),
-                1,
-                ChunkSettings.SizeY - 1);
+                finalHeight,
+                1f,
+                ChunkSettings.SizeY - 1f);
         }
 
         // ================================================================

@@ -38,12 +38,6 @@ MonoBehaviour:
     NodeKey: item-selection
     Position: {x: 2236.8, y: -140.8}
   - ItemGuid: 128e9d667dff51a44bb431a867628517
-    NodeKey: asset:9c0ba1af52136a7439d432f603cf2b08
-    Position: {x: 1002.4, y: -28.8}
-  - ItemGuid: 128e9d667dff51a44bb431a867628517
-    NodeKey: asset:8f51382ad7f84f848af5348451e6b547
-    Position: {x: 1015.2, y: -18.4}
-  - ItemGuid: 128e9d667dff51a44bb431a867628517
     NodeKey: asset:959569d7ad1e3cd4ab115039816f700d
     Position: {x: 998.4, y: 736.8}
   - ItemGuid: 22b3719fb2c9947c28e5c2258dc66c34
@@ -160,9 +154,6 @@ MonoBehaviour:
   - ItemGuid: 128e9d667dff51a44bb431a867628517
     NodeKey: asset:a396a045900a4dc30000000000000007
     Position: {x: -360, y: -429.59998}
-  - ItemGuid: 128e9d667dff51a44bb431a867628517
-    NodeKey: asset:a396a045900a4dc30000000000000006
-    Position: {x: -360, y: -609.6}
   - ItemGuid: 22b3719fb2c9947c28e5c2258dc66c34
     NodeKey: asset:64ac67415cf54edc903fb8765e612ac1
     Position: {x: 1360.7999, y: -179.2}
@@ -223,12 +214,6 @@ MonoBehaviour:
   - ItemGuid: 128e9d667dff51a44bb431a867628517
     NodeKey: asset:c1fc67415cf54edc903fb8765e612ac1
     Position: {x: 1453.6, y: -628}
-  - ItemGuid: 128e9d667dff51a44bb431a867628517
-    NodeKey: asset:d1fc67415cf54edc903fb8765e612ac1
-    Position: {x: 1460, y: -27.199999}
-  - ItemGuid: 128e9d667dff51a44bb431a867628517
-    NodeKey: asset:d2fc67415cf54edc903fb8765e612ac1
-    Position: {x: 1890.3999, y: -25.599998}
   - ItemGuid: 128e9d667dff51a44bb431a867628517
     NodeKey: asset:89cd57cb9c2f4a49bb678cc510c2dc13
     Position: {x: 1457.6, y: -338.4}

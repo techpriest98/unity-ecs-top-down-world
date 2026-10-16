@@ -116,6 +116,7 @@ namespace Game.World.Chunks
 
                 GenerateChunk(
                     blocks,
+                    state.EntityManager.GetBuffer<SplitCellData>(entity),
                     columns,
                     coordinate,
                     worldHeightMap,
@@ -241,6 +242,7 @@ namespace Game.World.Chunks
 
         private static void GenerateChunk(
             DynamicBuffer<BlockData> blocks,
+            DynamicBuffer<SplitCellData> splits,
             DynamicBuffer<ChunkColumnData> columns,
             int2 chunkCoordinate,
             WorldHeightMap heightMap,
@@ -253,6 +255,7 @@ namespace Game.World.Chunks
             in BiomeTerrainResolver biomeTerrainResolver,
             in BlockDatabaseComponent blockDatabase)
         {
+            splits.Clear();
             int shoreSearchDistance = biomeTerrainResolver.GetRockyShoreSearchDistance();
 
             ChunkShoreDistanceMap shoreDistanceMap = default;
@@ -282,13 +285,15 @@ namespace Game.World.Chunks
                     // Base terrain
                     // ====================================================
 
-                    int baseHeight = WorldTerrainHeight.Sample(
+                    float baseSurfaceHeight = WorldTerrainHeight.SampleContinuous(
                         worldX,
                         worldZ,
                         elevation,
                         heightMap,
                         worldSeed,
                         worldSettings);
+
+                    int baseHeight = (int)math.round(baseSurfaceHeight);
 
                     bool baseHasWater =
                         baseHeight <
@@ -362,7 +367,7 @@ namespace Game.World.Chunks
                             biome,
                             worldX,
                             worldZ,
-                            baseHeight,
+                            biome == WorldBiome.RockyShore ? baseSurfaceHeight : baseHeight,
                             shoreDistance,
                             biomeInfluence,
                             worldSeed,
@@ -394,6 +399,13 @@ namespace Game.World.Chunks
                             y,
                             z,
                             block);
+                        if (terrainSample.HalfSurface && y == terrainSample.Height - 1)
+                        {
+                            var above = blockDatabase.CreateBlock(y < waterLevel ? BlockId.OceanWater : BlockId.Air);
+                            SplitCellUtility.Set(blocks, splits, ChunkUtility.ToIndex(x, y, z),
+                                new CellContents(new BlockPart(block.BlockId, block.Durability),
+                                    new BlockPart(above.BlockId, above.Durability)));
+                        }
                     }
                 }
             }

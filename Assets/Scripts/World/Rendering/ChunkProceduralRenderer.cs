@@ -39,6 +39,7 @@ namespace Game.World.Rendering
 
         [SerializeField]
         private BlockDatabase blockDatabase;
+        public BlockDefinition[] AvailableBlocks => blockDatabase != null ? blockDatabase.Blocks : null;
 
         public bool TryGetBlockSideIcon(BlockId id, out Texture2D texture, out Rect uv, bool halfBlock = false)
         {

@@ -164,7 +164,7 @@ namespace Game.World.Rendering
                 projectionX,
                 projectionY,
                 sourceAirIndex,
-                hasHalfBelow);
+                hasHalfBelow, projectionClippingEnabled, playerPosition);
         }
 
         private static void ProcessOpaqueCell(
@@ -253,16 +253,16 @@ namespace Game.World.Rendering
             ushort projectionX,
             ushort projectionY,
             ushort sourceAirIndex,
-            bool hasHalfBelow)
+            bool hasHalfBelow, bool clipping, float3 player)
         {
             if (hasHalfBelow)
                 TryEmitWaterTop(chunkCoordinate, blockAccessor, writer, world, direction,
-                    projectionX, projectionY, sourceAirIndex, halfOnly: true);
+                    projectionX, projectionY, sourceAirIndex, halfOnly: true, clipping: clipping, player: player);
             if (!BlockUtility.IsAir(currentBlock.BlockId))
             {
                 if (currentBlock.Shape == BlockShape.LowerHalf)
                     TryEmitWaterSide(chunkCoordinate, blockAccessor, writer, world, direction,
-                        projectionX, projectionY, sourceAirIndex, upperOnly: true);
+                        projectionX, projectionY, sourceAirIndex, upperOnly: true, clipping: clipping, player: player);
                 return;
             }
 
@@ -274,7 +274,7 @@ namespace Game.World.Rendering
                 direction,
                 projectionX,
                 projectionY,
-                sourceAirIndex);
+                sourceAirIndex, clipping: clipping, player: player);
 
             TryEmitWaterTop(
                 chunkCoordinate,
@@ -284,7 +284,7 @@ namespace Game.World.Rendering
                 direction,
                 projectionX,
                 projectionY,
-                sourceAirIndex);
+                sourceAirIndex, clipping: clipping, player: player);
         }
 
         private static void TryEmitOpaqueTop(
@@ -486,7 +486,7 @@ namespace Game.World.Rendering
             ushort projectionX,
             ushort projectionY,
             ushort sourceAirIndex,
-            bool halfOnly = false)
+            bool halfOnly = false, bool clipping = false, float3 player = default)
         {
             int3 belowWorld = airWorld + new int3(0, -1, 0);
 
@@ -509,6 +509,8 @@ namespace Game.World.Rendering
             bool half = belowBlock.Shape == BlockShape.LowerHalf;
             if (half != halfOnly) return;
             if (half) projectionY++;
+            if (ShouldClipOpaqueFace(clipping, player,
+                    GetGlobalPosition(chunkCoordinate, belowWorld, half ? .5f : 1f), belowWorld.y, direction)) return;
 
             int3 awayFromCamera =
                 ViewDirectionUtility.GetAwayFromCameraOffset(direction);
@@ -554,7 +556,7 @@ namespace Game.World.Rendering
             ushort projectionX,
             ushort projectionY,
             ushort sourceAirIndex,
-            bool upperOnly = false)
+            bool upperOnly = false, bool clipping = false, float3 player = default)
         {
             if (projectionY < 2)
                 return;
@@ -574,6 +576,8 @@ namespace Game.World.Rendering
                 return;
             bool half = block.Shape == BlockShape.LowerHalf;
             if (half && upperOnly) return;
+            if (ShouldClipOpaqueFace(clipping, player,
+                    GetGlobalPosition(chunkCoordinate, blockWorld, half ? .25f : .5f), blockWorld.y, direction)) return;
 
             // Центр передньої грані, повернутої до камери.
             float3 faceCenter =

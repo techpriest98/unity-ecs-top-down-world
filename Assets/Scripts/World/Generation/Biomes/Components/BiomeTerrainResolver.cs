@@ -23,7 +23,7 @@ namespace Game.World.Generation.Biomes
             WorldBiome biome,
             int worldX,
             int worldZ,
-            int baseHeight,
+            float baseHeight,
             float shoreDistance,
             float biomeInfluence,
             uint worldSeed,
@@ -32,7 +32,7 @@ namespace Game.World.Generation.Biomes
             return biome switch
             {
                 WorldBiome.Ocean =>
-                    ocean.Sample(baseHeight),
+                    ocean.Sample((int)Unity.Mathematics.math.round(baseHeight)),
 
                 WorldBiome.RockyShore =>
                     rockyShore.Sample(
@@ -47,7 +47,7 @@ namespace Game.World.Generation.Biomes
                 _ =>
                     new BiomeTerrainSample(
                         biome,
-                        baseHeight)
+                        (int)Unity.Mathematics.math.round(baseHeight))
             };
         }
 
@@ -71,7 +71,7 @@ namespace Game.World.Generation.Biomes
             return terrainSample.Biome switch
             {
                 WorldBiome.RockyShore =>
-                    rockyShore.GetBlock(
+                    y >= terrainSample.Height && y < waterLevel ? BlockId.OceanWater : rockyShore.GetBlock(
                         y,
                         terrainSample.Zone,
                         terrainSample.Height),

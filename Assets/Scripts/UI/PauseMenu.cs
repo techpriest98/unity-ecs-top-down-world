@@ -42,6 +42,11 @@ namespace Game.UI
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null || !keyboard.escapeKey.wasPressedThisFrame)
                 return;
+            if (EquipmentHud.IsBlockPickerOpen)
+            {
+                EquipmentHud.CancelBlockPicker();
+                return;
+            }
 
             if (IsPaused)
                 Resume();

@@ -125,6 +125,8 @@ namespace Game.Items.Skills
                             return ConfigurationFailure(node, "Action asset is missing. Reimport or reconnect the action asset.", out failure);
                         if (node.Action is TogglePlacementShapeAction toggle)
                         {
+                            if (!toggle.ItemSelectionConnected)
+                                return ConfigurationFailure(node, "Connect the Block state output to Item.Selection.", out failure);
                             if (!toggle.ShapeStateConnected)
                                 return ConfigurationFailure(node, "Connect the State output to Item.Shape.", out failure);
                             if (!toggle.IsAvailable(manager, player, slot, item))
@@ -150,18 +152,6 @@ namespace Game.Items.Skills
                             if (!setBlock.CanSetAt(manager, player, slot, item, (int3)math.floor(position)))
                             { failure = node.FailureMessage; return false; }
                             actions.Add((setBlock, position, Entity.Null, node.FailureMessage));
-                            positions[node] = position;
-                            break;
-                        }
-                        if (node.Action is PickPlacementSelectionAction pickSelection)
-                        {
-                            if (!pickSelection.ShapeStateConnected)
-                                return ConfigurationFailure(node, "Connect the Shape state output to Item.Shape.", out failure);
-                            if (!pickSelection.ItemSelectionConnected)
-                                return ConfigurationFailure(node, "Connect the State output to Item Selection.", out failure);
-                            if (!pickSelection.CanPickAt(manager, player, slot, item, (int3)math.floor(position)))
-                            { failure = node.FailureMessage; return false; }
-                            actions.Add((pickSelection, position, Entity.Null, node.FailureMessage));
                             positions[node] = position;
                             break;
                         }
@@ -202,12 +192,12 @@ namespace Game.Items.Skills
                     : step.action is PickUpItemAction picked
                         ? currentItem == 0 && picked.ExecuteTarget(manager, player, slot, step.target, step.position)
                         : step.action is TogglePlacementShapeAction toggle
-                            ? toggle.Toggle(manager, player, slot, currentItem)
+                            ? toggle.OpenPicker(manager, player, slot, currentItem)
                         : step.action is ReplaceEquippedItemAction replacement
                             ? replacement.ExecuteReplacement(manager, player, slot, currentItem)
                             : step.action is SetWorldBlockAction setBlock
                                 ? setBlock.ExecuteAtPosition(manager, player, slot, currentItem, (int3)math.floor(step.position))
-                                : step.action is PickPlacementSelectionAction pickSelection && pickSelection.ExecuteAtPosition(manager, player, slot, currentItem, (int3)math.floor(step.position));
+                                : false;
                 if (!executed) { failure = step.failure; return false; }
             }
             failure = null;
