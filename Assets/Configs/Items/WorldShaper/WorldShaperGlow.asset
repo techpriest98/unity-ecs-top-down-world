@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b4682956241334c478ae6577c8d37c4d, type: 3}
   m_Name: WorldShaperGlow
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.ItemLightDefinition
-  Color: {r: 0.41320753, g: 1, b: 0.7946455, a: 1}
+  Color: {r: 1, g: 0.44390258, b: 0.41176474, a: 1}
   Radius: 2
   RadiusFromDurability: 1
   RadiusAtZeroDurability: 0

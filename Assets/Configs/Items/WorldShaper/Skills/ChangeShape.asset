@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: ChangeShape
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.Skills.ItemSkillDefinition
   Id: 12
-  DisplayName: Change Shape
-  Description: Switch between full blocks and half blocks
+  DisplayName: Rubedo
+  Description: Perfect the shape
   Icon: {fileID: 0}
   UseChain: 1
   FirstNode: {fileID: 11400000, guid: 89cd57cb9c2f4a49bb678cc510c2dc13, type: 2}

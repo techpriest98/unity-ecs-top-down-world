@@ -1,5 +1,7 @@
 using Game.World.Chunks;
 using Game.World.Rendering;
+using Game.Items;
+using Game.Player;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -38,8 +40,19 @@ namespace Game.World.Interaction
             int y = selection.ProjectionY;
             bool side = selection.FaceType == ProjectedFaceType.SideUpper ||
                 selection.FaceType == ProjectedFaceType.SideLower;
-            bool fullHeightSide = side && !ProjectedCellPacking.IsHalfFace(selection.BlockData);
-            if (selection.FaceType == ProjectedFaceType.SideLower)
+            Entity player = SystemAPI.GetSingletonEntity<SelectedProjectedCell>();
+            bool halfPlacement = false;
+            if (EntityManager.HasBuffer<PlayerEquipmentSlot>(player))
+            {
+                var hand = EntityManager.HasComponent<PlayerActiveHand>(player)
+                    ? EntityManager.GetComponentData<PlayerActiveHand>(player).Slot : EquipmentSlot.RightHand;
+                var instance = PlayerEquipmentUtility.GetInstance(
+                    EntityManager.GetBuffer<PlayerEquipmentSlot>(player, true), hand);
+                halfPlacement = instance.PlacementSelection.Kind == PlacementSelectionKind.Block &&
+                    instance.PlacementMode == BlockPlacementMode.Half;
+            }
+            bool fullHeightSide = side && !halfPlacement && !ProjectedCellPacking.IsHalfFace(selection.BlockData);
+            if (selection.FaceType == ProjectedFaceType.SideLower && fullHeightSide)
                 y--;
             float height = fullHeightSide ? 1f : 0.5f;
             float left = chunkPosition.x - ChunkSettings.SizeX * 0.5f + x;

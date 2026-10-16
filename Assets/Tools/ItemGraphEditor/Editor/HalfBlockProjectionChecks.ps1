@@ -275,6 +275,17 @@ public static class HalfProjectionChecks {
   selection.FaceType=ProjectedFaceType.SideUpper;selection.BlockData|=ProjectedCellPacking.UpperHalfFlag;
   Game.World.Interaction.ProjectedCellInteractionUtility.GetBlockPlacementStart(selection,before,out origin,out start);
   Check(math.all(origin==before) && start==1,"Upper-half side placement lost its half offset");
+  selection.BlockData=ProjectedCellPacking.PackBlock(new BlockData(BlockId.Stone,255),ProjectedFaceType.SideUpper,255);
+  Game.World.Interaction.ProjectedCellInteractionUtility.GetBlockPlacementStart(selection,before,out origin,out start,true);
+  Check(math.all(origin==before) && start==1,"Half mode must target the upper side half");
+  Game.World.Interaction.ProjectedCellInteractionUtility.GetBlockPlacementStart(selection,before,out origin,out start);
+  Check(start==0,"Full mode inherited half-mode side offset");
+  selection.FaceType=ProjectedFaceType.SideLower;
+  Game.World.Interaction.ProjectedCellInteractionUtility.GetBlockPlacementStart(selection,before,out origin,out start,true);
+  Check(math.all(origin==before) && start==0,"Half mode must target the lower side half");
+  selection.FaceType=ProjectedFaceType.SideUpper;
+  Game.World.Interaction.ProjectedCellInteractionUtility.GetBlockPlacementStart(selection,before+new int3(1,0,0),out origin,out start,true);
+  Check(start==0,"Custom position inherited half-mode side offset");
   var old=new BlockPart(BlockId.Stone,123);
   var placed=new BlockPart(BlockId.Sand,255);
   var air=new BlockPart(BlockId.Air,0);

@@ -37,7 +37,7 @@ namespace Game.World.Interaction
         }
 
         public static void GetBlockPlacementStart(in SelectedProjectedCell selection, int3 input,
-            out int3 origin, out int startHalf)
+            out int3 origin, out int startHalf, bool halfPlacement = false)
         {
             origin = input;
             startHalf = 0;
@@ -45,7 +45,8 @@ namespace Game.World.Interaction
             if (selection.FaceType == ProjectedFaceType.Top && ProjectedCellPacking.IsLowerHalf(selection.BlockData))
             { origin.y--; startHalf = 1; }
             else if (selection.FaceType == ProjectedFaceType.SideUpper &&
-                (selection.BlockData & ProjectedCellPacking.UpperHalfFlag) != 0) startHalf = 1;
+                ((selection.BlockData & ProjectedCellPacking.UpperHalfFlag) != 0 ||
+                 (halfPlacement && !ProjectedCellPacking.IsHalfFace(selection.BlockData)))) startHalf = 1;
         }
 
         public static bool TryGetPlacementPosition(

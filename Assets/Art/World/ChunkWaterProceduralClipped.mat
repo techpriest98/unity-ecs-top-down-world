@@ -48,8 +48,8 @@ Material:
     m_Floats:
     - _EnableExternalAlpha: 0
     - _PlayerClipping: 1
-    - _WaterAbsorption: 0.372
-    - _WaterOpacity: 0.75
+    - _WaterAbsorption: 0.83
+    - _WaterOpacity: 0.77
     - _WaterTopInsetPixels: 4
     - _ZWrite: 0
     m_Colors:

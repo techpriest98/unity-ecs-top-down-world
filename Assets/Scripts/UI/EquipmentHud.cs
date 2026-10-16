@@ -31,7 +31,6 @@ namespace Game.UI
 
         [Header("Selected block")]
         [SerializeField] private float selectedBlockGap = 12f;
-        [SerializeField] private Color selectedBlockBorderColor = new Color(0.35f, 0.95f, 0.8f, 1f);
         private readonly RectTransform[] selectionFrames = new RectTransform[2];
         private readonly RawImage[] selectionIcons = new RawImage[2];
 
@@ -65,7 +64,8 @@ namespace Game.UI
                 border.sprite = original.sprite;
                 border.type = original.type;
                 border.pixelsPerUnitMultiplier = original.pixelsPerUnitMultiplier;
-                border.color = selectedBlockBorderColor;
+                border.color = original.color;
+                border.fillCenter = original.fillCenter;
                 border.raycastTarget = false;
                 var picture = new GameObject("Block icon", typeof(RectTransform)).GetComponent<RectTransform>();
                 picture.SetParent(frame, false);

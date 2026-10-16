@@ -81,7 +81,8 @@ namespace Game.Items.Skills
             if (manager.HasComponent<SelectedProjectedCell>(player))
             {
                 var selected = manager.GetComponentData<SelectedProjectedCell>(player);
-                ProjectedCellInteractionUtility.GetBlockPlacementStart(selected, position, out var origin, out startHalf);
+                ProjectedCellInteractionUtility.GetBlockPlacementStart(selected, position, out var origin, out startHalf,
+                    instance.PlacementMode == BlockPlacementMode.Half);
                 position = origin;
             }
             using var query = manager.CreateEntityQuery(ComponentType.ReadOnly<BlockModificationQueue>());

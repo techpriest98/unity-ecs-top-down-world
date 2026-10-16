@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: 8
   DisplayName: Albedo
   Description: Let matter take form
-  Icon: {fileID: 0}
+  Icon: {fileID: 1246366773345905, guid: 3a3f38dba6e66a54cbccd3b3ce0f85f0, type: 3}
   UseChain: 1
   FirstNode: {fileID: 11400000, guid: c1fc67415cf54edc903fb8765e612ac1, type: 2}
   Conditions: []
