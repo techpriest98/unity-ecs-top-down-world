@@ -6,10 +6,10 @@ namespace Game.World.Blocks
     {
         public BlobAssetReference<BlockDatabaseBlob> Value;
 
-        public BlockData CreateBlock(BlockId blockId)
+        public BlockData CreateBlock(BlockId blockId, BlockShape shape = BlockShape.Full)
         {
             if (!Value.IsCreated)
-                return new BlockData(blockId, 0);
+                return new BlockData(blockId, 0, shape);
 
             int index = (int)blockId;
             ref BlockDatabaseBlob database = ref Value.Value;
@@ -19,7 +19,7 @@ namespace Game.World.Blocks
                     ? database.MaxDurability[index]
                     : (byte)0;
 
-            return new BlockData(blockId, maxDurability);
+            return new BlockData(blockId, maxDurability, shape);
         }
     }
 }

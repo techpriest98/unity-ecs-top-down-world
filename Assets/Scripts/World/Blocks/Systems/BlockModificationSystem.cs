@@ -94,6 +94,13 @@ namespace Game.World.Blocks
             {
                 BlockModificationRequest request = requests[i];
 
+                if (request.HasContents && (!SplitCellUtility.IsKnownMaterial(request.Contents.Lower.Id) ||
+                    !SplitCellUtility.IsKnownMaterial(request.Contents.Upper.Id))) continue;
+                if (!request.HasContents && request.Value.Shape != BlockShape.Full && request.Value.Shape != BlockShape.LowerHalf)
+                    continue;
+                if (BlockUtility.IsAir(request.Value.BlockId))
+                    request.Value.Shape = BlockShape.Full;
+
                 if (request.WorldPosition.y < 0 ||
                     request.WorldPosition.y >= ChunkSettings.SizeY)
                 {
@@ -135,15 +142,29 @@ namespace Game.World.Blocks
                     blockLookup[chunkEntity];
 
                 BlockData previousBlock = blocks[blockIndex];
+                DynamicBuffer<SplitCellData> splits = state.EntityManager.GetBuffer<SplitCellData>(chunkEntity);
 
-                if (previousBlock.BlockId == request.Value.BlockId &&
-                    previousBlock.Durability == request.Value.Durability)
+                if (!request.HasContents && previousBlock.BlockId == request.Value.BlockId &&
+                    previousBlock.Durability == request.Value.Durability &&
+                    previousBlock.Shape == request.Value.Shape)
                 {
                     continue;
                 }
 
-                changes.ValueRW.Record(chunkCoordinate, blockIndex, request.Value);
-                blocks[blockIndex] = request.Value;
+                if (request.HasContents)
+                {
+                    CellContents previous = SplitCellUtility.Get(blocks, splits, blockIndex);
+                    CellContents next = new CellContents(request.Contents.Lower, request.Contents.Upper);
+                    if (previous.Lower.Id == next.Lower.Id && previous.Lower.Durability == next.Lower.Durability &&
+                        previous.Upper.Id == next.Upper.Id && previous.Upper.Durability == next.Upper.Durability) continue;
+                    changes.ValueRW.Record(chunkCoordinate, blockIndex, next);
+                    SplitCellUtility.Set(blocks, splits, blockIndex, next);
+                }
+                else
+                {
+                    changes.ValueRW.Record(chunkCoordinate, blockIndex, request.Value);
+                    SplitCellUtility.SetLegacy(blocks, splits, blockIndex, request.Value);
+                }
                 worldChanged = true;
 
                 AddDirtyChunk(

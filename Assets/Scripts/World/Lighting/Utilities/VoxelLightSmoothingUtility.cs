@@ -89,8 +89,7 @@ namespace Game.World.Lighting
                 return false;
             }
 
-            if (BlockUtility.IsSolid(block.BlockId) &&
-                block.BlockId != BlockId.OceanWater)
+            if (BlockLightGeometry.IsFull(block))
             {
                 return false;
             }

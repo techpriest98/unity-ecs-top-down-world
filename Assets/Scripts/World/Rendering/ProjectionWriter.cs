@@ -34,7 +34,7 @@ namespace Game.World.Rendering
             ushort x,
             ushort y)
         {
-            if (!occupancy.TryOccupy(x, y, ProjectedFaceType.Top))
+            if (!occupancy.TryOccupy(x, y, ProjectedFaceType.Top, sourceAirIndex, block.Shape == BlockShape.LowerHalf))
             {
                 return false;
             }
@@ -145,7 +145,9 @@ namespace Game.World.Rendering
             BlockId footBlockId,
             ushort sourceAirIndex,
             ushort x,
-            ushort y)
+            ushort y,
+            bool raisedFoot = false,
+            bool upperHalf = false)
         {
             if (!occupancy.TryOccupy(x, y, ProjectedFaceType.SideUpper))
             {
@@ -161,6 +163,8 @@ namespace Game.World.Rendering
 
             cell.SourceAirIndex = sourceAirIndex;
             cell.SetSideFaceData(neighborMask, footBlockId);
+            if (raisedFoot) cell.BlockData |= ProjectedCellPacking.RaisedFootFlag;
+            if (upperHalf) cell.BlockData |= ProjectedCellPacking.UpperHalfFlag;
 
             result.Add(cell);
 

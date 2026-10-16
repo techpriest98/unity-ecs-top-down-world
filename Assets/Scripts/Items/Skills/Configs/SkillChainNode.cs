@@ -121,6 +121,17 @@ namespace Game.Items.Skills
                         break;
                     case SkillChainNodeKind.Action:
                         actionStarted = true;
+                        if (node.Action == null)
+                            return ConfigurationFailure(node, "Action asset is missing. Reimport or reconnect the action asset.", out failure);
+                        if (node.Action is TogglePlacementShapeAction toggle)
+                        {
+                            if (!toggle.ShapeStateConnected)
+                                return ConfigurationFailure(node, "Connect the State output to Item.Shape.", out failure);
+                            if (!toggle.IsAvailable(manager, player, slot, item))
+                            { failure = node.FailureMessage; return false; }
+                            actions.Add((toggle, default, Entity.Null, node.FailureMessage));
+                            break;
+                        }
                         if (node.Action is ReplaceEquippedItemAction replacement)
                         {
                             var error = replacement.GetConfigurationError(manager, slot);
@@ -144,6 +155,8 @@ namespace Game.Items.Skills
                         }
                         if (node.Action is PickPlacementSelectionAction pickSelection)
                         {
+                            if (!pickSelection.ShapeStateConnected)
+                                return ConfigurationFailure(node, "Connect the Shape state output to Item.Shape.", out failure);
                             if (!pickSelection.ItemSelectionConnected)
                                 return ConfigurationFailure(node, "Connect the State output to Item Selection.", out failure);
                             if (!pickSelection.CanPickAt(manager, player, slot, item, (int3)math.floor(position)))
@@ -188,6 +201,8 @@ namespace Game.Items.Skills
                     ? currentItem != 0 && thrown.ExecuteAtPosition(manager, player, slot, currentItem, (int3)math.floor(step.position))
                     : step.action is PickUpItemAction picked
                         ? currentItem == 0 && picked.ExecuteTarget(manager, player, slot, step.target, step.position)
+                        : step.action is TogglePlacementShapeAction toggle
+                            ? toggle.Toggle(manager, player, slot, currentItem)
                         : step.action is ReplaceEquippedItemAction replacement
                             ? replacement.ExecuteReplacement(manager, player, slot, currentItem)
                             : step.action is SetWorldBlockAction setBlock

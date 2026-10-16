@@ -284,6 +284,7 @@ public sealed class ItemGraphWindow : EditorWindow
         }
         else if (node is CursorNode) yield return "cursor";
         else if (node is SelectionNode) yield return "item-selection";
+        else if (node is ShapeNode) yield return "item-shape";
         else if (node is BlockNode block)
         {
             // The constant is serialized on each consuming action. Use those
@@ -547,10 +548,12 @@ public sealed class ItemGraphWindow : EditorWindow
         evt.menu.AppendAction("Create/Actions/ReplaceItem", _ => CreateActionNode<ReplaceEquippedItemAction>("ReplaceItem", position), status);
         evt.menu.AppendAction("Create/Actions/Pick Selection", _ => CreateActionNode<PickPlacementSelectionAction>("PickSelection", position), status);
         evt.menu.AppendAction("Create/Actions/Set World Block", _ => CreateActionNode<SetWorldBlockAction>("SetWorldBlock", position), status);
+        evt.menu.AppendAction("Create/Actions/Toggle Placement Shape", _ => CreateActionNode<TogglePlacementShapeAction>("TogglePlacementShape", position), status);
         evt.menu.AppendAction("Create/Actions/Throw Item", _ => CreateActionNode<ThrowItemAction>("ThrowItem", position), status);
         evt.menu.AppendAction("Create/Actions/Pick Up Item", _ => CreateActionNode<PickUpItemAction>("PickUpItem", position), status);
         evt.menu.AppendAction("Create/Data/Cursor", _ => PlaceNode(GetCursorNode(), position), status);
         evt.menu.AppendAction("Create/Data/Item.Selection", _ => PlaceNode(GetSelectionNode(), position), status);
+        evt.menu.AppendAction("Create/Data/Item.Shape", _ => PlaceNode(GetShapeNode(), position), status);
         evt.menu.AppendAction("Create/Data/Block", _ => AddBlockNode(BlockId.Air, position), status);
         evt.menu.AppendAction("Create/Data/Distance", _ => CreateDistanceNode(position), status);
         evt.menu.AppendAction("Create/Conditions/Within Distance", _ => CreateConditionNode<WithinDistanceCondition>(position), status);
@@ -647,6 +650,9 @@ public sealed class ItemGraphWindow : EditorWindow
                     foreach (var distanceEdge in distanceNode.Output.connections.ToList()) SetDataConnection(distanceEdge, false);
                     distanceNode.Unbind();
                 }
+                if (element is ShapeNode shapeNode)
+                    foreach (var shapeEdge in shapeNode.State.connections.Concat(shapeNode.Value.connections).Distinct().ToList())
+                        SetShapeConnection(shapeEdge, false);
                 if (element is Edge conditionEdge && conditionEdge.input.userData is ConditionSlot conditionSlot &&
                     !change.elementsToRemove.OfType<SkillNode>().Any(n => n.Skill == conditionSlot.Skill))
                     SetCondition(conditionSlot, null);
@@ -776,8 +782,63 @@ public sealed class ItemGraphWindow : EditorWindow
         return node;
     }
 
+    private ShapeNode GetShapeNode()
+    {
+        var node = graph.nodes.OfType<ShapeNode>().FirstOrDefault();
+        if (node != null) return node;
+        node = new ShapeNode();
+        node.SetPosition(new Rect(-820, 280, 300, 180));
+        graph.AddElement(node);
+        RestorePosition(node);
+        return node;
+    }
+
+    private void RestoreShapeConnections(ItemSkillAction action, Port input, Port output)
+    {
+        if (action is SetWorldBlockAction set && set.PlacementShapeConnected && input != null)
+            graph.AddElement(GetShapeNode().Value.ConnectTo(input));
+        if (action is TogglePlacementShapeAction toggle && toggle.ShapeStateConnected && output != null)
+            graph.AddElement(output.ConnectTo(GetShapeNode().State));
+        if (action is PickPlacementSelectionAction pick && pick.ShapeStateConnected && output != null)
+            graph.AddElement(output.ConnectTo(GetShapeNode().State));
+    }
+
+    private static bool SetShapeConnection(Edge edge, bool connected)
+    {
+        ItemSkillAction writer = edge.output.node is ChainNode chain ? chain.Asset.Action :
+            edge.output.node is ActionNode action ? action.Action : null;
+        if (edge.input.node is ShapeNode && writer is TogglePlacementShapeAction toggle &&
+            edge.output.portType == typeof(ShapeStateSignal))
+        {
+            Undo.RecordObject(toggle, "Connect shape state");
+            toggle.ShapeStateConnected = connected;
+            EditorUtility.SetDirty(toggle);
+            return true;
+        }
+        ItemSkillAction reader = edge.input.node is ChainNode target ? target.Asset.Action :
+            edge.input.node is ActionNode targetAction ? targetAction.Action : null;
+        if (edge.input.node is ShapeNode && writer is PickPlacementSelectionAction pick &&
+            edge.output.portType == typeof(ShapeStateSignal))
+        {
+            Undo.RecordObject(pick, "Connect Pick shape state");
+            pick.ShapeStateConnected = connected;
+            EditorUtility.SetDirty(pick);
+            return true;
+        }
+        if (edge.output.node is ShapeNode && reader is SetWorldBlockAction set &&
+            edge.input.portType == typeof(ShapeSignal))
+        {
+            Undo.RecordObject(set, "Connect placement shape");
+            set.PlacementShapeConnected = connected;
+            EditorUtility.SetDirty(set);
+            return true;
+        }
+        return false;
+    }
+
     private void RestoreDataConnections(ActionNode node)
     {
+        RestoreShapeConnections(node.Action, node.ShapeInput, node.ShapeStateOutput);
         if (node.DistanceInput != null && node.Action.Distance != null)
             graph.AddElement(GetDistanceNode(node.Action.Distance).Output.ConnectTo(node.DistanceInput));
         if (node.Action is ThrowItemAction thrown && thrown.Position == CursorWorldPosition.Before)
@@ -807,6 +868,7 @@ public sealed class ItemGraphWindow : EditorWindow
 
     private static void SetDataConnection(Edge edge, bool connected)
     {
+        if (SetShapeConnection(edge, connected)) return;
         if (SetChainConnection(edge, connected)) return;
         if (edge.input.node is ConditionNode condition)
         {
@@ -933,6 +995,8 @@ public sealed class ItemGraphWindow : EditorWindow
             graph.AddElement(GetDistanceNode(asset.Distance).Output.ConnectTo(node.DistanceInput));
         if (asset.Kind == SkillChainNodeKind.Action && asset.Action is PickPlacementSelectionAction pick && pick.ItemSelectionConnected)
             graph.AddElement(node.SelectionOutput.ConnectTo(GetSelectionNode().State));
+        if (asset.Kind == SkillChainNodeKind.Action)
+            RestoreShapeConnections(asset.Action, node.ShapeInput, node.ShapeStateOutput);
         if (asset.Kind == SkillChainNodeKind.Action && asset.Action is SetWorldBlockAction set)
         {
             if (set.BlockSource == BlockValueSource.ItemSelection)
@@ -976,6 +1040,7 @@ public sealed class ItemGraphWindow : EditorWindow
 
     private static bool SetChainConnection(Edge edge, bool connected)
     {
+        if (SetShapeConnection(edge, connected)) return true;
         if (edge.input.node is SelectionNode && edge.output.node is ChainNode writer &&
             edge.output == writer.SelectionOutput && writer.Asset.Action is PickPlacementSelectionAction pick)
         {
@@ -1037,6 +1102,7 @@ public sealed class ItemGraphWindow : EditorWindow
     {
         public readonly SkillChainNode Asset;
         public readonly Port FlowInput, FlowOutput, PositionInput, PositionOutput, DistanceInput, BlockInput, SelectionOutput;
+        public readonly Port ShapeInput, ShapeStateOutput;
         public ChainNode(SkillChainNode asset) : base(asset)
         {
             Asset = asset;
@@ -1044,12 +1110,23 @@ public sealed class ItemGraphWindow : EditorWindow
                 ? "Action — Replace Item"
                 : asset.Kind == SkillChainNodeKind.Action && asset.Action is SetWorldBlockAction ? "Action — Set World Block"
                 : asset.Kind == SkillChainNodeKind.Action && asset.Action is PickPlacementSelectionAction ? "Action — Pick Selection"
+                : asset.Kind == SkillChainNodeKind.Action && asset.Action is TogglePlacementShapeAction ? "Action — Toggle Placement Shape"
                 : (asset.Kind == SkillChainNodeKind.Action ? "Action — " : "Condition — ") + ObjectNames.NicifyVariableName(asset.Kind.ToString());
             style.width = 320;
             FlowInput = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(ChainFlowSignal));
             FlowInput.portName = "Flow"; inputContainer.Add(FlowInput);
             FlowOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(ChainFlowSignal));
             FlowOutput.portName = "Flow"; outputContainer.Add(FlowOutput);
+            if (asset.Kind == SkillChainNodeKind.Action && (asset.Action is TogglePlacementShapeAction || asset.Action is PickPlacementSelectionAction))
+            {
+                ShapeStateOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(ShapeStateSignal));
+                ShapeStateOutput.portName = asset.Action is PickPlacementSelectionAction ? "Shape state" : "State"; outputContainer.Add(ShapeStateOutput);
+            }
+            if (asset.Kind == SkillChainNodeKind.Action && asset.Action is SetWorldBlockAction shapeReader && shapeReader.BlockSource != BlockValueSource.Constant)
+            {
+                ShapeInput = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(ShapeSignal));
+                ShapeInput.portName = "Shape"; inputContainer.Add(ShapeInput);
+            }
             if (asset.Kind == SkillChainNodeKind.Action && asset.Action is PickPlacementSelectionAction)
             {
                 SelectionOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(SelectionStateSignal));
@@ -1060,13 +1137,20 @@ public sealed class ItemGraphWindow : EditorWindow
                 BlockInput = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(BlockSignal));
                 BlockInput.portName = "Block"; inputContainer.Add(BlockInput);
             }
-            if (!(asset.Kind == SkillChainNodeKind.Action && asset.Action is ReplaceEquippedItemAction))
+            if (!(asset.Kind == SkillChainNodeKind.Action && (asset.Action is ReplaceEquippedItemAction || asset.Action is TogglePlacementShapeAction)))
             {
                 PositionInput = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(PositionSignal));
                 PositionInput.portName = asset.Kind == SkillChainNodeKind.ValidTopTarget || asset.Kind == SkillChainNodeKind.GroundItemTarget || asset.Kind == SkillChainNodeKind.ValidTerrainTarget || asset.Kind == SkillChainNodeKind.ValidCursorTarget ? "Cursor position" : "Position";
                 PositionInput.portColor = new Color(0.4f, 0.7f, 1f); inputContainer.Add(PositionInput);
                 PositionOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(PositionSignal));
                 PositionOutput.portName = "Position"; PositionOutput.portColor = PositionInput.portColor; outputContainer.Add(PositionOutput);
+            }
+            if (asset.Kind == SkillChainNodeKind.Action && asset.Action is SetWorldBlockAction)
+            {
+                PositionInput.RemoveFromHierarchy();
+                inputContainer.Insert(1, PositionInput);
+                BlockInput.RemoveFromHierarchy();
+                inputContainer.Insert(2, BlockInput);
             }
             var serialized = new SerializedObject(asset);
             if (asset.Kind == SkillChainNodeKind.WithinDistance)
@@ -1185,6 +1269,7 @@ public sealed class ItemGraphWindow : EditorWindow
         {
             Value = value;
             title = "Data — Block";
+            SetHeaderColor(this, NodeCategory.Data);
             style.width = 260;
             Output = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(BlockSignal));
             Output.portName = "Block";
@@ -1212,6 +1297,25 @@ public sealed class ItemGraphWindow : EditorWindow
     private sealed class PositionSignal { }
     private sealed class BlockSignal { }
     private sealed class SelectionStateSignal { }
+    private sealed class ShapeSignal { }
+    private sealed class ShapeStateSignal { }
+
+    private sealed class ShapeNode : Node
+    {
+        public readonly Port Value, State;
+        public ShapeNode()
+        {
+            title = "Data — Item.Shape";
+            SetHeaderColor(this, NodeCategory.Data);
+            style.width = 300;
+            State = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(ShapeStateSignal));
+            State.portName = "State"; inputContainer.Add(State);
+            Value = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(ShapeSignal));
+            Value.portName = "Shape"; outputContainer.Add(Value);
+            extensionContainer.Add(new Label("Full / Half. State belongs to the item invoking the skill.\nEach item instance has its own shape."));
+            RefreshExpandedState(); RefreshPorts();
+        }
+    }
 
     private sealed class CursorNode : Node
     {
@@ -1219,6 +1323,7 @@ public sealed class ItemGraphWindow : EditorWindow
         public CursorNode()
         {
             title = "Data — Cursor";
+            SetHeaderColor(this, NodeCategory.Data);
             style.width = 300;
             Before = AddOutput("Before cursor", typeof(PositionSignal));
             Behind = AddOutput("Behind cursor", typeof(PositionSignal));
@@ -1241,6 +1346,7 @@ public sealed class ItemGraphWindow : EditorWindow
         public SelectionNode()
         {
             title = "Data — Item.Selection";
+            SetHeaderColor(this, NodeCategory.Data);
             style.width = 300;
             Value = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(BlockSignal));
             Value.portName = "Selected block";
@@ -1306,6 +1412,25 @@ public sealed class ItemGraphWindow : EditorWindow
         preview.TrackPropertyValue(iconProperty, UpdatePreview);
     }
 
+    private enum NodeCategory { Item, Skill, Data, Condition, Action }
+
+    private static void SetHeaderColor(Node node, NodeCategory category)
+    {
+        // Muted backgrounds keep the title legible without competing with ports
+        // or GraphView's selection outline. The node body is unchanged.
+        Color color = category switch
+        {
+            NodeCategory.Item => new Color(0.32f, 0.28f, 0.18f),
+            NodeCategory.Skill => new Color(0.29f, 0.22f, 0.39f),
+            NodeCategory.Data => new Color(0.16f, 0.32f, 0.36f),
+            NodeCategory.Condition => new Color(0.38f, 0.29f, 0.15f),
+            NodeCategory.Action => new Color(0.20f, 0.34f, 0.23f),
+            _ => new Color(0.23f, 0.23f, 0.23f)
+        };
+        node.titleContainer.style.backgroundColor = color;
+        node.titleContainer.Query<Label>().ForEach(label => label.style.color = new Color(0.94f, 0.94f, 0.94f));
+    }
+
     private abstract class AssetNode : Node
     {
         private readonly ScriptableObject asset;
@@ -1314,6 +1439,17 @@ public sealed class ItemGraphWindow : EditorWindow
         protected AssetNode(ScriptableObject asset)
         {
             this.asset = asset;
+            NodeCategory category = asset switch
+            {
+                ItemDefinition _ => NodeCategory.Item,
+                EmptyHandDefinition _ => NodeCategory.Item,
+                ItemSkillDefinition _ => NodeCategory.Skill,
+                SkillChainNode chain => chain.Kind == SkillChainNodeKind.Action ? NodeCategory.Action : NodeCategory.Condition,
+                ItemSkillCondition _ => NodeCategory.Condition,
+                ItemSkillAction _ => NodeCategory.Action,
+                _ => NodeCategory.Data
+            };
+            SetHeaderColor(this, category);
         }
 
         public override void OnSelected()
@@ -1525,6 +1661,7 @@ public sealed class ItemGraphWindow : EditorWindow
         public readonly ItemSkillAction Action;
         public readonly Port Output;
         public readonly Port PositionInput, BlockInput, SelectionOutput, DistanceInput;
+        public readonly Port ShapeInput, ShapeStateOutput;
 
         public ActionNode(ItemSkillAction action) : base(action)
         {
@@ -1532,6 +1669,13 @@ public sealed class ItemGraphWindow : EditorWindow
             title = "Action — " + (action is ReplaceEquippedItemAction ? "ReplaceItem — " : "") + action.name;
             style.width = 320;
             var serialized = new SerializedObject(action);
+            if (action is TogglePlacementShapeAction || action is PickPlacementSelectionAction)
+            {
+                ShapeStateOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(ShapeStateSignal));
+                ShapeStateOutput.portName = action is PickPlacementSelectionAction ? "Shape state" : "State"; outputContainer.Add(ShapeStateOutput);
+            }
+            if (action is SetWorldBlockAction shapeReader && shapeReader.BlockSource != BlockValueSource.Constant)
+                ShapeInput = AddDataInput("Shape", typeof(ShapeSignal));
             if (action is PickUpItemAction || action is ThrowItemAction || action is SetWorldBlockAction || action is PickPlacementSelectionAction)
                 DistanceInput = AddDataInput("Distance", typeof(ActionDistanceDefinition));
             if (action is SetWorldBlockAction)
@@ -1555,7 +1699,7 @@ public sealed class ItemGraphWindow : EditorWindow
                 do
                 {
                     if (property.name != "m_Script" && !(property.name == "Distance" && DistanceInput != null) && property.name != "Position" && property.name != "BlockSource" && property.name != "ConstantBlock" &&
-                        property.name != "ItemSelectionConnected")
+                        property.name != "ItemSelectionConnected" && property.name != "PlacementShapeConnected" && property.name != "ShapeStateConnected")
                         extensionContainer.Add(new PropertyField(property.Copy()));
                 } while (property.NextVisible(false));
             Output = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(ItemSkillAction));

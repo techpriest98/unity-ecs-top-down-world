@@ -16,6 +16,10 @@ namespace Game.World.Lighting
         {
             float3 origin = new float3(sourcePosition) + 0.5f;
             float3 target = new float3(targetPosition) + 0.5f;
+            origin.y += BlockLightGeometry.SampleOffset(blockAccessor.GetBlockOrAir(
+                sourceChunk, sourcePosition.x, sourcePosition.y, sourcePosition.z));
+            target.y += BlockLightGeometry.SampleOffset(blockAccessor.GetBlockOrAir(
+                sourceChunk, targetPosition.x, targetPosition.y, targetPosition.z));
             float3 ray = target - origin;
             float maximumDistance = math.length(ray);
 
@@ -25,6 +29,11 @@ namespace Game.World.Lighting
             }
 
             float3 direction = ray / maximumDistance;
+            BlockData sourceBlock = blockAccessor.GetBlockOrAir(sourceChunk,
+                sourcePosition.x, sourcePosition.y, sourcePosition.z);
+            if ((sourceBlock.Shape == BlockShape.LowerHalf || sourceBlock.Shape == BlockShape.UpperHalf) &&
+                BlockLightGeometry.Intersects(sourceBlock, sourcePosition, origin, direction, maximumDistance))
+                return false;
             int3 voxel = sourcePosition;
             int3 step = new int3(
                 GetStep(direction.x),
@@ -62,7 +71,8 @@ namespace Game.World.Lighting
 
                 if (math.all(voxel == targetPosition))
                 {
-                    return true;
+                    BlockData targetBlock = blockAccessor.GetBlockOrAir(sourceChunk, voxel.x, voxel.y, voxel.z);
+                    return !BlockLightGeometry.Intersects(targetBlock, voxel, origin, direction, maximumDistance);
                 }
 
                 if (!blockAccessor.TryGetBlock(
@@ -71,7 +81,7 @@ namespace Game.World.Lighting
                         voxel.y,
                         voxel.z,
                         out BlockData block) ||
-                    IsOpaque(block.BlockId))
+                    BlockLightGeometry.Intersects(block, voxel, origin, direction, maximumDistance))
                 {
                     return false;
                 }

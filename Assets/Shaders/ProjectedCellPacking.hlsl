@@ -36,7 +36,7 @@ uint GetBlockId(uint packedBlockData)
 }
 uint GetFaceType(uint packedBlockData)
 {
-    return (packedBlockData >> 8) & 0xFF;
+    return (packedBlockData >> 8) & 0x0F;
 }
 uint2 UnpackAtlasPosition(uint atlasPosition)
 {

@@ -36,6 +36,17 @@ namespace Game.World.Rendering
             ChunkBlockAccessor blockAccessor,
             ViewDirection direction)
         {
+            bool lower = blockAccessor.GetBlockOrAir(chunkCoordinate, blockWorld.x, blockWorld.y, blockWorld.z).Shape == BlockShape.LowerHalf;
+            return Build(chunkCoordinate, blockWorld, blockAccessor, direction, lower);
+        }
+
+        public static byte Build(
+            int2 chunkCoordinate,
+            int3 blockWorld,
+            ChunkBlockAccessor blockAccessor,
+            ViewDirection direction,
+            bool lowerSurface)
+        {
             int2 chunkSizeXZ =
                 new int2(
                     ChunkSettings.SizeX,
@@ -47,6 +58,7 @@ namespace Game.World.Rendering
                     chunkSizeXZ,
                     direction);
 
+            BlockShape centerShape = lowerSurface ? BlockShape.LowerHalf : BlockShape.Full;
             byte mask = 0;
 
             mask |= GetNeighborBit(
@@ -56,7 +68,7 @@ namespace Game.World.Rendering
                 NorthBit,
                 chunkSizeXZ,
                 blockAccessor,
-                direction);
+                direction, centerShape);
 
             mask |= GetNeighborBit(
                 chunkCoordinate,
@@ -65,7 +77,7 @@ namespace Game.World.Rendering
                 EastBit,
                 chunkSizeXZ,
                 blockAccessor,
-                direction);
+                direction, centerShape);
 
             mask |= GetNeighborBit(
                 chunkCoordinate,
@@ -74,7 +86,7 @@ namespace Game.World.Rendering
                 SouthBit,
                 chunkSizeXZ,
                 blockAccessor,
-                direction);
+                direction, centerShape);
 
             mask |= GetNeighborBit(
                 chunkCoordinate,
@@ -83,7 +95,7 @@ namespace Game.World.Rendering
                 WestBit,
                 chunkSizeXZ,
                 blockAccessor,
-                direction);
+                direction, centerShape);
 
             mask |= GetNeighborBit(
                 chunkCoordinate,
@@ -92,7 +104,7 @@ namespace Game.World.Rendering
                 NorthEastBit,
                 chunkSizeXZ,
                 blockAccessor,
-                direction);
+                direction, centerShape);
 
             mask |= GetNeighborBit(
                 chunkCoordinate,
@@ -101,7 +113,7 @@ namespace Game.World.Rendering
                 SouthEastBit,
                 chunkSizeXZ,
                 blockAccessor,
-                direction);
+                direction, centerShape);
 
             mask |= GetNeighborBit(
                 chunkCoordinate,
@@ -110,7 +122,7 @@ namespace Game.World.Rendering
                 SouthWestBit,
                 chunkSizeXZ,
                 blockAccessor,
-                direction);
+                direction, centerShape);
 
             mask |= GetNeighborBit(
                 chunkCoordinate,
@@ -119,7 +131,7 @@ namespace Game.World.Rendering
                 NorthWestBit,
                 chunkSizeXZ,
                 blockAccessor,
-                direction);
+                direction, centerShape);
 
             return mask;
         }
@@ -138,7 +150,8 @@ namespace Game.World.Rendering
             byte bit,
             int2 chunkSizeXZ,
             ChunkBlockAccessor blockAccessor,
-            ViewDirection direction)
+            ViewDirection direction,
+            BlockShape centerShape)
         {
             ViewCoordinate neighborView =
                 new ViewCoordinate(
@@ -156,15 +169,15 @@ namespace Game.World.Rendering
                     chunkSizeXZ,
                     direction);
 
-            BlockData neighborBlock =
-                blockAccessor.GetBlockOrAir(
+            CellContents neighbor =
+                blockAccessor.GetContentsOrAir(
                     chunkCoordinate,
                     neighborWorld.x,
                     neighborWorld.y,
                     neighborWorld.z);
 
-            return IsOpaque(
-                    neighborBlock.BlockId)
+            return (IsOpaque(neighbor.Upper.Id) ||
+                    (centerShape == BlockShape.LowerHalf && IsOpaque(neighbor.Lower.Id)))
                 ? bit
                 : (byte)0;
         }
@@ -183,8 +196,7 @@ namespace Game.World.Rendering
             BlockId blockId)
         {
             return
-                blockId ==
-                BlockId.OceanWater;
+                blockId == BlockId.OceanWater || blockId == BlockId.RiverWater;
         }
     }
 }

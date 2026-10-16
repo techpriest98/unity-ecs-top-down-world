@@ -40,6 +40,7 @@ namespace Game.World.Chunks
             chunkArchetype = state.EntityManager.CreateArchetype(
                 typeof(ChunkComponent),
                 typeof(BlockData),
+                typeof(SplitCellData),
                 typeof(ChunkColumnData),
                 typeof(ProjectedCellData),
                 typeof(ProjectedClipCell),

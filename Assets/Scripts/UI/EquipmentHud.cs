@@ -35,14 +35,15 @@ namespace Game.UI
         private readonly RectTransform[] selectionFrames = new RectTransform[2];
         private readonly RawImage[] selectionIcons = new RawImage[2];
 
-        public void SetSelectedBlock(int index, ItemPlacementSelection selection)
+        public void SetSelectedBlock(int index, ItemPlacementSelection selection, BlockPlacementMode mode)
         {
             if (index < 0 || index >= 2) return;
             var renderer = ChunkProceduralRenderer.Instance;
             Texture2D atlas = null;
             Rect uv = default;
             bool visible = selection.Kind == PlacementSelectionKind.Block && selection.Id > 0 && selection.Id <= byte.MaxValue &&
-                renderer != null && renderer.TryGetBlockSideIcon((BlockId)selection.Id, out atlas, out uv);
+                renderer != null && renderer.TryGetBlockSideIcon((BlockId)selection.Id, out atlas, out uv,
+                    halfBlock: mode == BlockPlacementMode.Half);
             if (!visible)
             {
                 if (selectionFrames[index] != null) selectionFrames[index].gameObject.SetActive(false);

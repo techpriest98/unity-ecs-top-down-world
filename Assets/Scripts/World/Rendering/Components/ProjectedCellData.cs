@@ -11,7 +11,10 @@ namespace Game.World.Rendering
         /// <summary>
         /// Bits:
         /// 0-7   BlockId
-        /// 8-15  FaceType
+        /// 8-11  FaceType
+        /// 12    Lower-half geometry
+        /// 13    Foot overlay at half-block height
+        /// 14    Upper-half-only face (cursor bounds)
         /// 16-23 Durability
         /// 24-31 MaxDurability
         /// </summary>
@@ -19,6 +22,7 @@ namespace Game.World.Rendering
 
         public BlockId BlockId => ProjectedCellPacking.GetBlockId(BlockData);
         public ProjectedFaceType FaceType => ProjectedCellPacking.GetFaceType(BlockData);
+        public bool IsLowerHalf => ProjectedCellPacking.IsLowerHalf(BlockData);
         public byte Durability => ProjectedCellPacking.GetDurability(BlockData);
         public byte MaxDurability => ProjectedCellPacking.GetMaxDurability(BlockData);
 
@@ -55,7 +59,7 @@ namespace Game.World.Rendering
         /// Other neighbor bits are currently unused for Side.
         /// bits 8-15 FootBlockId (Air means no bottom overlay).
         /// Directions are relative to the current view.
-        /// Both Side halves receive the same data.
+        /// Side adjacency is evaluated at the height of the drawn half.
         ///
         /// Water:
         /// bits 0-7 OpticalDepth,

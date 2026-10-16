@@ -25,7 +25,7 @@ namespace Game.Items
             foreach (var (chunk, entity) in SystemAPI.Query<RefRO<ChunkComponent>>().WithAll<ChunkGenerated, BlockData>().WithEntityAccess())
                 map.TryAdd(chunk.ValueRO.Coordinate, entity);
             state.EntityManager.CompleteDependencyBeforeRO<BlockData>();
-            var accessor = new ChunkBlockAccessor(map, SystemAPI.GetBufferLookup<BlockData>(true));
+            var accessor = new ChunkBlockAccessor(map, SystemAPI.GetBufferLookup<BlockData>(true), SystemAPI.GetBufferLookup<SplitCellData>(true));
             foreach (var item in SystemAPI.Query<RefRW<WorldItem>>())
             {
                 var value = item.ValueRO;

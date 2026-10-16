@@ -5,7 +5,7 @@ using Unity.Mathematics;
 
 namespace Game.World.Rendering
 {
-    public static class ChunkProjectionBuilder
+    public static partial class ChunkProjectionBuilder
     {
         private const float PlayerClipCenterOffset = 1f;
 
@@ -50,6 +50,10 @@ namespace Game.World.Rendering
                     ChunkSettings.SizeY,
                     direction);
 
+            int3 away = ViewDirectionUtility.GetAwayFromCameraOffset(direction);
+            bool splitPath = blockAccessor.HasSplitCells(chunkCoordinate) ||
+                blockAccessor.HasSplitCells(chunkCoordinate + new int2(away.x, away.z));
+
             for (int u = 0; u < bounds.Width; u++)
             {
                 for (int h = bounds.Height - 1; h >= 0; h--)
@@ -82,7 +86,7 @@ namespace Game.World.Rendering
                             checked((ushort)u),
                             checked((ushort)projectionY),
                             projectionClippingEnabled,
-                            playerPosition);
+                            playerPosition, splitPath);
                     }
                 }
             }
@@ -99,15 +103,17 @@ namespace Game.World.Rendering
             ushort projectionX,
             ushort projectionY,
             bool projectionClippingEnabled,
-            float3 playerPosition)
+            float3 playerPosition,
+            bool splitPath)
         {
+            if (splitPath && TryProcessSplitCell(blocks, chunkCoordinate, blockAccessor, writer, waterWriter,
+                    world, direction, projectionX, projectionY, projectionClippingEnabled, playerPosition))
+                return;
             BlockData currentBlock = GetBlockOrAir(
                 blocks,
                 chunkCoordinate,
                 blockAccessor,
                 world);
-
-            BlockId currentBlockId = currentBlock.BlockId;
 
             // The mask describes the clipped volume, including air and interior
             // cells, rather than only the visible faces emitted at its boundary.
@@ -129,46 +135,62 @@ namespace Game.World.Rendering
                     world.y,
                     world.z));
 
+            // Only the cell immediately above a half block needs the extra
+            // Top pass. Read the local buffer directly, without chunk lookups.
+            bool hasHalfBelow = world.y > 0 &&
+                blocks[sourceAirIndex - ChunkSettings.SizeX * ChunkSettings.SizeZ].Shape == BlockShape.LowerHalf;
+
             ProcessOpaqueCell(
                 chunkCoordinate,
                 blockAccessor,
                 writer,
-                currentBlockId,
+                currentBlock,
                 world,
                 direction,
                 projectionX,
                 projectionY,
                 sourceAirIndex,
                 projectionClippingEnabled,
-                playerPosition);
+                playerPosition,
+                hasHalfBelow);
 
             ProcessWaterCell(
                 chunkCoordinate,
                 blockAccessor,
                 waterWriter,
-                currentBlockId,
+                currentBlock,
                 world,
                 direction,
                 projectionX,
                 projectionY,
-                sourceAirIndex);
+                sourceAirIndex,
+                hasHalfBelow);
         }
 
         private static void ProcessOpaqueCell(
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
             ProjectionWriter writer,
-            BlockId currentBlockId,
+            BlockData currentBlock,
             int3 world,
             ViewDirection direction,
             ushort projectionX,
             ushort projectionY,
             ushort sourceAirIndex,
             bool projectionClippingEnabled,
-            float3 playerPosition)
+            float3 playerPosition,
+            bool hasHalfBelow)
         {
-            if (IsOpaque(currentBlockId))
+            // The gap above a lower-half block exists even under another block.
+            if (hasHalfBelow)
+                TryEmitOpaqueTop(chunkCoordinate, blockAccessor, writer, world, direction,
+                    projectionX, projectionY, sourceAirIndex, projectionClippingEnabled, playerPosition, halfOnly: true);
+
+            if (IsOpaque(currentBlock.BlockId))
             {
+                if (currentBlock.Shape == BlockShape.LowerHalf)
+                    TryEmitOpaqueSide(chunkCoordinate, blockAccessor, writer, world, direction,
+                        projectionX, projectionY, sourceAirIndex, projectionClippingEnabled, playerPosition, upperOnly: true);
                 TryEmitCutTop(
                     chunkCoordinate,
                     blockAccessor,
@@ -225,15 +247,24 @@ namespace Game.World.Rendering
             int2 chunkCoordinate,
             ChunkBlockAccessor blockAccessor,
             WaterProjectionWriter writer,
-            BlockId currentBlockId,
+            BlockData currentBlock,
             int3 world,
             ViewDirection direction,
             ushort projectionX,
             ushort projectionY,
-            ushort sourceAirIndex)
+            ushort sourceAirIndex,
+            bool hasHalfBelow)
         {
-            if (!BlockUtility.IsAir(currentBlockId))
+            if (hasHalfBelow)
+                TryEmitWaterTop(chunkCoordinate, blockAccessor, writer, world, direction,
+                    projectionX, projectionY, sourceAirIndex, halfOnly: true);
+            if (!BlockUtility.IsAir(currentBlock.BlockId))
+            {
+                if (currentBlock.Shape == BlockShape.LowerHalf)
+                    TryEmitWaterSide(chunkCoordinate, blockAccessor, writer, world, direction,
+                        projectionX, projectionY, sourceAirIndex, upperOnly: true);
                 return;
+            }
 
             TryEmitWaterSide(
                 chunkCoordinate,
@@ -266,7 +297,8 @@ namespace Game.World.Rendering
             ushort projectionY,
             ushort sourceAirIndex,
             bool projectionClippingEnabled,
-            float3 playerPosition)
+            float3 playerPosition,
+            bool halfOnly = false)
         {
             int3 belowWorld =
                 transparentWorld + new int3(0, -1, 0);
@@ -287,11 +319,14 @@ namespace Game.World.Rendering
 
             if (!IsOpaque(belowBlock.BlockId))
                 return;
+            bool half = belowBlock.Shape == BlockShape.LowerHalf;
+            if (half != halfOnly) return;
+            if (half) projectionY++;
 
             float3 facePosition = GetGlobalPosition(
                 chunkCoordinate,
                 belowWorld,
-                1f);
+                half ? 0.5f : 1f);
 
             if (ShouldClipOpaqueFace(
                     projectionClippingEnabled,
@@ -328,7 +363,8 @@ namespace Game.World.Rendering
             ushort projectionY,
             ushort sourceAirIndex,
             bool projectionClippingEnabled,
-            float3 playerPosition)
+            float3 playerPosition,
+            bool upperOnly = false)
         {
             if (projectionY < 2)
                 return;
@@ -345,11 +381,13 @@ namespace Game.World.Rendering
 
             if (!IsOpaque(block.BlockId))
                 return;
+            bool half = block.Shape == BlockShape.LowerHalf;
+            if (upperOnly && half) return;
 
             float3 facePosition = GetGlobalPosition(
                 chunkCoordinate,
                 blockWorld,
-                0.5f);
+                half ? 0.25f : 0.5f);
 
             if (ShouldClipOpaqueFace(
                     projectionClippingEnabled,
@@ -358,8 +396,8 @@ namespace Game.World.Rendering
                     blockWorld.y,
                     direction))
             {
-                writer.RecordClippedCell(projectionX, checked((ushort)(projectionY - 2)));
-                writer.RecordClippedCell(projectionX, checked((ushort)(projectionY - 1)));
+                writer.RecordClippedCell(projectionX, checked((ushort)(projectionY - (half ? 1 : 2))));
+                if (!half && !upperOnly) writer.RecordClippedCell(projectionX, checked((ushort)(projectionY - 1)));
                 return;
             }
 
@@ -395,9 +433,9 @@ namespace Game.World.Rendering
                 leftWorld.z);
 
             byte neighborMask = (byte)(
-                (IsOpaque(aboveBlock.BlockId) ? 1 : 0) |
-                (IsOpaque(rightBlock.BlockId) ? 2 : 0) |
-                (IsOpaque(leftBlock.BlockId) ? 8 : 0));
+                (!half && IsOpaque(aboveBlock.BlockId) ? 1 : 0) |
+                (IsOpaque(rightBlock.BlockId) && (half || rightBlock.Shape == BlockShape.Full) ? 2 : 0) |
+                (IsOpaque(leftBlock.BlockId) && (half || leftBlock.Shape == BlockShape.Full) ? 8 : 0));
 
             int3 footWorld =
                 transparentWorld + new int3(0, -1, 0);
@@ -408,9 +446,15 @@ namespace Game.World.Rendering
                 footWorld.y,
                 footWorld.z);
 
-            BlockId footBlockId = IsOpaque(footBlock.BlockId)
+            BlockId footBlockId = IsOpaque(footBlock.BlockId) && footBlock.Shape == BlockShape.Full
                 ? footBlock.BlockId
                 : BlockId.Air;
+
+            // The visible upper face rests against the Top of the half block
+            // in front, rather than against the floor one cell below it.
+            if (upperOnly)
+                footBlockId = blockAccessor.GetBlockOrAir(chunkCoordinate,
+                    transparentWorld.x, transparentWorld.y, transparentWorld.z).BlockId;
 
             writer.TryAddSideUpper(
                 block,
@@ -418,11 +462,15 @@ namespace Game.World.Rendering
                 footBlockId,
                 sourceAirIndex,
                 projectionX,
-                checked((ushort)(projectionY - 2)));
+                checked((ushort)(projectionY - (half ? 1 : 2))),
+                raisedFoot: upperOnly);
 
+            if (half || upperOnly) return;
+            byte lowerMask = (byte)((neighborMask & 1) |
+                (IsOpaque(rightBlock.BlockId) ? 2 : 0) | (IsOpaque(leftBlock.BlockId) ? 8 : 0));
             writer.TryAddSideLower(
                 block,
-                neighborMask,
+                lowerMask,
                 footBlockId,
                 sourceAirIndex,
                 projectionX,
@@ -437,7 +485,8 @@ namespace Game.World.Rendering
             ViewDirection direction,
             ushort projectionX,
             ushort projectionY,
-            ushort sourceAirIndex)
+            ushort sourceAirIndex,
+            bool halfOnly = false)
         {
             int3 belowWorld = airWorld + new int3(0, -1, 0);
 
@@ -457,13 +506,16 @@ namespace Game.World.Rendering
 
             if (!IsWater(belowBlock.BlockId))
                 return;
+            bool half = belowBlock.Shape == BlockShape.LowerHalf;
+            if (half != halfOnly) return;
+            if (half) projectionY++;
 
             int3 awayFromCamera =
                 ViewDirectionUtility.GetAwayFromCameraOffset(direction);
 
             float3 rayOrigin = new float3(
                 belowWorld.x + 0.5f,
-                belowWorld.y + 1f,
+                belowWorld.y + (half ? 0.5f : 1f),
                 belowWorld.z + 0.5f);
 
             byte opticalDepth = MeasureWaterDepth(
@@ -474,13 +526,15 @@ namespace Game.World.Rendering
 
             int3 behindWorld = belowWorld + awayFromCamera;
 
-            BlockData behindBlock = blockAccessor.GetBlockOrAir(
+            CellContents behindContents = blockAccessor.GetContentsOrAir(
                 chunkCoordinate,
                 behindWorld.x,
                 behindWorld.y,
                 behindWorld.z);
 
-            bool topInset = IsOpaque(behindBlock.BlockId);
+            // The water surface meets the neighbour's upper half, not its
+            // compatibility geometry (which may report the solid lower half).
+            bool topInset = !half && IsOpaque(behindContents.Upper.Id);
 
             writer.TryAddTop(
                 belowBlock,
@@ -499,7 +553,8 @@ namespace Game.World.Rendering
             ViewDirection direction,
             ushort projectionX,
             ushort projectionY,
-            ushort sourceAirIndex)
+            ushort sourceAirIndex,
+            bool upperOnly = false)
         {
             if (projectionY < 2)
                 return;
@@ -517,6 +572,8 @@ namespace Game.World.Rendering
 
             if (!IsWater(block.BlockId))
                 return;
+            bool half = block.Shape == BlockShape.LowerHalf;
+            if (half && upperOnly) return;
 
             // Центр передньої грані, повернутої до камери.
             float3 faceCenter =
@@ -538,11 +595,12 @@ namespace Game.World.Rendering
 
             writer.TryAddSideUpper(
                 block,
-                upperDepth,
+                half ? lowerDepth : upperDepth,
                 sourceAirIndex,
                 projectionX,
-                checked((ushort)(projectionY - 2)));
+                checked((ushort)(projectionY - (half ? 1 : 2))));
 
+            if (half || upperOnly) return;
             writer.TryAddSideLower(
                 block,
                 lowerDepth,
@@ -572,7 +630,7 @@ namespace Game.World.Rendering
         {
             const float verticalSpeed = 0.5f;
             const float epsilon = 0.00001f;
-            const int maxSteps = byte.MaxValue * 3 + 3;
+            const int maxSteps = byte.MaxValue * 5 + 5;
 
             bool movesAlongX = awayFromCamera.x != 0;
 
@@ -591,7 +649,7 @@ namespace Game.World.Rendering
                 ? (int)math.floor(horizontalOrigin)
                 : (int)math.ceil(horizontalOrigin) - 1;
 
-            int verticalCell = (int)math.ceil(rayOrigin.y) - 1;
+            int verticalCell = (int)math.ceil(rayOrigin.y * 2f) - 1;
 
             int3 currentWorld = (int3)math.floor(rayOrigin);
 
@@ -600,27 +658,28 @@ namespace Game.World.Rendering
             else
                 currentWorld.z = horizontalCell;
 
-            currentWorld.y = verticalCell;
+            currentWorld.y = (int)math.floor(verticalCell * .5f);
 
             float nextHorizontal = horizontalStep > 0
                 ? horizontalCell + 1f - horizontalOrigin
                 : horizontalOrigin - horizontalCell;
 
             float nextVertical =
-                (rayOrigin.y - verticalCell) / verticalSpeed;
+                (rayOrigin.y - verticalCell * .5f) / verticalSpeed;
 
             float distance = 0f;
             float maxDistance = byte.MaxValue / verticalSpeed;
 
             for (int step = 0; step < maxSteps; step++)
             {
-                BlockData block = blockAccessor.GetBlockOrAir(
+                CellContents contents = blockAccessor.GetContentsOrAir(
                     chunkCoordinate,
                     currentWorld.x,
                     currentWorld.y,
                     currentWorld.z);
 
-                if (!IsWater(block.BlockId))
+                BlockId material = (verticalCell & 1) == 0 ? contents.Lower.Id : contents.Upper.Id;
+                if (!IsWater(material))
                     break;
 
                 float nextBoundary = math.min(
@@ -646,8 +705,9 @@ namespace Game.World.Rendering
 
                 if (crossVertical)
                 {
-                    currentWorld.y--;
-                    nextVertical += 1f / verticalSpeed;
+                    verticalCell--;
+                    currentWorld.y = (int)math.floor(verticalCell * .5f);
+                    nextVertical += .5f / verticalSpeed;
                 }
             }
 
@@ -749,6 +809,7 @@ namespace Game.World.Rendering
 
             if (!IsOpaque(belowBlock.BlockId))
                 return;
+            if (belowBlock.Shape == BlockShape.LowerHalf) return; // Real half-height Top was emitted separately.
 
             float3 upperFacePosition = GetGlobalPosition(
                 chunkCoordinate,
@@ -799,6 +860,9 @@ namespace Game.World.Rendering
             
             if (!IsOpaque(behindBlock.BlockId))
                 return;
+            bool half = behindBlock.Shape == BlockShape.LowerHalf;
+            bool upperOnly = blockAccessor.GetBlockOrAir(chunkCoordinate, world.x, world.y, world.z).Shape == BlockShape.LowerHalf;
+            if (half && upperOnly) return;
 
             float3 facePosition = GetGlobalPosition(
                 chunkCoordinate,
@@ -828,8 +892,9 @@ namespace Game.World.Rendering
                 behindBlock,
                 sourceCellIndex,
                 projectionX,
-                checked((ushort)(projectionY - 2)));
+                checked((ushort)(projectionY - (half ? 1 : 2))));
 
+            if (half || upperOnly) return;
             writer.TryAddCutSideLower(
                 behindBlock,
                 sourceCellIndex,
@@ -865,7 +930,7 @@ namespace Game.World.Rendering
 
         private static bool IsWater(BlockId blockId)
         {
-            return blockId == BlockId.OceanWater;
+            return blockId == BlockId.OceanWater || blockId == BlockId.RiverWater;
         }
 
         private static int GetDepthDistance(

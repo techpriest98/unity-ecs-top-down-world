@@ -151,7 +151,7 @@ namespace Game.World.Lighting
                 math.max(chunkCount, 1),
                 Allocator.Temp);
 
-            ChunkBlockAccessor blockAccessor = new(chunkEntities, blockLookup);
+            ChunkBlockAccessor blockAccessor = new(chunkEntities, blockLookup, SystemAPI.GetBufferLookup<SplitCellData>(true));
             ChunkVoxelLightAccessor lightAccessor = new(chunkEntities, lightLookup);
 
             foreach (var (source, position) in
@@ -319,7 +319,7 @@ namespace Game.World.Lighting
                     position.y,
                     position.z,
                     out BlockData block) ||
-                (!isSource && IsOpaque(block.BlockId)) ||
+                (!isSource && BlockLightGeometry.IsFull(block)) ||
                 !DynamicLightVisibilityUtility.IsVisible(
                     sourceChunk,
                     sourcePosition,

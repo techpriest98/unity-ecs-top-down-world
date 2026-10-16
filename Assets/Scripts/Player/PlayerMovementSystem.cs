@@ -21,7 +21,6 @@ namespace Game.Player
         private const float MaximumFallSpeed = -50f;
         private const float MaximumVerticalStep = 0.25f;
         private const int CollisionSearchIterations = 8;
-        private const float GroundProbeDistance = 0.02f;
 
         private NativeParallelHashMap<int2, Entity> chunkEntities;
 
@@ -65,7 +64,7 @@ namespace Game.Player
             UpdateChunkLookup(ref state);
 
             BufferLookup<BlockData> blockLookup = SystemAPI.GetBufferLookup<BlockData>(isReadOnly: true);
-            ChunkBlockAccessor blockAccessor = new ChunkBlockAccessor(chunkEntities, blockLookup);
+            ChunkBlockAccessor blockAccessor = new ChunkBlockAccessor(chunkEntities, blockLookup, SystemAPI.GetBufferLookup<SplitCellData>(true));
             float deltaTime = SystemAPI.Time.DeltaTime;
 
             ViewDirection viewDirection = SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
@@ -92,6 +91,7 @@ namespace Game.Player
                     .WithEntityAccess())
             {
                 float3 position = worldPosition.ValueRO.Value;
+                float velocity = verticalVelocity.ValueRO.Value;
                 float2 screenDirection = moveInput.ValueRO.Value;
                 RefRW<PlayerFacing> facing = facingLookup.GetRefRW(entity);
 
@@ -108,27 +108,16 @@ namespace Game.Player
                     facing.ValueRW.Value = GetFacingDirection(worldDirection);
 
                     float distance = moveSpeed.ValueRO.Value * deltaTime;
-                    float3 horizontalCandidate = position + new float3(
-                        worldDirection.x * distance,
-                        0f,
-                        worldDirection.y * distance);
-
-                    bool horizontalBlocked = PlayerCollisionUtility.IsPositionBlocked(
-                        horizontalCandidate,
-                        collisionShape.ValueRO,
-                        blockAccessor);
-
-                    if (!horizontalBlocked)
-                    {
-                        position = horizontalCandidate;
-                    }
+                    float previousHeight = position.y;
+                    position = PlayerCollisionUtility.MoveHorizontally(position, worldDirection * distance,
+                        collisionShape.ValueRO, blockAccessor,
+                        allowStep: velocity <= 0f && !jumpInput.ValueRO.IsPressed);
+                    if (position.y > previousHeight) velocity = 0f;
                 }
 
                 // ========================================================
                 // Jump
                 // ========================================================
-
-                float velocity = verticalVelocity.ValueRO.Value;
 
                 bool grounded = IsGrounded(
                     position,
@@ -168,13 +157,7 @@ namespace Game.Player
             in PlayerCollisionShape shape,
             in ChunkBlockAccessor blockAccessor)
         {
-            float3 groundProbePosition = position;
-            groundProbePosition.y -= GroundProbeDistance;
-
-            return PlayerCollisionUtility.IsPositionBlocked(
-                groundProbePosition,
-                shape,
-                blockAccessor);
+            return PlayerCollisionUtility.IsGrounded(position, shape, blockAccessor);
         }
 
         private static void MoveVertically(

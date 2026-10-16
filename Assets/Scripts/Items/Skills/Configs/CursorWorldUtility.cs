@@ -33,6 +33,14 @@ namespace Game.Items.Skills
         public static bool TryGetBlock(EntityManager manager, int3 position, out BlockId block)
         {
             block = BlockId.Air;
+            if (!TryGetContents(manager, position, out CellContents contents)) return false;
+            block = contents.GeometryView().BlockId;
+            return true;
+        }
+
+        public static bool TryGetContents(EntityManager manager, int3 position, out CellContents contents)
+        {
+            contents = default;
             if (position.y < 0 || position.y >= ChunkSettings.SizeY)
                 return false;
             int2 coordinate = new int2(FloorDiv(position.x, ChunkSettings.SizeX),
@@ -49,7 +57,7 @@ namespace Game.Items.Skills
                 var blocks = manager.GetBuffer<BlockData>(entity, true);
                 if (index < 0 || index >= blocks.Length)
                     return false;
-                block = blocks[index].BlockId;
+                contents = SplitCellUtility.Get(blocks, manager.GetBuffer<SplitCellData>(entity, true), index);
                 return true;
             }
             return false;

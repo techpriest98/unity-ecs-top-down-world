@@ -12,7 +12,7 @@ namespace Game.World.Saving
 {
     public static class WorldStateStorage
     {
-        public const int CurrentVersion = 4;
+        public const int CurrentVersion = 7;
 
         public static bool TryRead(
             string id,
@@ -151,6 +151,8 @@ namespace Game.World.Saving
                         item.Instance.Durability <= 0f || item.Instance.MaxDurability <= 0f ||
                         item.Instance.Durability > item.Instance.MaxDurability ||
                         !Finite(item.Instance.DurabilityElapsed) || item.Instance.DurabilityElapsed < 0f ||
+                        (int)item.Instance.PlacementMode > 1 ||
+                        (data.Version < 7 && item.Instance.PlacementMode != BlockPlacementMode.Full) ||
                         (int)item.Instance.PlacementSelection.Kind > 2 || item.Instance.PlacementSelection.Id < 0 ||
                         (item.Instance.PlacementSelection.Kind == Game.Items.PlacementSelectionKind.None && item.Instance.PlacementSelection.Id != 0) ||
                         (item.Instance.PlacementSelection.Kind != Game.Items.PlacementSelectionKind.None && item.Instance.PlacementSelection.Id == 0))
@@ -199,11 +201,17 @@ namespace Game.World.Saving
                         block.Index < 0 ||
                         block.Index >= ChunkSettings.BlockCount ||
                         !indices.Add(block.Index) ||
+                        (block.Halves != null && (data.Version < 6 ||
+                            !ValidPart(block.Halves.LowerId, block.Halves.LowerDurability) ||
+                            !ValidPart(block.Halves.UpperId, block.Halves.UpperDurability))) ||
                         block.BlockId < 0 ||
                         block.BlockId > byte.MaxValue ||
                         !Enum.IsDefined(typeof(BlockId), (BlockId)block.BlockId) ||
                         block.Durability < 0 ||
-                        block.Durability > byte.MaxValue)
+                        block.Durability > byte.MaxValue ||
+                        block.Shape < (int)BlockShape.Full || block.Shape > (int)BlockShape.LowerHalf ||
+                        (data.Version < 5 && block.Shape != (int)BlockShape.Full) ||
+                        (block.BlockId == (int)BlockId.Air && block.Shape != (int)BlockShape.Full))
                     {
                         throw new InvalidDataException(
                             "Invalid or duplicate saved block.");
@@ -211,6 +219,11 @@ namespace Game.World.Saving
                 }
             }
         }
+
+        private static bool ValidPart(int id, int durability) =>
+            id >= 0 && id <= byte.MaxValue && Enum.IsDefined(typeof(BlockId), (BlockId)id) &&
+            durability >= 0 && durability <= byte.MaxValue &&
+            (id != (int)BlockId.Air || durability == 0);
 
         private static void ValidateEquipment(WorldStateData data)
         {
@@ -259,6 +272,8 @@ namespace Game.World.Saving
                 // Existence is validated against the baked library on restore.
                 if (entry.ItemId < 0)
                     throw new InvalidDataException("Invalid saved item ID.");
+                if (entry.PlacementMode < 0 || entry.PlacementMode > 1 || (data.Version < 7 && entry.PlacementMode != 0))
+                    throw new InvalidDataException("Invalid saved placement mode.");
                 if (entry.PlacementSelectionKind < 0 || entry.PlacementSelectionKind > 2 ||
                     entry.PlacementSelectionId < 0 ||
                     (entry.PlacementSelectionKind == 0 && entry.PlacementSelectionId != 0) ||

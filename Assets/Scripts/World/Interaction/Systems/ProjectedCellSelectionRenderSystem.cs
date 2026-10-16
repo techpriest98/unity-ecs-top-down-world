@@ -38,13 +38,14 @@ namespace Game.World.Interaction
             int y = selection.ProjectionY;
             bool side = selection.FaceType == ProjectedFaceType.SideUpper ||
                 selection.FaceType == ProjectedFaceType.SideLower;
+            bool fullHeightSide = side && !ProjectedCellPacking.IsHalfFace(selection.BlockData);
             if (selection.FaceType == ProjectedFaceType.SideLower)
                 y--;
-            float height = side ? 1f : 0.5f;
+            float height = fullHeightSide ? 1f : 0.5f;
             float left = chunkPosition.x - ChunkSettings.SizeX * 0.5f + x;
             float bottom = chunkPosition.y +
                 (ChunkSettings.SizeY * 2 + ChunkSettings.SizeZ) * 0.5f -
-                (y + (side ? 2 : 1)) * 0.5f;
+                (y + (fullHeightSide ? 2 : 1)) * 0.5f;
             properties.SetVector("_CursorRect", new Vector4(left, bottom, 1f, height));
             properties.SetFloat("_CursorDepth", chunkPosition.z - 0.0001f);
             var parameters = new RenderParams(material)

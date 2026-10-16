@@ -45,7 +45,9 @@ namespace Game.World.Rendering
             byte opticalDepth,
             ushort sourceAirIndex,
             ushort x,
-            ushort y)
+            ushort y,
+            bool upperHalf = false,
+            int opaqueUnderlaySource = -1)
         {
             return TryAdd(
                 block,
@@ -54,7 +56,7 @@ namespace Game.World.Rendering
                 false,
                 sourceAirIndex,
                 x,
-                y);
+                y, upperHalf, opaqueUnderlaySource);
         }
 
         public bool TryAddSideLower(
@@ -81,9 +83,12 @@ namespace Game.World.Rendering
             bool topInset,
             ushort sourceAirIndex,
             ushort x,
-            ushort y)
+            ushort y,
+            bool upperHalf = false,
+            int opaqueUnderlaySource = -1)
         {
-            if (opaqueOccupancy.IsOccupied(x, y))
+            if (opaqueOccupancy.IsOccupied(x, y) &&
+                (opaqueUnderlaySource < 0 || !opaqueOccupancy.IsLowerTop(x, y, (ushort)opaqueUnderlaySource)))
             {
                 return false;
             }
@@ -101,6 +106,7 @@ namespace Game.World.Rendering
                 y);
 
             cell.SourceAirIndex = sourceAirIndex;
+            if (upperHalf) cell.BlockData |= ProjectedCellPacking.UpperHalfFlag;
             cell.FaceData = PackFaceData(opticalDepth, topInset);
 
             result.Add(new ProjectedWaterCellData(cell));

@@ -64,7 +64,7 @@ namespace Game.Player
             ChunkBlockAccessor blockAccessor =
                 new ChunkBlockAccessor(
                     chunkEntities,
-                    blockLookup);
+                    blockLookup, SystemAPI.GetBufferLookup<Game.World.Blocks.SplitCellData>(true));
 
             ChunkVoxelLightAccessor lightAccessor =
                 new ChunkVoxelLightAccessor(

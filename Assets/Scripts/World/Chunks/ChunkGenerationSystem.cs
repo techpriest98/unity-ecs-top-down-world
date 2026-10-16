@@ -128,7 +128,7 @@ namespace Game.World.Chunks
                     biomeTerrainResolver,
                     blockDatabase);
 
-                changes.Apply(coordinate, blocks);
+                changes.Apply(coordinate, blocks, state.EntityManager.GetBuffer<SplitCellData>(entity));
 
                 ecb.AddComponent<ChunkGenerated>(entity);
                 ecb.SetComponentEnabled<ChunkNeedsProjection>(

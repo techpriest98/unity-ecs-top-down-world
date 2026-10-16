@@ -9,9 +9,6 @@ Shader "Game/World/ChunkWaterProcedural"
         _WaterOpacity("Water Opacity", Range(0.0, 1.0)) = 0.20
         _WaterAbsorption("Water Absorption", Range(0.0, 1.0)) = 0.12
         _WaterTopInsetPixels("Water Top Inset Pixels", Range(0.0, 4.0)) = 2.0
-        _PlayerClipRadius("Player Clip Radius", Range(0.0, 1024.0)) = 64.0
-        _PlayerClipFadeWidth("Player Clip Fade Width", Range(0.0, 256.0)) = 32.0
-        _PlayerClipGrainSize("Player Clip Grain Size", Range(1.0, 8.0)) = 2.0
     }
 
     SubShader
@@ -106,9 +103,6 @@ Shader "Game/World/ChunkWaterProcedural"
             float3 _SideFaceNormal;
             int _SunShadowMaskIndex;
 
-            float _PlayerClipRadius;
-            float _PlayerClipFadeWidth;
-            float _PlayerClipGrainSize;
 
             // ============================================================
             // Packed data
@@ -270,13 +264,6 @@ Shader "Game/World/ChunkWaterProcedural"
             // ============================================================
             // Fragment
             // ============================================================
-
-            float GetClipGrain(float2 screenPosition)
-            {
-                float grainSize = max(_PlayerClipGrainSize, 1.0);
-                float2 grainPosition = floor(screenPosition / grainSize);
-                return frac(52.9829189 * frac(dot(grainPosition, float2(0.06711056, 0.00583715))));
-            }
 
             float4 Frag(
                 Varyings input) :

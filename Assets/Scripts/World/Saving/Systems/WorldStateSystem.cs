@@ -168,7 +168,12 @@ namespace Game.World.Saving
                                 Index = block.Index,
                                 Value = new BlockData(
                                     (BlockId)block.BlockId,
-                                    (byte)block.Durability)
+                                    (byte)block.Durability,
+                                    (BlockShape)block.Shape),
+                                HasContents = block.Halves != null,
+                                Contents = block.Halves == null ? default : new CellContents(
+                                    new BlockPart((BlockId)block.Halves.LowerId, (byte)block.Halves.LowerDurability),
+                                    new BlockPart((BlockId)block.Halves.UpperId, (byte)block.Halves.UpperDurability))
                             });
                     }
                 }
@@ -262,6 +267,7 @@ namespace Game.World.Saving
                         if ((int)slots[i].Slot != saved.Slot)
                             continue;
                         var restored = slots[i];
+                        restored.Instance.PlacementMode = (BlockPlacementMode)saved.PlacementMode;
                         restored.Instance.PlacementSelection = new ItemPlacementSelection
                         {
                             Kind = (PlacementSelectionKind)saved.PlacementSelectionKind,
@@ -323,7 +329,8 @@ namespace Game.World.Saving
                     MaxDurability = entry.Instance.MaxDurability,
                     DurabilityElapsed = entry.Instance.DurabilityElapsed,
                     PlacementSelectionKind = (int)entry.Instance.PlacementSelection.Kind,
-                    PlacementSelectionId = entry.Instance.PlacementSelection.Id
+                    PlacementSelectionId = entry.Instance.PlacementSelection.Id,
+                    PlacementMode = (int)entry.Instance.PlacementMode
                 };
             }
 
@@ -408,7 +415,15 @@ namespace Game.World.Saving
                 {
                     Index = change.Index,
                     BlockId = (int)change.Value.BlockId,
-                    Durability = change.Value.Durability
+                    Durability = change.Value.Durability,
+                    Shape = (int)change.Value.Shape,
+                    Halves = change.HasContents ? new CellHalvesData
+                    {
+                        LowerId = (int)change.Contents.Lower.Id,
+                        LowerDurability = change.Contents.Lower.Durability,
+                        UpperId = (int)change.Contents.Upper.Id,
+                        UpperDurability = change.Contents.Upper.Durability
+                    } : null
                 });
             }
 

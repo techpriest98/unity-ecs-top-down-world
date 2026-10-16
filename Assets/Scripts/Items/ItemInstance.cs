@@ -10,6 +10,7 @@ namespace Game.Items
         public float MaxDurability;
         public float DurabilityElapsed;
         public ItemPlacementSelection PlacementSelection;
+        public BlockPlacementMode PlacementMode;
     }
 
     public enum PlacementSelectionKind : byte

@@ -12,19 +12,45 @@ namespace Game.World.Chunks
 
         private readonly BufferLookup<BlockData>
             blockLookup;
+        private readonly BufferLookup<SplitCellData> splitLookup;
 
         public ChunkBlockAccessor(
             NativeParallelHashMap<int2, Entity> chunkEntities,
-            BufferLookup<BlockData> blockLookup)
+            BufferLookup<BlockData> blockLookup,
+            BufferLookup<SplitCellData> splitLookup)
         {
             this.chunkEntities =
                 chunkEntities;
 
             this.blockLookup =
                 blockLookup;
+            this.splitLookup = splitLookup;
         }
 
         public bool TryGetBlock(
+            int2 sourceChunkCoordinate, int localX, int localY, int localZ, out BlockData block)
+        {
+            if (!TryGetRawBlock(sourceChunkCoordinate, localX, localY, localZ, out block)) return false;
+            if (SplitCellUtility.IsSplit(block))
+                block = GetContentsOrAir(sourceChunkCoordinate, localX, localY, localZ).GeometryView();
+            return true;
+        }
+
+        public CellContents GetContentsOrAir(int2 coordinate, int x, int y, int z)
+        {
+            if (!TryGetRawBlock(coordinate, x, y, z, out BlockData value)) return default;
+            if (!SplitCellUtility.IsSplit(value)) return CellContents.FromLegacy(value);
+            int2 target = coordinate + new int2(FloorDiv(x, ChunkSettings.SizeX), FloorDiv(z, ChunkSettings.SizeZ));
+            if (!chunkEntities.TryGetValue(target, out Entity entity) || !splitLookup.HasBuffer(entity))
+                return default;
+            SplitCellData split = splitLookup[entity][SplitCellUtility.GetReferenceIndex(value)];
+            return new CellContents(split.Lower, split.Upper);
+        }
+
+        public bool HasSplitCells(int2 coordinate) => chunkEntities.TryGetValue(coordinate, out Entity entity) &&
+            splitLookup.HasBuffer(entity) && splitLookup[entity].Length != 0;
+
+        public bool TryGetRawBlock(
             int2 sourceChunkCoordinate,
             int localX,
             int localY,

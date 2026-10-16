@@ -51,7 +51,7 @@ namespace Game.World.Lighting
                 entities.TryAdd(chunk.ValueRO.Coordinate, entity);
             }
 
-            var blocks = new ChunkBlockAccessor(entities, SystemAPI.GetBufferLookup<BlockData>(true));
+            var blocks = new ChunkBlockAccessor(entities, SystemAPI.GetBufferLookup<BlockData>(true), SystemAPI.GetBufferLookup<SplitCellData>(true));
             var lights = new ChunkLightAccessor(entities, SystemAPI.GetBufferLookup<VoxelLightData>(true));
             ViewDirection direction = SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
             if (SystemAPI.TryGetSingleton<ViewDirectionTransitionComponent>(out var transition) &&
@@ -95,7 +95,7 @@ namespace Game.World.Lighting
                 ProjectedCellData cell = cells[index];
                 cell.LightData = LightDataUtility.ReplaceLocalLight(
                     cell.LightData,
-                    GetLocalLight(cell.SourceAirIndex, voxelLight));
+                    GetLocalLight(ChunkLightingSystem.GetLightSourceIndex(cell), voxelLight));
 
                 ChunkLightingSystem.UpdateLocalLightCorners(
                     ref cell, coordinate, blocks, lights, direction);
@@ -118,7 +118,7 @@ namespace Game.World.Lighting
 
                 cell.LightData = LightDataUtility.ReplaceLocalLight(
                     cell.LightData,
-                    GetLocalLight(cell.SourceAirIndex, voxelLight));
+                    GetLocalLight(ChunkLightingSystem.GetLightSourceIndex(cell), voxelLight));
 
                 ChunkLightingSystem.UpdateLocalLightCorners(
                     ref cell, coordinate, blocks, lights, direction);

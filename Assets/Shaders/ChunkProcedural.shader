@@ -10,9 +10,6 @@ Shader "Game/World/ChunkProcedural"
 
         _BlockAtlas("Block Atlas", 2D) = "white" {}
         _BlockNormalAtlas("Block Normal Atlas", 2D) = "bump" {}
-        _PlayerClipRadius("Player Clip Radius", Range(0.0, 1024.0)) = 64.0
-        _PlayerClipFadeWidth("Player Clip Fade Width", Range(0.0, 256.0)) = 32.0
-        _PlayerClipGrainSize("Player Clip Grain Size", Range(1.0, 8.0)) = 2.0
     }
 
     SubShader
@@ -115,9 +112,6 @@ Shader "Game/World/ChunkProcedural"
             // Clipping
             // ============================================================
 
-            float _PlayerClipRadius;
-            float _PlayerClipFadeWidth;
-            float _PlayerClipGrainSize;
 
 
             // ============================================================
@@ -199,6 +193,7 @@ Shader "Game/World/ChunkProcedural"
                 nointerpolation uint FaceIndex : TEXCOORD2;
                 nointerpolation uint NeighborMask : TEXCOORD3;
                 nointerpolation uint LightData : TEXCOORD4;
+                nointerpolation uint FootAtHalfHeight : TEXCOORD5;
                 nointerpolation uint FootBlockId : TEXCOORD6;
                 nointerpolation uint4 LocalLightCorners : TEXCOORD7;
 nointerpolation uint IsCutSurface : TEXCOORD8;
@@ -250,6 +245,8 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
 
                 output.NeighborMask = GetNeighborMask(cell.FaceData);
                 output.FootBlockId = GetFootBlockId(cell.FaceData);
+                // Either short geometry or a half-height block in front.
+                output.FootAtHalfHeight = (cell.BlockData >> 12) & 3u;
                 output.LightData = cell.LightData;
 
                 output.LocalLightCorners = uint4(
@@ -381,6 +378,7 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
                 inout float3 normalOS,
                 uint neighborMask,
                 uint footBlockId,
+                uint isLowerHalf,
                 uint2 atlasPosition,
                 uint2 pixel)
             {
@@ -388,6 +386,7 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
                 bool rightOpen = !HasNeighbor(neighborMask, EAST_BIT);
                 bool leftOpen = !HasNeighbor(neighborMask, WEST_BIT);
                 bool hasFoot = footBlockId != 0u && footBlockId < (uint)_BlockDatabaseCount;
+                uint footY = isLowerHalf != 0u ? 28u : 44u;
                 uint2 footAtlasPosition = uint2(0, 0);
                 if (hasFoot)
                     footAtlasPosition = UnpackAtlasPosition(_BlockDatabase[footBlockId].AtlasPosition);
@@ -406,7 +405,7 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
 
                 if (hasFoot)
                     ApplyOverlay(color, normalOS, footAtlasPosition, pixel,
-                        uint2(32, 44), uint2(0, 44), uint2(32, 4));
+                        uint2(32, 44), uint2(0, footY), uint2(32, 4));
 
                 if (aboveOpen && leftOpen)
                     ApplyOverlay(color, normalOS, atlasPosition, pixel,
@@ -418,24 +417,16 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
 
                 if (hasFoot && leftOpen)
                     ApplyOverlay(color, normalOS, footAtlasPosition, pixel,
-                        uint2(40, 20), uint2(0, 44), uint2(4, 4));
+                        uint2(40, 20), uint2(0, footY), uint2(4, 4));
 
                 if (hasFoot && rightOpen)
                     ApplyOverlay(color, normalOS, footAtlasPosition, pixel,
-                        uint2(44, 20), uint2(28, 44), uint2(4, 4));
+                        uint2(44, 20), uint2(28, footY), uint2(4, 4));
             }
 
             // ============================================================
             // Clipping
             // ============================================================
-
-            float GetClipGrain(float2 screenPosition)
-            {
-                float grainSize = max(_PlayerClipGrainSize, 1.0);
-                float2 grainPosition = floor(screenPosition / grainSize);
-
-                return frac(52.9829189 * frac(dot(grainPosition, float2(0.06711056, 0.00583715))));
-            }
 
             // ============================================================
             // Fragment
@@ -495,7 +486,7 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
                 {
                     ApplySideOverlays(
                         color, normalOS, input.NeighborMask,
-                        input.FootBlockId, atlasPosition, pixel);
+                        input.FootBlockId, input.FootAtHalfHeight, atlasPosition, pixel);
                 }
 
                 #if defined(_DEBUG_NORMALS)

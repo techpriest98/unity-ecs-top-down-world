@@ -19,6 +19,16 @@ namespace Game.World.Lighting
         private const float MaximumShadowDistance = 16f;
         private const byte MaximumSkyLight = 15;
 
+        public static ushort GetLightSourceIndex(ProjectedCellData cell)
+        {
+            // A half Top lies inside its owner's cell, not in the cell above it.
+            int layerSize = ChunkSettings.SizeX * ChunkSettings.SizeZ;
+            return cell.IsLowerHalf && cell.FaceType == ProjectedFaceType.Top &&
+                   cell.SourceAirIndex >= layerSize
+                ? (ushort)(cell.SourceAirIndex - layerSize)
+                : cell.SourceAirIndex;
+        }
+
         private EntityQuery generatedChunksQuery;
         private EntityQuery chunksNeedingLightingQuery;
         private EntityQuery chunksNeedingShadowUpdateQuery;
@@ -82,7 +92,7 @@ namespace Game.World.Lighting
 
             ChunkBlockAccessor blockAccessor = new(
                 chunkEntities,
-                blockLookup);
+                blockLookup, SystemAPI.GetBufferLookup<Game.World.Blocks.SplitCellData>(true));
 
             ChunkLightAccessor lightAccessor = new(
                 chunkEntities, SystemAPI.GetBufferLookup<VoxelLightData>(true));
@@ -271,7 +281,7 @@ namespace Game.World.Lighting
             ChunkLightAccessor lights,
             ViewDirection direction)
         {
-            int3 position = ChunkUtility.ToLocalPosition(cell.SourceAirIndex);
+            int3 position = ChunkUtility.ToLocalPosition(GetLightSourceIndex(cell));
             int3 right = direction switch
             {
                 ViewDirection.Front => new int3(1, 0, 0),
@@ -300,7 +310,7 @@ namespace Game.World.Lighting
             {
                 uint middleLeft = AverageCornerLight(bottomLeft, topLeft);
                 uint middleRight = AverageCornerLight(bottomRight, topRight);
-                if (face == ProjectedFaceType.SideUpper)
+                if (face == ProjectedFaceType.SideUpper && !cell.IsLowerHalf)
                 {
                     bottomLeft = middleLeft;
                     bottomRight = middleRight;
@@ -374,8 +384,9 @@ namespace Game.World.Lighting
                 blockAccessor,
                 shadowState.ActiveLight);
 
-            VoxelLightData voxel = cell.SourceAirIndex < voxelLight.Length
-                ? voxelLight[cell.SourceAirIndex]
+            int lightSourceIndex = GetLightSourceIndex(cell);
+            VoxelLightData voxel = lightSourceIndex < voxelLight.Length
+                ? voxelLight[lightSourceIndex]
                 : new VoxelLightData(MaximumSkyLight);
 
             float3 localLight = new float3(
@@ -437,7 +448,7 @@ namespace Game.World.Lighting
             }
 
             int3 sourceAirPosition =
-                ChunkUtility.ToLocalPosition(cell.SourceAirIndex);
+                ChunkUtility.ToLocalPosition(GetLightSourceIndex(cell));
 
             return !VoxelShadowUtility.IsOccluded(
                 chunkCoordinate,

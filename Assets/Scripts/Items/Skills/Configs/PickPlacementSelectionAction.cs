@@ -12,26 +12,28 @@ namespace Game.Items.Skills
     {
         public CursorWorldPosition Position = CursorWorldPosition.Behind;
         public bool ItemSelectionConnected = true;
+        public bool ShapeStateConnected = true;
 
         public bool CanPickAt(EntityManager manager, Entity player, EquipmentSlot slot, int item, int3 position)
         {
-            return ItemSelectionConnected && manager.Exists(player) && manager.HasBuffer<PlayerEquipmentSlot>(player) &&
+            return ItemSelectionConnected && ShapeStateConnected && manager.Exists(player) && manager.HasBuffer<PlayerEquipmentSlot>(player) &&
                 item != 0 && PlayerEquipmentUtility.GetItem(manager.GetBuffer<PlayerEquipmentSlot>(player, true), slot) == item &&
-                CursorWorldUtility.TryGetBlock(manager, position, out var block) && !BlockUtility.IsAir(block) &&
+                TryGetMaterial(manager, player, position, out var block) && !BlockUtility.IsAir(block) &&
                 WithinDistance(manager, player, (float3)position + 0.5f);
         }
 
         public bool ExecuteAtPosition(EntityManager manager, Entity player, EquipmentSlot slot, int item, int3 position)
         {
             if (!CanPickAt(manager, player, slot, item, position) ||
-                !CursorWorldUtility.TryGetBlock(manager, position, out var block)) return false;
+                !TryGetMaterial(manager, player, position, out var block) ||
+                !CursorWorldUtility.TryGetContents(manager, position, out var contents)) return false;
             return PlayerEquipmentUtility.SetPlacementSelection(manager.GetBuffer<PlayerEquipmentSlot>(player), slot,
-                new ItemPlacementSelection { Kind = PlacementSelectionKind.Block, Id = (int)block });
+                new ItemPlacementSelection { Kind = PlacementSelectionKind.Block, Id = (int)block }, contents.PlacementMode);
         }
 
         public override bool IsAvailable(EntityManager manager, Entity player, EquipmentSlot slot, int item)
-            => ItemSelectionConnected && CursorWorldUtility.TryGetPosition(manager, player, Position, out var cell) &&
-                CursorWorldUtility.TryGetBlock(manager, cell, out var block) && !BlockUtility.IsAir(block) &&
+            => ItemSelectionConnected && ShapeStateConnected && CursorWorldUtility.TryGetPosition(manager, player, Position, out var cell) &&
+                TryGetMaterial(manager, player, cell, out var block) && !BlockUtility.IsAir(block) &&
                 WithinDistance(manager, player, (Unity.Mathematics.float3)cell + new Unity.Mathematics.float3(0.5f, 0.5f, 0.5f));
 
         public override bool TryGetTarget(EntityManager manager, Entity player, EquipmentSlot slot, int item,
@@ -45,23 +47,20 @@ namespace Game.Items.Skills
 
         public override void Execute(EntityManager manager, Entity player, EquipmentSlot sourceSlot, int sourceItem)
         {
-            if (!IsAvailable(manager, player, sourceSlot, sourceItem)) return;
-            if (Position == CursorWorldPosition.Disconnected || !ItemSelectionConnected)
-                return;
-            if (!manager.Exists(player) || !manager.HasComponent<SelectedProjectedCell>(player) ||
-                !manager.HasBuffer<PlayerEquipmentSlot>(player))
-                return;
-            if (!CursorWorldUtility.TryGetPosition(manager, player, Position, out var position) ||
-                !CursorWorldUtility.TryGetBlock(manager, position, out var block) || BlockUtility.IsAir(block))
-                return;
-            var slots = manager.GetBuffer<PlayerEquipmentSlot>(player);
-            if (PlayerEquipmentUtility.GetItem(slots, sourceSlot) != sourceItem)
-                return;
-            PlayerEquipmentUtility.SetPlacementSelection(slots, sourceSlot, new ItemPlacementSelection
+            if (CursorWorldUtility.TryGetPosition(manager, player, Position, out var position))
+                ExecuteAtPosition(manager, player, sourceSlot, sourceItem, position);
+        }
+
+        private static bool TryGetMaterial(EntityManager manager, Entity player, int3 position, out BlockId block)
+        {
+            if (!CursorWorldUtility.TryGetBlock(manager, position, out block)) return false;
+            if (manager.HasComponent<SelectedProjectedCell>(player) &&
+                CursorWorldUtility.TryGetPosition(manager, player, CursorWorldPosition.Behind, out var behind) && math.all(behind == position))
             {
-                Kind = PlacementSelectionKind.Block,
-                Id = (int)block
-            });
+                var selected = manager.GetComponentData<SelectedProjectedCell>(player);
+                if (selected.IsValid) block = selected.BlockId;
+            }
+            return SplitCellUtility.IsKnownMaterial(block);
         }
     }
 }

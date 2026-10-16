@@ -8,6 +8,39 @@ namespace Game.Player
     {
         private const float BoundsEpsilon =
             0.0001f;
+        private const float GroundProbeDistance = 0.02f;
+        private const float StepHeight = 0.5f;
+        private const float MaximumHorizontalStep = 0.2f;
+
+        public static bool IsGrounded(float3 position, in PlayerCollisionShape shape,
+            in ChunkBlockAccessor accessor) => IsPositionBlocked(position - new float3(0f, GroundProbeDistance, 0f), shape, accessor);
+
+        public static float3 MoveHorizontally(float3 position, float2 displacement,
+            in PlayerCollisionShape shape, in ChunkBlockAccessor accessor, bool allowStep)
+        {
+            int steps = math.max(1, (int)math.ceil(math.length(displacement) / MaximumHorizontalStep));
+            float3 increment = new float3(displacement.x, 0f, displacement.y) / steps;
+            for (int i = 0; i < steps; i++)
+            {
+                float3 candidate = position + increment;
+                if (!IsPositionBlocked(candidate, shape, accessor))
+                {
+                    position = candidate;
+                    continue;
+                }
+                if (!allowStep || !IsGrounded(position, shape, accessor)) break;
+
+                // Check the entire upward sweep, not only the raised endpoint.
+                PlayerCollisionShape upwardSweep = shape;
+                upwardSweep.Height += StepHeight;
+                if (IsPositionBlocked(position, upwardSweep, accessor)) break;
+
+                candidate.y += StepHeight;
+                if (IsPositionBlocked(candidate, shape, accessor) || !IsGrounded(candidate, shape, accessor)) break;
+                position = candidate;
+            }
+            return position;
+        }
 
         public static bool IsPositionBlocked(
             float3 position,
@@ -81,7 +114,7 @@ namespace Game.Player
                             blockZ -
                             sourceBlockZ;
 
-                        if (!blockAccessor.TryGetBlock(
+                        if (!blockAccessor.TryGetRawBlock(
                                 sourceChunkCoordinate,
                                 localX,
                                 blockY,
@@ -91,8 +124,15 @@ namespace Game.Player
                             return true;
                         }
 
-                        if (BlockUtility.IsSolid(
-                                block.BlockId))
+                        // Keep the existing material solidity rules. Resolve the
+                        // two actual volumes rather than a compatibility material.
+                        CellContents contents = SplitCellUtility.IsSplit(block)
+                            ? blockAccessor.GetContentsOrAir(sourceChunkCoordinate, localX, blockY, localZ)
+                            : CellContents.FromLegacy(block);
+                        float feet = position.y + BoundsEpsilon;
+                        float head = position.y + shape.Height - BoundsEpsilon;
+                        if ((BlockUtility.IsSolid(contents.Lower.Id) && feet < blockY + 0.5f && head > blockY) ||
+                            (BlockUtility.IsSolid(contents.Upper.Id) && feet < blockY + 1f && head > blockY + 0.5f))
                         {
                             return true;
                         }

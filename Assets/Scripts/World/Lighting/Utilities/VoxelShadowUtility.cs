@@ -26,6 +26,12 @@ namespace Game.World.Lighting
                 sourceAirPosition.x + 0.5f,
                 sourceAirPosition.y + 0.5f,
                 sourceAirPosition.z + 0.5f);
+            BlockData sourceBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate, sourceAirPosition.x, sourceAirPosition.y, sourceAirPosition.z);
+            origin.y += BlockLightGeometry.SampleOffset(sourceBlock);
+            if ((sourceBlock.Shape == BlockShape.LowerHalf || sourceBlock.Shape == BlockShape.UpperHalf) &&
+                BlockLightGeometry.Intersects(sourceBlock, sourceAirPosition, origin, direction, maximumDistance))
+                return true;
             int3 voxel = sourceAirPosition;
 
             int3 step = new int3(
@@ -79,7 +85,7 @@ namespace Game.World.Lighting
                     voxel.y,
                     voxel.z);
 
-                if (IsOpaque(block.BlockId))
+                if (BlockLightGeometry.Intersects(block, voxel, origin, direction, maximumDistance))
                 {
                     return true;
                 }
@@ -130,6 +136,49 @@ namespace Game.World.Lighting
         {
             return BlockUtility.IsSolid(blockId) &&
                    blockId != BlockId.OceanWater;
+        }
+    }
+
+    // Light stored in a lower-half cell represents its empty upper half.
+    public static class BlockLightGeometry
+    {
+        public static bool IsOpaque(BlockData block) =>
+            BlockUtility.IsSolid(block.BlockId) && block.BlockId != BlockId.OceanWater && block.BlockId != BlockId.RiverWater;
+
+        public static bool IsHalf(BlockData block) =>
+            IsOpaque(block) && block.Shape == BlockShape.LowerHalf;
+        public static bool IsUpperHalf(BlockData block) =>
+            IsOpaque(block) && block.Shape == BlockShape.UpperHalf;
+
+        public static bool IsFull(BlockData block) => IsOpaque(block) && !IsHalf(block) && !IsUpperHalf(block);
+        public static float SampleOffset(BlockData block) => IsHalf(block) ? .25f :
+            IsOpaque(block) && block.Shape == BlockShape.UpperHalf ? -.25f : 0f;
+
+        public static bool Intersects(BlockData block, int3 cell, float3 origin,
+            float3 direction, float maximumDistance)
+        {
+            if (!IsOpaque(block)) return false;
+            if (!IsHalf(block) && block.Shape != BlockShape.UpperHalf) return true;
+            float3 minimum = cell;
+            float3 maximum = minimum + new float3(1f, 1f, 1f);
+            if (block.Shape == BlockShape.UpperHalf) minimum.y += .5f;
+            else maximum.y -= .5f;
+            float near = 0f;
+            float far = maximumDistance;
+            for (int axis = 0; axis < 3; axis++)
+            {
+                if (math.abs(direction[axis]) < 0.0001f)
+                {
+                    if (origin[axis] < minimum[axis] || origin[axis] > maximum[axis]) return false;
+                    continue;
+                }
+                float a = (minimum[axis] - origin[axis]) / direction[axis];
+                float b = (maximum[axis] - origin[axis]) / direction[axis];
+                near = math.max(near, math.min(a, b));
+                far = math.min(far, math.max(a, b));
+                if (near > far) return false;
+            }
+            return far > 0.0001f && near < maximumDistance;
         }
     }
 }

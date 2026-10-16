@@ -161,7 +161,7 @@ namespace Game.World.Rendering
             var blockAccessor =
                 new ChunkBlockAccessor(
                     chunkEntities,
-                    blockLookup);
+                    blockLookup, SystemAPI.GetBufferLookup<SplitCellData>(true));
 
 
             // ============================================================

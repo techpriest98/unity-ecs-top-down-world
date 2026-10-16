@@ -40,6 +40,7 @@ namespace Game.World.Saving
         public float DurabilityElapsed;
         public int PlacementSelectionKind;
         public int PlacementSelectionId;
+        public int PlacementMode;
     }
 
     [Serializable]
@@ -55,5 +56,16 @@ namespace Game.World.Saving
         public int Index;
         public int BlockId;
         public int Durability;
+        // Absent in versions 1–4: JSON's default zero means Full.
+        public int Shape;
+        // Version 6: optional independent halves. Legacy fields are ignored when present.
+        public CellHalvesData Halves;
+    }
+
+    [Serializable]
+    public sealed class CellHalvesData
+    {
+        public int LowerId, LowerDurability;
+        public int UpperId, UpperDurability;
     }
 }

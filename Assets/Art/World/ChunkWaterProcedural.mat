@@ -47,9 +47,6 @@ Material:
     m_Floats:
     - _DstBlend: 1
     - _EnableExternalAlpha: 0
-    - _PlayerClipFadeWidth: 32
-    - _PlayerClipGrainSize: 2
-    - _PlayerClipRadius: 64
     - _PlayerClipping: 0
     - _SrcBlend: 1
     - _WaterAbsorption: 0.83

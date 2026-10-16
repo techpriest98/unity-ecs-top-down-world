@@ -16,4 +16,4 @@ MonoBehaviour:
   Next: {fileID: 0}
   PositionSource: {fileID: 11400000, guid: c1fc67415cf54edc903fb8765e612ac1, type: 2}
   Action: {fileID: 11400000, guid: 9c7aacf8e287b6a4089234e3435b02ea, type: 2}
-  FailureMessage: I need to pick a block first.
+  FailureMessage: I can't place that here.

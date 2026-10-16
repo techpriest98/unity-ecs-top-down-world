@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ItemIds
   m_EditorClassIdentifier: 
   NextItemId: 4
-  NextSkillId: 12
+  NextSkillId: 13
   Items:
   - Guid: 21863c02d6dcf45e395849a4c0b02231
     Id: 1
@@ -36,3 +36,5 @@ MonoBehaviour:
     Id: 10
   - Guid: 49991171ac7b48da86d1a20e42d08ee0
     Id: 11
+  - Guid: 540d2273b389460c8cfe3ef675d6e311
+    Id: 12

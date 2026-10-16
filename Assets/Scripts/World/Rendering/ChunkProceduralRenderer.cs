@@ -40,7 +40,7 @@ namespace Game.World.Rendering
         [SerializeField]
         private BlockDatabase blockDatabase;
 
-        public bool TryGetBlockSideIcon(BlockId id, out Texture2D texture, out Rect uv)
+        public bool TryGetBlockSideIcon(BlockId id, out Texture2D texture, out Rect uv, bool halfBlock = false)
         {
             texture = blockAtlas;
             uv = default;
@@ -49,7 +49,9 @@ namespace Game.World.Rendering
             {
                 if (block.BlockId != id) continue;
                 int x = block.AtlasColumn * BlockAtlasSettings.GroupWidth;
-                int top = block.AtlasRow * BlockAtlasSettings.GroupHeight + BlockAtlasSettings.TileHeight;
+                // Full: SideUpper + SideLower. Half: Top + SideUpper.
+                int top = block.AtlasRow * BlockAtlasSettings.GroupHeight +
+                    (halfBlock ? 0 : BlockAtlasSettings.TileHeight);
                 int width = BlockAtlasSettings.TileWidth;
                 int height = BlockAtlasSettings.TileHeight * 2;
                 int bottom = texture.height - top - height;

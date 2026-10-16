@@ -24,6 +24,7 @@ namespace Game.World.Lighting
             foreach (var (
                         blocks,
                         voxelLight,
+                        splits,
                         needsSkyLight,
                         needsLighting,
                         needsImmediateLighting,
@@ -31,6 +32,7 @@ namespace Game.World.Lighting
                     SystemAPI.Query<
                             DynamicBuffer<BlockData>,
                             DynamicBuffer<VoxelLightData>,
+                            DynamicBuffer<SplitCellData>,
                             EnabledRefRW<ChunkNeedsSkyLight>,
                             EnabledRefRW<ChunkNeedsLighting>,
                             EnabledRefRW<ChunkNeedsImmediateLighting>,
@@ -45,7 +47,7 @@ namespace Game.World.Lighting
                     continue;
                 }
 
-                Calculate(blocks, voxelLight);
+                Calculate(blocks, splits, voxelLight);
 
                 needsSkyLight.ValueRW = false;
                 needsLighting.ValueRW = true;
@@ -58,6 +60,7 @@ namespace Game.World.Lighting
             foreach (var (
                         blocks,
                         voxelLight,
+                        splits,
                         needsSkyLight,
                         needsLighting,
                         needsImmediateLighting,
@@ -65,6 +68,7 @@ namespace Game.World.Lighting
                     SystemAPI.Query<
                             DynamicBuffer<BlockData>,
                             DynamicBuffer<VoxelLightData>,
+                            DynamicBuffer<SplitCellData>,
                             EnabledRefRW<ChunkNeedsSkyLight>,
                             EnabledRefRW<ChunkNeedsLighting>,
                             EnabledRefRW<ChunkNeedsImmediateLighting>,
@@ -82,7 +86,7 @@ namespace Game.World.Lighting
                 if (processedCount >= MaxChunksPerFrame)
                     break;
 
-                Calculate(blocks, voxelLight);
+                Calculate(blocks, splits, voxelLight);
 
                 needsSkyLight.ValueRW = false;
                 needsLighting.ValueRW = true;
@@ -94,6 +98,7 @@ namespace Game.World.Lighting
 
         private static void Calculate(
             DynamicBuffer<BlockData> blocks,
+            DynamicBuffer<SplitCellData> splits,
             DynamicBuffer<VoxelLightData> voxelLight)
         {
             for (int index = 0; index < voxelLight.Length; index++)
@@ -103,14 +108,15 @@ namespace Game.World.Lighting
 
             NativeQueue<int3> queue = new(Allocator.Temp);
 
-            SeedVerticalLight(blocks, voxelLight, queue);
-            SpreadLight(blocks, voxelLight, queue);
+            SeedVerticalLight(blocks, splits, voxelLight, queue);
+            SpreadLight(blocks, splits, voxelLight, queue);
 
             queue.Dispose();
         }
 
         private static void SeedVerticalLight(
             DynamicBuffer<BlockData> blocks,
+            DynamicBuffer<SplitCellData> splits,
             DynamicBuffer<VoxelLightData> voxelLight,
             NativeQueue<int3> queue)
         {
@@ -124,7 +130,8 @@ namespace Game.World.Lighting
                     {
                         int index = ChunkUtility.ToIndex(x, y, z);
 
-                        if (IsOpaque(blocks[index].BlockId))
+                        BlockData block = LightBlock(blocks, splits, index);
+                        if (BlockLightGeometry.IsFull(block) || BlockLightGeometry.IsUpperHalf(block))
                         {
                             openToSky = false;
                             continue;
@@ -137,6 +144,7 @@ namespace Game.World.Lighting
 
                         SetSkyLight(voxelLight, index, MaximumLight);
                         queue.Enqueue(new int3(x, y, z));
+                        if (BlockLightGeometry.IsHalf(block)) openToSky = false;
                     }
                 }
             }
@@ -144,6 +152,7 @@ namespace Game.World.Lighting
 
         private static void SpreadLight(
             DynamicBuffer<BlockData> blocks,
+            DynamicBuffer<SplitCellData> splits,
             DynamicBuffer<VoxelLightData> voxelLight,
             NativeQueue<int3> queue)
         {
@@ -159,19 +168,21 @@ namespace Game.World.Lighting
 
                 byte nextLight = (byte)(currentLight - SpreadAttenuation);
 
-                TrySpread(position + new int3(1, 0, 0), nextLight, blocks, voxelLight, queue);
-                TrySpread(position + new int3(-1, 0, 0), nextLight, blocks, voxelLight, queue);
-                TrySpread(position + new int3(0, 1, 0), nextLight, blocks, voxelLight, queue);
-                TrySpread(position + new int3(0, -1, 0), nextLight, blocks, voxelLight, queue);
-                TrySpread(position + new int3(0, 0, 1), nextLight, blocks, voxelLight, queue);
-                TrySpread(position + new int3(0, 0, -1), nextLight, blocks, voxelLight, queue);
+                TrySpread(position, position + new int3(1, 0, 0), nextLight, blocks, splits, voxelLight, queue);
+                TrySpread(position, position + new int3(-1, 0, 0), nextLight, blocks, splits, voxelLight, queue);
+                TrySpread(position, position + new int3(0, 1, 0), nextLight, blocks, splits, voxelLight, queue);
+                TrySpread(position, position + new int3(0, -1, 0), nextLight, blocks, splits, voxelLight, queue);
+                TrySpread(position, position + new int3(0, 0, 1), nextLight, blocks, splits, voxelLight, queue);
+                TrySpread(position, position + new int3(0, 0, -1), nextLight, blocks, splits, voxelLight, queue);
             }
         }
 
         private static void TrySpread(
+            int3 source,
             int3 position,
             byte light,
             DynamicBuffer<BlockData> blocks,
+            DynamicBuffer<SplitCellData> splits,
             DynamicBuffer<VoxelLightData> voxelLight,
             NativeQueue<int3> queue)
         {
@@ -182,7 +193,17 @@ namespace Game.World.Lighting
 
             int index = ChunkUtility.ToIndex(position.x, position.y, position.z);
 
-            if (IsOpaque(blocks[index].BlockId) || voxelLight[index].Sky >= light)
+            BlockData sourceBlock = LightBlock(blocks, splits, ChunkUtility.ToIndex(source.x, source.y, source.z));
+            BlockData targetBlock = LightBlock(blocks, splits, index);
+            if (BlockLightGeometry.IsFull(targetBlock) ||
+                (position.y < source.y && BlockLightGeometry.IsHalf(sourceBlock)) ||
+                (position.y > source.y && BlockLightGeometry.IsHalf(targetBlock)) ||
+                (position.y > source.y && BlockLightGeometry.IsUpperHalf(sourceBlock)) ||
+                (position.y < source.y && BlockLightGeometry.IsUpperHalf(targetBlock)) ||
+                (position.y == source.y &&
+                    ((BlockLightGeometry.IsHalf(sourceBlock) && BlockLightGeometry.IsUpperHalf(targetBlock)) ||
+                     (BlockLightGeometry.IsUpperHalf(sourceBlock) && BlockLightGeometry.IsHalf(targetBlock)))) ||
+                voxelLight[index].Sky >= light)
             {
                 return;
             }
@@ -200,6 +221,9 @@ namespace Game.World.Lighting
             light.Sky = value;
             voxelLight[index] = light;
         }
+
+        private static BlockData LightBlock(DynamicBuffer<BlockData> blocks, DynamicBuffer<SplitCellData> splits, int index) =>
+            SplitCellUtility.IsSplit(blocks[index]) ? SplitCellUtility.Get(blocks, splits, index).GeometryView() : blocks[index];
 
         private static bool IsOpaque(BlockId blockId)
         {
