@@ -201,7 +201,7 @@ namespace Game.World.Saving
                         block.Index < 0 ||
                         block.Index >= ChunkSettings.BlockCount ||
                         !indices.Add(block.Index) ||
-                        (block.Halves != null && (data.Version < 6 ||
+                        (block.HasSplitContents && (data.Version < 6 || block.Halves == null ||
                             !ValidPart(block.Halves.LowerId, block.Halves.LowerDurability) ||
                             !ValidPart(block.Halves.UpperId, block.Halves.UpperDurability))) ||
                         block.BlockId < 0 ||
@@ -214,7 +214,9 @@ namespace Game.World.Saving
                         (block.BlockId == (int)BlockId.Air && block.Shape != (int)BlockShape.Full))
                     {
                         throw new InvalidDataException(
-                            "Invalid or duplicate saved block.");
+                            $"Invalid or duplicate saved block: version {data.Version}, chunk ({chunk.X}, {chunk.Z}), " +
+                            $"index {block?.Index}, material {block?.BlockId}, durability {block?.Durability}, " +
+                            $"shape {block?.Shape}, split {block?.HasSplitContents}.");
                     }
                 }
             }

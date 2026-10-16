@@ -60,6 +60,13 @@ namespace Game.World.Saving
         public int Shape;
         // Version 6: optional independent halves. Legacy fields are ignored when present.
         public CellHalvesData Halves;
+        public bool HasHalves;
+
+        // Unity can instantiate inline serializable classes even when their
+        // field is absent/null in JSON. Do not infer presence from null alone.
+        // Nonzero payload supports v6-v7 saves written before the discriminator.
+        public bool HasSplitContents => HasHalves || (Halves != null &&
+            (Halves.LowerId != 0 || Halves.LowerDurability != 0 || Halves.UpperId != 0 || Halves.UpperDurability != 0));
     }
 
     [Serializable]

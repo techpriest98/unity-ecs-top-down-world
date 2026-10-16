@@ -170,8 +170,8 @@ namespace Game.World.Saving
                                     (BlockId)block.BlockId,
                                     (byte)block.Durability,
                                     (BlockShape)block.Shape),
-                                HasContents = block.Halves != null,
-                                Contents = block.Halves == null ? default : new CellContents(
+                                HasContents = block.HasSplitContents,
+                                Contents = !block.HasSplitContents ? default : new CellContents(
                                     new BlockPart((BlockId)block.Halves.LowerId, (byte)block.Halves.LowerDurability),
                                     new BlockPart((BlockId)block.Halves.UpperId, (byte)block.Halves.UpperDurability))
                             });
@@ -417,6 +417,7 @@ namespace Game.World.Saving
                     BlockId = (int)change.Value.BlockId,
                     Durability = change.Value.Durability,
                     Shape = (int)change.Value.Shape,
+                    HasHalves = change.HasContents,
                     Halves = change.HasContents ? new CellHalvesData
                     {
                         LowerId = (int)change.Contents.Lower.Id,

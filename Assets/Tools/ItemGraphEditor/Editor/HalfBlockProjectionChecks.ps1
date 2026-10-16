@@ -156,6 +156,7 @@ public static class HalfProjectionChecks {
   CheckPlacement();
   CheckRemoval();
   CheckPlayerCollision();
+  CheckWorldItemCollision();
   CheckSplitProjection();
   var p=new Unity.Mathematics.int3(7,7,7);
   var full=new Game.World.Blocks.BlockData(Game.World.Blocks.BlockId.Stone,255);
@@ -391,6 +392,41 @@ public static class HalfProjectionChecks {
   Check(largeStep.x<1f,"Large-frame horizontal move tunneled through a full block");
   Console.WriteLine("Player collision PASS: half volumes, all cardinal directions, chunk edges, support, headroom, airborne gate, stairs and tunneling");
  }
+ static void CheckWorldItemCollision() {
+  var stone=new BlockPart(BlockId.Stone,200);
+  var air=new BlockPart(BlockId.Air,0);
+  foreach(int x in new[]{0,16,-1}) {
+   var p=new int3(x,2,0);
+   var map=new Dictionary<int3,BlockData>{{p,new BlockData {Shape=SplitCellUtility.ReferenceShape}}};
+   var contents=new Dictionary<int3,CellContents>{{p,new CellContents(stone,air)}};
+   var accessor=new Game.World.Chunks.ChunkBlockAccessor(map,contents);
+   var start=new float3(x+.5f,4f,.5f);
+   var end=new float3(x+.5f,1f,.5f);
+   const float radius=.04f;
+   Check(WorldItemCollisionUtility.Sweep(accessor,start,end,radius,out float fraction,out var normal) && fraction<1 && normal.y>.5f,"Item did not hit lower half");
+   var landed=math.lerp(start,end,fraction)+normal*.0002f;
+   Check(math.abs(landed.y-radius-2.5f)<.001f,"Item landed at full-block height over lower half");
+   Check(WorldItemCollisionUtility.ProbeSupport(accessor,landed,radius,out bool supported) && supported,"Half-block support missing");
+   Check(WorldItemCollisionUtility.ProbeSupport(accessor,new float3(x+.5f,3f+radius,.5f),radius,out supported) && !supported,
+    "Old hovering item remained grounded above a half block");
+   contents[p]=new CellContents(air,stone);
+   Check(WorldItemCollisionUtility.Sweep(accessor,start,end,radius,out fraction,out normal) &&
+    math.abs(math.lerp(start,end,fraction).y-radius-3f)<.001f,"Upper-half top is wrong");
+   var lowStart=new float3(x-.5f,2.2f,.5f);
+   var lowEnd=new float3(x+1.5f,2.2f,.5f);
+   Check(WorldItemCollisionUtility.Sweep(accessor,lowStart,lowEnd,radius,out fraction,out normal) && fraction==1f,
+    "Item collided with empty space below upper half");
+   contents[p]=new CellContents(stone,air);
+   Check(WorldItemCollisionUtility.Sweep(accessor,lowStart,lowEnd,radius,out fraction,out normal) && fraction<1f && math.abs(normal.x)>.5f,
+    "Flying item passed through lower half side");
+   contents[p]=new CellContents(stone,new BlockPart(BlockId.Sand,90));
+   Check(WorldItemCollisionUtility.Sweep(accessor,start,end,radius,out fraction,out normal) &&
+    math.abs(math.lerp(start,end,fraction).y-radius-3f)<.001f,"Mixed full solid collision changed");
+   contents[p]=new CellContents(air,air);
+   Check(WorldItemCollisionUtility.ProbeSupport(accessor,landed,radius,out supported) && !supported,"Removed half still supports item");
+  }
+  Console.WriteLine("World item collision PASS: lower/upper half landing, support revalidation, flight collisions and chunk boundaries");
+ }
  static void CheckSplitProjection() {
   var p=new int3(7,7,7);
   var stone=new BlockPart(BlockId.Stone,201);
@@ -490,6 +526,10 @@ public static class HalfProjectionChecks {
    Check(valid==expected,label);
   };
   for(int version=2;version<=7;version++) {state.Version=version;check(true,$"Legacy save rejected: v{version}");}
+  block.Halves=new Game.World.Saving.CellHalvesData();
+  for(int version=2;version<=7;version++) {state.Version=version;check(true,$"Unity inline empty Halves broke v{version}");}
+  Check(!block.HasSplitContents,"Empty inline Halves treated as a real split; would erase legacy blocks on restore");
+  block.Halves=null;
   state.Version=1;state.Chunks=Array.Empty<Game.World.Saving.ChunkChangesData>();check(true,"Legacy v1 save rejected");
   state.Chunks=new[]{new Game.World.Saving.ChunkChangesData {Blocks=new[]{block}}};
   block.Shape=1;state.Version=5;check(true,"Legacy half rejected");
@@ -497,6 +537,7 @@ public static class HalfProjectionChecks {
   block.Shape=0;state.Version=6;
   block.Halves=new Game.World.Saving.CellHalvesData {LowerId=2,LowerDurability=200,UpperId=4,UpperDurability=123};
   check(true,"Mixed materials rejected");
+  Check(block.HasSplitContents,"Older split save without discriminator lost contents");
   state.Version=5;check(false,"Old save accepted new halves");state.Version=6;
   block.Halves.UpperId=254;check(false,"Undefined material accepted");
   block.Halves.UpperId=0;block.Halves.UpperDurability=12;check(false,"Air durability accepted");

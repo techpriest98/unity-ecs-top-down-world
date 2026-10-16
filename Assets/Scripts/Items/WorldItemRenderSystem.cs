@@ -120,26 +120,27 @@ namespace Game.Items
         {
             properties.SetFloat("_GroundLightingEnabled", 0f);
             if (!grounded) return;
-            int3 key = new int3((int)math.floor(surface.x), (int)math.round(surface.y), (int)math.floor(surface.z));
+            int3 key = new int3((int)math.floor(surface.x), (int)math.round(surface.y * 2f), (int)math.floor(surface.z));
             if (!lightingTiles.TryGetValue(key, out var tile))
             {
                 int2 coordinate = (int2)math.floor(new float2(key.x, key.z) /
                     new float2(ChunkSettings.SizeX, ChunkSettings.SizeZ));
                 if (!lightingChunks.TryGetValue(coordinate, out var chunk)) return;
-                int3 local = new int3(key.x - coordinate.x * ChunkSettings.SizeX, key.y,
+                int3 local = new int3(key.x - coordinate.x * ChunkSettings.SizeX, (key.y + 1) / 2,
                     key.z - coordinate.y * ChunkSettings.SizeZ);
                 bool found = false;
                 foreach (var cell in EntityManager.GetBuffer<ProjectedCellData>(chunk, true))
                 {
                     if (cell.FaceType != ProjectedFaceType.Top || cell.IsCutTop ||
-                        math.any(ChunkUtility.ToLocalPosition(cell.SourceAirIndex) != local)) continue;
+                        math.any(ChunkUtility.ToLocalPosition(cell.SourceAirIndex) != local) ||
+                        local.y * 2 - (cell.IsLowerHalf ? 1 : 0) != key.y) continue;
                     tile = cell; found = true; break;
                 }
                 if (!found) return;
                 lightingTiles[key] = tile;
             }
             if (!SystemAPI.TryGetSingleton<SunShadowState>(out var shadow)) return;
-            float2 centre = WorldPositionProjectionUtility.Project(new float3(key.x + 0.5f, key.y, key.z + 0.5f), direction);
+            float2 centre = WorldPositionProjectionUtility.Project(new float3(key.x + 0.5f, key.y * .5f, key.z + 0.5f), direction);
             properties.SetVector("_LightTileRect", new Vector4(centre.x - 0.5f, centre.y, 1f, 0.5f));
             properties.SetVector("_LightBottomLeft", UnpackCorner(tile.LocalLightBottomLeft));
             properties.SetVector("_LightBottomRight", UnpackCorner(tile.LocalLightBottomRight));

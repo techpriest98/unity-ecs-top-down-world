@@ -7,6 +7,15 @@ namespace Game.World.Interaction
 {
     public static class ProjectedCellInteractionUtility
     {
+        public static float3 GetTopSurfacePosition(in SelectedProjectedCell selection, int3 before)
+        {
+            float height = before.y;
+            if (selection.IsValid && selection.FaceType == ProjectedFaceType.Top &&
+                ProjectedCellPacking.IsLowerHalf(selection.BlockData) &&
+                TryGetPlacementPosition(selection, out var actual) && math.all(actual == before)) height -= .5f;
+            return new float3(before.x + .5f, height, before.z + .5f);
+        }
+
         public static bool TryRemoveSelectedPart(in SelectedProjectedCell selection, CellContents contents,
             out CellContents result)
         {

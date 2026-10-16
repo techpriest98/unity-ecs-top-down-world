@@ -2,6 +2,8 @@ using System;
 using Game.Items;
 using System.Runtime.InteropServices;
 using Unity.Entities;
+using Unity.Mathematics;
+using Game.World.Chunks;
 
 namespace Game.World.Blocks
 {
@@ -100,6 +102,66 @@ namespace Game.World.Blocks
                 else resultSecond.Lower = material;
             }
             spills = crossesCell;
+            return true;
+        }
+    }
+
+    public static class WorldItemCollisionUtility
+    {
+        public static bool Sweep(in ChunkBlockAccessor accessor, float3 start, float3 end, float radius,
+            out float fraction, out float3 normal)
+        {
+            fraction = 1f; normal = 0f;
+            int3 min = (int3)math.floor(math.min(start, end) - radius);
+            int3 max = (int3)math.floor(math.max(start, end) + radius);
+            for (int y = min.y; y <= max.y; y++)
+            for (int z = min.z; z <= max.z; z++)
+            for (int x = min.x; x <= max.x; x++)
+            {
+                var cell = new int3(x, y, z);
+                CellContents contents;
+                if (y < 0) contents = new CellContents(new BlockPart(BlockId.Stone, 255), new BlockPart(BlockId.Stone, 255));
+                else if (y >= ChunkSettings.SizeY) contents = default;
+                else
+                {
+                    if (!accessor.TryGetRawBlock(int2.zero, x, y, z, out BlockData raw)) return false;
+                    contents = SplitCellUtility.IsSplit(raw) ? accessor.GetContentsOrAir(int2.zero, x, y, z) : CellContents.FromLegacy(raw);
+                }
+                bool lower = BlockUtility.IsSolid(contents.Lower.Id), upper = BlockUtility.IsSolid(contents.Upper.Id);
+                if (!lower && !upper) continue;
+                float3 minimum = cell;
+                float3 maximum = minimum + 1f;
+                if (!lower) minimum.y += .5f;
+                if (!upper) maximum.y -= .5f;
+                if (RayBox(start, end - start, minimum - radius, maximum + radius, out float hit, out float3 hitNormal) && hit < fraction)
+                { fraction = hit; normal = hitNormal; }
+            }
+            return true;
+        }
+
+        public static bool ProbeSupport(in ChunkBlockAccessor accessor, float3 position, float radius, out bool supported)
+        {
+            bool loaded = Sweep(accessor, position, position - new float3(0f, .02f, 0f), radius, out float fraction, out float3 normal);
+            supported = loaded && fraction < 1f && normal.y > .5f;
+            return loaded;
+        }
+
+        private static bool RayBox(float3 start, float3 delta, float3 min, float3 max, out float hit, out float3 normal)
+        {
+            float enter = -float.MaxValue, exit = float.MaxValue;
+            normal = 0f; hit = 1f;
+            for (int axis = 0; axis < 3; axis++)
+            {
+                if (math.abs(delta[axis]) < .0000001f)
+                { if (start[axis] < min[axis] || start[axis] > max[axis]) return false; continue; }
+                float a = (min[axis] - start[axis]) / delta[axis], b = (max[axis] - start[axis]) / delta[axis];
+                float near = math.min(a, b), far = math.max(a, b);
+                if (near > enter) { enter = near; normal = 0f; normal[axis] = delta[axis] > 0f ? -1f : 1f; }
+                exit = math.min(exit, far);
+                if (enter > exit) return false;
+            }
+            if (exit <= .000001f || enter < -.00001f || enter > 1f) return false;
+            hit = math.max(0f, enter);
             return true;
         }
     }

@@ -41,6 +41,9 @@ namespace Game.Items.Skills
             using var entities = query.ToEntityArray(Allocator.Temp);
             Entity target = Entity.Null;
             float best = float.MaxValue;
+            float expectedHeight = manager.HasComponent<SelectedProjectedCell>(player)
+                ? ProjectedCellInteractionUtility.GetTopSurfacePosition(manager.GetComponentData<SelectedProjectedCell>(player), cell).y
+                : cell.y;
             foreach (var entity in entities)
             {
                 var item = manager.GetComponentData<WorldItem>(entity);
@@ -50,7 +53,7 @@ namespace Game.Items.Skills
                 var surface = item.Position;
                 surface.y -= item.CollisionRadius;
                 if ((int)math.floor(surface.x) != cell.x || (int)math.floor(surface.z) != cell.z ||
-                    math.abs(surface.y - cell.y) > 0.01f) continue;
+                    math.abs(surface.y - expectedHeight) > 0.01f) continue;
                 float distance = math.lengthsq(surface.xz - new float2(cell.x + 0.5f, cell.z + 0.5f));
                 if (distance < best || (distance == best && entity.Index < target.Index))
                 { best = distance; target = entity; }

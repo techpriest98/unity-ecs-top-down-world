@@ -88,13 +88,14 @@ namespace Game.Items
                 int3 source = ChunkUtility.ToLocalPosition(cell.SourceAirIndex);
                 if (cell.FaceType == ProjectedFaceType.Top)
                     visibleTopSurfaces.Add(new int3(coordinate.x * ChunkSettings.SizeX + source.x,
-                        source.y, coordinate.y * ChunkSettings.SizeZ + source.z));
+                        source.y * 2 - (cell.IsLowerHalf ? 1 : 0), coordinate.y * ChunkSettings.SizeZ + source.z));
                 float depth = math.dot(new float2(coordinate.x * ChunkSettings.SizeX + source.x + 0.5f,
                     coordinate.y * ChunkSettings.SizeZ + source.z + 0.5f), (float2)forward);
                 var face = new Face
                 {
                     Top = cell.FaceType == ProjectedFaceType.Top,
-                    Height = source.y + (cell.IsCutTop ? 1f : 0f),
+                    Height = source.y + (cell.IsCutTop ? 1f : 0f) -
+                        (cell.FaceType == ProjectedFaceType.Top && cell.IsLowerHalf ? .5f : 0f),
                     Depth = depth + (cell.IsCutSide ? 0.5f : -0.5f)
                 };
                 if (!faces.TryGetValue(key, out var list)) { list = new List<Face>(2); faces.Add(key, list); }
@@ -116,12 +117,12 @@ namespace Game.Items
             // Snap to the supporting Top cell, not to the sprite's pixels or
             // the collision sphere centre (which sits slightly above the floor).
             int3 surfaceCell = new int3((int)math.floor(surfacePosition.x),
-                (int)math.round(surfacePosition.y), (int)math.floor(surfacePosition.z));
+                (int)math.round(surfacePosition.y * 2f), (int)math.floor(surfacePosition.z));
             // An unrelated clipped face can overlap this tile in projection.
             // Keep the item if its own supporting Top surface is still drawn.
             if (visibleTopSurfaces.Contains(surfaceCell)) return false;
             float2 centre = WorldPositionProjectionUtility.Project(
-                new float3(surfaceCell.x + 0.5f, surfaceCell.y, surfaceCell.z + 0.5f), direction);
+                new float3(surfaceCell.x + 0.5f, surfaceCell.y * .5f, surfaceCell.z + 0.5f), direction);
             return clipped.Contains(Key(centre.x, centre.y + 0.25f));
         }
 

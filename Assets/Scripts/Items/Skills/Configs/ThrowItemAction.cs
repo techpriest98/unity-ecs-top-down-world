@@ -97,7 +97,10 @@ namespace Game.Items.Skills
                 float3 start = manager.GetComponentData<PlayerWorldPosition>(player).Value;
                 start.y += manager.HasComponent<PlayerCollisionShape>(player)
                     ? manager.GetComponentData<PlayerCollisionShape>(player).Height * 0.6f : 0.7f;
-                float3 target = new float3(cell.x + 0.5f, cell.y + radius, cell.z + 0.5f);
+                float3 target = manager.HasComponent<SelectedProjectedCell>(player)
+                    ? ProjectedCellInteractionUtility.GetTopSurfacePosition(manager.GetComponentData<SelectedProjectedCell>(player), cell)
+                    : new float3(cell.x + .5f, cell.y, cell.z + .5f);
+                target.y += radius;
                 float time = math.clamp(FlightTime, 0.1f, 5f), gravity = math.clamp(Gravity, 0.1f, 100f);
                 manager.GetBuffer<WorldItemThrowRequest>(player).Add(new WorldItemThrowRequest
                 {
