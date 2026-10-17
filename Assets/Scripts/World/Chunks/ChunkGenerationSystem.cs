@@ -407,7 +407,7 @@ namespace Game.World.Chunks
                             biome,
                             worldX,
                             worldZ,
-                            biome == WorldBiome.RockyShore ? baseSurfaceHeight : baseHeight,
+                            biome == WorldBiome.RockyShore || biome == WorldBiome.Ocean ? baseSurfaceHeight : baseHeight,
                             shoreDistance,
                             biomeInfluence,
                             worldSeed,

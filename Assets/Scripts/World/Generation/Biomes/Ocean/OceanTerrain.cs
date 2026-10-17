@@ -18,7 +18,7 @@ namespace Game.World.Generation.Biomes.Ocean
         }
 
         public BiomeTerrainSample Sample(
-            int baseHeight)
+            float baseHeight)
         {
             return new BiomeTerrainSample(
                 WorldBiome.Ocean,

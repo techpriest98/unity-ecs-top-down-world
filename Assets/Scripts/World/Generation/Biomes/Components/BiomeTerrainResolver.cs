@@ -32,7 +32,7 @@ namespace Game.World.Generation.Biomes
             return biome switch
             {
                 WorldBiome.Ocean =>
-                    ocean.Sample((int)Unity.Mathematics.math.round(baseHeight)),
+                    ocean.Sample(baseHeight),
 
                 WorldBiome.RockyShore =>
                     rockyShore.Sample(

@@ -11,6 +11,8 @@ $halfFiles = @(
  'Scripts/Items/BlockPlacementMode.cs',
  'Scripts/World/Generation/WorldBiome.cs','Scripts/World/Generation/Components/WorldGenerationSettingsComponent.cs',
  'Scripts/World/Generation/Biomes/BiomeTerrainSample.cs',
+ 'Scripts/World/Generation/Biomes/Ocean/OceanTerrain.cs',
+ 'Scripts/World/Generation/Biomes/Ocean/Components/OceanSettingsComponent.cs',
  'Scripts/World/Generation/Biomes/RockyShore/RockyShoreTerrain.cs',
  'Scripts/World/Generation/Biomes/RockyShore/Components/RockyShoreSettingsComponent.cs',
  'Scripts/World/Chunks/ChunkSettings.cs','Scripts/World/Chunks/ChunkUtility.cs',
@@ -421,6 +423,23 @@ public static class HalfProjectionChecks {
   Console.WriteLine("Terrain minimap PASS: sky-visible material, water over half sand, upper-only water, edits, hidden changes and 4-byte columns");
  }
  static void CheckRockyShore() {
+  var seabed=new Game.World.Generation.Biomes.Ocean.OceanTerrain(
+   new Game.World.Generation.Biomes.Ocean.OceanSettingsComponent {SandDepth=3});
+  var submerged=seabed.Sample(60.5f);
+  Check(submerged.Height==61 && submerged.HalfSurface &&
+   seabed.GetBlock(60,submerged.Zone,submerged.Height,63)==BlockId.Sand &&
+   seabed.GetBlock(61,submerged.Zone,submerged.Height,63)==BlockId.OceanWater,
+   "Underwater sand lost half-height geometry or water above it");
+  var sandBlock=new BlockPart(BlockId.Sand,255);var waterBlock=new BlockPart(BlockId.OceanWater,255);
+  var submergedContents=new Dictionary<int3,CellContents>{{new int3(7,60,7),new CellContents(sandBlock,waterBlock)}};
+  foreach(ViewDirection view in Enum.GetValues(typeof(ViewDirection))) {
+   var projected=Build(new Dictionary<int3,BlockData>(),view,contents:submergedContents);
+   Check(projected.solid.Any(c=>c.BlockId==BlockId.Sand && c.FaceType==ProjectedFaceType.Top),
+    "Submerged half sand top missing from projection");
+   Check(projected.water.Any(c=>c.BlockId==BlockId.OceanWater),"Water over half sand missing");
+  }
+  Check(!seabed.Sample(60f).HalfSurface,"Integral seabed unexpectedly changed shape");
+  Console.WriteLine("Ocean seabed PASS: fractional sand, water-filled upper half, four-view projection and integral heights");
   var settings=new Game.World.Generation.Biomes.RockyShore.RockyShoreSettingsComponent {
    CliffWidth=20,CliffWidthVariation=.35f,CliffWidthNoiseScale=.006f,
    CliffMinHeight=10,CliffMaxHeight=24,CliffSharpness=3,CliffNoiseScale=.02f,
