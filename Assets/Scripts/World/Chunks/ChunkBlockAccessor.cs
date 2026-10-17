@@ -13,6 +13,8 @@ namespace Game.World.Chunks
         private readonly BufferLookup<BlockData>
             blockLookup;
         private readonly BufferLookup<SplitCellData> splitLookup;
+        private readonly BufferLookup<ChunkSurfaceSample> surfaceLookup;
+        private readonly bool hasSurfaceLookup;
 
         public ChunkBlockAccessor(
             NativeParallelHashMap<int2, Entity> chunkEntities,
@@ -25,6 +27,26 @@ namespace Game.World.Chunks
             this.blockLookup =
                 blockLookup;
             this.splitLookup = splitLookup;
+            surfaceLookup = default;
+            hasSurfaceLookup = false;
+        }
+
+        public ChunkBlockAccessor(NativeParallelHashMap<int2, Entity> chunks, BufferLookup<BlockData> blocks,
+            BufferLookup<SplitCellData> splits, BufferLookup<ChunkSurfaceSample> surfaces) : this(chunks, blocks, splits)
+        { surfaceLookup = surfaces; hasSurfaceLookup = true; }
+
+        public bool TryGetSurface(int2 coordinate, int x, int z, out ChunkSurfaceSample surface)
+        {
+            surface = default;
+            if (!hasSurfaceLookup) return false;
+            int dx = FloorDiv(x, ChunkSettings.SizeX), dz = FloorDiv(z, ChunkSettings.SizeZ);
+            if (!chunkEntities.TryGetValue(coordinate + new int2(dx, dz), out var entity) ||
+                !surfaceLookup.HasBuffer(entity)) return false;
+            var samples = surfaceLookup[entity];
+            int index = (z - dz * ChunkSettings.SizeZ) * ChunkSettings.SizeX + x - dx * ChunkSettings.SizeX;
+            if ((uint)index >= (uint)samples.Length) return false;
+            surface = samples[index];
+            return true;
         }
 
         public bool TryGetBlock(

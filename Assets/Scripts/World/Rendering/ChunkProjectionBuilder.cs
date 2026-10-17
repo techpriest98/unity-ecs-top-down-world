@@ -342,7 +342,8 @@ namespace Game.World.Rendering
                 neighborMask,
                 sourceAirIndex,
                 projectionX,
-                projectionY);
+                projectionY,
+                BuildShoreMask(chunkCoordinate, blockAccessor, belowWorld, half, false, direction));
         }
 
         private static void TryEmitOpaqueSide(
@@ -536,7 +537,8 @@ namespace Game.World.Rendering
                 topInset,
                 sourceAirIndex,
                 projectionX,
-                projectionY);
+                projectionY,
+                BuildShoreMask(chunkCoordinate, blockAccessor, belowWorld, half, true, direction));
         }
 
         private static void TryEmitWaterSide(

@@ -1,4 +1,5 @@
 using Game.World.Rendering;
+using Game.World.Chunks;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -27,6 +28,38 @@ namespace Game.Player
         [SerializeField, Min(.1f)] private float zoomResponse = 14f;
         private Camera cameraComponent;
         private float targetSize;
+
+        [Header("Chunk streaming")]
+        [SerializeField] private bool adaptChunkRadiusToZoom = true;
+        [Tooltip("Extra terrain height above/below the player included in the visible ground estimate. Preloading adds another chunk ring.")]
+        [SerializeField, Min(0f)] private float streamingHeightAllowance = 4f;
+        private static PlayerCameraFollow activeCamera;
+
+        private void OnEnable() => activeCamera = this;
+        private void OnDisable()
+        {
+            if (activeCamera == this) activeCamera = null;
+        }
+
+        public static bool TryGetStreamingRadius(EcsWorld world, out int radius)
+        {
+            radius = 0;
+            var follow = activeCamera;
+            if (follow == null || !follow.adaptChunkRadiusToZoom || follow.ecsWorld != world ||
+                follow.cameraComponent == null || !follow.cameraComponent.enabled ||
+                !follow.cameraComponent.orthographic) return false;
+            float size = Mathf.Max(follow.targetSize, follow.cameraComponent.orthographicSize);
+            // Wait for the smooth zoom to reach its minimum before shrinking.
+            if (size <= follow.minimumSize + .01f)
+            {
+                radius = 1;
+                return true;
+            }
+            radius = CameraStreamingRadiusUtility.Calculate(
+                size,
+                follow.cameraComponent.aspect, follow.screenOffset, follow.streamingHeightAllowance);
+            return true;
+        }
 
         private EcsWorld ecsWorld;
         private EntityManager entityManager;

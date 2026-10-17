@@ -39,6 +39,11 @@ namespace Game.World.Rendering
 
         [SerializeField]
         private BlockDatabase blockDatabase;
+        private Texture2D shoreFoamAtlas;
+        private float shoreFoamTime;
+        private Game.World.Time.WorldWind worldWind;
+
+        public void SetWind(Game.World.Time.WorldWind wind) => worldWind = wind;
         public BlockDefinition[] AvailableBlocks => blockDatabase != null ? blockDatabase.Blocks : null;
 
         public bool TryGetBlockSideIcon(BlockId id, out Texture2D texture, out Rect uv, bool halfBlock = false)
@@ -190,6 +195,10 @@ namespace Game.World.Rendering
 
         private void LateUpdate()
         {
+            var world = Unity.Entities.World.DefaultGameObjectInjectionWorld;
+            if (world != null && world.IsCreated &&
+                world.GetExistingSystemManaged<Unity.Entities.SimulationSystemGroup>() is { Enabled: true })
+                shoreFoamTime += UnityEngine.Time.deltaTime;
             RenderOpaque();
             RenderClipped();
             RenderWater();
@@ -422,6 +431,24 @@ namespace Game.World.Rendering
             Texture2D normalAtlas)
         {
             layerPropertyBlock.Clear();
+            layerPropertyBlock.SetFloat("_ShoreFoamTime", shoreFoamTime);
+            float2 windDirection = worldWind.Direction;
+            layerPropertyBlock.SetVector("_WorldWind", new Vector4(windDirection.x, windDirection.y,
+                worldWind.Strength, worldWind.Initialized ? 1f : 0f));
+            layerPropertyBlock.SetFloat("_ShoreWindWaveTime", worldWind.WaveTime);
+            layerPropertyBlock.SetVector("_ShoreViewRight", new Vector4(sideFaceNormal.z, -sideFaceNormal.x, 0f, 0f));
+            layerPropertyBlock.SetVector("_ShoreViewAway", new Vector4(-sideFaceNormal.x, -sideFaceNormal.z, 0f, 0f));
+            float2 projectedDrift = new float2(sideFaceNormal.z * worldWind.Drift.x - sideFaceNormal.x * worldWind.Drift.y,
+                -.5f * (sideFaceNormal.x * worldWind.Drift.x + sideFaceNormal.z * worldWind.Drift.y));
+            layerPropertyBlock.SetVector("_ShoreWindDrift", new Vector4(projectedDrift.x, projectedDrift.y, 0f, 0f));
+            if (shoreFoamAtlas == null) shoreFoamAtlas = Resources.Load<Texture2D>("ShoreFoamAtlas");
+            layerPropertyBlock.SetFloat("_ShoreFoamAvailable", shoreFoamAtlas != null ? 1f : 0f);
+            if (shoreFoamAtlas != null)
+            {
+                layerPropertyBlock.SetTexture("_ShoreFoamAtlas", shoreFoamAtlas);
+                layerPropertyBlock.SetVector("_ShoreFoamAtlas_TexelSize", new Vector4(
+                    1f / shoreFoamAtlas.width, 1f / shoreFoamAtlas.height, shoreFoamAtlas.width, shoreFoamAtlas.height));
+            }
             layerPropertyBlock.SetFloat("_ProjectionClipMaskEnabled", clipMaskEnabled ? 1f : 0f);
             layerPropertyBlock.SetVector("_ProjectionClipMaskBounds", clipMaskBounds);
             layerPropertyBlock.SetTexture("_ProjectionClipMask",

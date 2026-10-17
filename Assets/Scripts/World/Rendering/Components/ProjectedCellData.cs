@@ -15,6 +15,7 @@ namespace Game.World.Rendering
         /// 12    Lower-half geometry
         /// 13    Foot overlay at half-block height
         /// 14    Upper-half-only face (cursor bounds)
+        /// 15    Water Top NW outside shore corner
         /// 16-23 Durability
         /// 24-31 MaxDurability
         /// </summary>
@@ -50,6 +51,7 @@ namespace Game.World.Rendering
         /// <summary>
         /// Opaque Top:
         /// bits 0-7 NeighborMask (unchanged).
+        /// bits 8-11 Shore foam contacts N/E/S/W.
         ///
         /// Opaque SideUpper / SideLower:
         /// bits 0-7 NeighborMask:
@@ -64,6 +66,8 @@ namespace Game.World.Rendering
         /// Water:
         /// bits 0-7 OpticalDepth,
         /// bit 8 TopInset.
+        /// bits 9-12 Shore foam contacts N/E/S/W.
+        /// bits 13-15 Outside shore corners NE/SE/SW (NW in BlockData bit 15).
         /// </summary>
         public ushort FaceData;
         // Interpret according to face type and block category.

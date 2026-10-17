@@ -115,6 +115,28 @@ namespace Game.World.Chunks {
    Dictionary<Unity.Mathematics.int3,Game.World.Blocks.CellContents> contents=null) {this.data=data;this.contents=contents;}
   public bool HasSplitCells(Unity.Mathematics.int2 coordinate) => contents!=null && contents.Keys.Any(p=>
    (int)Math.Floor(p.x/16.0)==coordinate.x && (int)Math.Floor(p.z/16.0)==coordinate.y);
+  public bool TryGetSurface(Unity.Mathematics.int2 coordinate,int x,int z,out Game.World.Blocks.ChunkSurfaceSample surface) {
+   int worldX=coordinate.x*16+x,worldZ=coordinate.y*16+z;
+   surface=default;
+   foreach(var pair in data) {
+    if(pair.Key.x!=worldX || pair.Key.z!=worldZ || (contents!=null && contents.ContainsKey(pair.Key))) continue;
+    var parts=Game.World.Blocks.CellContents.FromLegacy(pair.Value);
+    bool upper=parts.Upper.Id!=Game.World.Blocks.BlockId.Air;
+    var material=upper?parts.Upper.Id:parts.Lower.Id;
+    int height=pair.Key.y*2+(upper?2:1);
+    if(material!=Game.World.Blocks.BlockId.Air && height>surface.HeightHalf)
+     surface=new Game.World.Blocks.ChunkSurfaceSample {Material=material,HeightHalf=(ushort)height};
+   }
+   if(contents!=null) foreach(var pair in contents) {
+    if(pair.Key.x!=worldX || pair.Key.z!=worldZ) continue;
+    bool upper=pair.Value.Upper.Id!=Game.World.Blocks.BlockId.Air;
+    var material=upper?pair.Value.Upper.Id:pair.Value.Lower.Id;
+    int height=pair.Key.y*2+(upper?2:1);
+    if(material!=Game.World.Blocks.BlockId.Air && height>surface.HeightHalf)
+     surface=new Game.World.Blocks.ChunkSurfaceSample {Material=material,HeightHalf=(ushort)height};
+   }
+   return true;
+  }
   public bool TryGetRawBlock(Unity.Mathematics.int2 coordinate,int x,int y,int z,out Game.World.Blocks.BlockData value) {
    ReadCount++;
    data.TryGetValue(new Unity.Mathematics.int3(coordinate.x*16+x,y,coordinate.y*16+z),out value);
@@ -157,6 +179,7 @@ public static class HalfProjectionChecks {
  public static string Run() {
   CheckRockyShore();
   CheckTerrainMinimap();
+  CheckShoreFoam();
   CheckSplitStorage();
   CheckSaveValidation();
   CheckPlacement();
@@ -285,6 +308,77 @@ public static class HalfProjectionChecks {
   changes.Record(Unity.Mathematics.int2.zero,5,new Game.World.Blocks.CellContents(stone,stone));
   changes.Apply(Unity.Mathematics.int2.zero,cells,splits);
   Check(changes.Values.Count()==1 && splits.Length==0 && cells[5].BlockId==stone.Id,"Registry overwrite left stale split data");
+ }
+ static void CheckShoreFoam() {
+   foreach(ViewDirection view in Enum.GetValues(typeof(ViewDirection))) foreach(int offset in new[]{0,15,-16})
+   foreach(int corner in new[]{0,1,2,3}) {
+    var water=new BlockData(BlockId.OceanWater,255);var sand=new BlockData(BlockId.Sand,255);
+    var p=new int3(offset,7,7);
+    var north=ViewDirectionUtility.GetAwayFromCameraOffset(view);var right=ViewDirectionUtility.Right(view);
+    var east=new int3(right.x,0,right.y);var dirs=new[]{north,east,-north,-east};
+    var a=p+dirs[corner];var b=p+dirs[(corner+1)&3];var d=a+dirs[(corner+1)&3];
+    var map=new Dictionary<int3,BlockData>{{p,water},{a,water},{b,water},{d,sand}};
+    var accessor=new Game.World.Chunks.ChunkBlockAccessor(map);
+    byte expected=(byte)(1<<(4+corner));
+    Check(Game.World.Rendering.ChunkProjectionBuilder.BuildShoreMask(int2.zero,accessor,p,false,true,view)==expected,
+     "Missing diagonal outside shore corner");
+    // Verify the actual writer keeps all eight mask bits without changing depth/inset.
+    var occupied=new ProjectionOccupancy(8,Unity.Collections.Allocator.Temp);
+    var watery=new ProjectionOccupancy(8,Unity.Collections.Allocator.Temp);
+    var cells=new List<ProjectedWaterCellData>();
+    var writer=new WaterProjectionWriter(occupied,watery,new Unity.Entities.DynamicBuffer<ProjectedWaterCellData>(cells));
+    Check(writer.TryAddTop(water,123,true,0,1,1,expected),"Corner writer rejected empty tile");
+    Check(cells.Select(x=>x.Value).Any(c=>c.FaceType==ProjectedFaceType.Top && c.OpticalDepth==123 && c.WaterTopInset &&
+     (((((uint)c.FaceData>>9)&127u)|(((c.BlockData>>15)&1u)<<7))&expected)!=0),"Outside corner packing lost a bit");
+    map[p+new int3(0,2,0)]=sand;
+    Check(Game.World.Rendering.ChunkProjectionBuilder.BuildShoreMask(int2.zero,accessor,p,false,true,view)==0,
+     "Outside corner foam appeared beneath a roof");
+    map.Remove(p+new int3(0,2,0));map.Remove(a);
+    Check(Game.World.Rendering.ChunkProjectionBuilder.BuildShoreMask(int2.zero,accessor,p,false,true,view)==0,
+     "Outside corner foam crossed an empty neighbour");
+   }
+  foreach(ViewDirection view in Enum.GetValues(typeof(ViewDirection))) foreach(int offset in new[]{0,15,-16}) {
+   var p=new int3(offset,7,7);var n=p+ViewDirectionUtility.GetAwayFromCameraOffset(view);
+   var water=new BlockData(BlockId.OceanWater,255);var sand=new BlockData(BlockId.Sand,255);
+   var map=new Dictionary<int3,BlockData>{{p,water},{n,sand}};
+   var accessor=new Game.World.Chunks.ChunkBlockAccessor(map);
+   Check(Game.World.Rendering.ChunkProjectionBuilder.BuildShoreMask(int2.zero,accessor,p,false,true,view)==1,
+    "Water shore mask lost world direction/chunk boundary");
+   Check(Game.World.Rendering.ChunkProjectionBuilder.BuildShoreMask(int2.zero,accessor,n,false,false,view)==4,
+    "Land mask did not point back to water");
+   var inland=n+ViewDirectionUtility.GetAwayFromCameraOffset(view);map[inland]=sand;
+   Check(Game.World.Rendering.ChunkProjectionBuilder.BuildShoreMask(int2.zero,accessor,inland,false,false,view)==0,
+    "Foam propagated more than one block inland");
+   map[n+new int3(0,1,0)]=new BlockData(BlockId.Stone,255,BlockShape.LowerHalf);
+   Check(Game.World.Rendering.ChunkProjectionBuilder.BuildShoreMask(int2.zero,accessor,n,false,false,view)==0,
+    "Land under half-block roof received foam");
+   Check(Game.World.Rendering.ChunkProjectionBuilder.BuildShoreMask(int2.zero,accessor,p,false,true,view)==1,
+    "Roof over shore incorrectly removed water-side foam");
+   map[p+new int3(0,4,0)]=new BlockData(BlockId.Stone,255);
+   Check(Game.World.Rendering.ChunkProjectionBuilder.BuildShoreMask(int2.zero,accessor,p,false,true,view)==0,
+    "Water beneath a high ceiling received wind foam");
+   map.Remove(p+new int3(0,4,0));map.Remove(n+new int3(0,1,0));
+   map[p]=new BlockData(BlockId.OceanWater,255,BlockShape.LowerHalf);
+   map[n]=new BlockData(BlockId.Sand,255,BlockShape.LowerHalf);
+   Check(Game.World.Rendering.ChunkProjectionBuilder.BuildShoreMask(int2.zero,accessor,p,true,true,view)==1 &&
+    Game.World.Rendering.ChunkProjectionBuilder.BuildShoreMask(int2.zero,accessor,n,true,false,view)==4,
+    "Half-height water/shore contact lost foam");
+   map[n]=sand;
+   Check(Game.World.Rendering.ChunkProjectionBuilder.BuildShoreMask(int2.zero,accessor,n,false,false,view)==0 &&
+    Game.World.Rendering.ChunkProjectionBuilder.BuildShoreMask(int2.zero,accessor,p,true,true,view)==1,
+    "Foam climbed a shore half a block above water or lost water-side contact");
+   map[p]=water;map[n]=new BlockData(BlockId.Sand,255,BlockShape.LowerHalf);
+   Check(Game.World.Rendering.ChunkProjectionBuilder.BuildShoreMask(int2.zero,accessor,n,true,false,view)==4,
+    "Lower shore lost permitted foam");
+   map.Remove(p);
+   Check(Game.World.Rendering.ChunkProjectionBuilder.BuildShoreMask(int2.zero,accessor,n,true,false,view)==0,
+    "Removing water did not clear shore mask");
+  }
+  var packing=Build(new Dictionary<int3,BlockData>{{new int3(7,7,7),new BlockData(BlockId.OceanWater,255)},
+   {new int3(7,7,6),new BlockData(BlockId.Sand,255)}},ViewDirection.Front);
+  Check(packing.water.Any(c=>c.FaceType==ProjectedFaceType.Top && ((c.FaceData>>9)&15)==1),"Water foam bits not packed");
+  Check(packing.solid.Any(c=>c.FaceType==ProjectedFaceType.Top && ((c.FaceData>>8)&15)==4),"Land foam bits not packed");
+  Console.WriteLine("Shore foam PASS: four views, chunk edges, half heights, water/land masks, one-cell run-up, ceilings and edits");
  }
  static void CheckTerrainMinimap() {
   var blocks=new Unity.Entities.DynamicBuffer<BlockData>(new List<BlockData>(new BlockData[16*256*16]));

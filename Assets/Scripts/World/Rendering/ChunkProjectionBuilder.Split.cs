@@ -67,6 +67,68 @@ namespace Game.World.Rendering
                 : CellContents.FromLegacy(raw);
 
         private static bool IsFluid(BlockId id) => id == BlockId.OceanWater || id == BlockId.RiverWater;
+
+        // Bits N/E/S/W are view-relative; all contacts are evaluated in world
+        // coordinates at the actual half-height surface, independent of camera.
+        public static byte BuildShoreMask(int2 coordinate, ChunkBlockAccessor accessor, int3 owner,
+            bool lower, bool water, ViewDirection direction)
+        {
+            int height = owner.y * 2 + (lower ? 1 : 2);
+            if (!accessor.TryGetSurface(coordinate, owner.x, owner.z, out var surface) ||
+                surface.HeightHalf != height || IsFluid(surface.Material) != water || surface.Material == BlockId.Air) return 0;
+            int3 north = ViewDirectionUtility.GetAwayFromCameraOffset(direction);
+            int2 r = ViewDirectionUtility.Right(direction);
+            int3 east = new int3(r.x, 0, r.y);
+            byte mask = 0;
+            for (int side = 0; side < 4; side++)
+            {
+                int3 offset = side == 0 ? north : side == 1 ? east : side == 2 ? -north : -east;
+                int3 adjacent = owner + offset;
+                if (!accessor.TryGetSurface(coordinate, adjacent.x, adjacent.z, out var neighbour)) continue;
+                if (water)
+                {
+                    // A wall can rise above the water; only the solid part
+                    // touching this half of the water column creates contact.
+                    if (neighbour.HeightHalf < height - 1) continue;
+                    var contents = accessor.GetContentsOrAir(coordinate, adjacent.x, adjacent.y, adjacent.z);
+                    if (IsPartOpaque(lower ? contents.Lower.Id : contents.Upper.Id)) mask |= (byte)(1 << side);
+                }
+                else
+                {
+                    // One cardinal step only, never land-to-land propagation.
+                    // A higher roof changes the cached sky surface and fails
+                    // the initial owner-height test above.
+                    // Foam cannot climb above the neighbouring water surface,
+                    // including a ledge just half a block higher.
+                    if (IsFluid(neighbour.Material) && height <= neighbour.HeightHalf &&
+                        neighbour.HeightHalf - height <= 1)
+                        mask |= (byte)(1 << side);
+                }
+            }
+            if (water)
+            {
+                // Outside corners have only a diagonal land neighbour. Both
+                // adjoining water tiles must expose this same sky-visible level.
+                for (int corner = 0; corner < 4; corner++)
+                {
+                    int next = (corner + 1) & 3;
+                    if ((mask & ((1 << corner) | (1 << next))) != 0) continue;
+                    int3 a = corner == 0 ? north : corner == 1 ? east : corner == 2 ? -north : -east;
+                    int3 b = next == 0 ? north : next == 1 ? east : next == 2 ? -north : -east;
+                    if (!accessor.TryGetSurface(coordinate, owner.x + a.x, owner.z + a.z, out var sa) ||
+                        !accessor.TryGetSurface(coordinate, owner.x + b.x, owner.z + b.z, out var sb) ||
+                        sa.HeightHalf != height || sb.HeightHalf != height ||
+                        !IsFluid(sa.Material) || !IsFluid(sb.Material)) continue;
+                    int3 diagonal = owner + a + b;
+                    if (!accessor.TryGetSurface(coordinate, diagonal.x, diagonal.z, out var sd) ||
+                        sd.HeightHalf < height - 1) continue;
+                    var contents = accessor.GetContentsOrAir(coordinate, diagonal.x, diagonal.y, diagonal.z);
+                    if (IsPartOpaque(lower ? contents.Lower.Id : contents.Upper.Id))
+                        mask |= (byte)(1 << (4 + corner));
+                }
+            }
+            return mask;
+        }
         private static bool IsPartOpaque(BlockId id) => BlockUtility.IsSolid(id) && !IsFluid(id);
 
         private static void EmitSplitTop(int2 coordinate, ChunkBlockAccessor accessor,
@@ -88,7 +150,8 @@ namespace Game.World.Rendering
                 int3 behind = ownerPosition + ViewDirectionUtility.GetAwayFromCameraOffset(direction);
                 CellContents neighbour = accessor.GetContentsOrAir(coordinate, behind.x, behind.y, behind.z);
                 bool inset = !lower && IsPartOpaque(neighbour.Upper.Id);
-                water.TryAddTop(block, depth, inset, source, x, y);
+                water.TryAddTop(block, depth, inset, source, x, y,
+                    BuildShoreMask(coordinate, accessor, ownerPosition, lower, true, direction));
                 return;
             }
             if (ShouldClipOpaqueFace(clipping, player,
@@ -97,7 +160,8 @@ namespace Game.World.Rendering
                 writer.RecordClippedCell(x, y);
                 return;
             }
-            writer.TryAddTop(block, TopNeighborMaskUtility.Build(coordinate, ownerPosition, accessor, direction, lower), source, x, y);
+            writer.TryAddTop(block, TopNeighborMaskUtility.Build(coordinate, ownerPosition, accessor, direction, lower), source, x, y,
+                BuildShoreMask(coordinate, accessor, ownerPosition, lower, false, direction));
         }
 
         private static void EmitSplitSide(int2 coordinate, ChunkBlockAccessor accessor,

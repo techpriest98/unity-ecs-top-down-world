@@ -32,7 +32,8 @@ namespace Game.World.Rendering
             byte neighborMask,
             ushort sourceAirIndex,
             ushort x,
-            ushort y)
+            ushort y,
+            byte shoreMask = 0)
         {
             if (!occupancy.TryOccupy(x, y, ProjectedFaceType.Top, sourceAirIndex, block.Shape == BlockShape.LowerHalf))
             {
@@ -48,6 +49,7 @@ namespace Game.World.Rendering
 
             cell.SourceAirIndex = sourceAirIndex;
             cell.SetTopNeighborMask(neighborMask);
+            cell.FaceData |= (ushort)((shoreMask & 15) << 8);
 
             result.Add(cell);
 

@@ -6,9 +6,26 @@ Shader "Game/World/ChunkWaterProcedural"
         _PlayerClipping("Player Clipping", Float) = 0
         _BlockAtlas("Block Atlas", 2D) = "white" {}
         _WaterTint("Water Tint", Color) = (0.55, 0.9, 0.9, 1.0)
+        _WaterDesaturation("Water Desaturation", Range(0, 1)) = 0
         _WaterOpacity("Water Opacity", Range(0.0, 1.0)) = 0.20
         _WaterAbsorption("Water Absorption", Range(0.0, 1.0)) = 0.12
         _WaterTopInsetPixels("Water Top Inset Pixels", Range(0.0, 4.0)) = 2.0
+        _ShoreFoamStrength("Shore Foam Strength", Range(0, 1)) = 0.85
+        _ShoreFoamWidth("Shore Foam Width", Range(0.05, 0.5)) = 0.28
+        _ShoreFoamScale("Shore Foam Scale", Range(0.5, 4)) = 2
+        _ShoreFoamFrame("Shore Foam Preview Frame", Range(0, 7)) = 2
+        [Toggle] _ShoreFoamAnimate("Animate Shore Foam", Float) = 1
+        _ShoreFoamPeriod("Shore Foam Cycle Seconds", Range(0.5, 10)) = 3.2
+        _ShoreWaveTailOpacity("Shore Wave Gradient Opacity", Range(0, 0.5)) = 0.18
+        _ShoreWaveTailLength("Shore Wave Gradient Length", Range(0.2, 2)) = 1.2
+        _ShoreWaveTailWaterBlend("Shore Wave Gradient Water Color", Range(0, 1)) = 0.8
+        _ShoreWaveTailNoise("Shore Wave Gradient Noise", Range(0, 1)) = 0.35
+        _ShoreWaveSecondStrength("Second Shore Wave Strength", Range(0, 1)) = 0.8
+        _ShoreWaveSpacing("Shore Wave Spacing (Blocks)", Range(0, 0.5)) = 0
+        _ShoreWavePhaseOffset("Second Shore Wave Phase Offset", Range(0, 1)) = 0.5
+        _ShoreWaveRunUp("Shore Wave Run Up (Blocks)", Range(0, 1)) = 0.35
+        _ShoreWindInfluence("Shore Wind Influence", Range(0, 1)) = 1
+        [Toggle] _ShoreFoamDebug("Shore Foam Debug Mask", Float) = 0
     }
 
     SubShader
@@ -39,6 +56,7 @@ Shader "Game/World/ChunkWaterProcedural"
             #pragma fragment Frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "ShoreFoam.hlsl"
 
             // ============================================================
             // Constants
@@ -81,6 +99,7 @@ Shader "Game/World/ChunkWaterProcedural"
             // ============================================================
 
             float4 _WaterTint;
+            float _WaterDesaturation;
 
             float _WaterOpacity;
             float _WaterAbsorption;
@@ -186,6 +205,8 @@ Shader "Game/World/ChunkWaterProcedural"
                 float4 PositionCS : SV_POSITION;
                 float2 LocalUv : TEXCOORD0;
                 float2 ProjectionPosition : TEXCOORD6;
+                nointerpolation uint ShoreMask : TEXCOORD7;
+                nointerpolation float ShoreQuadHeight : TEXCOORD8;
 
                 nointerpolation uint BlockId : TEXCOORD1;
                 nointerpolation uint FaceIndex : TEXCOORD2;
@@ -249,6 +270,9 @@ Shader "Game/World/ChunkWaterProcedural"
                 output.LocalUv = corner;
                 output.BlockId = GetBlockId(cell.BlockData);
                 output.FaceIndex = faceIndex;
+                output.ShoreMask = faceIndex == 0 ? ((cell.FaceData >> 9) & 127u) |
+                    (((cell.BlockData >> 15) & 1u) << 7) : 0u;
+                output.ShoreQuadHeight = _CellHeight - insetHeight;
                 output.OpticalDepth = opticalDepth;
                 output.LightData = cell.LightData;
 
@@ -333,6 +357,11 @@ Shader "Game/World/ChunkWaterProcedural"
                 atlasPixel.y = (uint)_BlockAtlas_TexelSize.w - 1u - atlasPixel.y;
 
                 float4 color = _BlockAtlas.Load(int3(atlasPixel, 0));
+                float waterGray = dot(color.rgb, float3(.2126, .7152, .0722));
+                color.rgb = lerp(color.rgb, waterGray.xxx, saturate(_WaterDesaturation));
+                float4 foam = GetShoreFoam(localUv, input.ShoreMask, float2(_CellWidth, input.ShoreQuadHeight),
+                    input.ProjectionPosition, false, color.rgb * _WaterTint.rgb);
+                color.rgb = lerp(color.rgb * _WaterTint.rgb, foam.rgb, foam.a);
 
                 // ========================================================
                 // Lighting
@@ -384,8 +413,6 @@ Shader "Game/World/ChunkWaterProcedural"
                     localLight +
                     directLight);
 
-                color.rgb *=
-                    _WaterTint.rgb;
 
                 // ========================================================
                 // Optical depth
@@ -417,6 +444,7 @@ Shader "Game/World/ChunkWaterProcedural"
                     saturate(
                         opacity *
                         _WaterTint.a);
+                color.a = lerp(color.a, 1.0, foam.a);
 
                 return color;
             }

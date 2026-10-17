@@ -57,6 +57,22 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _ShoreFoamAnimate: 1
+    - _ShoreFoamDebug: 0
+    - _ShoreFoamFrame: 2
+    - _ShoreFoamPeriod: 3.4
+    - _ShoreFoamScale: 2
+    - _ShoreFoamStrength: 0.98
+    - _ShoreFoamWidth: 0.28
+    - _ShoreWaveTailOpacity: 0.3
+    - _ShoreWaveTailWaterBlend: 0.8
+    - _ShoreWaveTailNoise: 0.35
+    - _ShoreWaveTailLength: 0.85
+    - _ShoreWaveSecondStrength: 1
+    - _ShoreWaveSpacing: 0.2
+    - _ShoreWaveRunUp: 0.85
+    - _ShoreWindInfluence: 1
+    - _ShoreWavePhaseOffset: 0.08
     - _DebugNormals: 0
     - _EnableExternalAlpha: 0
     - _PlayerClipping: 0

@@ -28,7 +28,8 @@ namespace Game.World.Rendering
             bool topInset,
             ushort sourceAirIndex,
             ushort x,
-            ushort y)
+            ushort y,
+            byte shoreMask = 0)
         {
             return TryAdd(
                 block,
@@ -37,7 +38,7 @@ namespace Game.World.Rendering
                 topInset,
                 sourceAirIndex,
                 x,
-                y);
+                y, shoreMask: shoreMask);
         }
 
         public bool TryAddSideUpper(
@@ -85,7 +86,8 @@ namespace Game.World.Rendering
             ushort x,
             ushort y,
             bool upperHalf = false,
-            int opaqueUnderlaySource = -1)
+            int opaqueUnderlaySource = -1,
+            byte shoreMask = 0)
         {
             if (opaqueOccupancy.IsOccupied(x, y) &&
                 (opaqueUnderlaySource < 0 || !opaqueOccupancy.IsLowerTop(x, y, (ushort)opaqueUnderlaySource)))
@@ -107,7 +109,10 @@ namespace Game.World.Rendering
 
             cell.SourceAirIndex = sourceAirIndex;
             if (upperHalf) cell.BlockData |= ProjectedCellPacking.UpperHalfFlag;
-            cell.FaceData = PackFaceData(opticalDepth, topInset);
+            // Seven shore bits fit FaceData; the fourth outside corner uses
+            // the spare BlockData bit, keeping the cell/GPU buffer stride intact.
+            cell.FaceData = (ushort)(PackFaceData(opticalDepth, topInset) | ((shoreMask & 127) << 9));
+            cell.BlockData |= (uint)(shoreMask >> 7) << 15;
 
             result.Add(new ProjectedWaterCellData(cell));
 

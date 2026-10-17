@@ -63,6 +63,7 @@ namespace Game.World.Rendering
             {
                 return;
             }
+            if (SystemAPI.TryGetSingleton<Game.World.Time.WorldWind>(out var wind)) renderer.SetWind(wind);
 
             int2 currentCenter =
                 SystemAPI.GetSingleton<ChunkStreamingCenter>().Coordinate;

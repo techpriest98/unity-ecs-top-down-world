@@ -4,6 +4,22 @@ Shader "Game/World/ChunkProcedural"
     {
         [Toggle(_PLAYER_CLIPPING)]
         _PlayerClipping("Player Clipping", Float) = 0
+        _ShoreFoamStrength("Shore Foam Strength", Range(0, 1)) = 0.85
+        _ShoreFoamWidth("Shore Foam Width", Range(0.05, 0.5)) = 0.28
+        _ShoreFoamScale("Shore Foam Scale", Range(0.5, 4)) = 2
+        _ShoreFoamFrame("Shore Foam Preview Frame", Range(0, 7)) = 2
+        [Toggle] _ShoreFoamAnimate("Animate Shore Foam", Float) = 1
+        _ShoreFoamPeriod("Shore Foam Cycle Seconds", Range(0.5, 10)) = 3.2
+        _ShoreWaveTailOpacity("Shore Wave Gradient Opacity", Range(0, 0.5)) = 0.18
+        _ShoreWaveTailLength("Shore Wave Gradient Length", Range(0.2, 2)) = 1.2
+        _ShoreWaveTailWaterBlend("Shore Wave Gradient Water Color", Range(0, 1)) = 0.8
+        _ShoreWaveTailNoise("Shore Wave Gradient Noise", Range(0, 1)) = 0.35
+        _ShoreWaveSecondStrength("Second Shore Wave Strength", Range(0, 1)) = 0.8
+        _ShoreWaveSpacing("Shore Wave Spacing (Blocks)", Range(0, 0.5)) = 0
+        _ShoreWavePhaseOffset("Second Shore Wave Phase Offset", Range(0, 1)) = 0.5
+        _ShoreWaveRunUp("Shore Wave Run Up (Blocks)", Range(0, 1)) = 0.35
+        _ShoreWindInfluence("Shore Wind Influence", Range(0, 1)) = 1
+        [Toggle] _ShoreFoamDebug("Shore Foam Debug Mask", Float) = 0
 
         [Toggle(_DEBUG_NORMALS)]
         _DebugNormals("Debug Normals", Float) = 0
@@ -38,6 +54,7 @@ Shader "Game/World/ChunkProcedural"
             #pragma fragment Frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "ShoreFoam.hlsl"
 
             // ============================================================
             // Constants
@@ -188,6 +205,7 @@ Shader "Game/World/ChunkProcedural"
                 float4 PositionCS : SV_POSITION;
                 float2 LocalUv : TEXCOORD0;
                 float2 ProjectionPosition : TEXCOORD9;
+                nointerpolation uint ShoreMask : TEXCOORD10;
 
                 nointerpolation uint BlockId : TEXCOORD1;
                 nointerpolation uint FaceIndex : TEXCOORD2;
@@ -229,6 +247,7 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
                 output.LocalUv = corner;
                 output.BlockId = GetBlockId(cell.BlockData);
                 output.FaceIndex = GetFaceIndex(GetFaceType(cell.BlockData));
+                output.ShoreMask = output.FaceIndex == 0 ? (cell.FaceData >> 8) & 15u : 0u;
                 
                 uint faceType = GetFaceType(cell.BlockData);
 
@@ -492,6 +511,10 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
                 #if defined(_DEBUG_NORMALS)
                     return float4(normalOS * 0.5 + 0.5, 1.0);
                 #endif
+
+                float4 foam = GetShoreFoam(localUv, input.ShoreMask, float2(_CellWidth, _CellHeight),
+                    input.ProjectionPosition, true, color.rgb);
+                color.rgb = lerp(color.rgb, foam.rgb, foam.a);
 
                 // ========================================================
                 // Lighting

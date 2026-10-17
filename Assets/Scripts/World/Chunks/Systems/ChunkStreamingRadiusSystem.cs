@@ -14,6 +14,9 @@ namespace Game.World.Chunks
 
         private int searchRadius;
         private bool searchStarted;
+        private int cameraRadius;
+        private float shrinkDelay;
+        private bool cameraRadiusInitialized;
 
         public void OnCreate(ref SystemState state)
         {
@@ -32,6 +35,24 @@ namespace Game.World.Chunks
                 0);
 
             WorldStartupState startup = SystemAPI.GetSingleton<WorldStartupState>();
+
+            if (startup.Phase != WorldStartupPhase.SearchingSpawn &&
+                Game.Player.PlayerCameraFollow.TryGetStreamingRadius(state.World, out int desiredRadius))
+            {
+                // Keep the startup guarantee until the initial view is ready.
+                if (startup.Phase != WorldStartupPhase.Ready)
+                    desiredRadius = math.max(desiredRadius, configuredRadius);
+                if (!cameraRadiusInitialized)
+                {
+                    cameraRadius = desiredRadius;
+                    shrinkDelay = 3f;
+                    cameraRadiusInitialized = true;
+                }
+                cameraRadius = CameraStreamingRadiusUtility.Update(cameraRadius, desiredRadius,
+                    SystemAPI.Time.DeltaTime, ref shrinkDelay);
+                configuredRadius = cameraRadius;
+            }
+            else cameraRadiusInitialized = false;
 
             if (startup.Phase != WorldStartupPhase.SearchingSpawn)
             {

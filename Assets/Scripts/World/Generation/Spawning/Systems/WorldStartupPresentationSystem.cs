@@ -21,6 +21,7 @@ namespace Game.World.Generation.Spawning
             RequireForUpdate<WorldStartupState>();
             RequireForUpdate<ChunkStreamingCenter>();
             RequireForUpdate<ChunkStreamingSettings>();
+            RequireForUpdate<ChunkStreamingRuntime>();
 
             readyChunksQuery =
                 new EntityQueryBuilder(Allocator.Temp)
@@ -93,7 +94,7 @@ namespace Game.World.Generation.Spawning
                 return;
             }
 
-            int radius = math.max(SystemAPI.GetSingleton<ChunkStreamingSettings>().LoadRadius, 0);
+            int radius = math.max(SystemAPI.GetSingleton<ChunkStreamingRuntime>().LoadRadius, 0);
 
             using NativeArray<ChunkComponent> readyChunks =
                 readyChunksQuery.ToComponentDataArray<ChunkComponent>(
