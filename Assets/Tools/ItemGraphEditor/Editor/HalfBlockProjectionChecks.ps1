@@ -424,10 +424,23 @@ public static class HalfProjectionChecks {
   var settings=new Game.World.Generation.Biomes.RockyShore.RockyShoreSettingsComponent {
    CliffWidth=20,CliffWidthVariation=.35f,CliffWidthNoiseScale=.006f,
    CliffMinHeight=10,CliffMaxHeight=24,CliffSharpness=3,CliffNoiseScale=.02f,
-   GrassDepth=3,RampNoiseScale=.008f,RampThreshold=.65f,RampStrength=.8f
+   GrassDepth=3,RampNoiseScale=.008f,RampThreshold=.65f,RampStrength=.8f,
+   MassifSize=32,MassifWarp=.2f,PlateauRelief=.75f
   };
   var terrain=new Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain(settings);
   var world=new Game.World.Generation.WorldGenerationSettingsComponent {SeaLevelHeight=64};
+  Check(world.WaterSurfaceHeight==63 && world.IsWaterColumn(62) &&
+   !world.IsWaterColumn(63) && !world.IsWaterColumn(64),
+   "Shore distance classified exposed sand at the water fill bound as ocean");
+  foreach(float oldSurface in new[]{62.5f,63f,63.5f,64f}) {
+   int rawHeight=(int)math.round(oldSurface);
+   if(world.IsWaterColumn(rawHeight))continue;
+   // These dry columns used to get a negative shore distance and bypass
+   // shaping, leaving a row of raised half blocks along the new beach.
+   var edge=terrain.Sample(0,0,oldSurface,1,1,123,world);
+   float edgeHeight=edge.Height-(edge.HalfSurface?.5f:0);
+   Check(edgeHeight==world.WaterSurfaceHeight,"Old shoreline ridge survived beach shaping");
+  }
   var beach=terrain.Sample(0,0,63.5f,0,1,123,world);
   Check(beach.Height==64 && beach.HalfSurface && terrain.GetBlock(63,beach.Zone,beach.Height)==BlockId.Sand,
    "Beach lost fractional sand surface");
@@ -450,6 +463,170 @@ public static class HalfProjectionChecks {
     Check(terrain.GetBlock(sample.Height,sample.Zone,sample.Height)==BlockId.Air,"Terrain exceeds half surface");
    }
   Check(halves>0 && grassHalves>0,"Rocky Shore produced no half slopes or grass summits");
+  var stepsSettings=settings;
+  stepsSettings.CliffWidth=48;stepsSettings.CliffWidthVariation=0;
+  stepsSettings.CliffMinHeight=8;stepsSettings.CliffMaxHeight=24;
+  stepsSettings.BeachWidth=12;stepsSettings.BeachRise=1f;
+  stepsSettings.TerraceCount=3;stepsSettings.RiserWidth=1;stepsSettings.PlateauRelief=0;stepsSettings.RampStrength=0;
+  var steps=new Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain(stepsSettings);
+  foreach(uint seed in new uint[]{0,1,123,777}) {
+   float previous=0;int flat=0,maxFlat=0,rises=0,falls=0;float low=999,high=0;
+   for(int x=-512;x<=512;x++) {
+    var s=steps.Sample(x,16,64,25,1,seed,world);
+    var inland=steps.Sample(x,16,64,40,1,seed,world);
+    float height=s.Height-(s.HalfSurface?.5f:0);
+    Check(s.Height==inland.Height && s.HalfSurface==inland.HalfSurface,
+     "Massif height still follows distance from water");
+    if(x>-512) {
+     if(height-previous>=2)rises++;
+     if(previous-height>=2)falls++;
+     if(height==previous)flat++;else flat=0;
+     maxFlat=System.Math.Max(maxFlat,flat);
+    }
+    low=System.Math.Min(low,height);high=System.Math.Max(high,height);previous=height;
+   }
+   Check(rises>2 && falls>2 && maxFlat>=8 && high-low>=8,
+    "Missing broad independent plateaus, sharp walls or non-monotonic height ordering");
+   int far=steps.GetShoreSearchDistance();
+   var outer=steps.Sample(-17,16,83.5f,far,1,seed,world);
+   Check(outer.Height==84 && outer.HalfSurface,"Clamped shore field created an inland seam");
+   var noInfluence=steps.Sample(-17,16,67.5f,25,0,seed,world);
+   Check(noInfluence.Height==68 && noInfluence.HalfSurface,"Zero biome influence changed base terrain");
+  }
+  Check(steps.GetShoreSearchDistance()>=12*1.35f+48+48*.35f,"Shore search clips terrace profile");
+  foreach(float influence in new[]{.5f,.75f,1f}) foreach(float macro in new[]{64f,68f,80f})
+   for(int x=-32;x<=32;x+=8) for(int d=1;d<=7;d++) {
+    var sand=steps.Sample(x,16,macro,d,influence,123,world);
+    float surface=sand.Height-(sand.HalfSurface?.5f:0);
+    Check(sand.Zone==(byte)Game.World.Generation.Biomes.RockyShore.RockyShoreZone.Beach &&
+     surface>=world.SeaLevelHeight-1 && surface<=world.SeaLevelHeight-1+stepsSettings.BeachRise,
+     "Beach exceeds two half-block levels above the actual generated water surface");
+   }
+  var untouchedBeach=steps.Sample(0,0,80,3,0,123,world);
+  Check(untouchedBeach.Height==80,"Zero influence flattened the original beach height");
+  Console.WriteLine("Rocky Shore massifs PASS: independent height at equal position, rising/falling neighbours, broad flat plateaus, beach and inland boundary");
+  var shelfSettings=stepsSettings;
+  shelfSettings.LowPlateauHeight=2;shelfSettings.LowPlateauChance=1;
+  var shelves=new Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain(shelfSettings);
+  for(int x=-64;x<=64;x+=4) {
+   var s=shelves.Sample(x,16,64,25,1,123,world);
+   Check(s.Height-(s.HalfSurface?.5f:0)==world.WaterSurfaceHeight+2,
+    "Low plateau height was not measured from the actual water surface");
+  }
+  shelfSettings.LowPlateauChance=.3f;
+  shelves=new Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain(shelfSettings);
+  int lowShelves=0,tallMasses=0;
+  for(int x=-512;x<=512;x++) {
+   var s=shelves.Sample(x,16,64,25,1,123,world);
+   float h=s.Height-(s.HalfSurface?.5f:0);
+   if(h==world.WaterSurfaceHeight+2)lowShelves++;
+   if(h>=world.SeaLevelHeight+shelfSettings.CliffMinHeight)tallMasses++;
+  }
+  Check(lowShelves>20 && tallMasses>20,"Low shelves replaced every taller mass or never appeared");
+  Console.WriteLine("Rocky Shore low shelves PASS: two blocks above water and coexistence with taller massifs");
+  var coverSettings=stepsSettings;
+  coverSettings.LayeredGroundCover=true;coverSettings.RockEdgeWidth=2;coverSettings.HalfCoverWidth=2.5f;
+  var coveredTerrain=new Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain(coverSettings);
+  int bareCover=0,halfCover=0,fullCover=0;
+  for(int x=-128;x<=128;x+=2) for(int z=-64;z<=64;z+=2) {
+   var s=coveredTerrain.Sample(x,z,64,25,1,123,world);
+   var original=steps.Sample(x,z,64,25,1,123,world);
+   Check(s.HasRockCover && s.RockSurfaceHalf==original.SurfaceHalf && s.SurfaceHalf==s.RockSurfaceHalf+s.CoverHalf,
+    "Ground cover replaced rock instead of adding a layer above it");
+   Check(s.CoverHalf<=2,"First-stage soil cover exceeded one block");
+   if(s.CoverHalf==0)bareCover++;else if(s.CoverHalf==1)halfCover++;else fullCover++;
+   Check(Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain.GetCoveredBlock(s.RockSurfaceHalf-1,63,s)==BlockId.Stone,
+    "Soil leaked below rock surface as a deep dirt wall");
+   if(s.CoverHalf>0)Check(Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain.GetCoveredBlock(s.SurfaceHalf-1,63,s)==BlockId.MeadowGrass,
+    "Ground cover has no grass top");
+   Check(Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain.GetCoveredBlock(s.SurfaceHalf,63,s)==BlockId.Air,
+    "Cover height disagrees with generated materials");
+   int cx=(int)math.floor(x/16f),cz=(int)math.floor(z/16f);
+   var repeated=coveredTerrain.Sample(cx*16+(x-cx*16),cz*16+(z-cz*16),64,25,1,123,world);
+   Check(repeated.SurfaceHalf==s.SurfaceHalf && repeated.CoverHalf==s.CoverHalf,"Cover depends on chunk-local coordinates");
+  }
+  Check(bareCover>20 && halfCover>20 && fullCover>20,"Missing bare / half / full soil zones");
+  foreach(float rockHeight in new[]{64f,64.5f}) foreach(byte cover in new byte[]{0,1,2}) {
+   var s=new Game.World.Generation.Biomes.BiomeTerrainSample(Game.World.Generation.WorldBiome.RockyShore,rockHeight,4,cover);
+   var cells=new Unity.Entities.DynamicBuffer<BlockData>(new List<BlockData>(new BlockData[Game.World.Chunks.ChunkSettings.BlockCount]));
+   var split=new Unity.Entities.DynamicBuffer<SplitCellData>(new List<SplitCellData>());
+   for(int y=63;y<=66;y++) {
+    var a=new BlockPart(Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain.GetCoveredBlock(y*2,63,s),255);
+    var b=new BlockPart(Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain.GetCoveredBlock(y*2+1,63,s),255);
+    int index=Game.World.Chunks.ChunkUtility.ToIndex(1,y,1);
+    SplitCellUtility.Set(cells,split,index,new CellContents(a,b));
+    var contents=SplitCellUtility.Get(cells,split,index);
+    Check(contents.Lower.Id==a.Id && contents.Upper.Id==b.Id,"Generated soil split failed round-trip");
+   }
+  }
+  Console.WriteLine("Rocky Shore cover PASS: independent stone foundation, 0/.5/1-block layers, half-cell materials and world-space determinism");
+  var rockSettings=stepsSettings;
+  rockSettings.CoastalRockSpacing=16;rockSettings.CoastalRockChance=.4f;
+  rockSettings.CoastalRockHeight=3;rockSettings.CoastalRockWaterReach=12;
+  var outcrops=new Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain(rockSettings);
+  var oceanFloor=new Game.World.Generation.Biomes.BiomeTerrainSample(Game.World.Generation.WorldBiome.Ocean,61,1);
+  var sandFloor=new Game.World.Generation.Biomes.BiomeTerrainSample(Game.World.Generation.WorldBiome.RockyShore,64,5);
+  var grassFloor=new Game.World.Generation.Biomes.BiomeTerrainSample(Game.World.Generation.WorldBiome.RockyShore,68,4);
+  foreach(uint seed in new uint[]{1,123}) {
+   int waterRocks=0,sandRocks=0,halfRocks=0;
+   for(int x=-64;x<=64;x++) for(int z=-64;z<=64;z++) {
+    var s=outcrops.ApplyCoastalRocks(x,z,-4,seed,world,oceanFloor);
+    var land=outcrops.ApplyCoastalRocks(x,z,4,seed,world,sandFloor);
+    var again=outcrops.ApplyCoastalRocks(x,z,-4,seed,world,oceanFloor);
+    Check(s.Height==again.Height && s.HalfSurface==again.HalfSurface && s.Zone==again.Zone,"Outcrop generation is not deterministic");
+    if(s.Biome==Game.World.Generation.WorldBiome.RockyShore) {
+     waterRocks++;if(s.HalfSurface)halfRocks++;
+     Check(s.Zone==2 && s.SurfaceHalf>world.WaterSurfaceHeight*2 && s.SurfaceHalf<=(world.WaterSurfaceHeight+3.5f)*2,
+      "Outcrop material or sea-relative height is wrong");
+     Check(outcrops.GetBlock(s.Height-1,s.Zone,s.Height)==BlockId.Stone,"Outcrop has a sand or grass cap");
+     bool insideRadius=false;int gx=(int)math.floor(x/16f),gz=(int)math.floor(z/16f);
+     for(int dz=-1;dz<=1;dz++)for(int dx=-1;dx<=1;dx++) {
+      uint h=math.hash(new uint3((uint)(gx+dx),(uint)(gz+dz),seed^0x524F434Bu));
+      var center=(new float2(gx+dx,gz+dz)+.15f+new float2(h&65535u,h>>16)/65535f*.7f)*16;
+      if(math.distance(center,new float2(x,z))<=3.001f)insideRadius=true;
+     }
+     Check(insideRadius,"Outcrop footprint exceeded three-block radius");
+    }
+    if(land.Zone==2)sandRocks++;
+   }
+   Check(waterRocks>30 && waterRocks<2000 && sandRocks>30 && halfRocks>0,"Missing sparse water/beach rocks or half-block caps");
+   Check(outcrops.ApplyCoastalRocks(0,0,-20,seed,world,oceanFloor).SurfaceHalf==oceanFloor.SurfaceHalf,"Outcrop escaped the nearshore band");
+   Check(outcrops.ApplyCoastalRocks(0,0,4,seed,world,grassFloor).SurfaceHalf==grassFloor.SurfaceHalf,"Outcrop replaced a grass plateau");
+  }
+  Console.WriteLine("Rocky Shore outcrops PASS: seeded sparse beach/water rocks, radius <=3, stone/half caps and placement exclusions");
+  var coastSettings=stepsSettings;
+  coastSettings.CoastVariation=1;coastSettings.CoastNoiseScale=.006f;
+  var coast=new Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain(coastSettings);
+  foreach(uint seed in new uint[]{0,1,123,777}) {
+   int bays=0,rocks=0,longest=0,run=0,changes=0;bool previousRock=false;
+   for(int x=-512;x<=512;x++) {
+    var s=coast.Sample(x,-17,64,1,1,seed,world);
+    var repeat=coast.Sample(x,-17,64,1,1,seed,world);
+    Check(s.Height==repeat.Height && s.HalfSurface==repeat.HalfSurface && s.Zone==repeat.Zone,
+     "Coast character is not deterministic");
+    bool rocky=s.Zone==(byte)Game.World.Generation.Biomes.RockyShore.RockyShoreZone.Cliff;
+    if(rocky) {
+     rocks++;run++;longest=System.Math.Max(longest,run);
+     Check(coast.GetBlock(s.Height-1,s.Zone,s.Height)==BlockId.Stone,"Headland retained sand cap");
+    } else run=0;
+    if(s.Zone==(byte)Game.World.Generation.Biomes.RockyShore.RockyShoreZone.Beach) {
+     bays++;Check(s.Height-(s.HalfSurface?.5f:0)<=world.WaterSurfaceHeight+1,
+      "Coast mask made a sandy bay too high");
+    }
+    if(x>-512 && rocky!=previousRock)changes++;previousRock=rocky;
+   }
+   Check(bays>50 && rocks>50 && longest>=16 && changes<64,"Missing broad sandy/rocky coastal stretches");
+   bool wallAtWater=false;
+   for(int x=-512;x<=512;x+=4) {
+    var s=coast.Sample(x,-17,64,1,1,seed,world);
+    if(s.Zone==(byte)Game.World.Generation.Biomes.RockyShore.RockyShoreZone.Cliff &&
+     s.Height-(s.HalfSurface?.5f:0)>world.WaterSurfaceHeight+2)wallAtWater=true;
+   }
+   Check(wallAtWater,"Rocky coast removed sand without moving the cliff to the water");
+   var far=coast.Sample(0,-17,83.5f,coast.GetShoreSearchDistance(),1,seed,world);
+   Check(far.Height==84 && far.HalfSurface,"Coast mask broke inland blend boundary");
+  }
+  Console.WriteLine("Rocky Shore coast PASS: seeded broad bays/headlands, stone contact at water, gentle sand and inland continuity");
   Console.WriteLine("Rocky Shore PASS: fractional beach, integer heights, half slopes, grass caps and deterministic seeds");
  }
  static void CheckPlacement() {

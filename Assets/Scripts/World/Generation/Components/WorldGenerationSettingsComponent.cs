@@ -14,5 +14,9 @@ namespace Game.World.Generation
         public int SeaLevelHeight;
         public int HighLandHeight;
         public float MacroSeaLevel;
+
+        // Exclusive water fill bound and its physical top surface.
+        public int WaterSurfaceHeight => SeaLevelHeight - 1;
+        public bool IsWaterColumn(int terrainHeight) => terrainHeight < WaterSurfaceHeight;
     }
 }

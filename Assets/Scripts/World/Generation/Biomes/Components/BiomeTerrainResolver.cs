@@ -60,11 +60,17 @@ namespace Game.World.Generation.Biomes
             return rockyShore.GetShoreSearchDistance();
         }
 
+        public BiomeTerrainSample ApplyCoastalRocks(int x, int z, float distance, uint seed,
+            in WorldGenerationSettingsComponent world, in BiomeTerrainSample terrain) =>
+            rockyShore.ApplyCoastalRocks(x, z, distance, seed, world, terrain);
+
         public BlockId GetBlock(
             int y,
             int waterLevel,
             in BiomeTerrainSample terrainSample)
         {
+            if (terrainSample.HasRockCover)
+                return RockyShoreTerrain.GetCoveredBlock(y * 2, waterLevel, terrainSample);
             int depth =
                 terrainSample.Height - 1 - y;
 

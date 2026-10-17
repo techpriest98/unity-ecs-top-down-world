@@ -170,8 +170,7 @@ namespace Game.World.Generation.Terrain
                 worldSeed,
                 settings);
 
-            return terrainHeight <
-                   settings.SeaLevelHeight;
+            return settings.IsWaterColumn(terrainHeight);
         }
     }
 }

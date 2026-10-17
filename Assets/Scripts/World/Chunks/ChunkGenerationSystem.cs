@@ -349,9 +349,8 @@ namespace Game.World.Chunks
                         heightMap,
                         landmassMap);
 
-                    int waterLevel = worldSettings.SeaLevelHeight - 1;
-                    bool isWaterColumn =
-                        baseHeight < waterLevel;
+                    int waterLevel = worldSettings.WaterSurfaceHeight;
+                    bool isWaterColumn = worldSettings.IsWaterColumn(baseHeight);
 
                     float2 uv = WorldSamplingUtility.WorldToUv(
                         worldX,
@@ -380,7 +379,12 @@ namespace Game.World.Chunks
                     // ====================================================
 
                     float shoreDistance = 0f;
-                    if (biome == WorldBiome.RockyShore)
+                    // Ocean columns normally bypass Rocky Shore shaping, but
+                    // nearby water must share the same seeded rock footprints.
+                    bool rockyCoast = biome == WorldBiome.RockyShore ||
+                        (biome == WorldBiome.Ocean && RockyShoreBiomeMask.Contains(
+                            RockyShoreBiomeMask.SampleInfluence(uv, coastDistance, biomeContext)));
+                    if (rockyCoast)
                     {
                         if (!shoreDistanceMap.IsCreated)
                         {
@@ -409,6 +413,10 @@ namespace Game.World.Chunks
                             worldSeed,
                             worldSettings);
 
+                    if (rockyCoast)
+                        terrainSample = biomeTerrainResolver.ApplyCoastalRocks(worldX, worldZ,
+                            shoreDistance, worldSeed, worldSettings, terrainSample);
+
                     int columnIndex = z * ChunkSettings.SizeX + x;
 
                     columns[columnIndex] = new ChunkColumnData
@@ -420,6 +428,19 @@ namespace Game.World.Chunks
 
                     for (int y = 0; y < ChunkSettings.SizeY; y++)
                     {
+                        if (terrainSample.HasRockCover)
+                        {
+                            var lower = blockDatabase.CreateBlock(
+                                Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain.GetCoveredBlock(y * 2, waterLevel, terrainSample));
+                            var upper = blockDatabase.CreateBlock(
+                                Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain.GetCoveredBlock(y * 2 + 1, waterLevel, terrainSample));
+                            ChunkUtility.SetBlock(blocks, x, y, z, lower);
+                            if (lower.BlockId != upper.BlockId)
+                                SplitCellUtility.Set(blocks, splits, ChunkUtility.ToIndex(x, y, z),
+                                    new CellContents(new BlockPart(lower.BlockId, lower.Durability),
+                                        new BlockPart(upper.BlockId, upper.Durability)));
+                            continue;
+                        }
                         BlockId blockId =
                             biomeTerrainResolver.GetBlock(
                                 y,

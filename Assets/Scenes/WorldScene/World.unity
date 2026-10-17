@@ -303,14 +303,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b61243b051c8f485f82fce33a2621c19, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.World.Generation.Biomes.RockyShore.RockyShoreSettingsAuthoring
-  cliffWidth: 30
+  cliffWidth: 48
   cliffWidthNoiseScale: 0.006
   cliffWidthVariation: 0.35
-  cliffMinHeight: 8
-  cliffMaxHeight: 24
+  cliffMinHeight: 4
+  cliffMaxHeight: 12
   cliffSharpness: 4.94
   cliffNoiseScale: 0.02
+  beachWidth: 12
+  beachRise: 1
+  terraceCount: 3
+  massifSize: 32
+  massifWarp: 0.2
+  lowPlateauHeight: 2
+  lowPlateauChance: 0.3
+  riserWidth: 1.25
+  plateauRelief: 0.75
+  coastVariation: 1
+  coastNoiseScale: 0.006
   grassDepth: 3
+  layeredGroundCover: 1
+  rockEdgeWidth: 2
+  halfCoverWidth: 2.5
+  coastalRockSpacing: 16
+  coastalRockChance: 0.4
+  coastalRockHeight: 3
+  coastalRockWaterReach: 12
   rampNoiseScale: 0.008
   rampThreshold: 0.65
   rampStrength: 1

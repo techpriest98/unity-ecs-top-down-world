@@ -23,7 +23,7 @@ namespace Game.Player
 
         [Header("Mouse wheel zoom")]
         [SerializeField, Min(.1f)] private float minimumSize = 2f;
-        [SerializeField, Min(.1f)] private float maximumSize = 10f;
+        [SerializeField, Min(.1f)] private float maximumSize = 20f;
         [SerializeField, Min(.05f)] private float zoomStep = .5f;
         [SerializeField, Min(.1f)] private float zoomResponse = 14f;
         private Camera cameraComponent;
