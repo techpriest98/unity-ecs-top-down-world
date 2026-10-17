@@ -37,6 +37,52 @@ namespace Game.World.Lighting
             return direction.x | (direction.y << 8) | (direction.z << 16) | (confidence << 24);
         }
 
+        private static float3 DirectionVector(uint packed)
+        {
+            float confidence = (packed >> 24) / 255f;
+            float3 v = new float3(packed & 255u, (packed >> 8) & 255u, (packed >> 16) & 255u) / 127.5f - 1f;
+            return math.normalizesafe(v) * confidence;
+        }
+
+        public static byte PackCornerDirection(float3 vector)
+        {
+            float confidence = math.saturate(math.length(vector));
+            uint c = (uint)math.round(confidence * 3f);
+            if (c == 0) return 0;
+            float3 n = math.normalizesafe(vector);
+            n /= math.abs(n.x) + math.abs(n.y) + math.abs(n.z);
+            float2 uv = n.xy;
+            if (n.z < 0f) uv = (1f - math.abs(uv.yx)) * new float2(uv.x >= 0 ? 1 : -1, uv.y >= 0 ? 1 : -1);
+            uint2 encoded = (uint2)math.round(math.saturate(uv * .5f + .5f) * 7f);
+            return (byte)(encoded.x | (encoded.y << 3) | (c << 6));
+        }
+
+        public static float3 UnpackCornerDirection(byte packed)
+        {
+            float2 uv = new float2(packed & 7, (packed >> 3) & 7) / 7f * 2f - 1f;
+            float3 n = new float3(uv, 1f - math.abs(uv.x) - math.abs(uv.y));
+            if (n.z < 0f) n.xy = (1f - math.abs(n.yx)) * new float2(n.x >= 0 ? 1 : -1, n.y >= 0 ? 1 : -1);
+            return math.normalizesafe(n) * ((packed >> 6) / 3f);
+        }
+
+        public static byte AverageDirection(byte a, byte b) =>
+            PackCornerDirection((UnpackCornerDirection(a) + UnpackCornerDirection(b)) * .5f);
+
+        public static byte SampleCornerDirection(int2 coordinate, int3 position, int3 a, int3 b,
+            ChunkBlockAccessor blocks, ChunkLightAccessor lights)
+        {
+            if (!TrySample(coordinate, position, blocks, lights, out _)) return 0;
+            float3 sum = DirectionVector(SampleDirection(coordinate, position, blocks, lights));
+            int count = 1;
+            bool hasA = TrySample(coordinate, position + a, blocks, lights, out _);
+            bool hasB = TrySample(coordinate, position + b, blocks, lights, out _);
+            if (hasA) { sum += DirectionVector(SampleDirection(coordinate, position + a, blocks, lights)); count++; }
+            if (hasB) { sum += DirectionVector(SampleDirection(coordinate, position + b, blocks, lights)); count++; }
+            if (hasA && hasB && TrySample(coordinate, position + a + b, blocks, lights, out _))
+            { sum += DirectionVector(SampleDirection(coordinate, position + a + b, blocks, lights)); count++; }
+            return PackCornerDirection(sum / count);
+        }
+
         public static uint SampleCorner(
             int2 chunkCoordinate,
             int3 airPosition,

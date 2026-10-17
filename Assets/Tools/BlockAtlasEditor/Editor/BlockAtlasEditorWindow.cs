@@ -402,27 +402,40 @@ namespace Game.EditorTools.BlockAtlas
 
         private void DrawNormalPicker()
         {
-            GUILayout.Label("Normal direction (+Y)", EditorStyles.boldLabel);
-            string[] names = { "NW", "N", "NE", "W", "Flat", "E", "SW", "S", "SE" };
-            for (int row = 0; row < 3; row++)
-            using (new EditorGUILayout.HorizontalScope())
+            GUILayout.Label("Normal direction", EditorStyles.boldLabel);
+            string[] rowLabels = { "Up", "45° up", "Front / vertical", "45° down" };
+            string[] columns = { "Left", "Center", "Right" };
+            for (int row = 0; row < 4; row++)
             {
+                GUILayout.Label(rowLabels[row], EditorStyles.miniLabel);
+                using (new EditorGUILayout.HorizontalScope())
                 for (int col = 0; col < 3; col++)
                 {
-                    Vector3 n = new Vector3(col - 1, 1 - row, 1).normalized;
-                    Color32 encoded = row == 1 && col == 1 ? new Color32(128, 128, 255, 255) : (Color32)new Color(n.x * .5f + .5f, n.y * .5f + .5f, n.z * .5f + .5f, 1);
-                    if (row == 0 && col == 1) encoded = BlockAtlasEntry.NorthNormal;
-                    Rect cell = GUILayoutUtility.GetRect(38, 36, GUILayout.Width(38));
-                    if (GUI.Button(cell, new GUIContent("", names[row * 3 + col]))) normalColor = encoded;
-                    if (Event.current.type == EventType.Repaint)
+                    Color32 encoded;
+                    if (row < 3)
                     {
-                        EditorGUI.DrawRect(new Rect(cell.x + 2, cell.y + 2, 34, 32), encoded);
-                        if (((Color32)normalColor).Equals(encoded))
-                            EditorGUI.DrawRect(new Rect(cell.x + 2, cell.yMax - 4, 34, 2), Color.white);
+                        Vector3 n = new Vector3(col - 1, 1 - row, 1).normalized;
+                        Color32 old = row == 1 && col == 1 ? new Color32(128,128,255,255) :
+                            (Color32)new Color(n.x*.5f+.5f,n.y*.5f+.5f,n.z*.5f+.5f,1);
+                        if (row == 0 && col == 1) old = BlockAtlasEntry.NorthNormal;
+                        // Preserve the exact converted edge colors used by
+                        // the migrated Stone / Sand normal maps.
+                        Vector3 v = new Vector3(old.r / 127.5f - 1f, old.g / 127.5f - 1f, old.b / 127.5f - 1f);
+                        v = new Vector3(v.x, (v.y+v.z)/Mathf.Sqrt(2f), (v.z-v.y)/Mathf.Sqrt(2f)).normalized;
+                        encoded = new Color32((byte)Mathf.RoundToInt((v.x*.5f+.5f)*255f),
+                            (byte)Mathf.RoundToInt((v.y*.5f+.5f)*255f), (byte)Mathf.RoundToInt((v.z*.5f+.5f)*255f),255);
+                        if (col == 1 && row == 0) encoded = new Color32(128,255,128,255);
+                        if (col == 1 && row == 2) encoded = new Color32(128,128,255,255);
                     }
+                    else
+                    {
+                        Vector3 n = new Vector3(col - 1, -1, 1).normalized;
+                        encoded = (Color32)new Color(n.x*.5f+.5f,n.y*.5f+.5f,n.z*.5f+.5f,1);
+                    }
+                    DrawNormalSwatch(encoded, rowLabels[row] + " / " + columns[col]);
                 }
             }
-            if (GUILayout.Button("Fill all Top: N"))
+            if (GUILayout.Button("Fill all Top: 45° up"))
             {
                 Change("Fill all Top normals with N");
                 draft.Blocks[selected].ResetTopNormals();
@@ -430,7 +443,19 @@ namespace Game.EditorTools.BlockAtlas
             }
             Color32 rgb = normalColor;
             GUILayout.Label($"RGB {rgb.r}, {rgb.g}, {rgb.b}", EditorStyles.miniLabel);
-            GUILayout.Label("Center = flat. Eraser resets base to flat; clears overlays.", EditorStyles.wordWrappedMiniLabel);
+            GUILayout.Label("Rows: up → 45° up → front → 45° down. Columns: left / center / right.",
+                EditorStyles.wordWrappedMiniLabel);
+        }
+
+        private void DrawNormalSwatch(Color32 encoded, string label)
+        {
+            Rect cell = GUILayoutUtility.GetRect(38, 36, GUILayout.Width(38));
+            if (GUI.Button(cell, new GUIContent("", $"{label}\nRGB {encoded.r}, {encoded.g}, {encoded.b}")))
+                normalColor = encoded;
+            if (Event.current.type != EventType.Repaint) return;
+            EditorGUI.DrawRect(new Rect(cell.x + 2, cell.y + 2, 34, 32), encoded);
+            if (((Color32)normalColor).Equals(encoded))
+                EditorGUI.DrawRect(new Rect(cell.x + 2, cell.yMax - 4, 34, 2), Color.white);
         }
 
         private BlockAtlasEntry PaintOwner()

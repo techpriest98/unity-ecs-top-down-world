@@ -56,8 +56,17 @@ public static class LocalNormalLightChecks {
   lights.Values[int3.zero]=L(200);lights.Values[new int3(1,0,0)]=L(100);
   Check(Game.World.Lighting.VoxelLightSmoothingUtility.SampleDirection(int2.zero,int3.zero,blocks,lights)==0,"Source maximum invented an incoming direction");
   Check(System.Runtime.InteropServices.Marshal.SizeOf<Game.World.Rendering.ProjectedCellRenderData>()==48,"GPU stride changed");
+  lights.Values.Clear();blocks.Solid.Clear();
+  for(int x=-2;x<=3;x++)for(int y=-1;y<=1;y++)for(int z=-2;z<=3;z++)
+   lights.Values[new int3(x,y,z)]=L((byte)(100+x*10));
+  byte ca=Game.World.Lighting.VoxelLightSmoothingUtility.SampleCornerDirection(int2.zero,int3.zero,new int3(1,0,0),new int3(0,0,1),blocks,lights);
+  byte cb=Game.World.Lighting.VoxelLightSmoothingUtility.SampleCornerDirection(int2.zero,new int3(1,0,0),new int3(-1,0,0),new int3(0,0,1),blocks,lights);
+  Check(ca==cb,"Adjacent faces disagree on shared corner direction");
+  Check(math.dot(Game.World.Lighting.VoxelLightSmoothingUtility.UnpackCornerDirection(ca),new float3(1,0,0))>.8f,
+   "Compact corner direction points away from light");
+  Check(math.length(Game.World.Lighting.VoxelLightSmoothingUtility.UnpackCornerDirection(0))==0,"Neutral corner is not neutral");
   Check((int)System.Runtime.InteropServices.Marshal.OffsetOf<Game.World.Rendering.ProjectedCellRenderData>("LocalLightDirection")==28,"Direction did not reuse GPU padding");
-  return "Local normals PASS: six directions, solid rejection, cancellation, sky exclusion, source maximum and unchanged 48-byte GPU stride. GPU/FPS not tested.";
+  return "Local normals PASS: six directions, shared corners, compact direction, solid rejection, cancellation, sky exclusion and unchanged 48-byte GPU stride. GPU/FPS not tested.";
  }
 }
 '@

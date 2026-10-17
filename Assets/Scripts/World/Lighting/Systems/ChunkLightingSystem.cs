@@ -327,8 +327,23 @@ namespace Game.World.Lighting
             cell.LocalLightBottomRight = bottomRight;
             cell.LocalLightTopLeft = topLeft;
             cell.LocalLightTopRight = topRight;
-            cell.LocalLightDirection = cell.BlockId == BlockId.OceanWater || cell.BlockId == BlockId.RiverWater ? 0u :
-                VoxelLightSmoothingUtility.SampleDirection(chunkCoordinate, position, blocks, lights);
+            cell.LocalLightDirection = 0u;
+            if (cell.BlockId != BlockId.OceanWater && cell.BlockId != BlockId.RiverWater &&
+                ((bottomLeft | bottomRight | topLeft | topRight) & 0xFFFFFFu) != 0)
+            {
+                byte dl = VoxelLightSmoothingUtility.SampleCornerDirection(chunkCoordinate, position, -right, -up, blocks, lights);
+                byte dr = VoxelLightSmoothingUtility.SampleCornerDirection(chunkCoordinate, position, right, -up, blocks, lights);
+                byte ul = VoxelLightSmoothingUtility.SampleCornerDirection(chunkCoordinate, position, -right, up, blocks, lights);
+                byte ur = VoxelLightSmoothingUtility.SampleCornerDirection(chunkCoordinate, position, right, up, blocks, lights);
+                if (!isTop)
+                {
+                    byte ml = VoxelLightSmoothingUtility.AverageDirection(dl, ul);
+                    byte mr = VoxelLightSmoothingUtility.AverageDirection(dr, ur);
+                    if (face == ProjectedFaceType.SideUpper && !cell.IsLowerHalf) { dl = ml; dr = mr; }
+                    else { ul = ml; ur = mr; }
+                }
+                cell.LocalLightDirection = (uint)dl | ((uint)dr << 8) | ((uint)ul << 16) | ((uint)ur << 24);
+            }
         }
 
         private static uint AverageCornerLight(uint a, uint b)

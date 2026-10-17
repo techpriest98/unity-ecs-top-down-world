@@ -16,6 +16,7 @@ namespace Game.World.Rendering
         public ushort ProjectionY => ProjectedCellPacking.GetY(Position);
 
         public float3 ChunkPosition;
+        // BL/BR/TL/TR packed directions, reuses the old 4-byte padding.
         public uint LocalLightDirection;
 
         public uint LocalLightBottomLeft;

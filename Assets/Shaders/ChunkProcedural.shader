@@ -169,6 +169,14 @@ Shader "Game/World/ChunkProcedural"
                 return normalize(packedNormal.rgb * 2.0 - 1.0);
             }
 
+            float3 DecodeLocalDirection(uint packed)
+            {
+                float2 uv = float2(packed & 7u, (packed >> 3) & 7u) / 7.0 * 2.0 - 1.0;
+                float3 n = float3(uv, 1.0 - abs(uv.x) - abs(uv.y));
+                if (n.z < 0.0) n.xy = (1.0 - abs(n.yx)) * float2(n.x >= 0 ? 1 : -1, n.y >= 0 ? 1 : -1);
+                return normalize(n) * (((packed >> 6) & 3u) / 3.0);
+            }
+
             float3 GetWorldNormal(float3 normalOS)
             {
                 float3 up = float3(0.0, 1.0, 0.0);
@@ -546,15 +554,15 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
 
                 float3 localLight = smoothLight.rgb;
                 uint packedDirection = input.LocalLightDirection;
-                float directionConfidence = ((packedDirection >> 24) & 255u) / 255.0;
-                float3 localDirection = normalize(float3(packedDirection & 255u,
-                    (packedDirection >> 8) & 255u, (packedDirection >> 16) & 255u) / 127.5 - 1.0);
+                float3 localDirection = lerp(
+                    lerp(DecodeLocalDirection(packedDirection & 255u), DecodeLocalDirection((packedDirection >> 8) & 255u), localUv.x),
+                    lerp(DecodeLocalDirection((packedDirection >> 16) & 255u), DecodeLocalDirection(packedDirection >> 24), localUv.x), localUv.y);
                 // Perturb the existing illumination rather than darkening every
                 // flat tile. The default atlas top normal is (0,1,1), not (0,1,0).
                 float3 referenceNormal = GetWorldNormal(input.FaceIndex == 0 ?
                     normalize(float3(0,1,1)) : float3(0,0,1));
                 float response = dot(worldNormal, localDirection) - dot(referenceNormal, localDirection);
-                localLight *= clamp(1.0 + response * _LocalNormalStrength * directionConfidence, .35, 1.65);
+                localLight *= clamp(1.0 + response * _LocalNormalStrength, .35, 1.65);
                 float skyVisibility = smoothLight.a;
 
                 float sunVisibility = GetSunVisibility(input.LightData);

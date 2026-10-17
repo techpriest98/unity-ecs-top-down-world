@@ -89,6 +89,7 @@ namespace Game.World.Rendering
         public uint LocalLightBottomRight;
         public uint LocalLightTopLeft;
         public uint LocalLightTopRight;
+        // Four compact octahedral directions/confidences: BL, BR, TL, TR (8 bits each).
         public uint LocalLightDirection;
 
         public const ushort CutTopFlag = 1 << 15;
