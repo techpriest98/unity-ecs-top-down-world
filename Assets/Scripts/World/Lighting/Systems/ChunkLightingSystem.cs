@@ -1,4 +1,5 @@
 using Game.World.Chunks;
+using Game.World.Blocks;
 using Game.World.Rendering;
 using Unity.Burst;
 using Unity.Collections;
@@ -326,6 +327,8 @@ namespace Game.World.Lighting
             cell.LocalLightBottomRight = bottomRight;
             cell.LocalLightTopLeft = topLeft;
             cell.LocalLightTopRight = topRight;
+            cell.LocalLightDirection = cell.BlockId == BlockId.OceanWater || cell.BlockId == BlockId.RiverWater ? 0u :
+                VoxelLightSmoothingUtility.SampleDirection(chunkCoordinate, position, blocks, lights);
         }
 
         private static uint AverageCornerLight(uint a, uint b)

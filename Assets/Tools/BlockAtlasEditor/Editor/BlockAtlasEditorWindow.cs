@@ -26,6 +26,10 @@ namespace Game.EditorTools.BlockAtlas
         [SerializeField] private bool checkerMask, checkerInvert;
         [SerializeField] private bool topOffsetX, topOffsetY, sideOffsetX, sideOffsetY;
         private Texture2D canvasTexture;
+        [SerializeField] private Texture2D referenceAsset;
+        [SerializeField] private string referenceFilePath;
+        private Texture2D loadedReference;
+        private Texture2D referencePickTexture;
         private readonly System.Collections.Generic.List<Texture2D> thumbnails =
             new System.Collections.Generic.List<Texture2D>();
         private bool painting;
@@ -42,12 +46,17 @@ namespace Game.EditorTools.BlockAtlas
             window.minSize = new Vector2(940, 680);
         }
 
-        private void OnEnable() { Undo.undoRedoPerformed += Repaint; }
+        private void OnEnable()
+        {
+            Undo.undoRedoPerformed += Repaint;
+            if (!string.IsNullOrEmpty(referenceFilePath)) LoadReferenceFile(referenceFilePath);
+        }
         private void OnDisable()
         {
             EndStroke();
             Undo.undoRedoPerformed -= Repaint;
             if (canvasTexture != null) DestroyImmediate(canvasTexture);
+            ReleaseReference();
             foreach (var texture in thumbnails) if (texture != null) DestroyImmediate(texture);
             thumbnails.Clear();
         }
@@ -81,6 +90,7 @@ namespace Game.EditorTools.BlockAtlas
                 {
                     DrawTools();
                     DrawCanvas();
+                    DrawReference();
                     DrawRightPanel();
                 }
                 DrawStrip();
@@ -310,13 +320,14 @@ namespace Game.EditorTools.BlockAtlas
                                 int index = row * 4 + col;
                                 if (index >= draft.Palette.Count) break;
                                 Rect swatch = GUILayoutUtility.GetRect(28, 22, GUILayout.Width(28));
-                                if (GUI.Button(swatch, GUIContent.none)) brushColor = draft.Palette[index];
+                                if (GUI.Button(swatch, new GUIContent("", "#" + ColorUtility.ToHtmlStringRGB(draft.Palette[index]))))
+                                    brushColor = draft.Palette[index];
                                 if (Event.current.type == EventType.Repaint)
                                     EditorGUI.DrawRect(new Rect(swatch.x + 3, swatch.y + 3, 22, 16), draft.Palette[index]);
                             }
                         }
                     }
-                    using (new EditorGUI.DisabledScope(draft.Palette.Count >= 16))
+                    using (new EditorGUI.DisabledScope(draft.Palette.Count >= 32))
                         if (GUILayout.Button("Add color"))
                         { Change("Add palette color"); draft.Palette.Add(brushColor); }
                 }
@@ -458,6 +469,135 @@ namespace Game.EditorTools.BlockAtlas
                 HandlePaint(rect, bounds, part.Source, pixels, width);
                 EditorGUILayout.EndScrollView();
             }
+        }
+
+        private void ReleaseReference()
+        {
+            if (referencePickTexture != null) DestroyImmediate(referencePickTexture);
+            referencePickTexture = null;
+            if (loadedReference != null) DestroyImmediate(loadedReference);
+            loadedReference = null;
+        }
+
+        private void LoadReferenceFile(string path)
+        {
+            Texture2D texture = null;
+            try
+            {
+                if (new FileInfo(path).Length > 64L * 1024 * 1024)
+                    throw new IOException("Reference image is larger than 64 MB.");
+                texture = new Texture2D(2, 2, TextureFormat.RGBA32, false)
+                    { hideFlags = HideFlags.HideAndDontSave, name = Path.GetFileName(path) };
+                if (!ImageConversion.LoadImage(texture, File.ReadAllBytes(path)))
+                    throw new IOException("Unable to decode the reference image. Use PNG or JPG.");
+                ReleaseReference();
+                loadedReference = texture;
+                referenceFilePath = path;
+                referenceAsset = null;
+                Repaint();
+            }
+            catch (Exception exception)
+            {
+                if (texture != null) DestroyImmediate(texture);
+                ShowNotification(new GUIContent("Reference: " + exception.Message));
+            }
+        }
+
+        private void DrawReference()
+        {
+            float width = Mathf.Clamp((position.width - 450f) * .42f, 180f, 640f);
+            using (new EditorGUILayout.VerticalScope(GUILayout.Width(width), GUILayout.ExpandHeight(true)))
+            {
+                GUILayout.Label("Reference", EditorStyles.boldLabel);
+                EditorGUI.BeginChangeCheck();
+                var asset = (Texture2D)EditorGUILayout.ObjectField(referenceAsset, typeof(Texture2D), false);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    ReleaseReference();
+                    referenceFilePath = null;
+                    referenceAsset = asset;
+                }
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    if (GUILayout.Button("Load PNG / JPG"))
+                    {
+                        string path = EditorUtility.OpenFilePanelWithFilters("Load reference image", "",
+                            new[] { "Images", "png,jpg,jpeg" });
+                        if (!string.IsNullOrEmpty(path)) LoadReferenceFile(path);
+                    }
+                    using (new EditorGUI.DisabledScope(referenceAsset == null && loadedReference == null))
+                        if (GUILayout.Button("Clear", GUILayout.Width(48)))
+                        {
+                            ReleaseReference(); referenceAsset = null; referenceFilePath = null;
+                        }
+                }
+                var texture = referenceAsset != null ? referenceAsset : loadedReference;
+                if (texture != null)
+                {
+                    GUILayout.Label(new GUIContent(texture.name, referenceFilePath), EditorStyles.miniLabel);
+                    GUILayout.Label("Alt + LMB: pick reference color", EditorStyles.miniLabel);
+                }
+                else
+                    GUILayout.Label("Choose a project texture or load an image from disk. Preview only.", EditorStyles.wordWrappedMiniLabel);
+                Rect preview = GUILayoutUtility.GetRect(0f, 10000f, 0f, 10000f,
+                    GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+                if (Event.current.type == EventType.Repaint)
+                {
+                    EditorGUI.DrawRect(preview, new Color(.12f, .12f, .12f));
+                    if (texture != null) GUI.DrawTexture(preview, texture, ScaleMode.ScaleToFit, true);
+                }
+                if (texture != null) HandleReferencePick(preview, texture);
+            }
+        }
+
+        private void HandleReferencePick(Rect preview, Texture2D texture)
+        {
+            var e = Event.current;
+            if (e.type != EventType.MouseDown || e.button != 0 || !e.alt ||
+                preview.width <= 0f || preview.height <= 0f) return;
+            float scale = Mathf.Min(preview.width / texture.width, preview.height / texture.height);
+            var image = new Rect(preview.center.x - texture.width * scale * .5f,
+                preview.center.y - texture.height * scale * .5f, texture.width * scale, texture.height * scale);
+            if (!image.Contains(e.mousePosition)) return;
+            int x = Mathf.Clamp(Mathf.FloorToInt((e.mousePosition.x - image.x) / scale), 0, texture.width - 1);
+            int y = texture.height - 1 - Mathf.Clamp(Mathf.FloorToInt((e.mousePosition.y - image.y) / scale), 0, texture.height - 1);
+            try
+            {
+                // Project textures need not have Read/Write enabled. Read back
+                // once for the picker without changing their import settings.
+                if (!texture.isReadable && referencePickTexture == null)
+                {
+                    var previous = RenderTexture.active;
+                    var temporary = RenderTexture.GetTemporary(texture.width, texture.height, 0,
+                        RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+                    try
+                    {
+                        Graphics.Blit(texture, temporary);
+                        RenderTexture.active = temporary;
+                        referencePickTexture = new Texture2D(texture.width, texture.height, TextureFormat.RGBA32, false)
+                            { hideFlags = HideFlags.HideAndDontSave };
+                        referencePickTexture.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
+                        referencePickTexture.Apply();
+                    }
+                    catch
+                    {
+                        if (referencePickTexture != null) DestroyImmediate(referencePickTexture);
+                        referencePickTexture = null;
+                        throw;
+                    }
+                    finally
+                    {
+                        RenderTexture.active = previous;
+                        RenderTexture.ReleaseTemporary(temporary);
+                    }
+                }
+                PickColor((texture.isReadable ? texture : referencePickTexture).GetPixel(x, y));
+            }
+            catch (Exception exception)
+            {
+                ShowNotification(new GUIContent("Reference picker: " + exception.Message));
+            }
+            e.Use();
         }
 
         private void PickColor(Color32 color)

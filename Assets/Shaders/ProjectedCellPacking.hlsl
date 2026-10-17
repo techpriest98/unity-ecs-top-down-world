@@ -9,7 +9,7 @@ struct ProjectedCellRenderData
     uint FaceData;
 
     float3 ChunkPosition;
-    float Padding;
+    uint LocalLightDirection;
 
     uint LocalLightBottomLeft;
     uint LocalLightBottomRight;

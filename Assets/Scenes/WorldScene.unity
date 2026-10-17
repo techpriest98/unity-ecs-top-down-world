@@ -375,6 +375,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.PlayerCameraFollow
   screenOffset: {x: 0, y: 1}
   cameraDepth: 10
+  minimumSize: 2
+  maximumSize: 20
+  zoomStep: 0.5
+  zoomResponse: 14
+  adaptChunkRadiusToZoom: 1
+  streamingHeightAllowance: 4
 --- !u!1 &619394800
 GameObject:
   m_ObjectHideFlags: 0
@@ -416,7 +422,7 @@ MonoBehaviour:
   m_Intensity: 1
   m_LightVolumeIntensity: 1
   m_LightVolumeEnabled: 0
-  m_ApplyToSortingLayers: 00000000
+  m_ApplyToSortingLayers: 00000000i
   m_LightCookieSprite: {fileID: 0}
   m_DeprecatedPointLightCookieSprite: {fileID: 0}
   m_LightOrder: 0
@@ -431,6 +437,9 @@ MonoBehaviour:
   m_ShadowSoftnessFalloffIntensity: 0.5
   m_ShadowVolumeIntensityEnabled: 0
   m_ShadowVolumeIntensity: 0.75
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
   m_LocalBounds:
     m_Center: {x: 0, y: -0.00000011920929, z: 0}
     m_Extent: {x: 0.9985302, y: 0.99853027, z: 0}
@@ -715,7 +724,6 @@ MonoBehaviour:
   blockAtlas: {fileID: 2800000, guid: caf39e18ac09544eb9b2d58568b020f8, type: 3}
   blockNormalAtlas: {fileID: 2800000, guid: 5651b7213f69a4275ade1f5005a192c2, type: 3}
   blockDatabase: {fileID: 11400000, guid: 4fb11d0e05fb84bf0a6c7d04dd2f682a, type: 2}
-  selectionColor: {r: 1, g: 0.9021226, b: 0.6084906, a: 0.45}
 --- !u!4 &1238157590
 Transform:
   m_ObjectHideFlags: 0
@@ -874,6 +882,14 @@ PrefabInstance:
     - target: {fileID: 2655464989590086737, guid: 92992f9edf7c34c079661840071b6734, type: 3}
       propertyPath: m_text
       value: Pause
+      objectReference: {fileID: 0}
+    - target: {fileID: 2655464989590086737, guid: 92992f9edf7c34c079661840071b6734, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 971444362080119057, guid: 69dfe637f91eb4f13acbf1ec3d8835b5, type: 2}
+    - target: {fileID: 2655464989590086737, guid: 92992f9edf7c34c079661840071b6734, type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4876514702957720049, guid: 92992f9edf7c34c079661840071b6734, type: 3}
       propertyPath: m_Pivot.x
@@ -1185,7 +1201,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.Scenes::Unity.Scenes.SubScene
   _SceneAsset: {fileID: 102900000, guid: 02c84b9e0cd5c4480bbcaab866aa7785, type: 3}
-  _HierarchyColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   AutoLoadScene: 1
   _SceneGUID:
     Value:

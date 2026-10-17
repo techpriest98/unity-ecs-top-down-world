@@ -65,6 +65,7 @@ Material:
     - _ShoreWaveSpacing: 0.2
     - _ShoreWaveRunUp: 0.85
     - _ShoreWindInfluence: 1
+    - _LocalNormalStrength: 0.8
     - _ShoreWavePhaseOffset: 0.08
     - _EnableExternalAlpha: 0
     - _PlayerClipping: 1

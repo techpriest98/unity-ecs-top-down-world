@@ -16,7 +16,7 @@ namespace Game.World.Rendering
         public ushort ProjectionY => ProjectedCellPacking.GetY(Position);
 
         public float3 ChunkPosition;
-        public float Padding;
+        public uint LocalLightDirection;
 
         public uint LocalLightBottomLeft;
         public uint LocalLightBottomRight;

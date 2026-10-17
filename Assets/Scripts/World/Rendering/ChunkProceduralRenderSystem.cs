@@ -263,7 +263,7 @@ namespace Game.World.Rendering
                             LightData = cell.LightData,
                             FaceData = cell.FaceData,
                             ChunkPosition = chunkPosition,
-                            Padding = 0f,
+                            LocalLightDirection = cell.LocalLightDirection,
 
                             LocalLightBottomLeft =
                                 cell.LocalLightBottomLeft,
@@ -304,7 +304,7 @@ namespace Game.World.Rendering
                             LightData = cell.LightData,
                             FaceData = cell.FaceData,
                             ChunkPosition = chunkPosition,
-                            Padding = 0f,
+                            LocalLightDirection = cell.LocalLightDirection,
 
                             LocalLightBottomLeft =
                                 cell.LocalLightBottomLeft,

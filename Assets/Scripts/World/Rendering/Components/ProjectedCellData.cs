@@ -89,6 +89,7 @@ namespace Game.World.Rendering
         public uint LocalLightBottomRight;
         public uint LocalLightTopLeft;
         public uint LocalLightTopRight;
+        public uint LocalLightDirection;
 
         public const ushort CutTopFlag = 1 << 15;
         public const ushort CutSideFlag = 1 << 2;
@@ -139,6 +140,7 @@ namespace Game.World.Rendering
             LocalLightBottomRight = 0;
             LocalLightTopLeft = 0;
             LocalLightTopRight = 0;
+            LocalLightDirection = 0;
         }
 
         public ProjectedCellData(
@@ -168,6 +170,7 @@ namespace Game.World.Rendering
             LocalLightBottomRight = 0;
             LocalLightTopLeft = 0;
             LocalLightTopRight = 0;
+            LocalLightDirection = 0;
         }
     }
 }

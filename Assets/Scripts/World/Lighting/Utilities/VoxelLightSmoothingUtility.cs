@@ -8,6 +8,35 @@ namespace Game.World.Lighting
     {
         private const float SkyToByte = 255f / 15f;
 
+        public static uint SampleDirection(int2 coordinate, int3 position, ChunkBlockAccessor blocks, ChunkLightAccessor lights)
+        {
+            if (!TrySample(coordinate, position, blocks, lights, out float4 center)) return 0;
+            float brightness = math.dot(center.xyz, new float3(.2126f, .7152f, .0722f));
+            if (brightness < .5f) return 0;
+            float3 gradient = float3.zero;
+            float incoming = 0f;
+            for (int axis = 0; axis < 6; axis++)
+            {
+                int3 offset = axis == 0 ? new int3(1,0,0) : axis == 1 ? new int3(-1,0,0) :
+                    axis == 2 ? new int3(0,1,0) : axis == 3 ? new int3(0,-1,0) :
+                    axis == 4 ? new int3(0,0,1) : new int3(0,0,-1);
+                if (!TrySample(coordinate, position + offset, blocks, lights, out float4 neighbour)) continue;
+                float weight = math.max(0f, math.dot(neighbour.xyz, new float3(.2126f,.7152f,.0722f)) - brightness);
+                gradient += (float3)offset * weight;
+                incoming += weight;
+            }
+            return PackDirection(gradient, incoming);
+        }
+
+        public static uint PackDirection(float3 gradient, float incoming)
+        {
+            float length = math.length(gradient);
+            if (length < .001f || incoming < .001f) return 0;
+            uint3 direction = (uint3)math.round(math.saturate(gradient / length * .5f + .5f) * 255f);
+            uint confidence = (uint)math.round(math.saturate(length / incoming) * 255f);
+            return direction.x | (direction.y << 8) | (direction.z << 16) | (confidence << 24);
+        }
+
         public static uint SampleCorner(
             int2 chunkCoordinate,
             int3 airPosition,

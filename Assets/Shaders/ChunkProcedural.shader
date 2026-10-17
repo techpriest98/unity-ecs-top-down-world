@@ -26,6 +26,7 @@ Shader "Game/World/ChunkProcedural"
 
         _BlockAtlas("Block Atlas", 2D) = "white" {}
         _BlockNormalAtlas("Block Normal Atlas", 2D) = "bump" {}
+        _LocalNormalStrength("Local Light Normal Strength", Range(0, 2)) = 0.8
     }
 
     SubShader
@@ -101,6 +102,7 @@ Shader "Game/World/ChunkProcedural"
             float4 _BlockAtlas_TexelSize;
 
             TEXTURE2D(_BlockNormalAtlas);
+            float _LocalNormalStrength;
 
 
 
@@ -206,6 +208,7 @@ Shader "Game/World/ChunkProcedural"
                 float2 LocalUv : TEXCOORD0;
                 float2 ProjectionPosition : TEXCOORD9;
                 nointerpolation uint ShoreMask : TEXCOORD10;
+                nointerpolation uint LocalLightDirection : TEXCOORD11;
 
                 nointerpolation uint BlockId : TEXCOORD1;
                 nointerpolation uint FaceIndex : TEXCOORD2;
@@ -246,6 +249,7 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
                 output.ProjectionPosition = worldPosition.xy;
                 output.LocalUv = corner;
                 output.BlockId = GetBlockId(cell.BlockData);
+                output.LocalLightDirection = cell.LocalLightDirection;
                 output.FaceIndex = GetFaceIndex(GetFaceType(cell.BlockData));
                 output.ShoreMask = output.FaceIndex == 0 ? (cell.FaceData >> 8) & 15u : 0u;
                 
@@ -541,6 +545,16 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
                     localUv.y);
 
                 float3 localLight = smoothLight.rgb;
+                uint packedDirection = input.LocalLightDirection;
+                float directionConfidence = ((packedDirection >> 24) & 255u) / 255.0;
+                float3 localDirection = normalize(float3(packedDirection & 255u,
+                    (packedDirection >> 8) & 255u, (packedDirection >> 16) & 255u) / 127.5 - 1.0);
+                // Perturb the existing illumination rather than darkening every
+                // flat tile. The default atlas top normal is (0,1,1), not (0,1,0).
+                float3 referenceNormal = GetWorldNormal(input.FaceIndex == 0 ?
+                    normalize(float3(0,1,1)) : float3(0,0,1));
+                float response = dot(worldNormal, localDirection) - dot(referenceNormal, localDirection);
+                localLight *= clamp(1.0 + response * _LocalNormalStrength * directionConfidence, .35, 1.65);
                 float skyVisibility = smoothLight.a;
 
                 float sunVisibility = GetSunVisibility(input.LightData);
