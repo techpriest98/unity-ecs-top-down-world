@@ -23,5 +23,21 @@ namespace Game.World.Rendering
         public uint LocalLightBottomRight;
         public uint LocalLightTopLeft;
         public uint LocalLightTopRight;
+
+        public bool HasSameGeometry(uint block, uint position, uint face) =>
+            BlockData == block && Position == position && FaceData == face;
+
+        public bool UpdateLighting(uint light, uint direction, uint bottomLeft, uint bottomRight, uint topLeft, uint topRight)
+        {
+            bool changed = LightData != light || LocalLightDirection != direction || LocalLightBottomLeft != bottomLeft ||
+                LocalLightBottomRight != bottomRight || LocalLightTopLeft != topLeft || LocalLightTopRight != topRight;
+            LightData = light; LocalLightDirection = direction;
+            LocalLightBottomLeft = bottomLeft; LocalLightBottomRight = bottomRight;
+            LocalLightTopLeft = topLeft; LocalLightTopRight = topRight;
+            return changed;
+        }
+
+        public static bool IsValidRange(int start, int length, int count) =>
+            start >= 0 && length >= 0 && start <= count && length <= count - start;
     }
 }

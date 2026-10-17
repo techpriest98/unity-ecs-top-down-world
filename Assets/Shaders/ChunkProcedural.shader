@@ -181,7 +181,9 @@ Shader "Game/World/ChunkProcedural"
             {
                 float3 up = float3(0.0, 1.0, 0.0);
                 float3 sideNormal = normalize(_SideFaceNormal);
-                float3 tangent = normalize(cross(sideNormal, up));
+                // Atlas +X is screen-right in every view (ViewDirectionUtility.Right).
+                // Reversing this cross product mirrors both sun and local-light relief.
+                float3 tangent = normalize(cross(up, sideNormal));
 
                 return normalize(
                     tangent * normalOS.x +

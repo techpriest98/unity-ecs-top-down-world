@@ -280,13 +280,13 @@ namespace Game.World.Generation.Biomes.RockyShore
 
                     case RockyShoreZone.Ramp:
                         if (depth == 0)
-                            return BlockId.MeadowGrass;
+                            return BlockId.Turf;
 
                         return BlockId.Stone;
 
                     case RockyShoreZone.GrassTop:
                         if (depth == 0)
-                            return BlockId.MeadowGrass;
+                            return BlockId.Turf;
 
                         if (depth <= settings.GrassDepth)
                             return BlockId.Dirt;
@@ -305,7 +305,7 @@ namespace Game.World.Generation.Biomes.RockyShore
         {
             if (halfY < sample.RockSurfaceHalf) return BlockId.Stone;
             if (halfY < sample.SurfaceHalf)
-                return halfY >= sample.SurfaceHalf - 2 ? BlockId.MeadowGrass : BlockId.Dirt;
+                return halfY >= sample.SurfaceHalf - 2 ? BlockId.Turf : BlockId.Dirt;
             return halfY < waterLevel * 2 ? BlockId.OceanWater : BlockId.Air;
         }
 

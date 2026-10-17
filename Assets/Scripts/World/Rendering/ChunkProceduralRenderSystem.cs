@@ -26,6 +26,30 @@ namespace Game.World.Rendering
         private bool hasLastCenter;
         private int2 lastCenter;
 
+        private sealed class UploadSnapshot
+        {
+            public bool Clipped;
+            public int OpaqueStart, WaterStart;
+            public int2 Coordinate;
+            public ProjectedCellRenderData[] Opaque, Water;
+            public ProjectedClipCell[] ClipCells;
+        }
+        private readonly System.Collections.Generic.Dictionary<Entity, UploadSnapshot> uploadedChunks =
+            new System.Collections.Generic.Dictionary<Entity, UploadSnapshot>();
+        private NativeList<ProjectedCellRenderData> lightUploadScratch;
+        private ChunkProceduralRenderer uploadedRenderer;
+        private ViewDirection uploadedDirection;
+        private readonly System.Collections.Generic.HashSet<Entity> snapshotSeen = new();
+        private readonly System.Collections.Generic.List<Entity> removedSnapshots = new();
+        private static readonly Unity.Profiling.ProfilerMarker LightRangeMarker = new("ChunkRender.LightRanges");
+        private static readonly Unity.Profiling.ProfilerMarker FullSnapshotMarker = new("ChunkRender.FullSnapshot");
+
+        protected override void OnDestroy()
+        {
+            if (lightUploadScratch.IsCreated) lightUploadScratch.Dispose();
+            uploadedChunks.Clear();
+        }
+
         public bool HasUploadedView { get; private set; }
         public int2 UploadedCenter { get; private set; }
 
@@ -59,7 +83,7 @@ namespace Game.World.Rendering
         {
             ChunkProceduralRenderer renderer = ChunkProceduralRenderer.Instance;
 
-            if (renderer == null)
+            if (renderer == null || !renderer.enabled)
             {
                 return;
             }
@@ -155,6 +179,15 @@ namespace Game.World.Rendering
                 return;
             }
 
+            if (!centerChanged && !transitionCompleted && uploadedRenderer == renderer &&
+                uploadedDirection == direction && TryUpdateLightingRanges(renderer)) return;
+
+            // Reuse per-chunk CPU arrays on geometry rebuilds; do not create
+            // a managed copy of the entire world on each clipping change.
+            uploadedRenderer = null;
+            snapshotSeen.Clear();
+            using var fullSnapshotMarker = FullSnapshotMarker.Auto();
+
             int totalCellCount = 0;
             int totalClippedCellCount = 0;
             int totalWaterCellCount = 0;
@@ -216,7 +249,8 @@ namespace Game.World.Rendering
                          clippingEnabled,
                          projectedCells,
                          projectedWaterCells,
-                         clipCells)
+                         clipCells,
+                         chunkEntity)
                      in SystemAPI.Query<
                              RefRO<ChunkComponent>,
                              EnabledRefRO<ChunkShaderClippingEnabled>,
@@ -225,7 +259,8 @@ namespace Game.World.Rendering
                              DynamicBuffer<ProjectedClipCell>>()
                          .WithAll<ChunkGenerated>()
                          .WithOptions(
-                             EntityQueryOptions.IgnoreComponentEnabledState))
+                             EntityQueryOptions.IgnoreComponentEnabledState)
+                         .WithEntityAccess())
             {
                 Vector3 chunkPosition =
                     ChunkRenderPositionUtility.GetPosition(
@@ -240,9 +275,27 @@ namespace Game.World.Rendering
                     chunkPosition.y,
                     chunkPosition.z);
 
+                if (!uploadedChunks.TryGetValue(chunkEntity, out var snapshot))
+                {
+                    snapshot = new UploadSnapshot();
+                    uploadedChunks.Add(chunkEntity, snapshot);
+                }
+                snapshotSeen.Add(chunkEntity);
+                snapshot.Clipped = clippingEnabled.ValueRO;
+                snapshot.Coordinate = chunk.ValueRO.Coordinate;
+                snapshot.OpaqueStart = clippingEnabled.ValueRO ? clippedRenderData.Length : renderData.Length;
+                snapshot.WaterStart = clippingEnabled.ValueRO ? clippedWaterRenderData.Length : waterRenderData.Length;
+                if (snapshot.Opaque == null || snapshot.Opaque.Length != projectedCells.Length)
+                    snapshot.Opaque = new ProjectedCellRenderData[projectedCells.Length];
+                if (snapshot.Water == null || snapshot.Water.Length != projectedWaterCells.Length)
+                    snapshot.Water = new ProjectedCellRenderData[projectedWaterCells.Length];
+                if (snapshot.ClipCells == null || snapshot.ClipCells.Length != clipCells.Length)
+                    snapshot.ClipCells = new ProjectedClipCell[clipCells.Length];
+
                 for (int index = 0; index < clipCells.Length; index++)
                 {
                     ProjectedClipCell cell = clipCells[index];
+                    snapshot.ClipCells[index] = cell;
                     float left = chunkPosition.x - chunkWidth * 0.5f + cell.X * ProjectedCellWidth;
                     float bottom = chunkPosition.y + projectionHeight - (cell.Y + 1) * ProjectedCellHeight;
                     clipRects.Add(new float4(left, bottom,
@@ -286,6 +339,7 @@ namespace Game.World.Rendering
                     {
                         renderData.Add(cellRenderData);
                     }
+                    snapshot.Opaque[index] = cellRenderData;
                 }
 
                 for (int index = 0;
@@ -318,6 +372,7 @@ namespace Game.World.Rendering
                             LocalLightTopRight =
                                 cell.LocalLightTopRight
                         });
+                    snapshot.Water[index] = waterTarget[waterTarget.Length - 1];
                 }
 
                 float3 chunkMin =
@@ -371,6 +426,12 @@ namespace Game.World.Rendering
             renderer.UploadClipped(clippedRenderData.AsArray(), bounds);
             renderer.UploadWater(waterRenderData.AsArray(), bounds);
             renderer.UploadClippedWater(clippedWaterRenderData.AsArray(), bounds);
+            removedSnapshots.Clear();
+            foreach (var pair in uploadedChunks)
+                if (!snapshotSeen.Contains(pair.Key)) removedSnapshots.Add(pair.Key);
+            foreach (var entity in removedSnapshots) uploadedChunks.Remove(entity);
+            uploadedRenderer = renderer;
+            uploadedDirection = direction;
 
             using NativeArray<Entity> dirtyEntities =
                 dirtyQuery.ToEntityArray(Allocator.Temp);
@@ -399,6 +460,79 @@ namespace Game.World.Rendering
                     blink.Reveal();
                 }
             }
+        }
+
+        private bool TryUpdateLightingRanges(ChunkProceduralRenderer renderer)
+        {
+            using var marker = LightRangeMarker.Auto();
+            // Validate the complete layout BEFORE publishing any range. A
+            // removal, clipping change or rebuilt geometry takes the old atomic
+            // full-snapshot path instead (including a changed clip mask).
+            int count = 0;
+            foreach (var (chunk, clipped, cells, water, caps, entity) in SystemAPI.Query<
+                RefRO<ChunkComponent>, EnabledRefRO<ChunkShaderClippingEnabled>, DynamicBuffer<ProjectedCellData>,
+                DynamicBuffer<ProjectedWaterCellData>, DynamicBuffer<ProjectedClipCell>>()
+                .WithAll<ChunkGenerated>().WithOptions(EntityQueryOptions.IgnoreComponentEnabledState).WithEntityAccess())
+            {
+                count++;
+                if (!uploadedChunks.TryGetValue(entity, out var snapshot) || snapshot.Clipped != clipped.ValueRO ||
+                    math.any(snapshot.Coordinate != chunk.ValueRO.Coordinate) ||
+                    snapshot.Opaque.Length != cells.Length || snapshot.Water.Length != water.Length ||
+                    snapshot.ClipCells.Length != caps.Length ||
+                    !renderer.CanUpdateRange(snapshot.OpaqueStart, cells.Length, snapshot.Clipped, false) ||
+                    !renderer.CanUpdateRange(snapshot.WaterStart, water.Length, snapshot.Clipped, true)) return false;
+                if (!EntityManager.IsComponentEnabled<ChunkNeedsRender>(entity)) continue;
+                for (int i = 0; i < cells.Length; i++)
+                    if (!snapshot.Opaque[i].HasSameGeometry(cells[i].BlockData, cells[i].Position, cells[i].FaceData)) return false;
+                for (int i = 0; i < water.Length; i++)
+                    if (!snapshot.Water[i].HasSameGeometry(water[i].Value.BlockData, water[i].Value.Position, water[i].Value.FaceData)) return false;
+                for (int i = 0; i < caps.Length; i++)
+                    if (snapshot.ClipCells[i].X != caps[i].X || snapshot.ClipCells[i].Y != caps[i].Y) return false;
+            }
+            if (count != uploadedChunks.Count) return false;
+            if (!lightUploadScratch.IsCreated) lightUploadScratch = new NativeList<ProjectedCellRenderData>(1024, Allocator.Persistent);
+
+            using var dirty = dirtyQuery.ToEntityArray(Allocator.Temp);
+            foreach (var entity in dirty)
+            {
+                if (!uploadedChunks.TryGetValue(entity, out var snapshot)) continue;
+                var cells = EntityManager.GetBuffer<ProjectedCellData>(entity, true);
+                var water = EntityManager.GetBuffer<ProjectedWaterCellData>(entity, true);
+                lightUploadScratch.Clear();
+                bool changed = false;
+                for (int i = 0; i < cells.Length; i++)
+                {
+                    var record = snapshot.Opaque[i];
+                    changed |= UpdateLightRecord(ref record, cells[i]);
+                    lightUploadScratch.Add(record);
+                }
+                if (changed)
+                {
+                    renderer.UpdateRange(lightUploadScratch.AsArray(), snapshot.OpaqueStart, snapshot.Clipped, false);
+                    for (int i = 0; i < cells.Length; i++) snapshot.Opaque[i] = lightUploadScratch[i];
+                }
+                lightUploadScratch.Clear();
+                changed = false;
+                for (int i = 0; i < water.Length; i++)
+                {
+                    var record = snapshot.Water[i];
+                    changed |= UpdateLightRecord(ref record, water[i].Value);
+                    lightUploadScratch.Add(record);
+                }
+                if (changed)
+                {
+                    renderer.UpdateRange(lightUploadScratch.AsArray(), snapshot.WaterStart, snapshot.Clipped, true);
+                    for (int i = 0; i < water.Length; i++) snapshot.Water[i] = lightUploadScratch[i];
+                }
+                EntityManager.SetComponentEnabled<ChunkNeedsRender>(entity, false);
+            }
+            return true;
+        }
+
+        private static bool UpdateLightRecord(ref ProjectedCellRenderData record, in ProjectedCellData cell)
+        {
+            return record.UpdateLighting(cell.LightData, cell.LocalLightDirection, cell.LocalLightBottomLeft,
+                cell.LocalLightBottomRight, cell.LocalLightTopLeft, cell.LocalLightTopRight);
         }
 
     }

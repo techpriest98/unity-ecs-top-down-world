@@ -53,6 +53,7 @@ namespace Game.World.Lighting
 
             var blocks = new ChunkBlockAccessor(entities, SystemAPI.GetBufferLookup<BlockData>(true), SystemAPI.GetBufferLookup<SplitCellData>(true));
             var lights = new ChunkLightAccessor(entities, SystemAPI.GetBufferLookup<VoxelLightData>(true));
+            var directionCache = new LocalLightDirectionCache(1024, Allocator.Temp);
             ViewDirection direction = SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
             if (SystemAPI.TryGetSingleton<ViewDirectionTransitionComponent>(out var transition) &&
                 transition.IsActive)
@@ -72,12 +73,13 @@ namespace Game.World.Lighting
                 int2 coordinate = chunk.ValueRO.Coordinate;
                 if (!affected.Contains(coordinate)) continue;
 
-                UpdateOpaqueCells(projectedCells, voxelLight, coordinate, blocks, lights, direction);
-                UpdateWaterCells(projectedWaterCells, voxelLight, coordinate, blocks, lights, direction);
+                UpdateOpaqueCells(projectedCells, voxelLight, coordinate, blocks, lights, direction, ref directionCache);
+                UpdateWaterCells(projectedWaterCells, voxelLight, coordinate, blocks, lights, direction, ref directionCache);
                 needsUpdate.ValueRW = false;
                 needsRender.ValueRW = true;
             }
 
+            directionCache.Dispose();
             entities.Dispose();
             affected.Dispose();
         }
@@ -88,7 +90,7 @@ namespace Game.World.Lighting
             int2 coordinate,
             ChunkBlockAccessor blocks,
             ChunkLightAccessor lights,
-            ViewDirection direction)
+            ViewDirection direction, ref LocalLightDirectionCache directionCache)
         {
             for (int index = 0; index < cells.Length; index++)
             {
@@ -98,7 +100,7 @@ namespace Game.World.Lighting
                     GetLocalLight(ChunkLightingSystem.GetLightSourceIndex(cell), voxelLight));
 
                 ChunkLightingSystem.UpdateLocalLightCorners(
-                    ref cell, coordinate, blocks, lights, direction);
+                    ref cell, coordinate, blocks, lights, direction, ref directionCache);
                 cells[index] = cell;
             }
         }
@@ -109,7 +111,7 @@ namespace Game.World.Lighting
             int2 coordinate,
             ChunkBlockAccessor blocks,
             ChunkLightAccessor lights,
-            ViewDirection direction)
+            ViewDirection direction, ref LocalLightDirectionCache directionCache)
         {
             for (int index = 0; index < cells.Length; index++)
             {
@@ -121,7 +123,7 @@ namespace Game.World.Lighting
                     GetLocalLight(ChunkLightingSystem.GetLightSourceIndex(cell), voxelLight));
 
                 ChunkLightingSystem.UpdateLocalLightCorners(
-                    ref cell, coordinate, blocks, lights, direction);
+                    ref cell, coordinate, blocks, lights, direction, ref directionCache);
                 waterCell.Value = cell;
                 cells[index] = waterCell;
             }

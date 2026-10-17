@@ -294,6 +294,24 @@ namespace Game.World.Rendering
                 cells.Length;
         }
 
+        public bool CanUpdateRange(int start, int length, bool clipped, bool water)
+        {
+            int count = water ? (clipped ? projectedClippedWaterCellsCount : projectedWaterCellsCount) :
+                (clipped ? projectedClippedCellsCount : projectedCellsCount);
+            var buffer = water ? (clipped ? projectedClippedWaterCellsBuffer : projectedWaterCellsBuffer) :
+                (clipped ? projectedClippedCellsBuffer : projectedCellsBuffer);
+            return enabled && ProjectedCellRenderData.IsValidRange(start, length, count) &&
+                (length == 0 || buffer != null);
+        }
+
+        public void UpdateRange(NativeArray<ProjectedCellRenderData> cells, int start, bool clipped, bool water)
+        {
+            if (cells.Length == 0) return;
+            var buffer = water ? (clipped ? projectedClippedWaterCellsBuffer : projectedWaterCellsBuffer) :
+                (clipped ? projectedClippedCellsBuffer : projectedCellsBuffer);
+            buffer.SetData(cells, 0, start, cells.Length);
+        }
+
         public void UploadClipped(
             NativeArray<ProjectedCellRenderData> cells,
             Bounds bounds)

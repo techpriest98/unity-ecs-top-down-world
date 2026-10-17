@@ -104,6 +104,7 @@ namespace Game.World.Lighting
                 direction = transition.TargetDirection;
 
             EntityCommandBuffer ecb = new(Allocator.Temp);
+            var directionCache = new LocalLightDirectionCache(1024, Allocator.Temp);
 
             foreach (var (chunk, voxelLight, cells, waterCells, entity) in
                      SystemAPI.Query<
@@ -124,7 +125,7 @@ namespace Game.World.Lighting
                     blockAccessor,
                     lightAccessor,
                     direction,
-                    shadowState);
+                    shadowState, ref directionCache);
 
                 ecb.SetComponentEnabled<ChunkNeedsLighting>(entity, false);
                 ecb.SetComponentEnabled<ChunkNeedsImmediateLighting>(entity, false);
@@ -158,7 +159,7 @@ namespace Game.World.Lighting
                     blockAccessor,
                     lightAccessor,
                     direction,
-                    shadowState);
+                    shadowState, ref directionCache);
 
                 ecb.SetComponentEnabled<ChunkNeedsLighting>(entity, false);
                 ecb.SetComponentEnabled<ChunkNeedsSunShadowUpdate>(entity, false);
@@ -205,6 +206,7 @@ namespace Game.World.Lighting
 
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
+            directionCache.Dispose();
             chunkEntities.Dispose();
 
             if (shadowState.IsTransitioning &&
@@ -239,7 +241,7 @@ namespace Game.World.Lighting
             ChunkBlockAccessor blockAccessor,
             ChunkLightAccessor lightAccessor,
             ViewDirection direction,
-            SunShadowState shadowState)
+            SunShadowState shadowState, ref LocalLightDirectionCache directionCache)
         {
             byte targetMaskIndex =
                 (byte)(1 - shadowState.ActiveMaskIndex);
@@ -254,7 +256,7 @@ namespace Game.World.Lighting
                     blockAccessor,
                     shadowState,
                     targetMaskIndex);
-                UpdateLocalLightCorners(ref cell, chunkCoordinate, blockAccessor, lightAccessor, direction);
+                UpdateLocalLightCorners(ref cell, chunkCoordinate, blockAccessor, lightAccessor, direction, ref directionCache);
                 cells[i] = cell;
             }
 
@@ -269,7 +271,7 @@ namespace Game.World.Lighting
                     blockAccessor,
                     shadowState,
                     targetMaskIndex);
-                UpdateLocalLightCorners(ref cell, chunkCoordinate, blockAccessor, lightAccessor, direction);
+                UpdateLocalLightCorners(ref cell, chunkCoordinate, blockAccessor, lightAccessor, direction, ref directionCache);
                 waterCell.Value = cell;
                 waterCells[i] = waterCell;
             }
@@ -280,7 +282,7 @@ namespace Game.World.Lighting
             int2 chunkCoordinate,
             ChunkBlockAccessor blocks,
             ChunkLightAccessor lights,
-            ViewDirection direction)
+            ViewDirection direction, ref LocalLightDirectionCache directionCache)
         {
             int3 position = ChunkUtility.ToLocalPosition(GetLightSourceIndex(cell));
             int3 right = direction switch
@@ -331,10 +333,10 @@ namespace Game.World.Lighting
             if (cell.BlockId != BlockId.OceanWater && cell.BlockId != BlockId.RiverWater &&
                 ((bottomLeft | bottomRight | topLeft | topRight) & 0xFFFFFFu) != 0)
             {
-                byte dl = VoxelLightSmoothingUtility.SampleCornerDirection(chunkCoordinate, position, -right, -up, blocks, lights);
-                byte dr = VoxelLightSmoothingUtility.SampleCornerDirection(chunkCoordinate, position, right, -up, blocks, lights);
-                byte ul = VoxelLightSmoothingUtility.SampleCornerDirection(chunkCoordinate, position, -right, up, blocks, lights);
-                byte ur = VoxelLightSmoothingUtility.SampleCornerDirection(chunkCoordinate, position, right, up, blocks, lights);
+                byte dl = VoxelLightSmoothingUtility.SampleCornerDirection(chunkCoordinate, position, -right, -up, blocks, lights, ref directionCache);
+                byte dr = VoxelLightSmoothingUtility.SampleCornerDirection(chunkCoordinate, position, right, -up, blocks, lights, ref directionCache);
+                byte ul = VoxelLightSmoothingUtility.SampleCornerDirection(chunkCoordinate, position, -right, up, blocks, lights, ref directionCache);
+                byte ur = VoxelLightSmoothingUtility.SampleCornerDirection(chunkCoordinate, position, right, up, blocks, lights, ref directionCache);
                 if (!isTop)
                 {
                     byte ml = VoxelLightSmoothingUtility.AverageDirection(dl, ul);

@@ -6,24 +6,39 @@ $lightReferences = @((Get-ChildItem (Join-Path $PSHOME 'ref') -Filter '*.dll').F
 $lightSource = Get-Content (Join-Path $lightRoot 'Scripts/World/Lighting/Utilities/VoxelLightSmoothingUtility.cs') -Raw
 $renderSource = (Get-Content (Join-Path $lightRoot 'Scripts/World/Rendering/ProjectedCellRenderData.cs') -Raw) -replace '(?m)^using [^;]+;\r?\n',''
 $lightHarness = @'
+namespace Unity.Collections {
+ public enum Allocator {Temp}
+ public struct NativeParallelHashMap<K,V> : System.IDisposable where K:notnull {
+  private System.Collections.Generic.Dictionary<K,V> values;
+  public NativeParallelHashMap(int capacity,Allocator allocator) {values=new System.Collections.Generic.Dictionary<K,V>();Capacity=capacity;}
+  public bool IsCreated=>values!=null;
+  public int Capacity {get;set;}
+  public int Count()=>values.Count;
+  public bool TryGetValue(K key,out V value)=>values.TryGetValue(key,out value);
+  public bool TryAdd(K key,V value)=>values.TryAdd(key,value);
+  public void Dispose(){values=null;}
+ }
+}
 namespace Game.World.Blocks {
  public enum BlockId:byte { Air,Stone }
  public struct BlockData { public bool Full; }
  public static class BlockLightGeometry {public static bool IsFull(BlockData block)=>block.Full;}
 }
 namespace Game.World.Chunks {
+ public static class ChunkSettings {public const int SizeX=16,SizeZ=16;}
  public class ChunkBlockAccessor {
   public System.Collections.Generic.HashSet<int3> Solid=new System.Collections.Generic.HashSet<int3>();
   public bool TryGetBlock(int2 c,int x,int y,int z,out Game.World.Blocks.BlockData b) {
-   b=new Game.World.Blocks.BlockData{Full=Solid.Contains(new int3(x,y,z))};return true;
+   b=new Game.World.Blocks.BlockData{Full=Solid.Contains(new int3(x+c.x*16,y,z+c.y*16))};return true;
   }
  }
 }
 namespace Game.World.Lighting {
  public struct VoxelLightData {public byte R,G,B,Sky;}
  public class ChunkLightAccessor {
+  public int Reads;
   public System.Collections.Generic.Dictionary<int3,VoxelLightData> Values=new System.Collections.Generic.Dictionary<int3,VoxelLightData>();
-  public bool TryGetLight(int2 c,int3 p,out VoxelLightData light)=>Values.TryGetValue(p,out light);
+  public bool TryGetLight(int2 c,int3 p,out VoxelLightData light) {Reads++;return Values.TryGetValue(p+new int3(c.x*16,0,c.y*16),out light);}
  }
 }
 namespace Game.World.Rendering {
@@ -66,6 +81,42 @@ public static class LocalNormalLightChecks {
    "Compact corner direction points away from light");
   Check(math.length(Game.World.Lighting.VoxelLightSmoothingUtility.UnpackCornerDirection(0))==0,"Neutral corner is not neutral");
   Check((int)System.Runtime.InteropServices.Marshal.OffsetOf<Game.World.Rendering.ProjectedCellRenderData>("LocalLightDirection")==28,"Direction did not reuse GPU padding");
+  var record=new Game.World.Rendering.ProjectedCellRenderData {
+   BlockData=11,Position=22,FaceData=33,ChunkPosition=new float3(4,5,6)};
+  Check(record.HasSameGeometry(11,22,33) && !record.HasSameGeometry(12,22,33) &&
+   !record.HasSameGeometry(11,23,33) && !record.HasSameGeometry(11,22,34),"Geometry changes can enter light-only upload");
+  Check(record.UpdateLighting(1,2,3,4,5,6),"Changed light data was not detected");
+  Check(!record.UpdateLighting(1,2,3,4,5,6),"Unchanged light triggered a redundant upload");
+  Check(record.HasSameGeometry(11,22,33) && math.all(record.ChunkPosition==new float3(4,5,6)) &&
+   record.LightData==1 && record.LocalLightDirection==2 && record.LocalLightTopRight==6,"Lighting update overwrote geometry or lost channels");
+  Check(Game.World.Rendering.ProjectedCellRenderData.IsValidRange(3,2,5) &&
+   Game.World.Rendering.ProjectedCellRenderData.IsValidRange(5,0,5) &&
+   !Game.World.Rendering.ProjectedCellRenderData.IsValidRange(-1,2,5) &&
+   !Game.World.Rendering.ProjectedCellRenderData.IsValidRange(3,3,5) &&
+   !Game.World.Rendering.ProjectedCellRenderData.IsValidRange(int.MaxValue,1,int.MaxValue),"Invalid GPU range accepted");
+  System.Console.WriteLine("Light ranges PASS: geometry guards, unchanged-upload rejection, all light channels, stable geometry and safe range bounds. GPU calls not tested.");
+  lights.Values.Clear();blocks.Solid.Clear();
+  for(int x=-2;x<=18;x++)for(int y=-1;y<=1;y++)for(int z=-2;z<=18;z++)lights.Values[new int3(x,y,z)]=L((byte)(80+x*3+z));
+  var expected=new byte[16*16*4];int i=0;lights.Reads=0;
+  for(int z=0;z<16;z++)for(int x=0;x<16;x++)foreach(var a in new[]{-1,1})foreach(var b in new[]{-1,1})
+   expected[i++]=Game.World.Lighting.VoxelLightSmoothingUtility.SampleCornerDirection(int2.zero,new int3(x,0,z),new int3(a,0,0),new int3(0,0,b),blocks,lights);
+  int baselineReads=lights.Reads;lights.Reads=0;i=0;
+  var cache=new Game.World.Lighting.LocalLightDirectionCache(2,Unity.Collections.Allocator.Temp);
+  for(int z=0;z<16;z++)for(int x=0;x<16;x++)foreach(var a in new[]{-1,1})foreach(var b in new[]{-1,1}) {
+   byte actual=Game.World.Lighting.VoxelLightSmoothingUtility.SampleCornerDirection(int2.zero,new int3(x,0,z),new int3(a,0,0),new int3(0,0,b),blocks,lights,ref cache);
+   Check(actual==expected[i++],"Cache changed a corner's lighting direction");
+  }
+  int cachedReads=lights.Reads;
+  Check(cachedReads<baselineReads/2 && cache.CacheHits>0,"Cache did not eliminate repeated light reads");
+  int samples=cache.SamplesComputed;
+  uint first=cache.Sample(int2.zero,int3.zero,blocks,lights);
+  uint edge=cache.Sample(new int2(-1,0),new int3(16,0,0),blocks,lights);
+  Check(first==edge && cache.SamplesComputed==samples,"Chunk boundary aliases were not cached together");
+  cache.Dispose();
+  lights.Values[int3.zero]=L(255);
+  cache=new Game.World.Lighting.LocalLightDirectionCache(2,Unity.Collections.Allocator.Temp);
+  Check(cache.Sample(int2.zero,int3.zero,blocks,lights)==0,"New lighting pass reused stale source data");cache.Dispose();
+  System.Console.WriteLine($"Cache PASS: identical 1024 corners, light reads {baselineReads} -> {cachedReads}, negative chunk alias, growth and fresh-pass invalidation (managed map adapter).");
   return "Local normals PASS: six directions, shared corners, compact direction, solid rejection, cancellation, sky exclusion and unchanged 48-byte GPU stride. GPU/FPS not tested.";
  }
 }

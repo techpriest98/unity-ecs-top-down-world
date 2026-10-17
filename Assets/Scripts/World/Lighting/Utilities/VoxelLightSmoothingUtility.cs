@@ -1,9 +1,47 @@
 using Game.World.Blocks;
 using Game.World.Chunks;
 using Unity.Mathematics;
+using Unity.Collections;
 
 namespace Game.World.Lighting
 {
+    // Scoped to one immutable lighting pass. Values never survive edits or
+    // moving sources; a world-space key also shares samples across chunk edges.
+    public struct LocalLightDirectionCache : System.IDisposable
+    {
+        private NativeParallelHashMap<int3, uint> values;
+        private int initialCapacity;
+        private Allocator allocator;
+        private bool enabled;
+        public int SamplesComputed;
+        public int CacheHits;
+
+        public LocalLightDirectionCache(int capacity, Allocator allocator)
+        {
+            values = default;
+            initialCapacity = math.max(1, capacity);
+            this.allocator = allocator;
+            enabled = true;
+            SamplesComputed = 0;
+            CacheHits = 0;
+        }
+
+        public uint Sample(int2 coordinate, int3 position, ChunkBlockAccessor blocks, ChunkLightAccessor lights)
+        {
+            if (!enabled) return VoxelLightSmoothingUtility.SampleDirection(coordinate, position, blocks, lights);
+            if (!values.IsCreated) values = new NativeParallelHashMap<int3, uint>(initialCapacity, allocator);
+            int3 key = position + new int3(coordinate.x * ChunkSettings.SizeX, 0, coordinate.y * ChunkSettings.SizeZ);
+            if (values.TryGetValue(key, out uint result)) { CacheHits++; return result; }
+            result = VoxelLightSmoothingUtility.SampleDirection(coordinate, position, blocks, lights);
+            SamplesComputed++;
+            if (values.Count() == values.Capacity) values.Capacity = values.Capacity * 2;
+            values.TryAdd(key, result);
+            return result;
+        }
+
+        public void Dispose() { if (values.IsCreated) values.Dispose(); }
+    }
+
     public static class VoxelLightSmoothingUtility
     {
         private const float SkyToByte = 255f / 15f;
@@ -71,15 +109,22 @@ namespace Game.World.Lighting
         public static byte SampleCornerDirection(int2 coordinate, int3 position, int3 a, int3 b,
             ChunkBlockAccessor blocks, ChunkLightAccessor lights)
         {
+            var cache = default(LocalLightDirectionCache);
+            return SampleCornerDirection(coordinate, position, a, b, blocks, lights, ref cache);
+        }
+
+        public static byte SampleCornerDirection(int2 coordinate, int3 position, int3 a, int3 b,
+            ChunkBlockAccessor blocks, ChunkLightAccessor lights, ref LocalLightDirectionCache cache)
+        {
             if (!TrySample(coordinate, position, blocks, lights, out _)) return 0;
-            float3 sum = DirectionVector(SampleDirection(coordinate, position, blocks, lights));
+            float3 sum = DirectionVector(cache.Sample(coordinate, position, blocks, lights));
             int count = 1;
             bool hasA = TrySample(coordinate, position + a, blocks, lights, out _);
             bool hasB = TrySample(coordinate, position + b, blocks, lights, out _);
-            if (hasA) { sum += DirectionVector(SampleDirection(coordinate, position + a, blocks, lights)); count++; }
-            if (hasB) { sum += DirectionVector(SampleDirection(coordinate, position + b, blocks, lights)); count++; }
+            if (hasA) { sum += DirectionVector(cache.Sample(coordinate, position + a, blocks, lights)); count++; }
+            if (hasB) { sum += DirectionVector(cache.Sample(coordinate, position + b, blocks, lights)); count++; }
             if (hasA && hasB && TrySample(coordinate, position + a + b, blocks, lights, out _))
-            { sum += DirectionVector(SampleDirection(coordinate, position + a + b, blocks, lights)); count++; }
+            { sum += DirectionVector(cache.Sample(coordinate, position + a + b, blocks, lights)); count++; }
             return PackCornerDirection(sum / count);
         }
 

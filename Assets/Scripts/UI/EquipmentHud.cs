@@ -697,7 +697,7 @@ namespace Game.UI
             BlockId.RiverWater => new Color32(49, 95, 110, 255),
             BlockId.Snow => new Color32(205, 220, 225, 255),
             BlockId.PlainsGrass or BlockId.PlainsHighGrass => new Color32(126, 145, 75, 255),
-            BlockId.MeadowGrass or BlockId.MeadowHighGrass => new Color32(100, 155, 85, 255),
+            BlockId.Turf or BlockId.MeadowHighGrass => new Color32(100, 155, 85, 255),
             BlockId.DarkForestGrass => new Color32(49, 95, 61, 255),
             _ => UnknownTerrain
         };

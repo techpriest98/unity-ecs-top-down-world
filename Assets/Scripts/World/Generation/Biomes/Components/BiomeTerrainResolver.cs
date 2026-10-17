@@ -91,7 +91,7 @@ namespace Game.World.Generation.Biomes
 
                 WorldBiome.Meadows =>
                     depth == 0
-                        ? BlockId.MeadowGrass
+                        ? BlockId.Turf
                         : depth <= 3
                             ? BlockId.Dirt
                             : BlockId.Stone,
@@ -113,7 +113,7 @@ namespace Game.World.Generation.Biomes
 
                 WorldBiome.Swamp =>
                     depth == 0
-                        ? BlockId.MeadowGrass
+                        ? BlockId.Turf
                         : depth <= 4
                             ? BlockId.Dirt
                             : BlockId.Stone,

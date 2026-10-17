@@ -397,9 +397,9 @@ public static class HalfProjectionChecks {
     surface[column].Material==BlockId.Sand && surface[column].HeightHalf==15,"Water removal must expose half sand");
    blocks[Game.World.Chunks.ChunkUtility.ToIndex(x,2,z)]=new BlockData(BlockId.Stone,255);
    Check(!TerrainMinimapUtility.UpdateColumn(blocks,splits,surface,x,z,7),"Underground change repainted unchanged surface");
-   blocks[Game.World.Chunks.ChunkUtility.ToIndex(x,9,z)]=new BlockData(BlockId.MeadowGrass,255);
+   blocks[Game.World.Chunks.ChunkUtility.ToIndex(x,9,z)]=new BlockData(BlockId.Turf,255);
    Check(TerrainMinimapUtility.UpdateColumn(blocks,splits,surface,x,z,9) && surface[column].HeightHalf==20 &&
-    surface[column].Material==BlockId.MeadowGrass,"Placement above surface not reflected");
+    surface[column].Material==BlockId.Turf,"Placement above surface not reflected");
    blocks[Game.World.Chunks.ChunkUtility.ToIndex(x,9,z)]=default;
    TerrainMinimapUtility.UpdateColumn(blocks,splits,surface,x,z,9);
    Check(surface[column].Material==BlockId.Sand && surface[column].HeightHalf==15,"Removal lost lower half floor");
@@ -477,7 +477,7 @@ public static class HalfProjectionChecks {
     halves++;
     var material=terrain.GetBlock(sample.Height-1,sample.Zone,sample.Height);
     if(sample.Zone==(byte)Game.World.Generation.Biomes.RockyShore.RockyShoreZone.GrassTop) {
-     Check(material==BlockId.MeadowGrass,"Half cliff summit lost grass cap");grassHalves++;
+     Check(material==BlockId.Turf,"Half cliff summit lost grass cap");grassHalves++;
     }
     Check(terrain.GetBlock(sample.Height,sample.Zone,sample.Height)==BlockId.Air,"Terrain exceeds half surface");
    }
@@ -556,7 +556,7 @@ public static class HalfProjectionChecks {
    if(s.CoverHalf==0)bareCover++;else if(s.CoverHalf==1)halfCover++;else fullCover++;
    Check(Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain.GetCoveredBlock(s.RockSurfaceHalf-1,63,s)==BlockId.Stone,
     "Soil leaked below rock surface as a deep dirt wall");
-   if(s.CoverHalf>0)Check(Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain.GetCoveredBlock(s.SurfaceHalf-1,63,s)==BlockId.MeadowGrass,
+   if(s.CoverHalf>0)Check(Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain.GetCoveredBlock(s.SurfaceHalf-1,63,s)==BlockId.Turf,
     "Ground cover has no grass top");
    Check(Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain.GetCoveredBlock(s.SurfaceHalf,63,s)==BlockId.Air,
     "Cover height disagrees with generated materials");

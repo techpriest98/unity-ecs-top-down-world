@@ -18,7 +18,7 @@ namespace Game.World.Lighting
         private EntityQuery generatedChunksQuery;
         private EntityQuery lightSourcesQuery;
 
-        private int lastSourceCount;
+        private NativeParallelHashMap<Entity, DynamicLightSourceState> previousSources;
         private int lastChunkCount;
         private uint lastChunkSignature;
         private bool initialized;
@@ -53,10 +53,12 @@ namespace Game.World.Lighting
             state.RequireForUpdate<DynamicLightingRevision>();
 
             previouslyLitChunks = new NativeParallelHashSet<int2>(16, Allocator.Persistent);
+            previousSources = new NativeParallelHashMap<Entity, DynamicLightSourceState>(16, Allocator.Persistent);
         }
 
         public void OnDestroy(ref SystemState state)
         {
+            if (previousSources.IsCreated) previousSources.Dispose();
             if (previouslyLitChunks.IsCreated)
             {
                 previouslyLitChunks.Dispose();
@@ -68,72 +70,52 @@ namespace Game.World.Lighting
         {
             int chunkCount = generatedChunksQuery.CalculateEntityCount();
             int sourceCount = lightSourcesQuery.CalculateEntityCount();
-
-            var chunkEntities = new NativeParallelHashMap<int2, Entity>(
-                math.max(chunkCount, 1),
-                Allocator.Temp);
-
+            var currentSources = new NativeParallelHashMap<Entity, DynamicLightSourceState>(math.max(sourceCount, 1), Allocator.Temp);
+            var changedBounds = new NativeList<DynamicLightBounds>(Allocator.Temp);
+            var chunkEntities = new NativeParallelHashMap<int2, Entity>(math.max(chunkCount, 1), Allocator.Temp);
             uint chunkSignature = 0;
-
-            foreach (var (chunk, entity) in
-                     SystemAPI.Query<RefRO<ChunkComponent>>()
-                         .WithAll<ChunkGenerated, BlockData, VoxelLightData>()
-                         .WithEntityAccess())
+            foreach (var (chunk, entity) in SystemAPI.Query<RefRO<ChunkComponent>>()
+                .WithAll<ChunkGenerated, BlockData, VoxelLightData>().WithEntityAccess())
             {
                 int2 coordinate = chunk.ValueRO.Coordinate;
                 chunkEntities.TryAdd(coordinate, entity);
-                chunkSignature ^= math.hash(coordinate);
+                chunkSignature ^= math.hash(new int4(coordinate.x, coordinate.y, entity.Index, entity.Version));
             }
 
-            uint lightingRevision =
-                SystemAPI.GetSingleton<DynamicLightingRevision>().Value;
-
-            bool needsRebuild =
-                !initialized ||
-                lightingRevision != lastLightingRevision ||
-                sourceCount != lastSourceCount ||
-                chunkCount != lastChunkCount ||
-                chunkSignature != lastChunkSignature;
-
-            foreach (var (source, position, sourceState) in
-                     SystemAPI.Query<
-                         RefRO<DynamicLightSource>,
-                         RefRO<DynamicLightWorldPosition>,
-                         RefRW<DynamicLightSourceState>>())
+            uint lightingRevision = SystemAPI.GetSingleton<DynamicLightingRevision>().Value;
+            bool fullRebuild = !initialized || lightingRevision != lastLightingRevision ||
+                chunkCount != lastChunkCount || chunkSignature != lastChunkSignature;
+            foreach (var (source, position, sourceState, entity) in SystemAPI.Query<
+                RefRO<DynamicLightSource>, RefRO<DynamicLightWorldPosition>, RefRW<DynamicLightSourceState>>().WithEntityAccess())
             {
-                int3 cell = (int3)math.floor(position.ValueRO.Value);
-
-                bool sourceChanged =
-                    !sourceState.ValueRO.Initialized ||
-                    math.any(cell != sourceState.ValueRO.Cell) ||
-                    math.any(source.ValueRO.Color != sourceState.ValueRO.Color) ||
-                    source.ValueRO.Radius != sourceState.ValueRO.Radius ||
-                    source.ValueRO.Intensity != sourceState.ValueRO.Intensity;
-
-                if (!sourceChanged)
+                var next = new DynamicLightSourceState
                 {
-                    continue;
+                    Cell = (int3)math.floor(position.ValueRO.Value), Color = source.ValueRO.Color,
+                    Radius = source.ValueRO.Radius, Intensity = source.ValueRO.Intensity, Initialized = true
+                };
+                currentSources.TryAdd(entity, next);
+                bool hadOld = previousSources.TryGetValue(entity, out var old);
+                bool changed = !hadOld || !sourceState.ValueRO.Initialized || math.any(old.Cell != next.Cell) ||
+                    math.any(old.Color != next.Color) || old.Radius != next.Radius || old.Intensity != next.Intensity;
+                if (changed)
+                {
+                    if (hadOld) changedBounds.Add(DynamicLightBounds.Around(old.Cell, old.Radius));
+                    changedBounds.Add(DynamicLightBounds.Around(next.Cell, next.Radius));
                 }
-
-                sourceState.ValueRW.Cell = cell;
-                sourceState.ValueRW.Color = source.ValueRO.Color;
-                sourceState.ValueRW.Radius = source.ValueRO.Radius;
-                sourceState.ValueRW.Intensity = source.ValueRO.Intensity;
-                sourceState.ValueRW.Initialized = true;
-                needsRebuild = true;
+                sourceState.ValueRW = next;
             }
+            // Entity identity retains old bounds even after removal/disable.
+            foreach (var old in previousSources)
+                if (!currentSources.ContainsKey(old.Key))
+                    changedBounds.Add(DynamicLightBounds.Around(old.Value.Cell, old.Value.Radius));
 
-            if (!needsRebuild)
+            if (!fullRebuild && changedBounds.Length == 0)
             {
-                chunkEntities.Dispose();
+                currentSources.Dispose(); changedBounds.Dispose(); chunkEntities.Dispose();
                 return;
             }
-
-            lastSourceCount = sourceCount;
-            lastChunkCount = chunkCount;
-            lastChunkSignature = chunkSignature;
-            lastLightingRevision = lightingRevision;
-            initialized = true;
+            lastChunkCount = chunkCount; lastChunkSignature = chunkSignature;
+            lastLightingRevision = lightingRevision; initialized = true;
 
             var dirtyChunks = new NativeParallelHashSet<Entity>(
                 math.max(chunkCount, 1),
@@ -145,19 +127,20 @@ namespace Game.World.Lighting
             BufferLookup<VoxelLightData> lightLookup =
                 SystemAPI.GetBufferLookup<VoxelLightData>();
 
-            ClearLocalLight(chunkEntities, lightLookup, dirtyChunks);
-
             var currentlyLitChunks = new NativeParallelHashSet<int2>(
                 math.max(chunkCount, 1),
                 Allocator.Temp);
 
             ChunkBlockAccessor blockAccessor = new(chunkEntities, blockLookup, SystemAPI.GetBufferLookup<SplitCellData>(true));
             ChunkVoxelLightAccessor lightAccessor = new(chunkEntities, lightLookup);
+            var originalLocalLight = new NativeParallelHashMap<int3, uint>(fullRebuild ? 1 : 1024, Allocator.Temp);
+            if (fullRebuild) ClearLocalLight(chunkEntities, lightLookup, dirtyChunks);
+            else ClearRegions(changedBounds, lightAccessor, ref originalLocalLight);
 
             foreach (var (source, position) in
                      SystemAPI.Query<
                          RefRO<DynamicLightSource>,
-                         RefRO<DynamicLightWorldPosition>>())
+                         RefRO<DynamicLightWorldPosition>>().WithAll<DynamicLightSourceState>())
             {
                 SpreadSource(
                     source.ValueRO,
@@ -165,10 +148,32 @@ namespace Game.World.Lighting
                     blockAccessor,
                     lightAccessor,
                     dirtyChunks,
-                    currentlyLitChunks);
+                    currentlyLitChunks, !fullRebuild, changedBounds, originalLocalLight);
             }
 
-            StoreLitChunks(currentlyLitChunks);
+            if (fullRebuild) StoreLitChunks(currentlyLitChunks);
+            else
+            {
+                foreach (int2 coordinate in currentlyLitChunks)
+                {
+                    if (previouslyLitChunks.Count() == previouslyLitChunks.Capacity)
+                        previouslyLitChunks.Capacity *= 2;
+                    previouslyLitChunks.Add(coordinate);
+                }
+                // Clearing/reapplying an unchanged neighbour must not dirty
+                // its projected lighting or trigger a renderer upload.
+                dirtyChunks.Clear();
+                foreach (var original in originalLocalLight)
+                {
+                    int3 p = original.Key;
+                    if (!lightAccessor.TryGet(int2.zero, p.x, p.y, p.z, out var light) || PackRgb(light) == original.Value) continue;
+                    int2 coordinate = new int2(FloorDiv(p.x, ChunkSettings.SizeX), FloorDiv(p.z, ChunkSettings.SizeZ));
+                    if (chunkEntities.TryGetValue(coordinate, out var entity)) dirtyChunks.Add(entity);
+                }
+            }
+            previousSources.Clear();
+            if (previousSources.Capacity < sourceCount) previousSources.Capacity = sourceCount;
+            foreach (var source in currentSources) previousSources.TryAdd(source.Key, source.Value);
 
             foreach (Entity entity in dirtyChunks)
             {
@@ -176,8 +181,38 @@ namespace Game.World.Lighting
             }
 
             currentlyLitChunks.Dispose();
+            originalLocalLight.Dispose();
+            currentSources.Dispose();
+            changedBounds.Dispose();
             dirtyChunks.Dispose();
             chunkEntities.Dispose();
+        }
+
+        private static uint PackRgb(VoxelLightData light) =>
+            (uint)light.R | ((uint)light.G << 8) | ((uint)light.B << 16);
+
+        private static void ClearRegions(NativeList<DynamicLightBounds> bounds, ChunkVoxelLightAccessor lights,
+            ref NativeParallelHashMap<int3, uint> original)
+        {
+            // The hash map is the exact union of the boxes: disjoint changes
+            // never force a large empty bounding rectangle to be recalculated.
+            for (int i = 0; i < bounds.Length; i++)
+            {
+                var box = bounds[i];
+                for (int y = math.max(0, box.Min.y); y <= math.min(ChunkSettings.SizeY - 1, box.Max.y); y++)
+                for (int z = box.Min.z; z <= box.Max.z; z++)
+                for (int x = box.Min.x; x <= box.Max.x; x++)
+                {
+                    int3 p = new int3(x, y, z);
+                    if (original.ContainsKey(p) || !lights.TryGet(int2.zero, x, y, z, out var light)) continue;
+                    if (original.Count() == original.Capacity) original.Capacity *= 2;
+                    uint rgb = PackRgb(light);
+                    original.TryAdd(p, rgb);
+                    if (rgb == 0) continue;
+                    light.R = light.G = light.B = 0;
+                    lights.TrySet(int2.zero, x, y, z, light, out _, out _);
+                }
+            }
         }
 
         private void ClearLocalLight(
@@ -247,7 +282,8 @@ namespace Game.World.Lighting
             ChunkBlockAccessor blockAccessor,
             ChunkVoxelLightAccessor lightAccessor,
             NativeParallelHashSet<Entity> dirtyChunks,
-            NativeParallelHashSet<int2> litChunks)
+            NativeParallelHashSet<int2> litChunks, bool restricted,
+            NativeList<DynamicLightBounds> changedBounds, NativeParallelHashMap<int3, uint> region)
         {
             float radius = math.clamp(source.Radius, 0f, MaximumRadius);
             float3 sourceLight = math.saturate(source.Color * source.Intensity);
@@ -258,6 +294,14 @@ namespace Game.World.Lighting
             }
 
             int3 sourceCell = (int3)math.floor(worldPosition);
+            if (restricted)
+            {
+                var bounds = DynamicLightBounds.Around(sourceCell, radius);
+                bool intersects = false;
+                for (int i = 0; i < changedBounds.Length; i++)
+                    if (bounds.Intersects(changedBounds[i])) { intersects = true; break; }
+                if (!intersects) return;
+            }
             int2 sourceChunk = new int2(
                 FloorDiv(sourceCell.x, ChunkSettings.SizeX),
                 FloorDiv(sourceCell.z, ChunkSettings.SizeZ));
@@ -276,6 +320,7 @@ namespace Game.World.Lighting
                     for (int x = -cellRadius; x <= cellRadius; x++)
                     {
                         int3 offset = new int3(x, y, z);
+                        if (restricted && !region.ContainsKey(sourceCell + offset)) continue;
                         float distance = math.length(offset);
 
                         if (distance > radius)

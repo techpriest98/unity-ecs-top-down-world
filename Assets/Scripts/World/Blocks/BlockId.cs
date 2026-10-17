@@ -14,8 +14,9 @@ namespace Game.World.Blocks
         PlainsGrass = 7,
         PlainsHighGrass = 8,
         
+        // Turf (дерн). Keep ID 9 for existing worlds and atlas assets.
+        Turf = 9,
         // Meadow
-        MeadowGrass = 9,
         MeadowHighGrass = 10,
 
         //Dark Forest

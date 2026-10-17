@@ -210,7 +210,7 @@ namespace Game.World.Blocks
         public static bool IsKnownMaterial(BlockId id) => id == BlockId.Air || id == BlockId.Dirt ||
             id == BlockId.Stone || id == BlockId.Sand || id == BlockId.OceanWater || id == BlockId.RiverWater ||
             id == BlockId.Snow || id == BlockId.PlainsGrass || id == BlockId.PlainsHighGrass ||
-            id == BlockId.MeadowGrass || id == BlockId.MeadowHighGrass || id == BlockId.DarkForestGrass;
+            id == BlockId.Turf || id == BlockId.MeadowHighGrass || id == BlockId.DarkForestGrass;
         public const BlockShape ReferenceShape = (BlockShape)255;
         public static bool IsSplit(BlockData value) => value.Shape == ReferenceShape;
         public static int GetReferenceIndex(BlockData value) => (byte)value.BlockId | (value.Durability << 8);
