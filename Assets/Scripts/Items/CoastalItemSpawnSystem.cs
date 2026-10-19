@@ -104,8 +104,6 @@ namespace Game.Items
                     WorldItemEntityUtility.Create(EntityManager, new WorldItem {
                         Instance = new ItemInstance { DefinitionId = pyrite.Id, Durability = pyrite.MaxDurability, MaxDurability = pyrite.MaxDurability },
                         Position = position, Gravity = 9.81f, CollisionRadius = .08f, Grounded = true });
-                if (positions.Count + pyritePositions.Count > 0 && diagnostics.Add("spawned"))
-                    Debug.Log($"[CoastalItemSpawn] First successful spawn: chunk {coordinate}, Flint={positions.Count}, Pyrite={pyritePositions.Count}.");
                 visited.Add(coordinate);
                 EntityManager.GetBuffer<CoastalItemSpawnedChunk>(owner).Add(new CoastalItemSpawnedChunk { Coordinate = coordinate });
             }

@@ -13,6 +13,7 @@ namespace Game.Items
     public partial class WorldItemRenderSystem : SystemBase
     {
         private Material material;
+        private Material aboveFogMaterial;
         private readonly List<WorldItemDrawBatch> batches = new();
         public int LastVisibleItemCount { get; private set; }
         public int LastDrawCallCount { get; private set; }
@@ -55,6 +56,8 @@ namespace Game.Items
 
         private void ClearCaches()
         {
+            if (aboveFogMaterial != null) Object.Destroy(aboveFogMaterial);
+            aboveFogMaterial = null;
             occlusion.Dispose();
             foreach (var batch in batches) batch.Dispose();
             batches.Clear(); LastVisibleItemCount = LastDrawCallCount = 0;
@@ -116,6 +119,7 @@ namespace Game.Items
                 if (!seenChunks.Contains(entry.Key)) removedChunks.Add(entry.Key);
             foreach (var coordinate in removedChunks) lightingChunks.Remove(coordinate);
             int usedBatches = 0;
+            var fogRenderer = ChunkProceduralRenderer.Instance;
             WorldItemDrawBatch currentBatch = null;
             LastVisibleItemCount = LastDrawCallCount = 0;
             foreach (var (item, entity) in SystemAPI.Query<RefRO<WorldItem>>().WithEntityAccess())
@@ -140,6 +144,7 @@ namespace Game.Items
                 // Use the full sprite bounds, not its anchor, at screen edges.
                 if (!IsVisible(bounds)) continue;
                 if (item.ValueRO.Grounded && occlusion.IsGroundTileClipped(surfacePosition)) continue;
+                bool aboveFog = fogRenderer != null && fogRenderer.IsAboveFogPlane(surfacePosition.y);
                 var texture = sprite.texture;
                 var uv = sprite.textureRect;
                 var rect = new Vector4(left, bottom, width, height);
@@ -154,17 +159,27 @@ namespace Game.Items
                     Flags = new Vector4(depth, 0, item.ValueRO.Grounded ? 1 : 0, 0)
                 };
                 ApplyGroundLighting(ref data, item.ValueRO.Grounded, surfacePosition, direction);
-                if (currentBatch == null || !currentBatch.CanAppend(texture))
+                if (currentBatch == null || !currentBatch.CanAppend(texture, aboveFog))
                 {
                     if (usedBatches == batches.Count) batches.Add(new WorldItemDrawBatch());
                     currentBatch = batches[usedBatches++];
-                    currentBatch.Begin(texture);
+                    currentBatch.Begin(texture, aboveFog);
                 }
                 currentBatch.Add(data, mask, maskVersion, bounds);
                 LastVisibleItemCount++;
             }
             using (SubmitMarker.Auto())
-                for (int i = 0; i < usedBatches; i++) batches[i].Draw(material);
+                for (int i = 0; i < usedBatches; i++)
+                {
+                    if (batches[i].AboveFog && aboveFogMaterial == null)
+                    {
+                        // Stencil is render state: use one reusable material
+                        // variant rather than trying to set it through an MPB.
+                        aboveFogMaterial = new Material(material) { name = "World items above fog" };
+                        aboveFogMaterial.SetInt("_FogStencilRef", 8);
+                    }
+                    batches[i].Draw(batches[i].AboveFog ? aboveFogMaterial : material);
+                }
             LastDrawCallCount = usedBatches;
             // Do not retain historical peak buffers/textures after items unload.
             for (int i = batches.Count - 1; i >= usedBatches; i--)

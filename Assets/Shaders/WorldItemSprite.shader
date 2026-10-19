@@ -1,6 +1,10 @@
 Shader "Game/World/ItemSprite"
 {
-    Properties { _MainTex("Sprite", 2D) = "white" {} }
+    Properties
+    {
+        _MainTex("Sprite", 2D) = "white" {}
+        [HideInInspector] _FogStencilRef("Fog Occlusion", Float) = 0
+    }
     SubShader
     {
         Tags { "RenderPipeline"="UniversalPipeline" "Queue"="AlphaTest" "RenderType"="TransparentCutout" }
@@ -9,6 +13,9 @@ Shader "Game/World/ItemSprite"
             ZWrite On
             ZTest LEqual
             Cull Off
+            // Write only actual visible sprite pixels (alpha/occlusion clips
+            // in Frag still apply). Below-fog sprites clear this same bit.
+            Stencil { Ref [_FogStencilRef] ReadMask 8 WriteMask 8 Comp Always Pass Replace }
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag

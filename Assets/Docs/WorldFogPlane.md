@@ -1,0 +1,37 @@
+# Experimental world-space fog plane
+
+F4 cycles Auto (default) -> Full -> Off -> Auto. Automatic density follows WorldWind.Strength with default thresholds 0.2..0.4, buildup 45 seconds, clearing 15 seconds. Automatic progression uses simulation-active frame time and continues beneath the manual override. The key is available in ordinary builds. Override is not saved. Controls are on ChunkProceduralRenderer under World Fog Plane.
+
+The prototype draws one horizontal quad per generated/uploaded world chunk, instanced in one fog draw. Height is fixed at sea level + Fog Height Above Sea (default 2), not relative to the player. Positions are appended during the existing full render snapshot loop; movement of fog never rebuilds geometry. The CPU buffer is 16 bytes per chunk. A 64x64 periodic R8 value-noise texture is generated once on first fog use, or an artist texture can be assigned (use Repeat wrapping). The fog fragment performs a single texture sample. UVs are unprojected to world XZ and displaced by WorldWind.Drift; rotation does not rotate the noise in the world. Daylight affects fog colour, preserving night darkness.
+
+No fog code is added to the ground/water fragment shaders and Air/material IDs, physics, saves and generation are unchanged. In the checked-out state at implementation time the previous surface-fog and height-grading experiments were already absent, so they were not restored.
+
+Occlusion uses up to two additional terrain mask draws (normal/clipped). The mask reconstructs face height from SourceAirIndex in the high 16 bits of GPU FaceData, retaining the 48-byte layout; geometry guards include the source, light-only updates retain it. ZTest Equal restricts stencil writes to existing visible opaque terrain. Faces above the fog plane write stencil bit 3 (value 8); clipping-mask rejection is preserved and cut caps remain occluders. Fog uses NotEqual stencil testing. This reserves bit 3 and assumes a stencil-capable camera depth buffer cleared each frame; check any future UI masks/deferred/custom stencil effects for conflicts. Source/height math currently assumes 16x256x16 terrain.
+
+Base extra draws when fog is visible: up to 2 simple terrain mask draws + 1 instanced fog layer. Off/near-zero automatic density skips all these draws. The stencil draws still process terrain geometry, and transparency costs GPU fill rate: there is no guaranteed FPS improvement. This is one flat 2.5D layer, not volumetric ray marching or a true 3D atmospheric simulation. The player-height follow-up below uses a shader-only radial fade, without per-part draws. Loose items remain unchanged, water keeps its own rendering behavior, and sky/roof containment in clipped caves remains a manual acceptance check.
+
+Validation: runtime C# compilation; WorldFogPlaneChecks compiles real fog/mask HLSL with Core adapters and verifies real projection/unprojection in all four views, multiple heights and negative chunk coordinates. LocalNormalLightChecks verifies 48-byte stride, all 65,536 packed source indices, source-sensitive geometry guards and lighting updates. GPU stencil/occlusion, transparent sorting and FPS require Unity testing. Compare the same stationary camera with F4 Full and Off, then inspect all four views, high cliffs, chunk seams, caves, night and streaming. Do not infer visual correctness from standalone shader compilation.
+
+Rollback scope: ChunkProceduralRenderer.Fog.cs plus three hook calls in the renderer, fog snapshot hooks/FaceData packing in ChunkProceduralRenderSystem, PackFaceData/source guard in ProjectedCellRenderData, WorldFog/WorldFogMask shaders and Resources materials, plus their tests/docs. Earlier optimizations are independent.
+
+## Noisy contact band
+
+Fog Edge Height (default 0.8 blocks, zero restores the original mask) lets the fog irregularly overlap the foot of rocks within a narrow height band above the plane. Fog Edge Noise Size controls the world-space texture period. It uses the existing periodic texture/drift; only mask fragments in that band sample it. Cut caps and higher terrain remain fully occluding. This is a noisy height intersection, not a blur/distance field of the complete screen-space cliff silhouette: vertical silhouette edges far above the plane can remain hard. No new passes or CPU block work are added. Check Full/Off and Edge Height=0/0.8 in Unity for actual appearance/cost.
+
+Density/colour tuning: default Fog Opacity is now 0.9 and Fog Coverage 0.55. Coverage supplies a minimum opacity between patches (0 restores transparent gaps, 1 removes patch contrast). Colour is a pale neutral/cool grey (sRGB 0.78/0.79/0.82). Fog follows the luminance of daylight instead of its per-channel tint, avoiding green ambient light turning it into green smog. One layer and one noise sample remain; F4 Full is the preview mode, not the default weather state.
+
+## Shader-only player clearance
+
+The per-player-part stencil prototype was removed after reported lag. Its ECS system, material and shader are deleted. Terrain stencil masking remains unchanged.
+
+The existing render system now passes player presence before its early exits. A radial alpha fade clears a small region centred one projected-world block above the actual player projection, at every player height (including inside/below fog). The player position is passed through the existing render system; camera screen offsets do not move this clearance away from the player. Projected XY keeps radius/offset stable under zoom. Defaults: inner radius 2.5 blocks, feather 1.25 blocks, upward offset 1 block. Controls are under Fog Player Clearance (shader only). There is no height activation or extra silhouette draw. Fog elsewhere and weather density do not change.
+
+No extra player mask draws, atlas reads, mesh lookups or chunk loops are added. This is intentionally a player-centred artistic clearance, not an exact silhouette or physically correct body-height intersection. It assumes the current orthographic camera. Test the upward offset, radius and softness in all views/zoom levels and compare F4 Full/Off.
+
+WorldFogPlaneChecks compiles the real fog/mask HLSL with a view-matrix adapter and checks that clearance activation is independent of player height. Unity visuals and runtime FPS remain manual acceptance checks.
+
+## Items above the fog plane
+
+Visible world items compare their collision-sphere bottom/support height with the fog plane. High items use a reusable material variant of the existing item shader with stencil reference 8; low items use reference 0. The original alpha/terrain-occlusion clipping and depth test determine which sprite pixels write the stencil, so this is not a rectangle. No new mask pass or individual per-item draw is added. Consecutive batches now split on both texture and above-fog state; mixed heights can increase the number of normal item batches. Disabled/clear fog disables the height split. The existing 176-byte instance format and draw order of submitted runs are unchanged; light values and atlas-mask uploads remain unchanged. The material variant is disposed on system stop/destroy.
+
+WorldItemBatchChecks covers separation/reset of fog classes along with existing atlas/capacity checks. WorldFogPlaneChecks tests the actual height predicate and compiles the item HLSL. ShaderLab material stencil state, equal-depth ordering, overlap with low items, airborne item transitions and actual performance must be checked in Unity. Player gradient remains independent of this item-height behavior.

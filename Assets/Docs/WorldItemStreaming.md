@@ -10,7 +10,7 @@ This first implementation uses authoritative snapshots, not sparse deterministic
 
 ## Time and durability
 
-WorldTime.SimulationSeconds is a monotonic double, advanced by simulation delta only while startup is Ready. Existing pause and Rubedo UI disable SimulationSystemGroup, so it freezes; closed-game real time never enters the calculation. It is independent of wrapping hour-of-day and saved/restored with the world.
+WorldTime.SimulationSeconds is a monotonic double, advanced by world delta (simulation delta multiplied by the F3/F5/F6 world-time rate) only while startup is Ready. Existing pause and Rubedo UI disable SimulationSystemGroup, so it freezes; closed-game real time never enters the calculation. It is independent of wrapping hour-of-day and saved/restored with the world. Loaded durability uses the same scaled WorldTime.DeltaSeconds; inactive catch-up uses differences of SimulationSeconds without multiplying again.
 
 Ordering: clock → active item durability → item throw creation/streaming → coastal spawns → sleep/motion. Streaming occurs in Simulation after Initialization terrain streaming. Active decay is applied before an unload timestamp is taken. Restoration happens after active decay for that frame; catch-up accounts through the current clock once. The next active frame resumes ordinary decay. Catch-up preserves DurabilityElapsed, interval and loss amount, using double arithmetic for elapsed intervals. A fully expired item is discarded on activation, matching active zero-durability destruction. Non-decaying items do no aging work. Wheat growth itself is not implemented, but the stored timestamp/world clock supports later time-based state transitions.
 

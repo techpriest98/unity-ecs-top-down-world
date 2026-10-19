@@ -315,13 +315,6 @@ namespace Game.World.Generation
             AssetDatabase.Refresh();
 
 
-            Debug.Log(
-                $"{previewMode} preview generated: {path}\n" +
-                $"Landmasses: {landmassMap.LandmassCount}\n" +
-                $"Mainland ID: {landmassMap.MainLandmassId}\n" +
-                $"Mainland Size: {landmassMap.MainLandmassSize}\n" +
-                $"Start: {anchors.StartMapPosition} UV={anchors.StartUv}\n" +
-                $"Final: {anchors.FinalMapPosition} UV={anchors.FinalUv}");
 
 #endif
         }

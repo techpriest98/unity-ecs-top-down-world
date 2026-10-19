@@ -6,6 +6,7 @@ namespace Game.Player
 {
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(PlayerEquipmentChangeSystem))]
+    [UpdateAfter(typeof(Game.World.Time.WorldTimeSystem))]
     [UpdateBefore(typeof(PlayerAvailableSkillsSystem))]
     [UpdateBefore(typeof(PlayerArmAnimationSelectionSystem))]
     [UpdateBefore(typeof(PlayerEquipmentLightSystem))]
@@ -19,7 +20,8 @@ namespace Game.Player
             if (!library.Value.IsCreated)
                 return;
             ref var items = ref library.Value.Value.Items;
-            float delta = (float)SystemAPI.Time.DeltaTime;
+            float delta = SystemAPI.TryGetSingleton<Game.World.Time.WorldTime>(out var clock)
+                ? clock.DeltaSeconds : SystemAPI.Time.DeltaTime;
             foreach (var slotBuffer in SystemAPI.Query<DynamicBuffer<PlayerEquipmentSlot>>().WithAll<PlayerTag>())
             {
                 var slots = slotBuffer;

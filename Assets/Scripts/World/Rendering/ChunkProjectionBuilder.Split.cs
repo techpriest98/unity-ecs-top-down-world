@@ -169,7 +169,9 @@ namespace Game.World.Rendering
                 return;
             }
             writer.TryAddTop(block, TopNeighborMaskUtility.Build(coordinate, ownerPosition, accessor, direction, lower), source, x, y,
-                BuildShoreMask(coordinate, accessor, ownerPosition, lower, false, direction));
+                BuildShoreMask(coordinate, accessor, ownerPosition, lower, false, direction),
+                TopNeighborMaskUtility.BuildFrontTransition(coordinate, ownerPosition, accessor,
+                    direction, lower, part.Id));
         }
 
         private static void EmitSplitSide(int2 coordinate, ChunkBlockAccessor accessor,

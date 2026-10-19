@@ -80,6 +80,5 @@ public sealed class ItemSkillDefinitionInspector : AutomaticIdInspector
         EditorUtility.SetDirty(skill);
         AssetDatabase.SaveAssetIfDirty(skill);
         ItemGraphWindow.ReloadOpenGraphs();
-        Debug.Log($"Applied saved chain to '{assetPath}': {node.name}. Name, description and icon preserved.", skill);
     }
 }

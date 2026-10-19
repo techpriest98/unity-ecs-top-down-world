@@ -88,6 +88,12 @@ namespace Game.World.Rendering
                 return;
             }
             if (SystemAPI.TryGetSingleton<Game.World.Time.WorldWind>(out var wind)) renderer.SetWind(wind);
+            renderer.SetWorldDelta(SystemAPI.TryGetSingleton<Game.World.Time.WorldTime>(out var clock) ? clock.DeltaSeconds : 0f);
+            bool hasFogPlayer = SystemAPI.TryGetSingleton<PlayerWorldPosition>(out var fogPlayer);
+            renderer.SetTerrainReferenceHeight(hasFogPlayer ? fogPlayer.Value.y : 0f, hasFogPlayer);
+            renderer.SetFogPlayerPosition(hasFogPlayer
+                ? WorldPositionProjectionUtility.Project(fogPlayer.Value, SystemAPI.GetSingleton<ViewDirectionComponent>().Value)
+                : float2.zero, hasFogPlayer);
 
             int2 currentCenter =
                 SystemAPI.GetSingleton<ChunkStreamingCenter>().Coordinate;
@@ -148,6 +154,7 @@ namespace Game.World.Rendering
                     new float2(0f, ProjectedCellHeight * .5f)
                 : float2.zero;
             renderer.SetOceanSurfaceProjection(seaOrigin, hasSeaPlane);
+            renderer.SetFogSeaLevel(hasSeaPlane ? waterSettings.WaterSurfaceHeight : 0f, hasSeaPlane);
 
             SunShadowState shadowState =
                 SystemAPI.GetSingleton<SunShadowState>();
@@ -201,6 +208,7 @@ namespace Game.World.Rendering
             int totalClippedCellCount = 0;
             int totalWaterCellCount = 0;
 
+            renderer.BeginFogChunks();
             foreach (var (
                          clippingEnabled,
                          projectedCells,
@@ -283,6 +291,7 @@ namespace Game.World.Rendering
                     chunkPosition.x,
                     chunkPosition.y,
                     chunkPosition.z);
+                renderer.AddFogChunk(chunkPosition);
 
                 if (!uploadedChunks.TryGetValue(chunkEntity, out var snapshot))
                 {
@@ -320,10 +329,10 @@ namespace Game.World.Rendering
                     ProjectedCellRenderData cellRenderData =
                         new ProjectedCellRenderData
                         {
-                            BlockData = cell.BlockData,
+                            BlockData = ProjectedCellRenderData.PackBlockData(cell.BlockData, cell.TopFrontMaterial),
                             Position = cell.Position,
                             LightData = cell.LightData,
-                            FaceData = cell.FaceData,
+                            FaceData = ProjectedCellRenderData.PackFaceData(cell.FaceData, cell.SourceAirIndex),
                             ChunkPosition = chunkPosition,
                             LocalLightDirection = cell.LocalLightDirection,
 
@@ -362,10 +371,10 @@ namespace Game.World.Rendering
                     waterTarget.Add(
                         new ProjectedCellRenderData
                         {
-                            BlockData = cell.BlockData,
+                            BlockData = ProjectedCellRenderData.PackBlockData(cell.BlockData, cell.TopFrontMaterial),
                             Position = cell.Position,
                             LightData = cell.LightData,
-                            FaceData = cell.FaceData,
+                            FaceData = ProjectedCellRenderData.PackFaceData(cell.FaceData, cell.SourceAirIndex),
                             ChunkPosition = chunkPosition,
                             LocalLightDirection = cell.LocalLightDirection,
 
@@ -431,6 +440,7 @@ namespace Game.World.Rendering
             }
 
             renderer.Upload(renderData.AsArray(), bounds);
+            renderer.UploadFogChunks(bounds);
             renderer.UploadClipMask(clipRects.AsArray());
             renderer.UploadClipped(clippedRenderData.AsArray(), bounds);
             renderer.UploadWater(waterRenderData.AsArray(), bounds);
@@ -492,9 +502,9 @@ namespace Game.World.Rendering
                     !renderer.CanUpdateRange(snapshot.WaterStart, water.Length, snapshot.Clipped, true)) return false;
                 if (!EntityManager.IsComponentEnabled<ChunkNeedsRender>(entity)) continue;
                 for (int i = 0; i < cells.Length; i++)
-                    if (!snapshot.Opaque[i].HasSameGeometry(cells[i].BlockData, cells[i].Position, cells[i].FaceData)) return false;
+                    if (!snapshot.Opaque[i].HasSameGeometry(cells[i].BlockData, cells[i].Position, cells[i].FaceData, cells[i].SourceAirIndex, cells[i].TopFrontMaterial)) return false;
                 for (int i = 0; i < water.Length; i++)
-                    if (!snapshot.Water[i].HasSameGeometry(water[i].Value.BlockData, water[i].Value.Position, water[i].Value.FaceData)) return false;
+                    if (!snapshot.Water[i].HasSameGeometry(water[i].Value.BlockData, water[i].Value.Position, water[i].Value.FaceData, water[i].Value.SourceAirIndex, water[i].Value.TopFrontMaterial)) return false;
                 for (int i = 0; i < caps.Length; i++)
                     if (snapshot.ClipCells[i].X != caps[i].X || snapshot.ClipCells[i].Y != caps[i].Y) return false;
             }

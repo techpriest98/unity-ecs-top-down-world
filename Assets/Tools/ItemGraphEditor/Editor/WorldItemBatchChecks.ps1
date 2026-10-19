@@ -44,6 +44,9 @@ public static class BatchChecks {
   var small=new UnityEngine.Texture2D(1,2,UnityEngine.TextureFormat.R8,false,true);small.Pixels=new byte[]{23,42};
   var b=new Game.Items.WorldItemDrawBatch();b.Begin(texture);
   Check(b.CanAppend(texture)&&!b.CanAppend(other),"Texture compatibility");
+  Check(!b.CanAppend(texture,true),"Fog classes mixed in one draw");
+  b.Begin(texture,true);Check(b.AboveFog&&b.CanAppend(texture,true)&&!b.CanAppend(texture),"Above-fog batch state missing");
+  b.Begin(texture);
   b.Add(default,mask,1,default);b.Add(default,small,2,default);b.Draw(material);
   Check(UnityEngine.Graphics.Calls==1&&UnityEngine.Graphics.Instances==2,"Expected one instanced submission");
   var p=UnityEngine.Graphics.Last.matProps;var atlas=p.Atlas;var buffer=p.Buffer;

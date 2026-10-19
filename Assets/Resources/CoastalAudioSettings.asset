@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f8b82538c4d48e9a674764b4be1963a, type: 3}
   m_Name: CoastalAudioSettings
   m_EditorClassIdentifier:
-  rockyShoreMusic: {fileID: 8300000, guid: cb778cf67b80d4430a0496c1b45803b3, type: 3}
+  rockyShoreMusic: {fileID: 8300000, guid: 05d396a337597f441a034e09c34eb818, type: 3}
   seaAmbience: {fileID: 8300000, guid: 42f653bc464c240b083f46b9dddfd866, type: 3}
   musicVolume: 0.35
   seaVolume: 0.75

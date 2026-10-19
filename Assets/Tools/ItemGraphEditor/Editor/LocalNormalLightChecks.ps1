@@ -71,6 +71,10 @@ public static class LocalNormalLightChecks {
   lights.Values[int3.zero]=L(200);lights.Values[new int3(1,0,0)]=L(100);
   Check(Game.World.Lighting.VoxelLightSmoothingUtility.SampleDirection(int2.zero,int3.zero,blocks,lights)==0,"Source maximum invented an incoming direction");
   Check(System.Runtime.InteropServices.Marshal.SizeOf<Game.World.Rendering.ProjectedCellRenderData>()==48,"GPU stride changed");
+  for(int source=0;source<65536;source++) {
+   uint packed=Game.World.Rendering.ProjectedCellRenderData.PackFaceData(0xa55a,(ushort)source);
+   Check((packed&0xffff)==0xa55a && (packed>>16)==source && (packed>>24)==source/256,"Fog height packing changed face flags");
+  }
   lights.Values.Clear();blocks.Solid.Clear();
   for(int x=-2;x<=3;x++)for(int y=-1;y<=1;y++)for(int z=-2;z<=3;z++)
    lights.Values[new int3(x,y,z)]=L((byte)(100+x*10));
@@ -89,6 +93,14 @@ public static class LocalNormalLightChecks {
   Check(!record.UpdateLighting(1,2,3,4,5,6),"Unchanged light triggered a redundant upload");
   Check(record.HasSameGeometry(11,22,33) && math.all(record.ChunkPosition==new float3(4,5,6)) &&
    record.LightData==1 && record.LocalLightDirection==2 && record.LocalLightTopRight==6,"Lighting update overwrote geometry or lost channels");
+  record.FaceData=Game.World.Rendering.ProjectedCellRenderData.PackFaceData(33,257);
+  Check(record.HasSameGeometry(11,22,33,257)&&!record.HasSameGeometry(11,22,33,513),"Height-only geometry change entered light path");
+  record.BlockData=Game.World.Rendering.ProjectedCellRenderData.PackBlockData(0xff00000bu,(Game.World.Blocks.BlockId)9);
+  Check(record.HasSameGeometry(0xff00000bu,22,33,257,(Game.World.Blocks.BlockId)9) &&
+   !record.HasSameGeometry(0xff00000bu,22,33,257,Game.World.Blocks.BlockId.Stone),"Top transition material change entered light-only path");
+  Check((record.BlockData>>24)==9 && (record.BlockData&0xffffffu)==11,"GPU Top material packing corrupts geometry");
+  record.UpdateLighting(7,8,9,10,11,12);
+  Check(record.FaceData==Game.World.Rendering.ProjectedCellRenderData.PackFaceData(33,257),"Light update erased fog source index");
   Check(Game.World.Rendering.ProjectedCellRenderData.IsValidRange(3,2,5) &&
    Game.World.Rendering.ProjectedCellRenderData.IsValidRange(5,0,5) &&
    !Game.World.Rendering.ProjectedCellRenderData.IsValidRange(-1,2,5) &&

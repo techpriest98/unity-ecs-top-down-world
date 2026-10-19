@@ -6,6 +6,21 @@ namespace Game.World.Rendering
 {
     public static class TopNeighborMaskUtility
     {
+        // Only a shared, exposed surface at the same physical half-height.
+        public static BlockId BuildFrontTransition(int2 coordinate, int3 owner,
+            ChunkBlockAccessor accessor, ViewDirection direction, bool lower, BlockId material)
+        {
+            int3 front = owner - ViewDirectionUtility.GetAwayFromCameraOffset(direction);
+            CellContents contents = accessor.GetContentsOrAir(coordinate, front.x, front.y, front.z);
+            BlockId candidate = (lower ? contents.Lower : contents.Upper).Id;
+            if (candidate == material || !BlockUtility.IsSolid(candidate) ||
+                candidate == BlockId.OceanWater || candidate == BlockId.RiverWater)
+                return BlockId.Air;
+            BlockId above = lower ? contents.Upper.Id :
+                accessor.GetContentsOrAir(coordinate, front.x, front.y + 1, front.z).Lower.Id;
+            return above == BlockId.Air ? candidate : BlockId.Air;
+        }
+
         public const byte NorthBit =
             1 << 0;
 

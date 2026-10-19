@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Game.World.Rendering
 {
-    public sealed class ChunkProceduralRenderer :
+    public sealed partial class ChunkProceduralRenderer :
         MonoBehaviour
     {
         public static ChunkProceduralRenderer Instance
@@ -30,6 +30,19 @@ namespace Game.World.Rendering
         [SerializeField]
         private Material clippedWaterMaterial;
 
+        [Header("Terrain Height Readability (GPU)")]
+        [SerializeField, Range(0f, 1f)] private float terrainHeightStrength = .3f;
+        [SerializeField] private Color terrainHeightTint = new Color(.62f, .73f, .85f, 1f);
+        [SerializeField] private Vector2 terrainHeightRange = new Vector2(.5f, 6f);
+        [SerializeField, Range(0f, 1f)] private float terrainHeightDesaturation = .65f;
+        private float terrainReferenceHeight;
+        private bool hasTerrainReference;
+        public void SetTerrainReferenceHeight(float height, bool valid)
+        {
+            terrainReferenceHeight = height;
+            hasTerrainReference = valid;
+        }
+
         [Header("Shared Resources")]
         [SerializeField]
         private Texture2D blockAtlas;
@@ -44,6 +57,8 @@ namespace Game.World.Rendering
         private float shoreFoamTime;
         private Vector4 oceanSurfaceOrigin;
         private Game.World.Time.WorldWind worldWind;
+        private float worldDeltaSeconds;
+        public void SetWorldDelta(float delta) => worldDeltaSeconds = Mathf.Max(0f, delta);
 
         public void SetWind(Game.World.Time.WorldWind wind) => worldWind = wind;
         public void SetOceanSurfaceProjection(float2 origin, bool valid) =>
@@ -202,11 +217,16 @@ namespace Game.World.Rendering
             var world = Unity.Entities.World.DefaultGameObjectInjectionWorld;
             if (world != null && world.IsCreated &&
                 world.GetExistingSystemManaged<Unity.Entities.SimulationSystemGroup>() is { Enabled: true })
-                shoreFoamTime += UnityEngine.Time.deltaTime;
+            {
+                shoreFoamTime += worldDeltaSeconds;
+                AdvanceWorldFog(worldDeltaSeconds);
+            }
+            PollWorldFogKey();
             RenderOpaque();
             RenderClipped();
             RenderWater();
             RenderClippedWater();
+            RenderWorldFog();
         }
 
         private void OnDestroy()
@@ -218,6 +238,7 @@ namespace Game.World.Rendering
             }
 
             ReleaseResources();
+            ReleaseWorldFog();
         }
 
         public void SetDirectionalLight(
@@ -453,6 +474,12 @@ namespace Game.World.Rendering
             Texture2D normalAtlas)
         {
             layerPropertyBlock.Clear();
+            layerPropertyBlock.SetVector("_TerrainHeightParams", new Vector4(terrainReferenceHeight,
+                hasTerrainReference ? terrainHeightStrength : 0f, terrainHeightRange.x,
+                Mathf.Max(.01f, terrainHeightRange.y - terrainHeightRange.x)));
+            Color heightTint = terrainHeightTint.linear;
+            layerPropertyBlock.SetVector("_TerrainHeightTint", new Vector4(heightTint.r, heightTint.g,
+                heightTint.b, terrainHeightDesaturation));
             layerPropertyBlock.SetFloat("_ShoreFoamTime", shoreFoamTime);
             layerPropertyBlock.SetVector("_OceanSurfaceOrigin", oceanSurfaceOrigin);
             if (oceanFoamAtlas == null) oceanFoamAtlas = Resources.Load<Texture2D>("OceanFoamAtlas");

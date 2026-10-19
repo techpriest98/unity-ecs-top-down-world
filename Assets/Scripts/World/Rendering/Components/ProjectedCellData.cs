@@ -47,6 +47,8 @@ namespace Game.World.Rendering
         /// Index of the air cell from which this projected face was generated.
         /// </summary>
         public ushort SourceAirIndex;
+        // Material of the front neighbour's SideBottom on an opaque Top.
+        public BlockId TopFrontMaterial;
 
         /// <summary>
         /// Opaque Top:
@@ -136,6 +138,7 @@ namespace Game.World.Rendering
                 ((uint)byte.MaxValue << 24);
 
             SourceAirIndex = 0;
+            TopFrontMaterial = BlockId.Air;
             FaceData = 0;
             LocalLightBottomLeft = 0;
             LocalLightBottomRight = 0;
@@ -166,6 +169,7 @@ namespace Game.World.Rendering
                 ((uint)lightB << 24);
 
             SourceAirIndex = 0;
+            TopFrontMaterial = BlockId.Air;
             FaceData = 0;
             LocalLightBottomLeft = 0;
             LocalLightBottomRight = 0;

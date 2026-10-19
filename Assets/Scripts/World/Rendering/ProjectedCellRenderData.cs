@@ -24,8 +24,15 @@ namespace Game.World.Rendering
         public uint LocalLightTopLeft;
         public uint LocalLightTopRight;
 
-        public bool HasSameGeometry(uint block, uint position, uint face) =>
-            BlockData == block && Position == position && FaceData == face;
+        // GPU-only upper bits carry source Y/X/Z; CPU face flags stay ushort.
+        public static uint PackFaceData(uint face, ushort source) => (face & 0xffffu) | ((uint)source << 16);
+        // Terrain shaders do not use maximum durability. Reuse that GPU-only
+        // byte for the Top transition, preserving CPU durability and 48B stride.
+        public static uint PackBlockData(uint block, Game.World.Blocks.BlockId frontMaterial = 0) =>
+            (block & 0x00ffffffu) | ((uint)frontMaterial << 24);
+        public bool HasSameGeometry(uint block, uint position, uint face, ushort source = 0,
+            Game.World.Blocks.BlockId frontMaterial = 0) =>
+            BlockData == PackBlockData(block, frontMaterial) && Position == position && FaceData == PackFaceData(face, source);
 
         public bool UpdateLighting(uint light, uint direction, uint bottomLeft, uint bottomRight, uint topLeft, uint topRight)
         {

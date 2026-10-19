@@ -125,7 +125,6 @@ namespace Game.Editor
                 var pending = new List<PendingFrame>();
                 var keys = new HashSet<(CharacterPart, AnimationID)>();
 
-                int emptyCount = 0;
 
                 for (int clipIndex = 0;
                      clipIndex < definitions.Length;
@@ -196,7 +195,6 @@ namespace Game.Editor
 
                             if (bounds.width == 0)
                             {
-                                emptyCount++;
                                 continue;
                             }
 
@@ -333,11 +331,6 @@ namespace Game.Editor
                 Selection.activeObject = atlas;
                 EditorGUIUtility.PingObject(atlas);
 
-                Debug.Log(
-                    $"Created animation atlas: {outputPath}\n" +
-                    $"Packed frames: {pending.Count}; empty: {emptyCount}; " +
-                    $"pages: {pages.Count} × {PageSize}×{PageSize}.",
-                    atlas);
             }
             catch (Exception exception)
             {

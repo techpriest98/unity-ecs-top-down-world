@@ -103,6 +103,8 @@ Shader "Game/World/ChunkProcedural"
 
             TEXTURE2D(_BlockNormalAtlas);
             float _LocalNormalStrength;
+            float4 _TerrainHeightParams; // reference height, strength, start, span
+            float4 _TerrainHeightTint;   // linear colour, desaturation
 
 
 
@@ -219,6 +221,7 @@ Shader "Game/World/ChunkProcedural"
                 float2 ProjectionPosition : TEXCOORD9;
                 nointerpolation uint ShoreMask : TEXCOORD10;
                 nointerpolation uint LocalLightDirection : TEXCOORD11;
+                nointerpolation float HeightGrade : TEXCOORD12;
 
                 nointerpolation uint BlockId : TEXCOORD1;
                 nointerpolation uint FaceIndex : TEXCOORD2;
@@ -276,8 +279,18 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
                 output.IsCutSurface =
                     (isCutTop || isCutSide) ? 1u : 0u;
 
+                // Source index is already packed for the fog mask. Its high
+                // byte is Y for 16x256x16 chunks, independent of camera view.
+                float sourceHeight = (cell.FaceData >> 24) & 255u;
+                bool lowerHalf = (cell.BlockData & (1u << 12)) != 0u;
+                float faceHeight = faceType == 1u ? sourceHeight - (lowerHalf ? .5 : 0.0) :
+                    sourceHeight + (faceType == 3u || lowerHalf ? .25 : .75);
+                float grade = saturate((faceHeight - _TerrainHeightParams.x - _TerrainHeightParams.z) /
+                    max(.01, _TerrainHeightParams.w));
+                output.HeightGrade = grade * grade * (3.0 - 2.0 * grade) * saturate(_TerrainHeightParams.y);
+
                 output.NeighborMask = GetNeighborMask(cell.FaceData);
-                output.FootBlockId = GetFootBlockId(cell.FaceData);
+                output.FootBlockId = output.FaceIndex == 0u ? cell.BlockData >> 24 : GetFootBlockId(cell.FaceData);
                 // Either short geometry or a half-height block in front.
                 output.FootAtHalfHeight = (cell.BlockData >> 12) & 3u;
                 output.LightData = cell.LightData;
@@ -514,6 +527,12 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
                 {
                     ApplyTopOverlays(
                         color, normalOS, input.NeighborMask, atlasPosition, pixel);
+                    // Front material extends its SideBottom onto the shared
+                    // lower edge of this Top; colour and normal use its atlas.
+                    if (input.FootBlockId != 0u && input.FootBlockId < (uint)_BlockDatabaseCount)
+                        ApplyOverlay(color, normalOS,
+                            UnpackAtlasPosition(_BlockDatabase[input.FootBlockId].AtlasPosition), pixel,
+                            uint2(32, 44), uint2(0, 12), uint2(32, 4));
                 }
                 else
                 {
@@ -589,6 +608,12 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
                     localLight +
                     directLight);
 
+                // Grade already-lit colour; never brighten black caves/cut caps.
+                float luminance = dot(color.rgb, float3(.2126, .7152, .0722));
+                float tintLuminance = max(.001, dot(_TerrainHeightTint.rgb, float3(.2126, .7152, .0722)));
+                float3 graded = lerp(color.rgb, luminance.xxx, saturate(_TerrainHeightTint.a)) *
+                    (_TerrainHeightTint.rgb / tintLuminance);
+                color.rgb = lerp(color.rgb, graded, input.HeightGrade * saturate(skyVisibility));
                 color.a = 1.0;
 
                 return color;

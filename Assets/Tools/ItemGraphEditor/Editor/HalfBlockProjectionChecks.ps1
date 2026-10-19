@@ -225,10 +225,11 @@ public static class HalfProjectionChecks {
     Check(outputs[0].SequenceEqual(outputs[1]),"Air skip changed opaque records");
     Check(waters[0].SequenceEqual(waters[1]),"Air skip changed water records");
     Check(clips[0].SequenceEqual(clips[1]),"Air skip changed clipping volume/order");
-    Check(newReads==oldReads,"Restored projection differs from baseline accessor work");
+    Check(newReads>=oldReads && newReads<=oldReads*1.05+2,
+     "Top transitions added more than 5% accessor reads in projection fixture");
    }
   }
-  Console.WriteLine("Projection rollback PASS: 20k occupancy operations, exact baseline opaque/water/air-mask output and accessor reads across 4 views, clipping and mixed halves");
+  Console.WriteLine("Projection PASS: 20k occupancy operations, baseline geometry/water/clip output; transition reads within 5% across 4 views, clipping and mixed halves");
  }
  static (List<Game.World.Rendering.ProjectedCellData> solid,List<Game.World.Rendering.ProjectedCellData> water) Build(
   Dictionary<Unity.Mathematics.int3,Game.World.Blocks.BlockData> map,Game.World.Rendering.ViewDirection view,bool clip=false,
@@ -248,7 +249,30 @@ public static class HalfProjectionChecks {
    view,clip,new Unity.Mathematics.float3(7,playerHeight,7));
   return (solid,water.Select(x=>x.Value).ToList());
  }
+ static void CheckTopFrontTransition() {
+  foreach(ViewDirection view in Enum.GetValues(typeof(ViewDirection)))
+  foreach(bool lower in new[]{false,true}) foreach(int x in new[]{0,15}) {
+   var p=new Unity.Mathematics.int3(x,7,7);
+   var front=p-ViewDirectionUtility.GetAwayFromCameraOffset(view);
+   var shape=lower?Game.World.Blocks.BlockShape.LowerHalf:Game.World.Blocks.BlockShape.Full;
+   var map=new Dictionary<Unity.Mathematics.int3,Game.World.Blocks.BlockData>();
+   var accessor=new Game.World.Chunks.ChunkBlockAccessor(map);
+   var stone=Game.World.Blocks.BlockId.Stone;var turf=Game.World.Blocks.BlockId.Turf;
+   map[p]=new Game.World.Blocks.BlockData(stone,255,shape);
+   Check(TopNeighborMaskUtility.BuildFrontTransition(Unity.Mathematics.int2.zero,p,accessor,view,lower,stone)==0,"Empty front got transition");
+   map[front]=new Game.World.Blocks.BlockData(turf,255,shape);
+   Check(TopNeighborMaskUtility.BuildFrontTransition(Unity.Mathematics.int2.zero,p,accessor,view,lower,stone)==turf,"Different same-height material missing");
+   map[front]=new Game.World.Blocks.BlockData(stone,255,shape);
+   Check(TopNeighborMaskUtility.BuildFrontTransition(Unity.Mathematics.int2.zero,p,accessor,view,lower,stone)==0,"Same material got transition");
+   map[front]=new Game.World.Blocks.BlockData(turf,255,lower?Game.World.Blocks.BlockShape.Full:Game.World.Blocks.BlockShape.LowerHalf);
+   Check(TopNeighborMaskUtility.BuildFrontTransition(Unity.Mathematics.int2.zero,p,accessor,view,lower,stone)==0,"Transition crossed a half-height step");
+   map[front]=new Game.World.Blocks.BlockData(turf,255,shape);
+   map[front+new Unity.Mathematics.int3(0,1,0)]=new Game.World.Blocks.BlockData(stone,255);
+   if(!lower) Check(TopNeighborMaskUtility.BuildFrontTransition(Unity.Mathematics.int2.zero,p,accessor,view,lower,stone)==0,"Covered surface got transition");
+  }
+ }
  public static string Run() {
+  CheckTopFrontTransition();
   CheckProjectionOptimization();
   CheckRockyShore();
   CheckTerrainMinimap();

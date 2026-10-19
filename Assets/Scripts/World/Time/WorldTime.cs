@@ -7,5 +7,7 @@ namespace Game.World.Time
         public int Hour;
         public float UpdateTimer;
         public double SimulationSeconds;
+        // Scaled world time advanced this frame; movement/physics use ECS delta instead.
+        public float DeltaSeconds;
     }
 }

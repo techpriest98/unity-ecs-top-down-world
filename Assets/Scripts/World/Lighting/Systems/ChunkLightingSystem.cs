@@ -196,6 +196,10 @@ namespace Game.World.Lighting
                         shadowState.TargetLight,
                         targetMaskIndex);
 
+                    // Upload the inactive mask as each chunk finishes. The
+                    // range uploader only visits chunks marked for rendering;
+                    // flipping the global mask alone leaves stale GPU shadows.
+                    ecb.SetComponentEnabled<ChunkNeedsRender>(entity, true);
                     ecb.SetComponentEnabled<ChunkNeedsSunShadowUpdate>(
                         entity,
                         false);

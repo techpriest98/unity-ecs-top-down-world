@@ -58,6 +58,7 @@ namespace Game.World.Time
     [BurstCompile]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateBefore(typeof(ChunkProceduralRenderSystem))]
+    [UpdateAfter(typeof(WorldTimeSystem))]
     public partial struct WorldWindSystem : ISystem
     {
         private Entity windEntity;
@@ -79,7 +80,8 @@ namespace Game.World.Time
         {
             if (SystemAPI.TryGetSingleton<WorldStartupState>(out var startup) && startup.Phase != WorldStartupPhase.Ready) return;
             var wind = state.EntityManager.GetComponentData<WorldWind>(windEntity);
-            WorldWindUtility.Advance(ref wind, SystemAPI.GetSingleton<WorldSeedComponent>().Value, SystemAPI.Time.DeltaTime);
+            float delta = SystemAPI.TryGetSingleton<WorldTime>(out var clock) ? clock.DeltaSeconds : SystemAPI.Time.DeltaTime;
+            WorldWindUtility.Advance(ref wind, SystemAPI.GetSingleton<WorldSeedComponent>().Value, delta);
             state.EntityManager.SetComponentData(windEntity, wind);
         }
     }
@@ -88,7 +90,6 @@ namespace Game.World.Time
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     public partial struct WorldTimeSystem : ISystem
     {
-        private const float SecondsPerHour = 90f;
 
         public void OnCreate(ref SystemState state)
         {
@@ -109,28 +110,21 @@ namespace Game.World.Time
             }
 
             state.RequireForUpdate<WorldTime>();
+            Entity timeEntity = worldTimeQuery.GetSingletonEntity();
+            if (!state.EntityManager.HasComponent<WorldTimeDebugSpeed>(timeEntity))
+                state.EntityManager.AddComponentData(timeEntity, new WorldTimeDebugSpeed { Value = 1f });
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            RefRW<WorldTime> worldTime = SystemAPI.GetSingletonRW<WorldTime>();
+            worldTime.ValueRW.DeltaSeconds = 0f;
             if (SystemAPI.TryGetSingleton<WorldStartupState>(out var startup) &&
                 startup.Phase != WorldStartupPhase.Ready) return;
 
-            RefRW<WorldTime> worldTime = SystemAPI.GetSingletonRW<WorldTime>();
-
-            worldTime.ValueRW.UpdateTimer += SystemAPI.Time.DeltaTime;
-            worldTime.ValueRW.SimulationSeconds += SystemAPI.Time.DeltaTime;
-
-            if (worldTime.ValueRO.UpdateTimer < SecondsPerHour)
-            {
-                return;
-            }
-
-            int elapsedHours = (int)math.floor(worldTime.ValueRO.UpdateTimer / SecondsPerHour);
-
-            worldTime.ValueRW.UpdateTimer -= elapsedHours * SecondsPerHour;
-            worldTime.ValueRW.Hour = (worldTime.ValueRO.Hour + elapsedHours) % 24;
+            float speed = SystemAPI.TryGetSingleton<WorldTimeDebugSpeed>(out var debugSpeed) ? debugSpeed.Value : 1f;
+            WorldTimeDebugUtility.Advance(ref worldTime.ValueRW, SystemAPI.Time.DeltaTime, speed);
         }
     }
 }

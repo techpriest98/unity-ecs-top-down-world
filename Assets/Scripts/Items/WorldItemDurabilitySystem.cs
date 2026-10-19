@@ -18,13 +18,15 @@ namespace Game.Items
         {
             var library = SystemAPI.GetSingleton<ItemLibrary>();
             if (!library.Value.IsCreated) return;
+            float delta = SystemAPI.TryGetSingleton<Game.World.Time.WorldTime>(out var clock)
+                ? clock.DeltaSeconds : SystemAPI.Time.DeltaTime;
             using var commands = new EntityCommandBuffer(Allocator.Temp);
             foreach (var (item, entity) in SystemAPI.Query<RefRW<WorldItem>>().WithEntityAccess())
             {
                 int index = ItemRuntimeUtility.Find(ref library.Value.Value, item.ValueRO.Instance.DefinitionId);
                 if (index < 0) continue;
                 var value = item.ValueRO;
-                ItemRuntimeUtility.TickDurability(ref value.Instance, library.Value.Value.Items[index], (float)SystemAPI.Time.DeltaTime);
+                ItemRuntimeUtility.TickDurability(ref value.Instance, library.Value.Value.Items[index], delta);
                 item.ValueRW = value;
                 if (value.Instance.Durability <= 0f) commands.DestroyEntity(entity);
             }

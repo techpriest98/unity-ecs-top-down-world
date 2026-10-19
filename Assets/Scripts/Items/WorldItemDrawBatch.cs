@@ -31,13 +31,15 @@ namespace Game.Items
         private Bounds bounds;
         public int Count { get; private set; }
         public Texture Texture => texture;
+        public bool AboveFog { get; private set; }
 
-        public void Begin(Texture source)
+        public void Begin(Texture source, bool aboveFog = false)
         {
-            texture = source; Count = 0;
+            texture = source; Count = 0; AboveFog = aboveFog;
         }
 
-        public bool CanAppend(Texture source) => Count < Capacity && texture == source;
+        public bool CanAppend(Texture source, bool aboveFog = false) =>
+            Count < Capacity && texture == source && AboveFog == aboveFog;
 
         public void Add(WorldItemDrawData data, Texture2D mask, uint version, Bounds itemBounds)
         {

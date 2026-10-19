@@ -343,7 +343,9 @@ namespace Game.World.Rendering
                 sourceAirIndex,
                 projectionX,
                 projectionY,
-                BuildShoreMask(chunkCoordinate, blockAccessor, belowWorld, half, false, direction));
+                BuildShoreMask(chunkCoordinate, blockAccessor, belowWorld, half, false, direction),
+                TopNeighborMaskUtility.BuildFrontTransition(chunkCoordinate, belowWorld, blockAccessor,
+                    direction, half, belowBlock.BlockId));
         }
 
         private static void TryEmitOpaqueSide(
