@@ -9,24 +9,63 @@ using UnityEngine;
 
 namespace Game.Items.Skills
 {
-    public enum SkillChainNodeKind { ValidTopTarget, WithinDistance, Action, GroundItemTarget, Ignitable, ValidTerrainTarget, ValidCursorTarget }
+    public enum SkillChainNodeKind { ValidTopTarget, WithinDistance, Action, GroundItemTarget, Ignitable, ValidTerrainTarget, ValidCursorTarget, OtherHandItem, ReplaceableWorldItemTarget, TopSurfacePosition, ItemCondition }
+
+    [System.Serializable]
+    public sealed class WorldItemMatch
+    {
+        public ItemDefinition Item;
+        public SkillChainNode Output;
+    }
 
     [CreateAssetMenu(menuName = "Game/Items/Skills/Chain Node")]
     public sealed class SkillChainNode : ScriptableObject
     {
         public SkillChainNodeKind Kind;
-        public SkillChainNode Next;
-        // Data edges are independent of flow edges. Only earlier evaluated nodes
-        // may supply a position; no recursive evaluation or hidden cursor rereads.
-        public SkillChainNode PositionSource;
+        // Internal successful-data continuation, edited by ONE data connection.
+        // Kept under its serialized name so existing graphs retain their wiring.
+        [HideInInspector] public SkillChainNode Next;
+        public WorldItemMatch[] ItemMatches = System.Array.Empty<WorldItemMatch>();
+        // Optional additional input referring to previously resolved data.
+        [HideInInspector] public SkillChainNode PositionSource;
         public CursorWorldPosition Cursor = CursorWorldPosition.Before;
         public ActionDistanceDefinition Distance;
         public ItemSkillAction Action;
+        public OtherHandItemCondition HandCondition;
+        public ItemSkillCondition Condition;
         [TextArea] public string FailureMessage = "I can't do that.";
     }
 
     public static class SkillChainRunner
     {
+        public static string OutputName(SkillChainNode node)
+        {
+            // World Item carries its entity AND surface position through range checks.
+            int count = 0;
+            for (var source = node; source != null && ++count <= 64; source = source.PositionSource)
+            {
+                if (source.Kind == SkillChainNodeKind.GroundItemTarget || source.Kind == SkillChainNodeKind.ReplaceableWorldItemTarget ||
+                    (source.Kind == SkillChainNodeKind.Action && source.Action is ReplaceWorldItemAction)) return "World Item";
+                if (source.Kind != SkillChainNodeKind.WithinDistance && source.Kind != SkillChainNodeKind.ItemCondition &&
+                    source.Kind != SkillChainNodeKind.Ignitable && !(source.Kind == SkillChainNodeKind.OtherHandItem && source.PositionSource != null)) break;
+            }
+            return node.Kind == SkillChainNodeKind.OtherHandItem ||
+                (node.Kind == SkillChainNodeKind.Action && (node.Action is ReplaceEquippedItemAction || node.Action is TogglePlacementShapeAction))
+                ? "Item" : "Position";
+        }
+        public static bool IsVisible(SkillChainNode first, EntityManager manager, Entity player, EquipmentSlot slot, int item)
+        {
+            int count = 0;
+            for (var node = first; node != null; node = node.Next)
+            {
+                if (++count > 64) return false;
+                if (node.Kind == SkillChainNodeKind.OtherHandItem &&
+                    (node.HandCondition == null || !node.HandCondition.Evaluate(manager, player, slot, item))) return false;
+                if (node.Kind == SkillChainNodeKind.ItemCondition && node.Condition != null && node.Condition.ControlsVisibility &&
+                    !node.Condition.Evaluate(manager, player, slot, item)) return false;
+            }
+            return true;
+        }
         private static bool ConfigurationFailure(SkillChainNode node, string reason, out string failure)
         {
             failure = null; // PlayerSkillInputSystem does not display empty dialogue.
@@ -44,17 +83,53 @@ namespace Game.Items.Skills
             var targets = new Dictionary<SkillChainNode, Entity>();
             var actions = new List<(ItemSkillAction action, float3 position, Entity target, string failure)>();
             bool actionStarted = false;
+            SkillChainNode previous = null;
+            SkillChainNode branch = null;
             // Validate the complete chain before any mutation.
-            for (var node = first; node != null; node = node.Next)
+            for (var node = first; node != null; previous = node, node = branch != null ? branch : node.Next)
             {
+                branch = null;
                 if (visited.Count >= 64 || !visited.Add(node))
-                    return ConfigurationFailure(node, "Flow contains a cycle or exceeds 64 nodes.", out failure);
+                    return ConfigurationFailure(node, "Data graph contains a cycle or exceeds 64 nodes.", out failure);
                 if (node.Kind != SkillChainNodeKind.Action && actionStarted)
                     return ConfigurationFailure(node, "Conditions must precede actions.", out failure);
                 float3 position;
                 bool valid;
+                // Successful data arrives from the connected predecessor. No second
+                // Flow connection or cursor reread is required to carry its value.
+                var input = previous != null ? previous : node.PositionSource;
                 switch (node.Kind)
                 {
+                    case SkillChainNodeKind.ItemCondition:
+                        if (node.Condition == null) return ConfigurationFailure(node, "Condition asset is not assigned.", out failure);
+                        if (!node.Condition.Evaluate(manager, player, slot, item)) { failure = node.FailureMessage; return false; }
+                        if (input != null && positions.TryGetValue(input, out var conditionPosition)) positions[node] = conditionPosition;
+                        if (input != null && targets.TryGetValue(input, out var conditionTarget)) targets[node] = conditionTarget;
+                        break;
+                    case SkillChainNodeKind.OtherHandItem:
+                        if (node.HandCondition == null) return ConfigurationFailure(node, "Other hand condition is not assigned.", out failure);
+                        if (!node.HandCondition.Evaluate(manager, player, slot, item)) { failure = node.FailureMessage; return false; }
+                        if (input != null && positions.TryGetValue(input, out var handPosition)) positions[node] = handPosition;
+                        if (input != null && targets.TryGetValue(input, out var handTarget)) targets[node] = handTarget;
+                        break;
+                    case SkillChainNodeKind.TopSurfacePosition:
+                        if (!manager.HasComponent<SelectedProjectedCell>(player)) { failure = node.FailureMessage; return false; }
+                        var top = manager.GetComponentData<SelectedProjectedCell>(player);
+                        if (!top.IsValid || top.FaceType != ProjectedFaceType.Top || node.Cursor != CursorWorldPosition.Before ||
+                            !CursorWorldUtility.TryGetPosition(manager, player, node.Cursor, out var topCell))
+                        { failure = node.FailureMessage; return false; }
+                        positions[node] = ProjectedCellInteractionUtility.GetTopSurfacePosition(top, topCell);
+                        break;
+                    case SkillChainNodeKind.ReplaceableWorldItemTarget:
+                        if (input == null || !positions.TryGetValue(input, out position))
+                            return ConfigurationFailure(node, "Position input is not connected to evaluated data.", out failure);
+                        var replacementTarget = WorldItemMatchUtility.Find(manager, position, node.ItemMatches, out int matchedRow);
+                        if (replacementTarget == Entity.Null) { failure = node.FailureMessage; return false; }
+                        branch = node.ItemMatches[matchedRow].Output;
+                        if (branch == null) return ConfigurationFailure(node, "Matched World Item output is not connected.", out failure);
+                        positions[node] = PickUpItemAction.Surface(manager, replacementTarget);
+                        targets[node] = replacementTarget;
+                        break;
                     case SkillChainNodeKind.ValidCursorTarget:
                     case SkillChainNodeKind.ValidTerrainTarget:
                         if (node.Cursor != CursorWorldPosition.Before && node.Cursor != CursorWorldPosition.Behind)
@@ -94,8 +169,8 @@ namespace Game.Items.Skills
                         positions[node] = position;
                         break;
                     case SkillChainNodeKind.WithinDistance:
-                        if (node.PositionSource == null || !positions.TryGetValue(node.PositionSource, out position))
-                            return ConfigurationFailure(node, "Position must come from an earlier node in this flow.", out failure);
+                        if (input == null || !positions.TryGetValue(input, out position))
+                            return ConfigurationFailure(node, "Position must come from an earlier data output.", out failure);
                         if (node.Distance == null)
                             return ConfigurationFailure(node, "Distance input is not connected.", out failure);
                         if (!math.isfinite(node.Distance.MaxDistance) || node.Distance.MaxDistance < 0)
@@ -103,11 +178,11 @@ namespace Game.Items.Skills
                         if (!node.Distance.Allows(manager, player, position))
                         { failure = node.FailureMessage; return false; }
                         positions[node] = position;
-                        if (targets.TryGetValue(node.PositionSource, out var distanceTarget)) targets[node] = distanceTarget;
+                        if (targets.TryGetValue(input, out var distanceTarget)) targets[node] = distanceTarget;
                         break;
                     case SkillChainNodeKind.Ignitable:
-                        if (node.PositionSource == null || !positions.TryGetValue(node.PositionSource, out position))
-                            return ConfigurationFailure(node, "Position must come from an earlier node in this flow.", out failure);
+                        if (input == null || !positions.TryGetValue(input, out position))
+                            return ConfigurationFailure(node, "Position must come from an earlier data output.", out failure);
                         using (var effectQuery = manager.CreateEntityQuery(ComponentType.ReadOnly<ItemLibrary>(), ComponentType.ReadOnly<IgnitableCell>()))
                         {
                             if (effectQuery.CalculateEntityCount() != 1)
@@ -118,6 +193,7 @@ namespace Game.Items.Skills
                             if (!valid) { failure = node.FailureMessage; return false; }
                         }
                         positions[node] = position;
+                        if (input != null && targets.TryGetValue(input, out var ignitableTarget)) targets[node] = ignitableTarget;
                         break;
                     case SkillChainNodeKind.Action:
                         actionStarted = true;
@@ -143,13 +219,24 @@ namespace Game.Items.Skills
                             actions.Add((replacement, default, Entity.Null, node.FailureMessage));
                             break;
                         }
-                        if (node.PositionSource == null || !positions.TryGetValue(node.PositionSource, out position))
-                            return ConfigurationFailure(node, "Position must come from an earlier node in this flow.", out failure);
+                        if (input == null || !positions.TryGetValue(input, out position))
+                            return ConfigurationFailure(node, "Position must come from an earlier data output.", out failure);
+                        if (node.Action is ReplaceWorldItemAction replaceWorld)
+                        {
+                            if (!targets.TryGetValue(input, out var resolvedTarget))
+                                return ConfigurationFailure(node, "Position must carry a Replaceable World Item Target.", out failure);
+                            if (!replaceWorld.CanReplaceTarget(manager, resolvedTarget, position))
+                            { failure = node.FailureMessage; return false; }
+                            actions.Add((replaceWorld, position, resolvedTarget, node.FailureMessage));
+                            positions[node] = position;
+                            targets[node] = resolvedTarget;
+                            break;
+                        }
                         if (node.Action is SetWorldBlockAction setBlock)
                         {
                             var error = setBlock.GetConfigurationError(manager);
                             if (error != null) return ConfigurationFailure(node, error, out failure);
-                            if (!setBlock.CanSetAt(manager, player, slot, item, (int3)math.floor(position)))
+                            if (!setBlock.CanSetAt(manager, player, slot, item, (int3)math.floor(position), checkDistance: false))
                             { failure = node.FailureMessage; return false; }
                             actions.Add((setBlock, position, Entity.Null, node.FailureMessage));
                             positions[node] = position;
@@ -162,12 +249,12 @@ namespace Game.Items.Skills
                             var error = throwConfig.GetConfigurationError(manager, player, item);
                             if (error != null) return ConfigurationFailure(node, error, out failure);
                         }
-                        targets.TryGetValue(node.PositionSource, out var actionTarget);
+                        targets.TryGetValue(input, out var actionTarget);
                         if (node.Action is PickUpItemAction && actionTarget == Entity.Null)
-                            return ConfigurationFailure(node, "Pick Up position must carry a Ground Item Target through the flow.", out failure);
+                            return ConfigurationFailure(node, "Pick Up position must carry a Ground Item Target through the data connection.", out failure);
                         valid = node.Action is ThrowItemAction thrown
                             ? thrown.CanThrowAt(manager, player, slot, item, (int3)math.floor(position))
-                            : node.Action is PickUpItemAction picked && item == 0 && picked.CanPickUp(manager, player, slot, actionTarget, position);
+                            : node.Action is PickUpItemAction picked && item == 0 && picked.CanPickUp(manager, player, slot, actionTarget, position, checkDistance: false);
                         if (!valid) { failure = node.FailureMessage; return false; }
                         actions.Add((node.Action, position, actionTarget, node.FailureMessage));
                         positions[node] = position;
@@ -176,7 +263,7 @@ namespace Game.Items.Skills
                     default: return ConfigurationFailure(node, "Unknown node kind.", out failure);
                 }
             }
-            if (actions.Count == 0) return ConfigurationFailure(first, "Flow contains no action.", out failure);
+            if (actions.Count == 0) return ConfigurationFailure(first, "Data graph contains no action.", out failure);
             foreach (var step in actions)
             {
                 // A previous action may consume the hand's item. Never reuse it.
@@ -189,14 +276,16 @@ namespace Game.Items.Skills
                 }
                 bool executed = step.action is ThrowItemAction thrown
                     ? currentItem != 0 && thrown.ExecuteAtPosition(manager, player, slot, currentItem, (int3)math.floor(step.position))
+                    : step.action is ReplaceWorldItemAction replaceWorld
+                        ? replaceWorld.ExecuteTarget(manager, step.target, step.position)
                     : step.action is PickUpItemAction picked
-                        ? currentItem == 0 && picked.ExecuteTarget(manager, player, slot, step.target, step.position)
+                        ? currentItem == 0 && picked.ExecuteTarget(manager, player, slot, step.target, step.position, checkDistance: false)
                         : step.action is TogglePlacementShapeAction toggle
                             ? toggle.OpenPicker(manager, player, slot, currentItem)
                         : step.action is ReplaceEquippedItemAction replacement
                             ? replacement.ExecuteReplacement(manager, player, slot, currentItem)
                             : step.action is SetWorldBlockAction setBlock
-                                ? setBlock.ExecuteAtPosition(manager, player, slot, currentItem, (int3)math.floor(step.position))
+                                ? setBlock.ExecuteAtPosition(manager, player, slot, currentItem, (int3)math.floor(step.position), checkDistance: false)
                                 : false;
                 if (!executed) { failure = step.failure; return false; }
             }

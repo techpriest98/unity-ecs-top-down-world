@@ -18,7 +18,11 @@ namespace Game.World.Saving
         public ChunkChangesData[] Chunks;
         public EquipmentSlotData[] Equipment;
         public WorldItemData[] WorldItems;
+        public CoastalItemChunkData[] CoastalItemChunks;
     }
+
+    [Serializable]
+    public sealed class CoastalItemChunkData { public int X, Z; }
 
     [Serializable]
     public sealed class WorldItemData

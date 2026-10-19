@@ -12,9 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 715a6ac247b746519f8c5f607d45711a, type: 3}
   m_Name: ItemIds
   m_EditorClassIdentifier: 
-  NextItemId: 4
-  NextSkillId: 13
+  NextItemId: 8
+  NextSkillId: 15
   Items:
+  - Guid: c019f11a00004e66b200000000000002
+    Id: 6
+  - Guid: c019f11a00004e66b200000000000003
+    Id: 7
+  - Guid: ab11c01f00004e66b200000000000001
+    Id: 4
   - Guid: 21863c02d6dcf45e395849a4c0b02231
     Id: 1
   - Guid: 22b3719fb2c9947c28e5c2258dc66c34
@@ -22,6 +28,8 @@ MonoBehaviour:
   - Guid: 128e9d667dff51a44bb431a867628517
     Id: 3
   Skills:
+  - Guid: ab11c01f00004e66b200000000000002
+    Id: 13
   - Guid: 6915bc3950696455c8f38b7f7667f5da
     Id: 1
   - Guid: 8402cdd43bb1b4a2292bccb46ec042db

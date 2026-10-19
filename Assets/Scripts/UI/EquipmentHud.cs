@@ -538,12 +538,16 @@ namespace Game.UI
             var seen = new System.Collections.Generic.HashSet<BlockId>();
             foreach (var block in ChunkProceduralRenderer.Instance.AvailableBlocks)
             {
-                if (block.BlockId == BlockId.Air || !SplitCellUtility.IsKnownMaterial(block.BlockId) || !seen.Add(block.BlockId)) continue;
+                if (!IsRubedoMaterial(block.BlockId) || !seen.Add(block.BlockId)) continue;
                 AddBlockChoice(content, block.BlockId, BlockPlacementMode.Full);
                 AddBlockChoice(content, block.BlockId, BlockPlacementMode.Half);
             }
             blockPicker.SetAsLastSibling();
         }
+
+        private static bool IsRubedoMaterial(BlockId material) =>
+            material == BlockId.Stone || material == BlockId.Sand ||
+            material == BlockId.Turf || material == BlockId.OceanWater;
 
         private void AddBlockChoice(Transform parent, BlockId material, BlockPlacementMode mode)
         {

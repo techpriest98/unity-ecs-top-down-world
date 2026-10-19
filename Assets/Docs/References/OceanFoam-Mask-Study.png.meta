@@ -1,0 +1,2368 @@
+fileFormatVersion: 2
+guid: 47199c2a15b959742b6af331a419094e
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -3143806803687704339
+    second: OceanFoam-Mask-Study_0
+  - first:
+      213: -6005708559931565117
+    second: OceanFoam-Mask-Study_1
+  - first:
+      213: 3870093611268180281
+    second: OceanFoam-Mask-Study_2
+  - first:
+      213: -5450859231979664269
+    second: OceanFoam-Mask-Study_3
+  - first:
+      213: 4995495393508240340
+    second: OceanFoam-Mask-Study_4
+  - first:
+      213: 1584317404280953047
+    second: OceanFoam-Mask-Study_5
+  - first:
+      213: -486445417534566074
+    second: OceanFoam-Mask-Study_6
+  - first:
+      213: 1731845036271303703
+    second: OceanFoam-Mask-Study_7
+  - first:
+      213: 8376678701384838650
+    second: OceanFoam-Mask-Study_8
+  - first:
+      213: 4824870473995459837
+    second: OceanFoam-Mask-Study_9
+  - first:
+      213: 5084461416986636827
+    second: OceanFoam-Mask-Study_10
+  - first:
+      213: 5438004512373858241
+    second: OceanFoam-Mask-Study_11
+  - first:
+      213: -1075735775779762785
+    second: OceanFoam-Mask-Study_12
+  - first:
+      213: -4853180040373672136
+    second: OceanFoam-Mask-Study_13
+  - first:
+      213: -4225186086418993526
+    second: OceanFoam-Mask-Study_14
+  - first:
+      213: -6170658402860595608
+    second: OceanFoam-Mask-Study_15
+  - first:
+      213: 2919809260614516532
+    second: OceanFoam-Mask-Study_16
+  - first:
+      213: -5560502459784482646
+    second: OceanFoam-Mask-Study_17
+  - first:
+      213: 3075703722647170635
+    second: OceanFoam-Mask-Study_18
+  - first:
+      213: -7344874011925971725
+    second: OceanFoam-Mask-Study_19
+  - first:
+      213: -6127221639173579156
+    second: OceanFoam-Mask-Study_20
+  - first:
+      213: -2650143393775723709
+    second: OceanFoam-Mask-Study_21
+  - first:
+      213: 5505626985016782923
+    second: OceanFoam-Mask-Study_22
+  - first:
+      213: 4119745316168662533
+    second: OceanFoam-Mask-Study_23
+  - first:
+      213: -8617489271103369406
+    second: OceanFoam-Mask-Study_24
+  - first:
+      213: 475251171860931457
+    second: OceanFoam-Mask-Study_25
+  - first:
+      213: -6775433056877876945
+    second: OceanFoam-Mask-Study_26
+  - first:
+      213: 1926641242201364053
+    second: OceanFoam-Mask-Study_27
+  - first:
+      213: 9140191558201590476
+    second: OceanFoam-Mask-Study_28
+  - first:
+      213: 3632709593567286283
+    second: OceanFoam-Mask-Study_29
+  - first:
+      213: 8655344165239576954
+    second: OceanFoam-Mask-Study_30
+  - first:
+      213: 533929648419264826
+    second: OceanFoam-Mask-Study_31
+  - first:
+      213: 3735257893620126621
+    second: OceanFoam-Mask-Study_32
+  - first:
+      213: -765641372752825103
+    second: OceanFoam-Mask-Study_33
+  - first:
+      213: 1342553180668891326
+    second: OceanFoam-Mask-Study_34
+  - first:
+      213: -4116997705124623930
+    second: OceanFoam-Mask-Study_35
+  - first:
+      213: 7655847478928850886
+    second: OceanFoam-Mask-Study_36
+  - first:
+      213: 4441647553019692326
+    second: OceanFoam-Mask-Study_37
+  - first:
+      213: -46165535268655131
+    second: OceanFoam-Mask-Study_38
+  - first:
+      213: -909760656807219073
+    second: OceanFoam-Mask-Study_39
+  - first:
+      213: 7448724973596014309
+    second: OceanFoam-Mask-Study_40
+  - first:
+      213: -5598145443503194119
+    second: OceanFoam-Mask-Study_41
+  - first:
+      213: -8831990520286519648
+    second: OceanFoam-Mask-Study_42
+  - first:
+      213: -368445529763896824
+    second: OceanFoam-Mask-Study_43
+  - first:
+      213: -5002444652577568946
+    second: OceanFoam-Mask-Study_44
+  - first:
+      213: 6659175399595485661
+    second: OceanFoam-Mask-Study_45
+  - first:
+      213: -1711181792251117843
+    second: OceanFoam-Mask-Study_46
+  - first:
+      213: -7391217933636453883
+    second: OceanFoam-Mask-Study_47
+  - first:
+      213: -55516517933233836
+    second: OceanFoam-Mask-Study_48
+  - first:
+      213: -4058970044783902270
+    second: OceanFoam-Mask-Study_49
+  - first:
+      213: 3784984148934386142
+    second: OceanFoam-Mask-Study_50
+  - first:
+      213: 7678469002190594617
+    second: OceanFoam-Mask-Study_51
+  - first:
+      213: -2385579605668975122
+    second: OceanFoam-Mask-Study_52
+  - first:
+      213: 1971954609626848313
+    second: OceanFoam-Mask-Study_53
+  - first:
+      213: 1567318734132960595
+    second: OceanFoam-Mask-Study_54
+  - first:
+      213: 4657309022323646756
+    second: OceanFoam-Mask-Study_55
+  - first:
+      213: -4869095692650330869
+    second: OceanFoam-Mask-Study_56
+  - first:
+      213: 5403501552115418663
+    second: OceanFoam-Mask-Study_57
+  - first:
+      213: -6713305162039589988
+    second: OceanFoam-Mask-Study_58
+  - first:
+      213: -4970181804856954619
+    second: OceanFoam-Mask-Study_59
+  - first:
+      213: -7910246944753770289
+    second: OceanFoam-Mask-Study_60
+  - first:
+      213: 2030034840723339874
+    second: OceanFoam-Mask-Study_61
+  - first:
+      213: 7749177530730423703
+    second: OceanFoam-Mask-Study_62
+  - first:
+      213: -1931293915872029284
+    second: OceanFoam-Mask-Study_63
+  - first:
+      213: 3114785058376331443
+    second: OceanFoam-Mask-Study_64
+  - first:
+      213: 8306246124132839027
+    second: OceanFoam-Mask-Study_65
+  - first:
+      213: -501263683420577922
+    second: OceanFoam-Mask-Study_66
+  - first:
+      213: -1727464901999523242
+    second: OceanFoam-Mask-Study_67
+  - first:
+      213: 659389351770242430
+    second: OceanFoam-Mask-Study_68
+  - first:
+      213: -7656816067977319440
+    second: OceanFoam-Mask-Study_69
+  - first:
+      213: -8783136970935345897
+    second: OceanFoam-Mask-Study_70
+  - first:
+      213: 434501442206598284
+    second: OceanFoam-Mask-Study_71
+  - first:
+      213: -3520696566822091982
+    second: OceanFoam-Mask-Study_72
+  - first:
+      213: -6377039856100809820
+    second: OceanFoam-Mask-Study_73
+  - first:
+      213: -4869317519595391752
+    second: OceanFoam-Mask-Study_74
+  - first:
+      213: -1880998754491290575
+    second: OceanFoam-Mask-Study_75
+  - first:
+      213: -4850511386646255787
+    second: OceanFoam-Mask-Study_76
+  - first:
+      213: -328870159502775823
+    second: OceanFoam-Mask-Study_77
+  - first:
+      213: 3543303305445339090
+    second: OceanFoam-Mask-Study_78
+  - first:
+      213: -4866562373246785096
+    second: OceanFoam-Mask-Study_79
+  - first:
+      213: -804461768839246772
+    second: OceanFoam-Mask-Study_80
+  - first:
+      213: 3111955595294387922
+    second: OceanFoam-Mask-Study_81
+  - first:
+      213: 4077764396191256754
+    second: OceanFoam-Mask-Study_82
+  - first:
+      213: -1148677408391334010
+    second: OceanFoam-Mask-Study_83
+  - first:
+      213: -3891174502600943060
+    second: OceanFoam-Mask-Study_84
+  - first:
+      213: 8788822862815177557
+    second: OceanFoam-Mask-Study_85
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 358
+        width: 834
+        height: 529
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: de8fcbf5e54fe54d0800000000000000
+      internalID: -3143806803687704339
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_1
+      rect:
+        serializedVersion: 2
+        x: 1242
+        y: 778
+        width: 140
+        height: 55
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3cb91c462ef67aca0800000000000000
+      internalID: -6005708559931565117
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_2
+      rect:
+        serializedVersion: 2
+        x: 1500
+        y: 745
+        width: 23
+        height: 104
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 939062382a555b530800000000000000
+      internalID: 3870093611268180281
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_3
+      rect:
+        serializedVersion: 2
+        x: 1611
+        y: 813
+        width: 65
+        height: 58
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 37c813d8868aa54b0800000000000000
+      internalID: -5450859231979664269
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_4
+      rect:
+        serializedVersion: 2
+        x: 1661
+        y: 838
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4dba827d790935540800000000000000
+      internalID: 4995495393508240340
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_5
+      rect:
+        serializedVersion: 2
+        x: 179
+        y: 776
+        width: 10
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7d892adf840acf510800000000000000
+      internalID: 1584317404280953047
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_6
+      rect:
+        serializedVersion: 2
+        x: 232
+        y: 739
+        width: 11
+        height: 43
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6415c35587ccf39f0800000000000000
+      internalID: -486445417534566074
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_7
+      rect:
+        serializedVersion: 2
+        x: 826
+        y: 751
+        width: 58
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 71c79f082efb80810800000000000000
+      internalID: 1731845036271303703
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_8
+      rect:
+        serializedVersion: 2
+        x: 847
+        y: 306
+        width: 927
+        height: 492
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: afdaf99b5e0ff3470800000000000000
+      internalID: 8376678701384838650
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_9
+      rect:
+        serializedVersion: 2
+        x: 228
+        y: 761
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dfc15c1022265f240800000000000000
+      internalID: 4824870473995459837
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_10
+      rect:
+        serializedVersion: 2
+        x: 304
+        y: 749
+        width: 12
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b12faa958b2af8640800000000000000
+      internalID: 5084461416986636827
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_11
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 767
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1cfd30fca4ca77b40800000000000000
+      internalID: 5438004512373858241
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_12
+      rect:
+        serializedVersion: 2
+        x: 304
+        y: 714
+        width: 20
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f9dc77ce2083211f0800000000000000
+      internalID: -1075735775779762785
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_13
+      rect:
+        serializedVersion: 2
+        x: 1018
+        y: 738
+        width: 15
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 837e28e677a06acb0800000000000000
+      internalID: -4853180040373672136
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_14
+      rect:
+        serializedVersion: 2
+        x: 1197
+        y: 745
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a8ea211f3af1d55c0800000000000000
+      internalID: -4225186086418993526
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_15
+      rect:
+        serializedVersion: 2
+        x: 1197
+        y: 737
+        width: 10
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 866073b40ea6d5aa0800000000000000
+      internalID: -6170658402860595608
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_16
+      rect:
+        serializedVersion: 2
+        x: 1530
+        y: 743
+        width: 9
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 43ff2de7d0f358820800000000000000
+      internalID: 2919809260614516532
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_17
+      rect:
+        serializedVersion: 2
+        x: 272
+        y: 734
+        width: 9
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aa03cdf397025d2b0800000000000000
+      internalID: -5560502459784482646
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_18
+      rect:
+        serializedVersion: 2
+        x: 845
+        y: 690
+        width: 39
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4e2bbe6d381faa20800000000000000
+      internalID: 3075703722647170635
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_19
+      rect:
+        serializedVersion: 2
+        x: 832
+        y: 659
+        width: 16
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3fc772f3004c11a90800000000000000
+      internalID: -7344874011925971725
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_20
+      rect:
+        serializedVersion: 2
+        x: 855
+        y: 636
+        width: 25
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c6ed8f0f16cb7faa0800000000000000
+      internalID: -6127221639173579156
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_21
+      rect:
+        serializedVersion: 2
+        x: 22
+        y: 575
+        width: 9
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 34b562adf9cc83bd0800000000000000
+      internalID: -2650143393775723709
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_22
+      rect:
+        serializedVersion: 2
+        x: 849
+        y: 579
+        width: 23
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b40fab3a29ae76c40800000000000000
+      internalID: 5505626985016782923
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_23
+      rect:
+        serializedVersion: 2
+        x: 54
+        y: 533
+        width: 8
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 50eff47a9864c2930800000000000000
+      internalID: 4119745316168662533
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_24
+      rect:
+        serializedVersion: 2
+        x: 887
+        y: 539
+        width: 7
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 24fc4245a27886880800000000000000
+      internalID: -8617489271103369406
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_25
+      rect:
+        serializedVersion: 2
+        x: 70
+        y: 499
+        width: 6
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 183ebdd3c6e689600800000000000000
+      internalID: 475251171860931457
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_26
+      rect:
+        serializedVersion: 2
+        x: 28
+        y: 465
+        width: 23
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f29ea555883d8f1a0800000000000000
+      internalID: -6775433056877876945
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_27
+      rect:
+        serializedVersion: 2
+        x: 441
+        y: 436
+        width: 8
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5569703800eccba10800000000000000
+      internalID: 1926641242201364053
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_28
+      rect:
+        serializedVersion: 2
+        x: 689
+        y: 424
+        width: 8
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cc241ad9bcb78de70800000000000000
+      internalID: 9140191558201590476
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_29
+      rect:
+        serializedVersion: 2
+        x: 695
+        y: 424
+        width: 8
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b045bb0e02af96230800000000000000
+      internalID: 3632709593567286283
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_30
+      rect:
+        serializedVersion: 2
+        x: 982
+        y: 422
+        width: 17
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a79dad909a5fd1870800000000000000
+      internalID: 8655344165239576954
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_31
+      rect:
+        serializedVersion: 2
+        x: 1586
+        y: 432
+        width: 10
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a395415bf26e86700800000000000000
+      internalID: 533929648419264826
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_32
+      rect:
+        serializedVersion: 2
+        x: 1627
+        y: 424
+        width: 11
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d9393b5934d46d330800000000000000
+      internalID: 3735257893620126621
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_33
+      rect:
+        serializedVersion: 2
+        x: 564
+        y: 418
+        width: 8
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1f4b9bf5a35ef55f0800000000000000
+      internalID: -765641372752825103
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_34
+      rect:
+        serializedVersion: 2
+        x: 700
+        y: 426
+        width: 8
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eb017d13105b1a210800000000000000
+      internalID: 1342553180668891326
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_35
+      rect:
+        serializedVersion: 2
+        x: 1072
+        y: 426
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6c9c2f4666c7dd6c0800000000000000
+      internalID: -4116997705124623930
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_36
+      rect:
+        serializedVersion: 2
+        x: 1209
+        y: 420
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6cfbf1c38b80f3a60800000000000000
+      internalID: 7655847478928850886
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_37
+      rect:
+        serializedVersion: 2
+        x: 276
+        y: 374
+        width: 48
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 625c837aae6e3ad30800000000000000
+      internalID: 4441647553019692326
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_38
+      rect:
+        serializedVersion: 2
+        x: 321
+        y: 407
+        width: 9
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5ef2275b0bcfb5ff0800000000000000
+      internalID: -46165535268655131
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_39
+      rect:
+        serializedVersion: 2
+        x: 321
+        y: 384
+        width: 9
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f703164b081ef53f0800000000000000
+      internalID: -909760656807219073
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_40
+      rect:
+        serializedVersion: 2
+        x: 1195
+        y: 399
+        width: 16
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5e675c006ef2f5760800000000000000
+      internalID: 7448724973596014309
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_41
+      rect:
+        serializedVersion: 2
+        x: 1579
+        y: 390
+        width: 25
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9ff350f11646f42b0800000000000000
+      internalID: -5598145443503194119
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_42
+      rect:
+        serializedVersion: 2
+        x: 433
+        y: 398
+        width: 9
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0ae54ba6a677e6580800000000000000
+      internalID: -8831990520286519648
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_43
+      rect:
+        serializedVersion: 2
+        x: 433
+        y: 394
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 802a7572eb403eaf0800000000000000
+      internalID: -368445529763896824
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_44
+      rect:
+        serializedVersion: 2
+        x: 464
+        y: 380
+        width: 59
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e47cf82b71fb39ab0800000000000000
+      internalID: -5002444652577568946
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_45
+      rect:
+        serializedVersion: 2
+        x: 1133
+        y: 376
+        width: 15
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dd9a8ed7eb42a6c50800000000000000
+      internalID: 6659175399595485661
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_46
+      rect:
+        serializedVersion: 2
+        x: 435
+        y: 386
+        width: 25
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dee71c6e939a048e0800000000000000
+      internalID: -1711181792251117843
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_47
+      rect:
+        serializedVersion: 2
+        x: 570
+        y: 377
+        width: 16
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 50a3a10237e1d6990800000000000000
+      internalID: -7391217933636453883
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_48
+      rect:
+        serializedVersion: 2
+        x: 726
+        y: 384
+        width: 11
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4594c656504ca3ff0800000000000000
+      internalID: -55516517933233836
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_49
+      rect:
+        serializedVersion: 2
+        x: 732
+        y: 372
+        width: 9
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2c144b6ef34aba7c0800000000000000
+      internalID: -4058970044783902270
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_50
+      rect:
+        serializedVersion: 2
+        x: 1127
+        y: 379
+        width: 7
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ed1e7bd9707f68430800000000000000
+      internalID: 3784984148934386142
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_51
+      rect:
+        serializedVersion: 2
+        x: 1284
+        y: 370
+        width: 9
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9322b6e00e66f8a60800000000000000
+      internalID: 7678469002190594617
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_52
+      rect:
+        serializedVersion: 2
+        x: 1290
+        y: 376
+        width: 19
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eed2facecf7b4eed0800000000000000
+      internalID: -2385579605668975122
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_53
+      rect:
+        serializedVersion: 2
+        x: 68
+        y: 0
+        width: 774
+        height: 360
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 93c9004054acd5b10800000000000000
+      internalID: 1971954609626848313
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_54
+      rect:
+        serializedVersion: 2
+        x: 306
+        y: 358
+        width: 8
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 35d5fcda51c30c510800000000000000
+      internalID: 1567318734132960595
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_55
+      rect:
+        serializedVersion: 2
+        x: 312
+        y: 360
+        width: 6
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 421a2dc51e512a040800000000000000
+      internalID: 4657309022323646756
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_56
+      rect:
+        serializedVersion: 2
+        x: 867
+        y: 19
+        width: 874
+        height: 362
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b05413ed34f7d6cb0800000000000000
+      internalID: -4869095692650330869
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_57
+      rect:
+        serializedVersion: 2
+        x: 839
+        y: 297
+        width: 27
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7268c1d58081dfa40800000000000000
+      internalID: 5403501552115418663
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_58
+      rect:
+        serializedVersion: 2
+        x: 1713
+        y: 281
+        width: 20
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c9385d3168c85d2a0800000000000000
+      internalID: -6713305162039589988
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_59
+      rect:
+        serializedVersion: 2
+        x: 14
+        y: 194
+        width: 29
+        height: 62
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 501346c4bfd560bb0800000000000000
+      internalID: -4970181804856954619
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_60
+      rect:
+        serializedVersion: 2
+        x: 1725
+        y: 240
+        width: 30
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fc025546058293290800000000000000
+      internalID: -7910246944753770289
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_61
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 168
+        width: 22
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 26a3bfa9ee12c2c10800000000000000
+      internalID: 2030034840723339874
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_62
+      rect:
+        serializedVersion: 2
+        x: 38
+        y: 192
+        width: 9
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 79520a448eb9a8b60800000000000000
+      internalID: 7749177530730423703
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_63
+      rect:
+        serializedVersion: 2
+        x: 70
+        y: 124
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c95139b7a6aa235e0800000000000000
+      internalID: -1931293915872029284
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_64
+      rect:
+        serializedVersion: 2
+        x: 71
+        y: 114
+        width: 11
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3b0373cf180f93b20800000000000000
+      internalID: 3114785058376331443
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_65
+      rect:
+        serializedVersion: 2
+        x: 397
+        y: 95
+        width: 40
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 37e27ed67d6b54370800000000000000
+      internalID: 8306246124132839027
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_66
+      rect:
+        serializedVersion: 2
+        x: 189
+        y: 89
+        width: 10
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e7f99e2f5572b09f0800000000000000
+      internalID: -501263683420577922
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_67
+      rect:
+        serializedVersion: 2
+        x: 966
+        y: 94
+        width: 17
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 65a0d5af2dfc608e0800000000000000
+      internalID: -1727464901999523242
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_68
+      rect:
+        serializedVersion: 2
+        x: 1187
+        y: 84
+        width: 24
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e7db0f03f1f962900800000000000000
+      internalID: 659389351770242430
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_69
+      rect:
+        serializedVersion: 2
+        x: 1218
+        y: 65
+        width: 23
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0fb65bd8a568db590800000000000000
+      internalID: -7656816067977319440
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_70
+      rect:
+        serializedVersion: 2
+        x: 1558
+        y: 88
+        width: 13
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 71d5cc1c5770c1680800000000000000
+      internalID: -8783136970935345897
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_71
+      rect:
+        serializedVersion: 2
+        x: 1570
+        y: 92
+        width: 14
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c848e1572c8a70600800000000000000
+      internalID: 434501442206598284
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_72
+      rect:
+        serializedVersion: 2
+        x: 1578
+        y: 86
+        width: 8
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 233c1ac3029f32fc0800000000000000
+      internalID: -3520696566822091982
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_73
+      rect:
+        serializedVersion: 2
+        x: 1583
+        y: 94
+        width: 11
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4a36a92b9043087a0800000000000000
+      internalID: -6377039856100809820
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_74
+      rect:
+        serializedVersion: 2
+        x: 570
+        y: 53
+        width: 12
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8f43ee1c385bc6cb0800000000000000
+      internalID: -4869317519595391752
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_75
+      rect:
+        serializedVersion: 2
+        x: 683
+        y: 65
+        width: 16
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 13c2897499955e5e0800000000000000
+      internalID: -1880998754491290575
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_76
+      rect:
+        serializedVersion: 2
+        x: 698
+        y: 64
+        width: 9
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 55766fbc7958facb0800000000000000
+      internalID: -4850511386646255787
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_77
+      rect:
+        serializedVersion: 2
+        x: 1455
+        y: 53
+        width: 8
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1f96c95155e9f6bf0800000000000000
+      internalID: -328870159502775823
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_78
+      rect:
+        serializedVersion: 2
+        x: 1462
+        y: 53
+        width: 9
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2df698445975c2130800000000000000
+      internalID: 3543303305445339090
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_79
+      rect:
+        serializedVersion: 2
+        x: 1508
+        y: 63
+        width: 7
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8b9e7514e4f767cb0800000000000000
+      internalID: -4866562373246785096
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_80
+      rect:
+        serializedVersion: 2
+        x: 1526
+        y: 51
+        width: 13
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c4c44f0984af5d4f0800000000000000
+      internalID: -804461768839246772
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_81
+      rect:
+        serializedVersion: 2
+        x: 1537
+        y: 49
+        width: 8
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2deaf464023ef2b20800000000000000
+      internalID: 3111955595294387922
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_82
+      rect:
+        serializedVersion: 2
+        x: 1556
+        y: 63
+        width: 7
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2b017b80d11279830800000000000000
+      internalID: 4077764396191256754
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_83
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 31
+        width: 56
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6877157abf31f00f0800000000000000
+      internalID: -1148677408391334010
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_84
+      rect:
+        serializedVersion: 2
+        x: 1453
+        y: 50
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c2ad96df765cff9c0800000000000000
+      internalID: -3891174502600943060
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OceanFoam-Mask-Study_85
+      rect:
+        serializedVersion: 2
+        x: 1572
+        y: 47
+        width: 16
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 55b2eeb14db28f970800000000000000
+      internalID: 8788822862815177557
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      OceanFoam-Mask-Study_0: -3143806803687704339
+      OceanFoam-Mask-Study_1: -6005708559931565117
+      OceanFoam-Mask-Study_10: 5084461416986636827
+      OceanFoam-Mask-Study_11: 5438004512373858241
+      OceanFoam-Mask-Study_12: -1075735775779762785
+      OceanFoam-Mask-Study_13: -4853180040373672136
+      OceanFoam-Mask-Study_14: -4225186086418993526
+      OceanFoam-Mask-Study_15: -6170658402860595608
+      OceanFoam-Mask-Study_16: 2919809260614516532
+      OceanFoam-Mask-Study_17: -5560502459784482646
+      OceanFoam-Mask-Study_18: 3075703722647170635
+      OceanFoam-Mask-Study_19: -7344874011925971725
+      OceanFoam-Mask-Study_2: 3870093611268180281
+      OceanFoam-Mask-Study_20: -6127221639173579156
+      OceanFoam-Mask-Study_21: -2650143393775723709
+      OceanFoam-Mask-Study_22: 5505626985016782923
+      OceanFoam-Mask-Study_23: 4119745316168662533
+      OceanFoam-Mask-Study_24: -8617489271103369406
+      OceanFoam-Mask-Study_25: 475251171860931457
+      OceanFoam-Mask-Study_26: -6775433056877876945
+      OceanFoam-Mask-Study_27: 1926641242201364053
+      OceanFoam-Mask-Study_28: 9140191558201590476
+      OceanFoam-Mask-Study_29: 3632709593567286283
+      OceanFoam-Mask-Study_3: -5450859231979664269
+      OceanFoam-Mask-Study_30: 8655344165239576954
+      OceanFoam-Mask-Study_31: 533929648419264826
+      OceanFoam-Mask-Study_32: 3735257893620126621
+      OceanFoam-Mask-Study_33: -765641372752825103
+      OceanFoam-Mask-Study_34: 1342553180668891326
+      OceanFoam-Mask-Study_35: -4116997705124623930
+      OceanFoam-Mask-Study_36: 7655847478928850886
+      OceanFoam-Mask-Study_37: 4441647553019692326
+      OceanFoam-Mask-Study_38: -46165535268655131
+      OceanFoam-Mask-Study_39: -909760656807219073
+      OceanFoam-Mask-Study_4: 4995495393508240340
+      OceanFoam-Mask-Study_40: 7448724973596014309
+      OceanFoam-Mask-Study_41: -5598145443503194119
+      OceanFoam-Mask-Study_42: -8831990520286519648
+      OceanFoam-Mask-Study_43: -368445529763896824
+      OceanFoam-Mask-Study_44: -5002444652577568946
+      OceanFoam-Mask-Study_45: 6659175399595485661
+      OceanFoam-Mask-Study_46: -1711181792251117843
+      OceanFoam-Mask-Study_47: -7391217933636453883
+      OceanFoam-Mask-Study_48: -55516517933233836
+      OceanFoam-Mask-Study_49: -4058970044783902270
+      OceanFoam-Mask-Study_5: 1584317404280953047
+      OceanFoam-Mask-Study_50: 3784984148934386142
+      OceanFoam-Mask-Study_51: 7678469002190594617
+      OceanFoam-Mask-Study_52: -2385579605668975122
+      OceanFoam-Mask-Study_53: 1971954609626848313
+      OceanFoam-Mask-Study_54: 1567318734132960595
+      OceanFoam-Mask-Study_55: 4657309022323646756
+      OceanFoam-Mask-Study_56: -4869095692650330869
+      OceanFoam-Mask-Study_57: 5403501552115418663
+      OceanFoam-Mask-Study_58: -6713305162039589988
+      OceanFoam-Mask-Study_59: -4970181804856954619
+      OceanFoam-Mask-Study_6: -486445417534566074
+      OceanFoam-Mask-Study_60: -7910246944753770289
+      OceanFoam-Mask-Study_61: 2030034840723339874
+      OceanFoam-Mask-Study_62: 7749177530730423703
+      OceanFoam-Mask-Study_63: -1931293915872029284
+      OceanFoam-Mask-Study_64: 3114785058376331443
+      OceanFoam-Mask-Study_65: 8306246124132839027
+      OceanFoam-Mask-Study_66: -501263683420577922
+      OceanFoam-Mask-Study_67: -1727464901999523242
+      OceanFoam-Mask-Study_68: 659389351770242430
+      OceanFoam-Mask-Study_69: -7656816067977319440
+      OceanFoam-Mask-Study_7: 1731845036271303703
+      OceanFoam-Mask-Study_70: -8783136970935345897
+      OceanFoam-Mask-Study_71: 434501442206598284
+      OceanFoam-Mask-Study_72: -3520696566822091982
+      OceanFoam-Mask-Study_73: -6377039856100809820
+      OceanFoam-Mask-Study_74: -4869317519595391752
+      OceanFoam-Mask-Study_75: -1880998754491290575
+      OceanFoam-Mask-Study_76: -4850511386646255787
+      OceanFoam-Mask-Study_77: -328870159502775823
+      OceanFoam-Mask-Study_78: 3543303305445339090
+      OceanFoam-Mask-Study_79: -4866562373246785096
+      OceanFoam-Mask-Study_8: 8376678701384838650
+      OceanFoam-Mask-Study_80: -804461768839246772
+      OceanFoam-Mask-Study_81: 3111955595294387922
+      OceanFoam-Mask-Study_82: 4077764396191256754
+      OceanFoam-Mask-Study_83: -1148677408391334010
+      OceanFoam-Mask-Study_84: -3891174502600943060
+      OceanFoam-Mask-Study_85: 8788822862815177557
+      OceanFoam-Mask-Study_9: 4824870473995459837
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

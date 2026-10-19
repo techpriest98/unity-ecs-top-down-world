@@ -149,7 +149,16 @@ namespace Game.World.Blocks
     {
         public static bool Sweep(in ChunkBlockAccessor accessor, float3 start, float3 end, float radius,
             out float fraction, out float3 normal)
+            => SweepCore(accessor, start, end, radius, false, out fraction, out normal, out _);
+
+        public static bool Sweep(in ChunkBlockAccessor accessor, float3 start, float3 end, float radius,
+            out float fraction, out float3 normal, out BlockId material)
+            => SweepCore(accessor, start, end, radius, true, out fraction, out normal, out material);
+
+        private static bool SweepCore(in ChunkBlockAccessor accessor, float3 start, float3 end, float radius,
+            bool resolveMaterial, out float fraction, out float3 normal, out BlockId material)
         {
+            material = BlockId.Air;
             fraction = 1f; normal = 0f;
             int3 min = (int3)math.floor(math.min(start, end) - radius);
             int3 max = (int3)math.floor(math.max(start, end) + radius);
@@ -168,12 +177,27 @@ namespace Game.World.Blocks
                 }
                 bool lower = BlockUtility.IsSolid(contents.Lower.Id), upper = BlockUtility.IsSolid(contents.Upper.Id);
                 if (!lower && !upper) continue;
-                float3 minimum = cell;
-                float3 maximum = minimum + 1f;
-                if (!lower) minimum.y += .5f;
-                if (!upper) maximum.y -= .5f;
-                if (RayBox(start, end - start, minimum - radius, maximum + radius, out float hit, out float3 hitNormal) && hit < fraction)
-                { fraction = hit; normal = hitNormal; }
+                // Support probes only need geometry. Uniform materials also need
+                // one box, not two overlapping half-boxes.
+                if (!resolveMaterial || contents.Lower.Id == contents.Upper.Id || !lower || !upper)
+                {
+                    float3 minimum = cell;
+                    float3 maximum = minimum + 1f;
+                    if (!lower) minimum.y += .5f;
+                    if (!upper) maximum.y -= .5f;
+                    if (RayBox(start, end - start, minimum - radius, maximum + radius, out float hit, out float3 hitNormal) && hit < fraction)
+                    { fraction = hit; normal = hitNormal; material = lower ? contents.Lower.Id : contents.Upper.Id; }
+                    continue;
+                }
+                for (int half = 0; half < 2; half++)
+                {
+                    var part = half == 0 ? contents.Lower : contents.Upper;
+                    if (!BlockUtility.IsSolid(part.Id)) continue;
+                    float3 minimum = (float3)cell + new float3(0, half * .5f, 0);
+                    float3 maximum = minimum + new float3(1, .5f, 1);
+                    if (RayBox(start, end - start, minimum - radius, maximum + radius, out float hit, out float3 hitNormal) && hit < fraction)
+                    { fraction = hit; normal = hitNormal; material = part.Id; }
+                }
             }
             return true;
         }

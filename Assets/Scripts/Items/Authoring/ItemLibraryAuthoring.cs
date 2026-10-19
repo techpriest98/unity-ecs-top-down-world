@@ -242,15 +242,29 @@ namespace Game.Items
                     var node = pending.Pop();
                     if (!visited.Add(node)) continue;
                     DependsOn(node);
+                    if (node.Condition != null) DependsOn(node.Condition);
+                    if (node.HandCondition != null)
+                    {
+                        DependsOn(node.HandCondition);
+                        if (node.HandCondition.RequiredItem != null) DependsOn(node.HandCondition.RequiredItem);
+                    }
                     if (node.Distance != null) DependsOn(node.Distance);
                     if (node.Action != null) DependsOn(node.Action);
                     if (node.Next != null) pending.Push(node.Next);
+                    foreach (var row in node.ItemMatches ?? System.Array.Empty<Game.Items.Skills.WorldItemMatch>())
+                    {
+                        if (row == null) continue;
+                        if (row.Item != null) DependsOn(row.Item);
+                        if (row.Output != null) pending.Push(row.Output);
+                    }
                     if (node.PositionSource != null) pending.Push(node.PositionSource);
                 }
                 foreach (var condition in skill.Conditions ?? System.Array.Empty<Game.Items.Skills.ItemSkillCondition>())
                 {
                     if (condition == null) continue;
                     DependsOn(condition);
+                    if (condition is Game.Items.Skills.OtherHandItemCondition other && other.RequiredItem != null)
+                        DependsOn(other.RequiredItem);
                     if (condition is Game.Items.Skills.WithinDistanceCondition range)
                     {
                         if (range.Distance != null) DependsOn(range.Distance);

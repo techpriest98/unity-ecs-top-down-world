@@ -23,7 +23,7 @@ namespace Game.Items.Skills
                 !manager.HasComponent<PlayerWorldPosition>(player) ||
                 !manager.HasBuffer<WorldItemThrowRequest>(player)) return false;
             var selection = manager.GetComponentData<SelectedProjectedCell>(player);
-            if (!selection.IsValid || selection.FaceType != ProjectedFaceType.Top ||
+            if (!selection.IsValid ||
                 !TryGetTarget(manager, player, slot, item, out var target) || !WithinDistance(manager, player, target)) return false;
             return CanThrowAt(manager, player, slot, item, (int3)math.floor(target));
         }
@@ -34,9 +34,9 @@ namespace Game.Items.Skills
                 !manager.HasBuffer<WorldItemThrowRequest>(player) || !manager.HasBuffer<PlayerEquipmentSlot>(player) ||
                 PlayerEquipmentUtility.GetItem(manager.GetBuffer<PlayerEquipmentSlot>(player, true), slot) != item || item == 0)
                 return false;
-            if (!CursorWorldUtility.TryGetBlock(manager, cell, out var block) || !BlockUtility.IsAir(block) ||
-                !CursorWorldUtility.TryGetBlock(manager, cell + new int3(0, -1, 0), out var support) ||
-                !BlockUtility.IsSolid(support)) return false;
+            // Before may be beside a wall, with no floor directly beneath it.
+            // The existing world-item physics resolves collision and the fall.
+            if (!CursorWorldUtility.TryGetBlock(manager, cell, out var block) || !BlockUtility.IsAir(block)) return false;
             using var query = manager.CreateEntityQuery(ComponentType.ReadOnly<ItemDefinitionReference>());
             if (query.CalculateEntityCount() != 1 ||
                 !ItemDefinitionReference.TryGet(manager.GetBuffer<ItemDefinitionReference>(query.GetSingletonEntity(), true),
@@ -74,7 +74,8 @@ namespace Game.Items.Skills
         {
             position = default;
             if (!CursorWorldUtility.TryGetPosition(manager, player, Position, out var cell)) return false;
-            position = new float3(cell.x + 0.5f, cell.y, cell.z + 0.5f);
+            position = GetThrowTarget(manager.GetComponentData<SelectedProjectedCell>(player), cell,
+                math.clamp(CollisionRadius, 0.01f, 0.2f));
             return true;
         }
 
@@ -97,10 +98,8 @@ namespace Game.Items.Skills
                 float3 start = manager.GetComponentData<PlayerWorldPosition>(player).Value;
                 start.y += manager.HasComponent<PlayerCollisionShape>(player)
                     ? manager.GetComponentData<PlayerCollisionShape>(player).Height * 0.6f : 0.7f;
-                float3 target = manager.HasComponent<SelectedProjectedCell>(player)
-                    ? ProjectedCellInteractionUtility.GetTopSurfacePosition(manager.GetComponentData<SelectedProjectedCell>(player), cell)
-                    : new float3(cell.x + .5f, cell.y, cell.z + .5f);
-                target.y += radius;
+                float3 target = GetThrowTarget(manager.HasComponent<SelectedProjectedCell>(player)
+                    ? manager.GetComponentData<SelectedProjectedCell>(player) : default, cell, radius);
                 float time = math.clamp(FlightTime, 0.1f, 5f), gravity = math.clamp(Gravity, 0.1f, 100f);
                 manager.GetBuffer<WorldItemThrowRequest>(player).Add(new WorldItemThrowRequest
                 {
@@ -116,6 +115,15 @@ namespace Game.Items.Skills
                 return true;
             }
             return false;
+        }
+
+        public static float3 GetThrowTarget(in SelectedProjectedCell selection, int3 before, float radius)
+        {
+            // Keep top/half-block landing heights; side targets use the centre
+            // of the exact Before cell rather than pretending it is a floor.
+            return selection.IsValid && selection.FaceType != ProjectedFaceType.Top
+                ? (float3)before + .5f
+                : ProjectedCellInteractionUtility.GetTopSurfacePosition(selection, before) + new float3(0, radius, 0);
         }
     }
 }

@@ -22,6 +22,7 @@ namespace Game.UI
         private string mainMenuSceneName = "MainMenu";
 
         private bool isLeaving;
+        private SettingsMenu settingsMenu;
 
         private SimulationSystemGroup simulationGroup;
         private Unity.Entities.World pausedWorld;
@@ -30,6 +31,7 @@ namespace Game.UI
 
         private void Awake()
         {
+            settingsMenu = GetComponent<SettingsMenu>();
             if (pausePanel != null)
                 pausePanel.SetActive(false);
         }
@@ -48,6 +50,8 @@ namespace Game.UI
                 return;
             }
 
+            if (IsPaused && settingsMenu != null && settingsMenu.TryBack())
+                return;
             if (IsPaused)
                 Resume();
             else
@@ -77,6 +81,7 @@ namespace Game.UI
         public void Resume()
         {
             if (isLeaving || !IsPaused) return;
+            if (settingsMenu != null) settingsMenu.Close();
             if (pausedWorld != null && pausedWorld.IsCreated && simulationGroup != null)
                 simulationGroup.Enabled = simulationWasEnabled;
 

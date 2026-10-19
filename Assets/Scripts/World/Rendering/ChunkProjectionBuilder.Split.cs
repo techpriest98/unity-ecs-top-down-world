@@ -70,6 +70,13 @@ namespace Game.World.Rendering
 
         // Bits N/E/S/W are view-relative; all contacts are evaluated in world
         // coordinates at the actual half-height surface, independent of camera.
+        public static bool IsSkyVisibleWaterSurface(int2 coordinate, ChunkBlockAccessor accessor, int3 owner, bool lower)
+        {
+            int height = owner.y * 2 + (lower ? 1 : 2);
+            return accessor.TryGetSurface(coordinate, owner.x, owner.z, out var surface) &&
+                surface.HeightHalf == height && IsFluid(surface.Material);
+        }
+
         public static byte BuildShoreMask(int2 coordinate, ChunkBlockAccessor accessor, int3 owner,
             bool lower, bool water, ViewDirection direction)
         {
@@ -151,7 +158,8 @@ namespace Game.World.Rendering
                 CellContents neighbour = accessor.GetContentsOrAir(coordinate, behind.x, behind.y, behind.z);
                 bool inset = !lower && IsPartOpaque(neighbour.Upper.Id);
                 water.TryAddTop(block, depth, inset, source, x, y,
-                    BuildShoreMask(coordinate, accessor, ownerPosition, lower, true, direction));
+                    BuildShoreMask(coordinate, accessor, ownerPosition, lower, true, direction),
+                    skyVisible: IsSkyVisibleWaterSurface(coordinate, accessor, ownerPosition, lower));
                 return;
             }
             if (ShouldClipOpaqueFace(clipping, player,

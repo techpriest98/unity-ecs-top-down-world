@@ -10,12 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 26eeb9622c9340c782d9f9c235990908, type: 3}
-  m_Name: ThrowTopTarget
+  m_Name: ThrowCursorTarget
   m_EditorClassIdentifier: 
-  Kind: 0
+  Kind: 6
   Next: {fileID: 11400000, guid: 2206c7415cf54edc903fb8765e612ac1, type: 2}
+  ItemMatches: []
   PositionSource: {fileID: 0}
   Cursor: 0
   Distance: {fileID: 0}
   Action: {fileID: 0}
+  HandCondition: {fileID: 0}
+  Condition: {fileID: 0}
   FailureMessage: Wrong target.

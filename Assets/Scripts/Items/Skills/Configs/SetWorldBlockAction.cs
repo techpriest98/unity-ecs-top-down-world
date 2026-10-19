@@ -30,12 +30,12 @@ namespace Game.Items.Skills
                 ? null : "Expected one block modification queue with a request buffer.";
         }
 
-        public bool CanSetAt(EntityManager manager, Entity player, EquipmentSlot slot, int item, int3 position)
+        public bool CanSetAt(EntityManager manager, Entity player, EquipmentSlot slot, int item, int3 position, bool checkDistance = true)
         {
             if (!manager.Exists(player) || !manager.HasBuffer<PlayerEquipmentSlot>(player) ||
                 PlayerEquipmentUtility.GetItem(manager.GetBuffer<PlayerEquipmentSlot>(player, true), slot) != item ||
                 !CursorWorldUtility.TryGetBlock(manager, position, out _) ||
-                !WithinDistance(manager, player, (float3)position + 0.5f)) return false;
+                (checkDistance && !WithinDistance(manager, player, (float3)position + 0.5f))) return false;
             if (BlockSource == BlockValueSource.Constant) return true;
             var selection = PlayerEquipmentUtility.GetInstance(manager.GetBuffer<PlayerEquipmentSlot>(player, true), slot).PlacementSelection;
             return BlockSource == BlockValueSource.ItemSelection && selection.Kind == PlacementSelectionKind.Block &&
@@ -43,9 +43,9 @@ namespace Game.Items.Skills
                 TryPlanPlacement(manager, player, slot, position, out _, out _, out _);
         }
 
-        public bool ExecuteAtPosition(EntityManager manager, Entity player, EquipmentSlot slot, int item, int3 position)
+        public bool ExecuteAtPosition(EntityManager manager, Entity player, EquipmentSlot slot, int item, int3 position, bool checkDistance = true)
         {
-            if (GetConfigurationError(manager) != null || !CanSetAt(manager, player, slot, item, position)) return false;
+            if (GetConfigurationError(manager) != null || !CanSetAt(manager, player, slot, item, position, checkDistance)) return false;
             var instance = PlayerEquipmentUtility.GetInstance(manager.GetBuffer<PlayerEquipmentSlot>(player, true), slot);
             BlockId block = BlockSource == BlockValueSource.Constant ? ConstantBlock : (BlockId)instance.PlacementSelection.Id;
             using var query = manager.CreateEntityQuery(ComponentType.ReadOnly<BlockModificationQueue>());

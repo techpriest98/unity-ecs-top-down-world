@@ -1,0 +1,7 @@
+# Ignite icon reference
+
+Generated with built-in image generation. User flint_shard_icon.png and pyrite_icon.png used only as subject/style references. No game icons replaced.
+
+## Prompt
+
+Use case: stylized-concept. Generate one compact pixel-art reference sheet for an IGNITE skill icon in a muted dark fantasy survival game. Input image 1 is the user's dark grey thin sharp flint shard, input image 2 is their small brass-gold pyrite rock: use both as subject and palette references, not edit targets. Show three composition alternatives side by side on plain charcoal background, each large readable pixel-art icon and a small thumbnail directly beneath it. Each icon depicts exactly one dark flint shard from lower left approaching one compact brassy pyrite stone from upper right, touching at an edge with a tiny bright ivory spark and 2-3 short ochre spark rays. Alternatives vary angle and spacing, not objects. Crisp deliberately coarse clustered pixels, hard pixel edges, very sparse detail, 32x32 logical icon feel enlarged with nearest-neighbour appearance, dark outlines, muted grey and tarnished brass, high contrast tiny spark focal point. Match the handmade simplicity of the input icons. No hands, torch, fireball, flames, magic halo, bloom, blurred gradients, UI frames or text. Preserve enough separation to read the two stones at small size. This is a drawing reference board, not an exact production sprite atlas.

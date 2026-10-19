@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: WorldShaper
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.ItemDefinition
   Id: 3
-  DisplayName: Alchemist Staff
+  DisplayName: Staff of Apotheosis
   Description: Allows you to reshape the world
   Icon: {fileID: -8481152168999223679, guid: 362ea9d7b3e288745b85434c7cbdede1, type: 3}
   WorldSprite: {fileID: -610138035837649096, guid: 347deaa1893d75c4c93c9aace2e64dd0, type: 3}

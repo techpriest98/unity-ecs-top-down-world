@@ -25,6 +25,19 @@ public abstract class AutomaticIdInspector : Editor
 [CustomEditor(typeof(ItemDefinition))]
 public sealed class ItemDefinitionInspector : AutomaticIdInspector { }
 
+[CustomEditor(typeof(ReplaceWorldItemAction))]
+public sealed class ReplaceWorldItemActionInspector : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        serializedObject.Update();
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("ReplacementItem"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("Count"));
+        EditorGUILayout.HelpBox("Receives an actual World Item from a successful data output. Searching and range checks belong upstream.", MessageType.Info);
+        serializedObject.ApplyModifiedProperties();
+    }
+}
+
 [CustomEditor(typeof(ItemSkillDefinition))]
 public sealed class ItemSkillDefinitionInspector : AutomaticIdInspector
 {

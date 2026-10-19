@@ -40,10 +40,14 @@ namespace Game.World.Rendering
         [SerializeField]
         private BlockDatabase blockDatabase;
         private Texture2D shoreFoamAtlas;
+        private Texture2D oceanFoamAtlas;
         private float shoreFoamTime;
+        private Vector4 oceanSurfaceOrigin;
         private Game.World.Time.WorldWind worldWind;
 
         public void SetWind(Game.World.Time.WorldWind wind) => worldWind = wind;
+        public void SetOceanSurfaceProjection(float2 origin, bool valid) =>
+            oceanSurfaceOrigin = new Vector4(origin.x, origin.y, 0f, valid ? 1f : 0f);
         public BlockDefinition[] AvailableBlocks => blockDatabase != null ? blockDatabase.Blocks : null;
 
         public bool TryGetBlockSideIcon(BlockId id, out Texture2D texture, out Rect uv, bool halfBlock = false)
@@ -450,6 +454,15 @@ namespace Game.World.Rendering
         {
             layerPropertyBlock.Clear();
             layerPropertyBlock.SetFloat("_ShoreFoamTime", shoreFoamTime);
+            layerPropertyBlock.SetVector("_OceanSurfaceOrigin", oceanSurfaceOrigin);
+            if (oceanFoamAtlas == null) oceanFoamAtlas = Resources.Load<Texture2D>("OceanFoamAtlas");
+            layerPropertyBlock.SetFloat("_OceanFoamAvailable", oceanFoamAtlas != null ? 1f : 0f);
+            if (oceanFoamAtlas != null)
+            {
+                layerPropertyBlock.SetTexture("_OceanFoamAtlas", oceanFoamAtlas);
+                layerPropertyBlock.SetVector("_OceanFoamAtlas_TexelSize", new Vector4(
+                    1f / oceanFoamAtlas.width, 1f / oceanFoamAtlas.height, oceanFoamAtlas.width, oceanFoamAtlas.height));
+            }
             float2 windDirection = worldWind.Direction;
             layerPropertyBlock.SetVector("_WorldWind", new Vector4(windDirection.x, windDirection.y,
                 worldWind.Strength, worldWind.Initialized ? 1f : 0f));

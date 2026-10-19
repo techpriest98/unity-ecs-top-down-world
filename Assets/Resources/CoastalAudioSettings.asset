@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f8b82538c4d48e9a674764b4be1963a, type: 3}
+  m_Name: CoastalAudioSettings
+  m_EditorClassIdentifier:
+  rockyShoreMusic: {fileID: 8300000, guid: cb778cf67b80d4430a0496c1b45803b3, type: 3}
+  seaAmbience: {fileID: 8300000, guid: 42f653bc464c240b083f46b9dddfd866, type: 3}
+  musicVolume: 0.35
+  seaVolume: 0.75
+  fullVolumeDistance: 3
+  silentDistance: 32
+  fadeSeconds: 2

@@ -140,6 +140,15 @@ namespace Game.World.Rendering
             ViewDirection direction =
                 SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
 
+            bool hasSeaPlane = SystemAPI.TryGetSingleton<Game.World.Generation.WorldGenerationSettingsComponent>(out var waterSettings);
+            // Project() locates an entity's center; the rendered Top quad's
+            // physical sea plane is half a projected pixel-cell higher.
+            float2 seaOrigin = hasSeaPlane
+                ? WorldPositionProjectionUtility.Project(new float3(0f, waterSettings.WaterSurfaceHeight, 0f), direction) +
+                    new float2(0f, ProjectedCellHeight * .5f)
+                : float2.zero;
+            renderer.SetOceanSurfaceProjection(seaOrigin, hasSeaPlane);
+
             SunShadowState shadowState =
                 SystemAPI.GetSingleton<SunShadowState>();
 

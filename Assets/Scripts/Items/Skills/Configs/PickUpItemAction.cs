@@ -82,7 +82,7 @@ namespace Game.Items.Skills
             ExecuteTarget(manager, player, slot, target, Surface(manager, target));
         }
 
-        public bool CanPickUp(EntityManager manager, Entity player, EquipmentSlot slot, Entity target, float3 position)
+        public bool CanPickUp(EntityManager manager, Entity player, EquipmentSlot slot, Entity target, float3 position, bool checkDistance = true)
         {
             if (!manager.Exists(player) || !manager.HasBuffer<PlayerEquipmentSlot>(player) ||
                 !manager.Exists(target) || !manager.HasComponent<WorldItem>(target)) return false;
@@ -92,16 +92,16 @@ namespace Game.Items.Skills
                 if (entry.Slot == slot && entry.Instance.DefinitionId == 0) empty = true;
             var value = manager.GetComponentData<WorldItem>(target);
             if (!empty || !value.Grounded || value.Instance.DefinitionId == 0 || value.Instance.Durability <= 0 ||
-                math.distancesq(Surface(manager, target), position) > 0.000001f || !WithinDistance(manager, player, position)) return false;
+                math.distancesq(Surface(manager, target), position) > 0.000001f || (checkDistance && !WithinDistance(manager, player, position))) return false;
             using var library = manager.CreateEntityQuery(ComponentType.ReadOnly<ItemDefinitionReference>());
             return library.CalculateEntityCount() == 1 && ItemDefinitionReference.TryGet(
                 manager.GetBuffer<ItemDefinitionReference>(library.GetSingletonEntity(), true), value.Instance.DefinitionId,
                 out var definition) && (definition.AllowedSlots & slot) != 0;
         }
 
-        public bool ExecuteTarget(EntityManager manager, Entity player, EquipmentSlot slot, Entity target, float3 position)
+        public bool ExecuteTarget(EntityManager manager, Entity player, EquipmentSlot slot, Entity target, float3 position, bool checkDistance = true)
         {
-            if (!CanPickUp(manager, player, slot, target, position)) return false;
+            if (!CanPickUp(manager, player, slot, target, position, checkDistance)) return false;
             var instance = manager.GetComponentData<WorldItem>(target).Instance;
             var slots = manager.GetBuffer<PlayerEquipmentSlot>(player);
             for (int i = 0; i < slots.Length; i++)

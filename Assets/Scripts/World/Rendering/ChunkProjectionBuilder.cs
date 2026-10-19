@@ -538,7 +538,8 @@ namespace Game.World.Rendering
                 sourceAirIndex,
                 projectionX,
                 projectionY,
-                BuildShoreMask(chunkCoordinate, blockAccessor, belowWorld, half, true, direction));
+                BuildShoreMask(chunkCoordinate, blockAccessor, belowWorld, half, true, direction),
+                skyVisible: IsSkyVisibleWaterSurface(chunkCoordinate, blockAccessor, belowWorld, half));
         }
 
         private static void TryEmitWaterSide(

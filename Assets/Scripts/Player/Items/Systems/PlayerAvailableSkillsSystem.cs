@@ -22,8 +22,8 @@ namespace Game.Player
         {
             Entity libraryEntity = libraryQuery.GetSingletonEntity();
             var library = EntityManager.GetBuffer<ItemDefinitionReference>(libraryEntity, true);
-            foreach (var (slots, availableSkills, activeHand) in SystemAPI.Query<
-                         DynamicBuffer<PlayerEquipmentSlot>, DynamicBuffer<PlayerAvailableSkill>, RefRO<PlayerActiveHand>>().WithAll<PlayerTag>())
+            foreach (var (slots, availableSkills, activeHand, player) in SystemAPI.Query<
+                         DynamicBuffer<PlayerEquipmentSlot>, DynamicBuffer<PlayerAvailableSkill>, RefRO<PlayerActiveHand>>().WithAll<PlayerTag>().WithEntityAccess())
             {
                 var destination = availableSkills;
                 if (destination.Length != PlayerAvailableSkill.SlotCount)
@@ -32,11 +32,11 @@ namespace Game.Player
                     for (int i = 0; i < destination.Length; i++)
                         destination[i] = new PlayerAvailableSkill { SkillIndex = -1 };
                 }
-                FillHand(EntityManager, libraryEntity, library, slots, destination, activeHand.ValueRO.Slot, 0);
+                FillHand(EntityManager, player, libraryEntity, library, slots, destination, activeHand.ValueRO.Slot, 0);
             }
         }
 
-        private static void FillHand(EntityManager manager, Entity libraryEntity,
+        private static void FillHand(EntityManager manager, Entity player, Entity libraryEntity,
             DynamicBuffer<ItemDefinitionReference> library, DynamicBuffer<PlayerEquipmentSlot> slots,
             DynamicBuffer<PlayerAvailableSkill> destination, EquipmentSlot sourceSlot, int offset)
         {
@@ -47,6 +47,13 @@ namespace Game.Player
                 for (int i = 0; i < skills.Length && next < PlayerAvailableSkill.SkillsPerHand; i++)
                 {
                     if (skills[i] == null || !skills[i].HasActions) continue;
+                    bool visible = true;
+                    if (skills[i].UseChain)
+                        visible = Game.Items.Skills.SkillChainRunner.IsVisible(skills[i].FirstNode, manager, player, sourceSlot, itemId);
+                    foreach (var condition in skills[i].Conditions ?? System.Array.Empty<Game.Items.Skills.ItemSkillCondition>())
+                        if (condition != null && condition.ControlsVisibility &&
+                            !condition.Evaluate(manager, player, sourceSlot, itemId)) { visible = false; break; }
+                    if (!visible) continue;
                     SetEntry(destination, offset + next++, sourceSlot, itemId, i);
                 }
             // Empty slots stay at their own key; they never borrow the other hand's skills.

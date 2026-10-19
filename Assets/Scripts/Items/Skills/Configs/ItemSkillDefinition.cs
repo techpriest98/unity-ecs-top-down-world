@@ -11,10 +11,10 @@ namespace Game.Items.Skills
         public string DisplayName;
         public string Description;
         public Sprite Icon;
-        public bool UseChain;
+        [HideInInspector] public bool UseChain = true;
         public SkillChainNode FirstNode;
-        public ItemSkillCondition[] Conditions = System.Array.Empty<ItemSkillCondition>();
-        public ItemSkillAction[] Actions = System.Array.Empty<ItemSkillAction>();
+        [HideInInspector] public ItemSkillCondition[] Conditions = System.Array.Empty<ItemSkillCondition>();
+        [HideInInspector] public ItemSkillAction[] Actions = System.Array.Empty<ItemSkillAction>();
 
         public bool HasActions
         {

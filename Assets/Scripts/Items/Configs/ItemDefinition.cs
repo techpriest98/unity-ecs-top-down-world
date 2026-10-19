@@ -22,6 +22,8 @@ namespace Game.Items
         public bool IgnitionSource;
         public ItemAnimationDefinition Animation;
 
+        public ItemCollisionNode OnCollision;
+
         public ItemSkillDefinition[] Skills =
             System.Array.Empty<ItemSkillDefinition>();
     }

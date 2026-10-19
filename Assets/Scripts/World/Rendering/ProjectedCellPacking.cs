@@ -9,6 +9,8 @@ namespace Game.World.Rendering
         public const uint LowerHalfFlag = 1u << 12;
         public const uint RaisedFootFlag = 1u << 13;
         public const uint UpperHalfFlag = 1u << 14;
+        // Water does not render durability. Its low durability bit carries sky visibility.
+        public const uint WaterSkyVisibleFlag = 1u << 16;
         public static bool IsHalfFace(uint data) => (data & (LowerHalfFlag | UpperHalfFlag)) != 0;
         public static ProjectedFaceType GetFaceType(uint data) => (ProjectedFaceType)((data >> 8) & 0x0Fu);
         public static bool IsLowerHalf(uint data) => (data & LowerHalfFlag) != 0;

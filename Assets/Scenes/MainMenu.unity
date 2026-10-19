@@ -4290,6 +4290,7 @@ GameObject:
   - component: {fileID: 1650856382}
   - component: {fileID: 1650856381}
   - component: {fileID: 1650856380}
+  - component: {fileID: 2080000100}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -6849,6 +6850,22 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1d7934c6a792c42e5a03cb17455f044d, type: 3}
+--- !u!114 &2080000100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1650856379}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 743a32dc00a445f3a18a87f5e00c32ab, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.UI.SettingsMenu
+  hostPanel: {fileID: 1378521621}
+  panelPrefab: {fileID: 5335655854925384093, guid: 92992f9edf7c34c079661840071b6734, type: 3}
+  buttonPrefab: {fileID: 1044404767601426280, guid: 0b971797c26574811b4deca807afad45, type: 3}
+  pauseMenu: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

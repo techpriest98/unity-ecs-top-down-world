@@ -112,6 +112,14 @@ namespace Game.World.Saving
 
             Entity player = playerQuery.GetSingletonEntity();
 
+            Entity itemOwner = itemLibraryQuery.GetSingletonEntity();
+            if (!EntityManager.HasBuffer<CoastalItemSpawnedChunk>(itemOwner)) EntityManager.AddBuffer<CoastalItemSpawnedChunk>(itemOwner);
+            var coastalChunks = EntityManager.GetBuffer<CoastalItemSpawnedChunk>(itemOwner);
+            coastalChunks.Clear();
+            if (data.CoastalItemChunks != null)
+                foreach (var chunk in data.CoastalItemChunks)
+                    if (chunk != null) coastalChunks.Add(new CoastalItemSpawnedChunk { Coordinate = new int2(chunk.X, chunk.Z) });
+
             if (!TryRestoreEquipment(
                     player,
                     data.Equipment,
@@ -370,6 +378,16 @@ namespace Game.World.Saving
                 changes.Dispose();
         }
 
+        private CoastalItemChunkData[] CaptureCoastalItemChunks()
+        {
+            Entity owner = itemLibraryQuery.GetSingletonEntity();
+            if (!EntityManager.HasBuffer<CoastalItemSpawnedChunk>(owner)) return System.Array.Empty<CoastalItemChunkData>();
+            var chunks = EntityManager.GetBuffer<CoastalItemSpawnedChunk>(owner, true);
+            var result = new CoastalItemChunkData[chunks.Length];
+            for (int i = 0; i < result.Length; i++) result[i] = new CoastalItemChunkData { X = chunks[i].Coordinate.x, Z = chunks[i].Coordinate.y };
+            return result;
+        }
+
         private WorldItemData[] CaptureWorldItems()
         {
             using var query = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<WorldItem>());
@@ -514,7 +532,8 @@ namespace Game.World.Saving
 
                     Chunks = CaptureChanges(),
                     Equipment = CaptureEquipment(player),
-                    WorldItems = CaptureWorldItems()
+                    WorldItems = CaptureWorldItems(),
+                    CoastalItemChunks = CaptureCoastalItemChunks()
                 },
                 out error);
         }

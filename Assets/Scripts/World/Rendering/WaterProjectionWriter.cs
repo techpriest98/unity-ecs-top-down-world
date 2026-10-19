@@ -29,7 +29,8 @@ namespace Game.World.Rendering
             ushort sourceAirIndex,
             ushort x,
             ushort y,
-            byte shoreMask = 0)
+            byte shoreMask = 0,
+            bool skyVisible = false)
         {
             return TryAdd(
                 block,
@@ -38,7 +39,7 @@ namespace Game.World.Rendering
                 topInset,
                 sourceAirIndex,
                 x,
-                y, shoreMask: shoreMask);
+                y, shoreMask: shoreMask, skyVisible: skyVisible);
         }
 
         public bool TryAddSideUpper(
@@ -87,7 +88,8 @@ namespace Game.World.Rendering
             ushort y,
             bool upperHalf = false,
             int opaqueUnderlaySource = -1,
-            byte shoreMask = 0)
+            byte shoreMask = 0,
+            bool skyVisible = false)
         {
             if (opaqueOccupancy.IsOccupied(x, y) &&
                 (opaqueUnderlaySource < 0 || !opaqueOccupancy.IsLowerTop(x, y, (ushort)opaqueUnderlaySource)))
@@ -113,6 +115,8 @@ namespace Game.World.Rendering
             // the spare BlockData bit, keeping the cell/GPU buffer stride intact.
             cell.FaceData = (ushort)(PackFaceData(opticalDepth, topInset) | ((shoreMask & 127) << 9));
             cell.BlockData |= (uint)(shoreMask >> 7) << 15;
+            cell.BlockData &= ~ProjectedCellPacking.WaterSkyVisibleFlag;
+            if (skyVisible) cell.BlockData |= ProjectedCellPacking.WaterSkyVisibleFlag;
 
             result.Add(new ProjectedWaterCellData(cell));
 
