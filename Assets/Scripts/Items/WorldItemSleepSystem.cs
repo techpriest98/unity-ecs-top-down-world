@@ -20,6 +20,14 @@ namespace Game.Items
         private struct Sleeper { public Entity Entity; public int3 Cell; public float Height; }
         private readonly Dictionary<int2, List<Sleeper>> sleepers = new();
         private readonly Dictionary<int2, Entity> terrain = new();
+        private readonly List<int2> unloaded = new();
+
+        public void ForgetUnloaded(HashSet<int2> loaded)
+        {
+            unloaded.Clear();
+            foreach (var key in terrain.Keys) if (!loaded.Contains(key)) unloaded.Add(key);
+            foreach (var key in unloaded) { terrain.Remove(key); sleepers.Remove(key); }
+        }
 
         protected override void OnUpdate()
         {

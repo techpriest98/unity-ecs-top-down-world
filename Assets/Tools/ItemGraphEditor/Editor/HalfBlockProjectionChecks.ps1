@@ -35,6 +35,13 @@ $halfBodies = foreach ($halfFile in $halfFiles) {
  $halfUsings += [regex]::Matches($halfText, '(?m)^using [^;]+;') | ForEach-Object { $_.Value }
  [regex]::Replace($halfText, '(?m)^using [^;]+;\r?\n', '')
 }
+# Captured pre-optimization builder, compiled alongside current code for exact
+# opaque/water/clip-buffer comparisons. Split geometry helpers are unchanged.
+foreach ($baselinePath in 'Tools/ItemGraphEditor/Editor/Fixtures/ChunkProjectionBuilderBaseline.cs.txt','Scripts/World/Rendering/ChunkProjectionBuilder.Split.cs') {
+ $baselineText=(Get-Content (Join-Path $halfAssetsRoot $baselinePath) -Raw).Replace('ChunkProjectionBuilder','BaselineChunkProjectionBuilder')
+ $halfUsings += [regex]::Matches($baselineText, '(?m)^using [^;]+;') | ForEach-Object { $_.Value }
+ $halfBodies += [regex]::Replace($baselineText, '(?m)^using [^;]+;\r?\n', '')
+}
 $halfHarness = @'
 // Save validation runs against the real storage source; engine IO/JSON and
 // unrelated item fields are adapters, so this does not test Unity JSON or disk IO.
@@ -97,6 +104,14 @@ namespace Unity.Collections {
   public void SetValue(V value,Iterator iterator)=>data.Entries[iterator.Index]=(iterator.Key,value);
  }
  public enum Allocator {Temp}
+ public struct NativeArray<T> {
+  T[] data;
+  public NativeArray(int length,Allocator allocator){data=new T[length];}
+  public int Length=>data.Length;
+  public T this[int i]{get=>data[i];set=>data[i]=value;}
+  public bool IsCreated=>data!=null;
+  public void Dispose(){}
+ }
  public struct NativeParallelHashMap<K,V> {
   Dictionary<K,V> data;
   public NativeParallelHashMap(int capacity,Allocator a) {data=new Dictionary<K,V>();}
@@ -160,6 +175,61 @@ namespace Game.World.Chunks {
 }
 public static class HalfProjectionChecks {
  static void Check(bool ok,string label) {if(!ok)throw new Exception(label);}
+ static void CheckProjectionOptimization() {
+  var occupancy=new ProjectionOccupancy(65536,Unity.Collections.Allocator.Temp);
+  var expected=new Dictionary<Unity.Mathematics.int2,(ushort source,bool lower)>();
+  var random=new System.Random(123);
+  for(int i=0;i<20000;i++){
+   int x=random.Next(16),y=random.Next(528);var key=new Unity.Mathematics.int2(x,y);
+   ushort source=(ushort)random.Next(65536);bool lower=i%2==0;
+   bool fresh=!expected.ContainsKey(key);
+   Check(occupancy.TryOccupy(x,y,ProjectedFaceType.Top,source,lower)==fresh,"Dense occupancy collision differs");
+   if(fresh)expected.Add(key,(source,lower));
+   Check(occupancy.IsOccupied(x,y),"Dense occupancy empty after add");
+   var old=expected[key];Check(occupancy.IsLowerTop(x,y,old.source)==old.lower,"Dense source/half metadata differs");
+  }
+  occupancy.Clear();Check(!occupancy.IsOccupied(0,0)&&!occupancy.IsLowerTop(0,0,0),"Dense clear lost empty marker");
+  Check(occupancy.TryOccupy(0,0,ProjectedFaceType.Top,0,false)&&occupancy.IsOccupied(0,0),"Zero-valued Top must occupy");
+  occupancy.Dispose();
+  var map=new Dictionary<Unity.Mathematics.int3,Game.World.Blocks.BlockData>();
+  var contents=new Dictionary<Unity.Mathematics.int3,Game.World.Blocks.CellContents>();
+  for(int i=0;i<100;i++){
+   var p=new Unity.Mathematics.int3(random.Next(-1,17),random.Next(5,18),random.Next(-1,17));
+   var id=i%3==0?Game.World.Blocks.BlockId.OceanWater:Game.World.Blocks.BlockId.Stone;
+   map[p]=new Game.World.Blocks.BlockData(id,200,i%4==0?Game.World.Blocks.BlockShape.LowerHalf:Game.World.Blocks.BlockShape.Full);
+  }
+  foreach(bool split in new[]{false,true}){
+   if(split){
+    var p=new Unity.Mathematics.int3(4,10,7);
+    contents[p]=new Game.World.Blocks.CellContents(new Game.World.Blocks.BlockPart(Game.World.Blocks.BlockId.Stone,200),new Game.World.Blocks.BlockPart(Game.World.Blocks.BlockId.OceanWater,200));
+    map[p]=new Game.World.Blocks.BlockData{Shape=Game.World.Blocks.SplitCellUtility.ReferenceShape};
+   }
+   var input=new List<Game.World.Blocks.BlockData>(new Game.World.Blocks.BlockData[65536]);
+   foreach(var pair in map)if(Game.World.Chunks.ChunkUtility.IsInside(pair.Key.x,pair.Key.y,pair.Key.z))input[Game.World.Chunks.ChunkUtility.ToIndex(pair.Key)]=pair.Value;
+   foreach(ViewDirection view in Enum.GetValues(typeof(ViewDirection)))foreach(bool clip in new[]{false,true}){
+    var outputs=new List<ProjectedCellData>[2];var waters=new List<ProjectedWaterCellData>[2];var clips=new List<ProjectedClipCell>[2];
+    long oldReads=0,newReads=0;
+    for(int variant=0;variant<2;variant++){
+     outputs[variant]=new List<ProjectedCellData>();waters[variant]=new List<ProjectedWaterCellData>();clips[variant]=new List<ProjectedClipCell>();
+     var solid=new ProjectionOccupancy(65536,Unity.Collections.Allocator.Temp);var water=new ProjectionOccupancy(65536,Unity.Collections.Allocator.Temp);
+     var writer=new ProjectionWriter(solid,new Unity.Entities.DynamicBuffer<ProjectedCellData>(outputs[variant]),new Unity.Entities.DynamicBuffer<ProjectedClipCell>(clips[variant]));
+     var waterWriter=new WaterProjectionWriter(solid,water,new Unity.Entities.DynamicBuffer<ProjectedWaterCellData>(waters[variant]));
+     var blocks=new Unity.Entities.DynamicBuffer<Game.World.Blocks.BlockData>(input);
+     var accessor=new Game.World.Chunks.ChunkBlockAccessor(map,split?contents:null);
+     Game.World.Chunks.ChunkBlockAccessor.ReadCount=0;
+     if(variant==0)BaselineChunkProjectionBuilder.Build(blocks,Unity.Mathematics.int2.zero,accessor,writer,waterWriter,view,clip,new Unity.Mathematics.float3(7,10.5f,7));
+     else ChunkProjectionBuilder.Build(blocks,Unity.Mathematics.int2.zero,accessor,writer,waterWriter,view,clip,new Unity.Mathematics.float3(7,10.5f,7));
+     if(variant==0)oldReads=Game.World.Chunks.ChunkBlockAccessor.ReadCount;else newReads=Game.World.Chunks.ChunkBlockAccessor.ReadCount;
+     solid.Dispose();water.Dispose();
+    }
+    Check(outputs[0].SequenceEqual(outputs[1]),"Air skip changed opaque records");
+    Check(waters[0].SequenceEqual(waters[1]),"Air skip changed water records");
+    Check(clips[0].SequenceEqual(clips[1]),"Air skip changed clipping volume/order");
+    Check(newReads==oldReads,"Restored projection differs from baseline accessor work");
+   }
+  }
+  Console.WriteLine("Projection rollback PASS: 20k occupancy operations, exact baseline opaque/water/air-mask output and accessor reads across 4 views, clipping and mixed halves");
+ }
  static (List<Game.World.Rendering.ProjectedCellData> solid,List<Game.World.Rendering.ProjectedCellData> water) Build(
   Dictionary<Unity.Mathematics.int3,Game.World.Blocks.BlockData> map,Game.World.Rendering.ViewDirection view,bool clip=false,
   Dictionary<Unity.Mathematics.int3,Game.World.Blocks.CellContents> contents=null,float playerHeight=7f) {
@@ -179,6 +249,7 @@ public static class HalfProjectionChecks {
   return (solid,water.Select(x=>x.Value).ToList());
  }
  public static string Run() {
+  CheckProjectionOptimization();
   CheckRockyShore();
   CheckTerrainMinimap();
   CheckShoreFoam();
@@ -546,12 +617,27 @@ public static class HalfProjectionChecks {
   var coverSettings=stepsSettings;
   coverSettings.LayeredGroundCover=true;coverSettings.RockEdgeWidth=2;coverSettings.HalfCoverWidth=2.5f;
   var coveredTerrain=new Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain(coverSettings);
-  int bareCover=0,halfCover=0,fullCover=0;
+  int bareCover=0,halfCover=0,fullCover=0,alignedCover=0;
   for(int x=-128;x<=128;x+=2) for(int z=-64;z<=64;z+=2) {
    var s=coveredTerrain.Sample(x,z,64,25,1,123,world);
    var original=steps.Sample(x,z,64,25,1,123,world);
-   Check(s.HasRockCover && s.RockSurfaceHalf==original.SurfaceHalf && s.SurfaceHalf==s.RockSurfaceHalf+s.CoverHalf,
+   int foundationAdjustment=s.RockSurfaceHalf-original.SurfaceHalf;
+   Check(s.HasRockCover && (foundationAdjustment==0 ||
+    (foundationAdjustment==1 && (original.SurfaceHalf&1)!=0 && s.CoverHalf==1)) && s.SurfaceHalf==s.RockSurfaceHalf+s.CoverHalf,
     "Ground cover replaced rock instead of adding a layer above it");
+   if(foundationAdjustment==1) {
+    alignedCover++;
+    Check(s.SurfaceHalf==original.SurfaceHalf+2,"Foundation alignment changed terrain silhouette");
+   }
+   Check(!((s.RockSurfaceHalf&1)!=0 && s.CoverHalf==2),"Generated cover spans two consecutive split cells");
+   // Inspect actual half-cell materials, including mixed-material splits.
+   bool previousSplit=false;
+   for(int halfY=math.max(0,original.SurfaceHalf-4)&~1;halfY<=s.SurfaceHalf+2;halfY+=2) {
+    bool splitCell=Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain.GetCoveredBlock(halfY,63,s)!=
+     Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain.GetCoveredBlock(halfY+1,63,s);
+    Check(!(previousSplit&&splitCell),"Consecutive generated split cells remain");
+    previousSplit=splitCell;
+   }
    Check(s.CoverHalf<=2,"First-stage soil cover exceeded one block");
    if(s.CoverHalf==0)bareCover++;else if(s.CoverHalf==1)halfCover++;else fullCover++;
    Check(Game.World.Generation.Biomes.RockyShore.RockyShoreTerrain.GetCoveredBlock(s.RockSurfaceHalf-1,63,s)==BlockId.Stone,
@@ -565,6 +651,7 @@ public static class HalfProjectionChecks {
    Check(repeated.SurfaceHalf==s.SurfaceHalf && repeated.CoverHalf==s.CoverHalf,"Cover depends on chunk-local coordinates");
   }
   Check(bareCover>20 && halfCover>20 && fullCover>20,"Missing bare / half / full soil zones");
+  Check(alignedCover>0,"Fixture did not exercise half-height foundation alignment");
   foreach(float rockHeight in new[]{64f,64.5f}) foreach(byte cover in new byte[]{0,1,2}) {
    var s=new Game.World.Generation.Biomes.BiomeTerrainSample(Game.World.Generation.WorldBiome.RockyShore,rockHeight,4,cover);
    var cells=new Unity.Entities.DynamicBuffer<BlockData>(new List<BlockData>(new BlockData[Game.World.Chunks.ChunkSettings.BlockCount]));

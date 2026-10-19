@@ -12,7 +12,7 @@ namespace Game.World.Saving
 {
     public static class WorldStateStorage
     {
-        public const int CurrentVersion = 7;
+        public const int CurrentVersion = 8;
 
         public static bool TryRead(
             string id,
@@ -38,11 +38,21 @@ namespace Game.World.Saving
                     View = -1,
                     Hour = -1,
                     UpdateTimer = float.NaN,
-                    VerticalVelocity = float.NaN
+                    VerticalVelocity = float.NaN,
+                    SimulationSeconds = double.NaN
                 };
 
                 JsonUtility.FromJsonOverwrite(
                     File.ReadAllText(path), data);
+
+                // Old saves contain hour-of-day only; elapsed days cannot be
+                // recovered. Start a new monotonic epoch without offline aging.
+                if (data.Version < 8)
+                {
+                    data.SimulationSeconds = 0;
+                    if (data.WorldItems != null)
+                        foreach (var item in data.WorldItems) if (item != null) item.LastSimulationSeconds = 0;
+                }
 
                 Validate(data, id, seed);
                 return true;
@@ -139,10 +149,14 @@ namespace Game.World.Saving
             }
 
             ValidateEquipment(data);
+            if (double.IsNaN(data.SimulationSeconds) || double.IsInfinity(data.SimulationSeconds) || data.SimulationSeconds < 0)
+                throw new InvalidDataException("Invalid accumulated world time.");
             if (data.WorldItems != null)
                 foreach (var item in data.WorldItems)
                 {
                     if (item == null || item.Instance.DefinitionId <= 0 ||
+                        double.IsNaN(item.LastSimulationSeconds) || double.IsInfinity(item.LastSimulationSeconds) ||
+                        item.LastSimulationSeconds < 0 || item.LastSimulationSeconds > data.SimulationSeconds ||
                         !Finite(item.X) || !Finite(item.Y) || !Finite(item.Z) ||
                         !Finite(item.Vx) || !Finite(item.Vy) || !Finite(item.Vz) ||
                         !Finite(item.Gravity) || item.Gravity <= 0f || item.Gravity > 100f ||

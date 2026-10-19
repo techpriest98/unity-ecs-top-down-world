@@ -1,0 +1,1007 @@
+using Game.World.Blocks;
+using Game.World.Chunks;
+using Unity.Entities;
+using Unity.Mathematics;
+
+namespace Game.World.Rendering
+{
+    public static partial class ChunkProjectionBuilder
+    {
+        private const float PlayerClipCenterOffset = 1f;
+
+        public const float ProjectionClipRadius = 4f;
+
+        public static void Build(
+            DynamicBuffer<BlockData> blocks,
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            ProjectionWriter writer,
+            WaterProjectionWriter waterWriter,
+            ViewDirection direction)
+        {
+            Build(
+                blocks,
+                chunkCoordinate,
+                blockAccessor,
+                writer,
+                waterWriter,
+                direction,
+                projectionClippingEnabled: false,
+                playerPosition: float3.zero);
+        }
+
+        public static void Build(
+            DynamicBuffer<BlockData> blocks,
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            ProjectionWriter writer,
+            WaterProjectionWriter waterWriter,
+            ViewDirection direction,
+            bool projectionClippingEnabled,
+            float3 playerPosition)
+        {
+            int2 chunkSizeXZ = new int2(
+                ChunkSettings.SizeX,
+                ChunkSettings.SizeZ);
+
+            ViewBounds bounds =
+                ViewCoordinateUtility.GetViewBounds(
+                    chunkSizeXZ,
+                    ChunkSettings.SizeY,
+                    direction);
+
+            int3 away = ViewDirectionUtility.GetAwayFromCameraOffset(direction);
+            bool splitPath = blockAccessor.HasSplitCells(chunkCoordinate) ||
+                blockAccessor.HasSplitCells(chunkCoordinate + new int2(away.x, away.z)) ||
+                (projectionClippingEnabled && GetClippingHeight(playerPosition) % 1f != 0f);
+
+            for (int u = 0; u < bounds.Width; u++)
+            {
+                for (int h = bounds.Height - 1; h >= 0; h--)
+                {
+                    int heightFromTop = bounds.Height - 1 - h;
+
+                    for (int v = bounds.Depth - 1; v >= 0; v--)
+                    {
+                        int projectionY = heightFromTop * 2 + v;
+
+                        ViewCoordinate view = new ViewCoordinate(
+                            u,
+                            v,
+                            h);
+
+                        int3 world =
+                            ViewCoordinateUtility.ViewToWorld(
+                                view,
+                                chunkSizeXZ,
+                                direction);
+
+                        ProcessCell(
+                            blocks,
+                            chunkCoordinate,
+                            blockAccessor,
+                            writer,
+                            waterWriter,
+                            world,
+                            direction,
+                            checked((ushort)u),
+                            checked((ushort)projectionY),
+                            projectionClippingEnabled,
+                            playerPosition, splitPath);
+                    }
+                }
+            }
+        }
+
+        private static void ProcessCell(
+            DynamicBuffer<BlockData> blocks,
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            ProjectionWriter writer,
+            WaterProjectionWriter waterWriter,
+            int3 world,
+            ViewDirection direction,
+            ushort projectionX,
+            ushort projectionY,
+            bool projectionClippingEnabled,
+            float3 playerPosition,
+            bool splitPath)
+        {
+            if (splitPath && TryProcessSplitCell(blocks, chunkCoordinate, blockAccessor, writer, waterWriter,
+                    world, direction, projectionX, projectionY, projectionClippingEnabled, playerPosition))
+                return;
+            BlockData currentBlock = GetBlockOrAir(
+                blocks,
+                chunkCoordinate,
+                blockAccessor,
+                world);
+
+            // The mask describes the clipped volume, including air and interior
+            // cells, rather than only the visible faces emitted at its boundary.
+            RecordClippedVolume(writer, chunkCoordinate, world, projectionX, projectionY,
+                projectionClippingEnabled, playerPosition, direction);
+
+            ushort sourceAirIndex = checked(
+                (ushort)ChunkUtility.ToIndex(
+                    world.x,
+                    world.y,
+                    world.z));
+
+            // Only the cell immediately above a half block needs the extra
+            // Top pass. Read the local buffer directly, without chunk lookups.
+            bool hasHalfBelow = world.y > 0 &&
+                blocks[sourceAirIndex - ChunkSettings.SizeX * ChunkSettings.SizeZ].Shape == BlockShape.LowerHalf;
+
+            ProcessOpaqueCell(
+                chunkCoordinate,
+                blockAccessor,
+                writer,
+                currentBlock,
+                world,
+                direction,
+                projectionX,
+                projectionY,
+                sourceAirIndex,
+                projectionClippingEnabled,
+                playerPosition,
+                hasHalfBelow);
+
+            ProcessWaterCell(
+                chunkCoordinate,
+                blockAccessor,
+                waterWriter,
+                currentBlock,
+                world,
+                direction,
+                projectionX,
+                projectionY,
+                sourceAirIndex,
+                hasHalfBelow, projectionClippingEnabled, playerPosition);
+        }
+
+        private static void ProcessOpaqueCell(
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            ProjectionWriter writer,
+            BlockData currentBlock,
+            int3 world,
+            ViewDirection direction,
+            ushort projectionX,
+            ushort projectionY,
+            ushort sourceAirIndex,
+            bool projectionClippingEnabled,
+            float3 playerPosition,
+            bool hasHalfBelow)
+        {
+            // The gap above a lower-half block exists even under another block.
+            if (hasHalfBelow)
+                TryEmitOpaqueTop(chunkCoordinate, blockAccessor, writer, world, direction,
+                    projectionX, projectionY, sourceAirIndex, projectionClippingEnabled, playerPosition, halfOnly: true);
+
+            if (IsOpaque(currentBlock.BlockId))
+            {
+                if (currentBlock.Shape == BlockShape.LowerHalf)
+                    TryEmitOpaqueSide(chunkCoordinate, blockAccessor, writer, world, direction,
+                        projectionX, projectionY, sourceAirIndex, projectionClippingEnabled, playerPosition, upperOnly: true);
+                TryEmitCutTop(
+                    chunkCoordinate,
+                    blockAccessor,
+                    writer,
+                    world,
+                    direction,
+                    projectionX,
+                    projectionY,
+                    sourceAirIndex,
+                    projectionClippingEnabled,
+                    playerPosition);
+
+                TryEmitCutSide(
+                    chunkCoordinate,
+                    blockAccessor,
+                    writer,
+                    world,
+                    direction,
+                    projectionX,
+                    projectionY,
+                    sourceAirIndex,
+                    projectionClippingEnabled,
+                    playerPosition);
+
+                return;
+            }
+
+            TryEmitOpaqueSide(
+                chunkCoordinate,
+                blockAccessor,
+                writer,
+                world,
+                direction,
+                projectionX,
+                projectionY,
+                sourceAirIndex,
+                projectionClippingEnabled,
+                playerPosition);
+
+            TryEmitOpaqueTop(
+                chunkCoordinate,
+                blockAccessor,
+                writer,
+                world,
+                direction,
+                projectionX,
+                projectionY,
+                sourceAirIndex,
+                projectionClippingEnabled,
+                playerPosition);
+        }
+
+        private static void ProcessWaterCell(
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            WaterProjectionWriter writer,
+            BlockData currentBlock,
+            int3 world,
+            ViewDirection direction,
+            ushort projectionX,
+            ushort projectionY,
+            ushort sourceAirIndex,
+            bool hasHalfBelow, bool clipping, float3 player)
+        {
+            if (hasHalfBelow)
+                TryEmitWaterTop(chunkCoordinate, blockAccessor, writer, world, direction,
+                    projectionX, projectionY, sourceAirIndex, halfOnly: true, clipping: clipping, player: player);
+            if (!BlockUtility.IsAir(currentBlock.BlockId))
+            {
+                if (currentBlock.Shape == BlockShape.LowerHalf)
+                    TryEmitWaterSide(chunkCoordinate, blockAccessor, writer, world, direction,
+                        projectionX, projectionY, sourceAirIndex, upperOnly: true, clipping: clipping, player: player);
+                return;
+            }
+
+            TryEmitWaterSide(
+                chunkCoordinate,
+                blockAccessor,
+                writer,
+                world,
+                direction,
+                projectionX,
+                projectionY,
+                sourceAirIndex, clipping: clipping, player: player);
+
+            TryEmitWaterTop(
+                chunkCoordinate,
+                blockAccessor,
+                writer,
+                world,
+                direction,
+                projectionX,
+                projectionY,
+                sourceAirIndex, clipping: clipping, player: player);
+        }
+
+        private static void TryEmitOpaqueTop(
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            ProjectionWriter writer,
+            int3 transparentWorld,
+            ViewDirection direction,
+            ushort projectionX,
+            ushort projectionY,
+            ushort sourceAirIndex,
+            bool projectionClippingEnabled,
+            float3 playerPosition,
+            bool halfOnly = false)
+        {
+            int3 belowWorld =
+                transparentWorld + new int3(0, -1, 0);
+
+            if (!ChunkUtility.IsInside(
+                    belowWorld.x,
+                    belowWorld.y,
+                    belowWorld.z))
+            {
+                return;
+            }
+
+            BlockData belowBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                belowWorld.x,
+                belowWorld.y,
+                belowWorld.z);
+
+            if (!IsOpaque(belowBlock.BlockId))
+                return;
+            bool half = belowBlock.Shape == BlockShape.LowerHalf;
+            if (half != halfOnly) return;
+            if (half) projectionY++;
+
+            float3 facePosition = GetGlobalPosition(
+                chunkCoordinate,
+                belowWorld,
+                half ? 0.5f : 1f);
+
+            if (ShouldClipOpaqueFace(
+                    projectionClippingEnabled,
+                    playerPosition,
+                    facePosition,
+                    belowWorld.y,
+                    direction))
+            {
+                writer.RecordClippedCell(projectionX, projectionY);
+                return;
+            }
+
+            byte neighborMask = TopNeighborMaskUtility.Build(
+                chunkCoordinate,
+                belowWorld,
+                blockAccessor,
+                direction);
+
+            writer.TryAddTop(
+                belowBlock,
+                neighborMask,
+                sourceAirIndex,
+                projectionX,
+                projectionY,
+                BuildShoreMask(chunkCoordinate, blockAccessor, belowWorld, half, false, direction));
+        }
+
+        private static void TryEmitOpaqueSide(
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            ProjectionWriter writer,
+            int3 transparentWorld,
+            ViewDirection direction,
+            ushort projectionX,
+            ushort projectionY,
+            ushort sourceAirIndex,
+            bool projectionClippingEnabled,
+            float3 playerPosition,
+            bool upperOnly = false)
+        {
+            if (projectionY < 2)
+                return;
+
+            int3 blockWorld =
+                transparentWorld +
+                ViewDirectionUtility.GetAwayFromCameraOffset(direction);
+
+            BlockData block = blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                blockWorld.x,
+                blockWorld.y,
+                blockWorld.z);
+
+            if (!IsOpaque(block.BlockId))
+                return;
+            bool half = block.Shape == BlockShape.LowerHalf;
+            if (upperOnly && half) return;
+
+            float3 facePosition = GetGlobalPosition(
+                chunkCoordinate,
+                blockWorld,
+                half ? 0.25f : 0.5f);
+
+            if (ShouldClipOpaqueFace(
+                    projectionClippingEnabled,
+                    playerPosition,
+                    facePosition,
+                    blockWorld.y,
+                    direction))
+            {
+                writer.RecordClippedCell(projectionX, checked((ushort)(projectionY - (half ? 1 : 2))));
+                if (!half && !upperOnly) writer.RecordClippedCell(projectionX, checked((ushort)(projectionY - 1)));
+                return;
+            }
+
+            int3 rightOffset = direction switch
+            {
+                ViewDirection.Front => new int3(1, 0, 0),
+                ViewDirection.Back => new int3(-1, 0, 0),
+                ViewDirection.Right => new int3(0, 0, 1),
+                ViewDirection.Left => new int3(0, 0, -1),
+                _ => int3.zero
+            };
+
+            int3 aboveWorld = blockWorld + new int3(0, 1, 0);
+            int3 rightWorld = blockWorld + rightOffset;
+            int3 leftWorld = blockWorld - rightOffset;
+
+            BlockData aboveBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                aboveWorld.x,
+                aboveWorld.y,
+                aboveWorld.z);
+
+            BlockData rightBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                rightWorld.x,
+                rightWorld.y,
+                rightWorld.z);
+
+            BlockData leftBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                leftWorld.x,
+                leftWorld.y,
+                leftWorld.z);
+
+            byte neighborMask = (byte)(
+                (!half && IsOpaque(aboveBlock.BlockId) ? 1 : 0) |
+                (IsOpaque(rightBlock.BlockId) && (half || rightBlock.Shape == BlockShape.Full) ? 2 : 0) |
+                (IsOpaque(leftBlock.BlockId) && (half || leftBlock.Shape == BlockShape.Full) ? 8 : 0));
+
+            int3 footWorld =
+                transparentWorld + new int3(0, -1, 0);
+
+            BlockData footBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                footWorld.x,
+                footWorld.y,
+                footWorld.z);
+
+            BlockId footBlockId = IsOpaque(footBlock.BlockId) && footBlock.Shape == BlockShape.Full
+                ? footBlock.BlockId
+                : BlockId.Air;
+
+            // The visible upper face rests against the Top of the half block
+            // in front, rather than against the floor one cell below it.
+            if (upperOnly)
+                footBlockId = blockAccessor.GetBlockOrAir(chunkCoordinate,
+                    transparentWorld.x, transparentWorld.y, transparentWorld.z).BlockId;
+
+            writer.TryAddSideUpper(
+                block,
+                neighborMask,
+                footBlockId,
+                sourceAirIndex,
+                projectionX,
+                checked((ushort)(projectionY - (half ? 1 : 2))),
+                raisedFoot: upperOnly);
+
+            if (half || upperOnly) return;
+            byte lowerMask = (byte)((neighborMask & 1) |
+                (IsOpaque(rightBlock.BlockId) ? 2 : 0) | (IsOpaque(leftBlock.BlockId) ? 8 : 0));
+            writer.TryAddSideLower(
+                block,
+                lowerMask,
+                footBlockId,
+                sourceAirIndex,
+                projectionX,
+                checked((ushort)(projectionY - 1)));
+        }
+
+        private static void TryEmitWaterTop(
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            WaterProjectionWriter writer,
+            int3 airWorld,
+            ViewDirection direction,
+            ushort projectionX,
+            ushort projectionY,
+            ushort sourceAirIndex,
+            bool halfOnly = false, bool clipping = false, float3 player = default)
+        {
+            int3 belowWorld = airWorld + new int3(0, -1, 0);
+
+            if (!ChunkUtility.IsInside(
+                    belowWorld.x,
+                    belowWorld.y,
+                    belowWorld.z))
+            {
+                return;
+            }
+
+            BlockData belowBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                belowWorld.x,
+                belowWorld.y,
+                belowWorld.z);
+
+            if (!IsWater(belowBlock.BlockId))
+                return;
+            bool half = belowBlock.Shape == BlockShape.LowerHalf;
+            if (half != halfOnly) return;
+            if (half) projectionY++;
+            if (ShouldClipOpaqueFace(clipping, player,
+                    GetGlobalPosition(chunkCoordinate, belowWorld, half ? .5f : 1f), belowWorld.y, direction)) return;
+
+            int3 awayFromCamera =
+                ViewDirectionUtility.GetAwayFromCameraOffset(direction);
+
+            float3 rayOrigin = new float3(
+                belowWorld.x + 0.5f,
+                belowWorld.y + (half ? 0.5f : 1f),
+                belowWorld.z + 0.5f);
+
+            byte opticalDepth = MeasureWaterDepth(
+                chunkCoordinate,
+                blockAccessor,
+                rayOrigin,
+                awayFromCamera);
+
+            int3 behindWorld = belowWorld + awayFromCamera;
+
+            CellContents behindContents = blockAccessor.GetContentsOrAir(
+                chunkCoordinate,
+                behindWorld.x,
+                behindWorld.y,
+                behindWorld.z);
+
+            // The water surface meets the neighbour's upper half, not its
+            // compatibility geometry (which may report the solid lower half).
+            bool topInset = !half && IsOpaque(behindContents.Upper.Id);
+
+            writer.TryAddTop(
+                belowBlock,
+                opticalDepth,
+                topInset,
+                sourceAirIndex,
+                projectionX,
+                projectionY,
+                BuildShoreMask(chunkCoordinate, blockAccessor, belowWorld, half, true, direction),
+                skyVisible: IsSkyVisibleWaterSurface(chunkCoordinate, blockAccessor, belowWorld, half));
+        }
+
+        private static void TryEmitWaterSide(
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            WaterProjectionWriter writer,
+            int3 airWorld,
+            ViewDirection direction,
+            ushort projectionX,
+            ushort projectionY,
+            ushort sourceAirIndex,
+            bool upperOnly = false, bool clipping = false, float3 player = default)
+        {
+            if (projectionY < 2)
+                return;
+
+            int3 awayFromCamera =
+                ViewDirectionUtility.GetAwayFromCameraOffset(direction);
+
+            int3 blockWorld = airWorld + awayFromCamera;
+
+            BlockData block = blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                blockWorld.x,
+                blockWorld.y,
+                blockWorld.z);
+
+            if (!IsWater(block.BlockId))
+                return;
+            bool half = block.Shape == BlockShape.LowerHalf;
+            if (half && upperOnly) return;
+            if (ShouldClipOpaqueFace(clipping, player,
+                    GetGlobalPosition(chunkCoordinate, blockWorld, half ? .25f : .5f), blockWorld.y, direction)) return;
+
+            // Центр передньої грані, повернутої до камери.
+            float3 faceCenter =
+                (float3)blockWorld +
+                new float3(0.5f, 0.5f, 0.5f) -
+                (float3)awayFromCamera * 0.5f;
+
+            byte upperDepth = MeasureWaterDepth(
+                chunkCoordinate,
+                blockAccessor,
+                faceCenter + new float3(0f, 0.25f, 0f),
+                awayFromCamera);
+
+            byte lowerDepth = MeasureWaterDepth(
+                chunkCoordinate,
+                blockAccessor,
+                faceCenter - new float3(0f, 0.25f, 0f),
+                awayFromCamera);
+
+            writer.TryAddSideUpper(
+                block,
+                half ? lowerDepth : upperDepth,
+                sourceAirIndex,
+                projectionX,
+                checked((ushort)(projectionY - (half ? 1 : 2))));
+
+            if (half || upperOnly) return;
+            writer.TryAddSideLower(
+                block,
+                lowerDepth,
+                sourceAirIndex,
+                projectionX,
+                checked((ushort)(projectionY - 1)));
+        }
+
+        private static BlockData GetBlockOrAir(
+            DynamicBuffer<BlockData> blocks,
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            int3 world)
+        {
+            return blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                world.x,
+                world.y,
+                world.z);
+        }
+
+        private static byte MeasureWaterDepth(
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            float3 rayOrigin,
+            int3 awayFromCamera)
+        {
+            const float verticalSpeed = 0.5f;
+            const float epsilon = 0.00001f;
+            const int maxSteps = byte.MaxValue * 5 + 5;
+
+            bool movesAlongX = awayFromCamera.x != 0;
+
+            int horizontalStep = movesAlongX
+                ? awayFromCamera.x
+                : awayFromCamera.z;
+
+            if (horizontalStep == 0)
+                return 0;
+
+            float horizontalOrigin = movesAlongX
+                ? rayOrigin.x
+                : rayOrigin.z;
+
+            int horizontalCell = horizontalStep > 0
+                ? (int)math.floor(horizontalOrigin)
+                : (int)math.ceil(horizontalOrigin) - 1;
+
+            int verticalCell = (int)math.ceil(rayOrigin.y * 2f) - 1;
+
+            int3 currentWorld = (int3)math.floor(rayOrigin);
+
+            if (movesAlongX)
+                currentWorld.x = horizontalCell;
+            else
+                currentWorld.z = horizontalCell;
+
+            currentWorld.y = (int)math.floor(verticalCell * .5f);
+
+            float nextHorizontal = horizontalStep > 0
+                ? horizontalCell + 1f - horizontalOrigin
+                : horizontalOrigin - horizontalCell;
+
+            float nextVertical =
+                (rayOrigin.y - verticalCell * .5f) / verticalSpeed;
+
+            float distance = 0f;
+            float maxDistance = byte.MaxValue / verticalSpeed;
+
+            for (int step = 0; step < maxSteps; step++)
+            {
+                CellContents contents = blockAccessor.GetContentsOrAir(
+                    chunkCoordinate,
+                    currentWorld.x,
+                    currentWorld.y,
+                    currentWorld.z);
+
+                BlockId material = (verticalCell & 1) == 0 ? contents.Lower.Id : contents.Upper.Id;
+                if (!IsWater(material))
+                    break;
+
+                float nextBoundary = math.min(
+                    nextHorizontal,
+                    nextVertical);
+
+                distance = math.min(nextBoundary, maxDistance);
+
+                if (distance >= maxDistance)
+                    break;
+
+                bool crossHorizontal =
+                    nextHorizontal <= nextBoundary + epsilon;
+
+                bool crossVertical =
+                    nextVertical <= nextBoundary + epsilon;
+
+                if (crossHorizontal)
+                {
+                    currentWorld += awayFromCamera;
+                    nextHorizontal += 1f;
+                }
+
+                if (crossVertical)
+                {
+                    verticalCell--;
+                    currentWorld.y = (int)math.floor(verticalCell * .5f);
+                    nextVertical += .5f / verticalSpeed;
+                }
+            }
+
+            float depth = distance * verticalSpeed;
+
+            return (byte)math.clamp(
+                (int)math.ceil(depth - epsilon),
+                0,
+                byte.MaxValue);
+        }
+
+        private static bool IsOpaque(BlockId blockId)
+        {
+            return BlockUtility.IsSolid(blockId) &&
+                   !IsWater(blockId);
+        }
+
+        private static float3 GetGlobalPosition(
+            int2 chunkCoordinate,
+            int3 localPosition,
+            float heightOffset)
+        {
+            return new float3(
+                chunkCoordinate.x * ChunkSettings.SizeX +
+                localPosition.x + 0.5f,
+
+                localPosition.y + heightOffset,
+
+                chunkCoordinate.y * ChunkSettings.SizeZ +
+                localPosition.z + 0.5f);
+        }
+
+        public static float GetClippingHeight(float3 playerPosition) =>
+            math.floor((playerPosition.y + .01f) * 2f) * .5f;
+
+        private static void RecordClippedVolume(ProjectionWriter writer, int2 coordinate, int3 position,
+            ushort x, ushort y, bool clipping, float3 player, ViewDirection direction)
+        {
+            if (!clipping) return;
+            if (ShouldClipOpaqueFace(clipping, player, GetGlobalPosition(coordinate, position, .25f), position.y, direction))
+                writer.RecordClippedCell(x, y);
+            if (y > 0 && ShouldClipOpaqueFace(clipping, player, GetGlobalPosition(coordinate, position, .75f), position.y, direction))
+                writer.RecordClippedCell(x, (ushort)(y - 1));
+        }
+
+        private static bool ShouldClipOpaqueFace(
+            bool projectionClippingEnabled,
+            float3 playerPosition,
+            float3 facePosition,
+            int blockY,
+            ViewDirection direction)
+        {
+            if (!projectionClippingEnabled)
+                return false;
+
+            if (facePosition.y <= GetClippingHeight(playerPosition) + .001f)
+                return false;
+
+            int depthDistance = GetDepthDistance(
+                playerPosition,
+                facePosition,
+                direction);
+
+            if (depthDistance <= 0)
+                return false;
+
+            return IsInsideClippingRadius(
+                playerPosition,
+                facePosition,
+                direction,
+                PlayerClipCenterOffset,
+                ProjectionClipRadius);
+        }
+
+        private static void TryEmitCutTop(
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            ProjectionWriter writer,
+            int3 upperWorld,
+            ViewDirection direction,
+            ushort projectionX,
+            ushort projectionY,
+            ushort sourceCellIndex,
+            bool projectionClippingEnabled,
+            float3 playerPosition)
+        {
+            if (!projectionClippingEnabled)
+                return;
+
+            float clipHeight = GetClippingHeight(playerPosition);
+            int clipFromBlockY = (int)math.floor(clipHeight);
+
+            if (upperWorld.y != clipFromBlockY)
+                return;
+
+            if (clipHeight > clipFromBlockY)
+            {
+                CellContents contents = blockAccessor.GetContentsOrAir(chunkCoordinate, upperWorld.x, upperWorld.y, upperWorld.z);
+                // A real lower-half surface is already emitted. Only cap a solid
+                // volume crossing the half-height cut plane.
+                if (!IsOpaque(contents.Lower.Id) || !IsOpaque(contents.Upper.Id) || projectionY == 0 ||
+                    upperWorld.y + 1 >= ChunkSettings.SizeY ||
+                    !ShouldClipOpaqueFace(true, playerPosition, GetGlobalPosition(chunkCoordinate, upperWorld, .75f),
+                        upperWorld.y, direction)) return;
+                writer.TryAddCutTop(new BlockData(contents.Lower.Id, contents.Lower.Durability, BlockShape.LowerHalf),
+                    (ushort)ChunkUtility.ToIndex(upperWorld + new int3(0, 1, 0)), projectionX, (ushort)(projectionY - 1));
+                return;
+            }
+
+            int3 belowWorld = upperWorld + new int3(0, -1, 0);
+
+            if (!ChunkUtility.IsInside(
+                    belowWorld.x,
+                    belowWorld.y,
+                    belowWorld.z))
+            {
+                return;
+            }
+
+            BlockData belowBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                belowWorld.x,
+                belowWorld.y,
+                belowWorld.z);
+
+            if (!IsOpaque(belowBlock.BlockId))
+                return;
+            if (belowBlock.Shape == BlockShape.LowerHalf) return; // Real half-height Top was emitted separately.
+
+            float3 upperFacePosition = GetGlobalPosition(
+                chunkCoordinate,
+                upperWorld,
+                0.5f);
+
+            if (!ShouldClipOpaqueFace(
+                    projectionClippingEnabled,
+                    playerPosition,
+                    upperFacePosition,
+                    upperWorld.y,
+                    direction))
+            {
+                return;
+            }
+
+            writer.TryAddCutTop(
+                belowBlock,
+                sourceCellIndex,
+                projectionX,
+                projectionY);
+        }
+
+        private static void TryEmitCutSide(
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            ProjectionWriter writer,
+            int3 world,
+            ViewDirection direction,
+            ushort projectionX,
+            ushort projectionY,
+            ushort sourceCellIndex,
+            bool projectionClippingEnabled,
+            float3 playerPosition)
+        {
+            if (!projectionClippingEnabled)
+                return;
+
+            int3 behindWorld =
+                world +
+                ViewDirectionUtility.GetAwayFromCameraOffset(direction);
+
+            BlockData behindBlock = blockAccessor.GetBlockOrAir(
+                chunkCoordinate,
+                behindWorld.x,
+                behindWorld.y,
+                behindWorld.z);
+            
+            if (!IsOpaque(behindBlock.BlockId))
+                return;
+            bool half = behindBlock.Shape == BlockShape.LowerHalf;
+            bool upperOnly = blockAccessor.GetBlockOrAir(chunkCoordinate, world.x, world.y, world.z).Shape == BlockShape.LowerHalf;
+            if (half && upperOnly) return;
+            float clipHeight = GetClippingHeight(playerPosition);
+            if (behindWorld.y + (half ? .5f : 1f) <= clipHeight + .001f) return;
+
+            float3 facePosition = GetGlobalPosition(
+                chunkCoordinate,
+                behindWorld,
+                0.5f);
+
+            if (!IsInsideClippingRadius(
+                    playerPosition,
+                    facePosition,
+                    direction,
+                    PlayerClipCenterOffset,
+                    ProjectionClipRadius))
+            {
+                return;
+            }
+
+            if (GetDepthDistance(
+                    playerPosition,
+                    facePosition,
+                    direction) != 0)
+            {
+                return;
+            }
+
+
+            writer.TryAddCutSideUpper(
+                behindBlock,
+                sourceCellIndex,
+                projectionX,
+                checked((ushort)(projectionY - (half ? 1 : 2))));
+
+            if (half || upperOnly) return;
+            if (behindWorld.y + .5f <= clipHeight + .001f) return;
+            writer.TryAddCutSideLower(
+                behindBlock,
+                sourceCellIndex,
+                projectionX,
+                checked((ushort)(projectionY - 1)));
+        }
+
+        private static float2 ProjectWorldPosition(
+            float3 worldPosition,
+            ViewDirection direction)
+        {
+            return direction switch
+            {
+                ViewDirection.Front => new float2(
+                    worldPosition.x,
+                    worldPosition.y - worldPosition.z * 0.5f),
+
+                ViewDirection.Back => new float2(
+                    -worldPosition.x,
+                    worldPosition.y + worldPosition.z * 0.5f),
+
+                ViewDirection.Right => new float2(
+                    worldPosition.z,
+                    worldPosition.y + worldPosition.x * 0.5f),
+
+                ViewDirection.Left => new float2(
+                    -worldPosition.z,
+                    worldPosition.y - worldPosition.x * 0.5f),
+
+                _ => float2.zero
+            };
+        }
+
+        private static bool IsWater(BlockId blockId)
+        {
+            return blockId == BlockId.OceanWater || blockId == BlockId.RiverWater;
+        }
+
+        private static int GetDepthDistance(
+            float3 playerPosition,
+            float3 facePosition,
+            ViewDirection direction)
+        {
+            int2 towardCamera =
+                ViewDirectionUtility.Forward(direction);
+
+            int2 playerCell = new int2(
+                (int)math.floor(playerPosition.x),
+                (int)math.floor(playerPosition.z));
+
+            int2 faceCell = new int2(
+                (int)math.floor(facePosition.x),
+                (int)math.floor(facePosition.z));
+
+            return math.dot(faceCell - playerCell, towardCamera);
+        }
+
+        private static bool IsInsideClippingRadius(
+            float3 playerPosition,
+            float3 facePosition,
+            ViewDirection direction,
+            float centerOffset,
+            float clipRadius)
+        {
+            float3 playerClipCenterPosition =
+                playerPosition +
+                new float3(0f, centerOffset, 0f);
+
+            float2 projectedFacePosition =
+                ProjectWorldPosition(facePosition, direction);
+
+            float2 projectedPlayerPosition =
+                ProjectWorldPosition(
+                    playerClipCenterPosition,
+                    direction);
+
+            return math.distancesq(
+                projectedFacePosition,
+                projectedPlayerPosition) < clipRadius * clipRadius;
+        }
+    }
+}

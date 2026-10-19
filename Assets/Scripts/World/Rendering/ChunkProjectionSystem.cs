@@ -15,6 +15,7 @@ namespace Game.World.Rendering
     public partial struct ChunkProjectionSystem :
         ISystem
     {
+        private static readonly Unity.Profiling.ProfilerMarker BuildMarker = new("ChunkProjection.Build");
         private const int
             MaxChunksProjectedPerFrame = 1;
 
@@ -167,14 +168,9 @@ namespace Game.World.Rendering
             // ============================================================
             // Temporary projection data
             // ============================================================
+            var occupancy = new ProjectionOccupancy(ChunkSettings.BlockCount, Allocator.Temp);
+            var waterOccupancy = new ProjectionOccupancy(ChunkSettings.BlockCount, Allocator.Temp);
 
-            ProjectionOccupancy occupancy = new ProjectionOccupancy(
-                ChunkSettings.BlockCount,
-                Allocator.Temp);
-
-            ProjectionOccupancy waterOccupancy = new ProjectionOccupancy(
-                ChunkSettings.BlockCount,
-                Allocator.Temp);
 
 
             var ecb =
@@ -212,12 +208,11 @@ namespace Game.World.Rendering
                 }
 
 
-                projectedCells.Clear();
-                projectedWaterCells.Clear();
                 DynamicBuffer<ProjectedClipCell> clippedCells =
                     state.EntityManager.GetBuffer<ProjectedClipCell>(entity);
+                projectedCells.Clear();
+                projectedWaterCells.Clear();
                 clippedCells.Clear();
-
                 occupancy.Clear();
                 waterOccupancy.Clear();
 
@@ -236,6 +231,7 @@ namespace Game.World.Rendering
                     projectionClippingLookup.HasComponent(entity) &&
                     projectionClippingLookup.IsComponentEnabled(entity);
 
+                using (BuildMarker.Auto())
                 ChunkProjectionBuilder.Build(
                     blocks,
                     chunk.ValueRO.Coordinate,
@@ -258,7 +254,6 @@ namespace Game.World.Rendering
 
 
             ecb.Dispose();
-
             occupancy.Dispose();
             waterOccupancy.Dispose();
 

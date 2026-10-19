@@ -95,6 +95,14 @@ namespace Game.World.Generation.Biomes.RockyShore
             byte cover = coastRise < .99f || clearance < bare ? (byte)0 :
                 clearance < bare + halfWidth ? (byte)1 : (byte)2;
             float rockHeight = rock.SurfaceHalf * .5f;
+            // A full cover layer on a half-height foundation otherwise spans
+            // two split cells: stone/turf below, turf/air above. Keep the same
+            // surface elevation, but align the foundation to a full cell.
+            if (cover == 2 && (rock.SurfaceHalf & 1) != 0)
+            {
+                rockHeight += .5f;
+                cover = 1;
+            }
             return new BiomeTerrainSample(WorldBiome.RockyShore, rockHeight,
                 (byte)(cover == 0 ? RockyShoreZone.Cliff : RockyShoreZone.GrassTop), cover);
         }

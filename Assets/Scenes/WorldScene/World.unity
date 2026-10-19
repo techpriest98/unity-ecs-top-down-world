@@ -321,14 +321,14 @@ MonoBehaviour:
   plateauRelief: 0.75
   coastVariation: 1
   coastNoiseScale: 0.006
-  grassDepth: 3
-  layeredGroundCover: 1
-  rockEdgeWidth: 2
-  halfCoverWidth: 2.5
   coastalRockSpacing: 16
   coastalRockChance: 0.4
   coastalRockHeight: 3
   coastalRockWaterReach: 12
+  layeredGroundCover: 1
+  rockEdgeWidth: 2
+  halfCoverWidth: 2.5
+  grassDepth: 3
   rampNoiseScale: 0.008
   rampThreshold: 0.65
   rampStrength: 1
@@ -402,7 +402,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad16fe5f55b604056994fbd9c5618018, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.World.Chunks.WorldAuthoring
-  chunkRadius: 3
+  chunkRadius: 1
   initialCenterChunk: {x: 0, y: 0}
 --- !u!1 &908224969
 GameObject:

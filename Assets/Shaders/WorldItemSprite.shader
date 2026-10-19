@@ -16,40 +16,48 @@ Shader "Game/World/ItemSprite"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             TEXTURE2D(_MainTex);
             TEXTURE2D(_OcclusionMask);
-            float _OcclusionEnabled;
             SamplerState item_point_clamp_sampler;
-            float4 _SpriteRect;
-            float4 _SpriteUv;
-            float _SpriteDepth;
-            float _GroundLightingEnabled;
-            float4 _LightTileRect;
-            float4 _LightBottomLeft, _LightBottomRight, _LightTopLeft, _LightTopRight;
-            float3 _ItemAmbient, _ItemSunlight;
-            struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; float2 maskUv : TEXCOORD1; float2 lightUv : TEXCOORD2; };
-            Varyings Vert(uint id : SV_VertexID)
+            struct WorldItemDrawData
             {
+                float4 Rect, Uv, MaskPixels, LightRect;
+                float4 BottomLeft, BottomRight, TopLeft, TopRight;
+                float4 Ambient, Sunlight, Flags;
+            };
+            StructuredBuffer<WorldItemDrawData> _WorldItems;
+            struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; float2 maskUv : TEXCOORD1; float2 lightUv : TEXCOORD2; nointerpolation uint instanceId : TEXCOORD3; };
+            Varyings Vert(uint id : SV_VertexID, uint instanceId : SV_InstanceID)
+            {
+                WorldItemDrawData data = _WorldItems[instanceId];
                 const float2 corners[6] = { float2(0,0), float2(0,1), float2(1,1), float2(0,0), float2(1,1), float2(1,0) };
                 Varyings output;
                 float2 corner = corners[id];
-                output.positionCS = TransformWorldToHClip(float3(_SpriteRect.xy + corner * _SpriteRect.zw, _SpriteDepth));
-                output.uv = _SpriteUv.xy + corner * _SpriteUv.zw;
+                output.positionCS = TransformWorldToHClip(float3(data.Rect.xy + corner * data.Rect.zw, data.Flags.x));
+                output.uv = data.Uv.xy + corner * data.Uv.zw;
+                output.instanceId = instanceId;
                 output.maskUv = corner;
-                output.lightUv = (_SpriteRect.xy + corner * _SpriteRect.zw - _LightTileRect.xy) / max(_LightTileRect.zw, 0.0001);
+                output.lightUv = (data.Rect.xy + corner * data.Rect.zw - data.LightRect.xy) / max(data.LightRect.zw, 0.0001);
                 return output;
             }
             float4 Frag(Varyings input) : SV_Target
             {
+                WorldItemDrawData data = _WorldItems[input.instanceId];
                 float4 color = SAMPLE_TEXTURE2D(_MainTex, item_point_clamp_sampler, input.uv);
                 clip(color.a - 0.1);
-                if (_OcclusionEnabled > 0.5)
-                    clip(0.5 - SAMPLE_TEXTURE2D(_OcclusionMask, item_point_clamp_sampler, input.maskUv).r);
-                if (_GroundLightingEnabled > 0.5)
+                if (data.Flags.z > 0.5)
+                {
+                    // Integer atlas addressing exactly preserves point/clamp
+                    // sampling, including uv=1 at the edge of adjacent slots.
+                    uint2 size = max(uint2(1,1), (uint2)data.MaskPixels.zw);
+                    uint2 pixel = min((uint2)(saturate(input.maskUv) * size), size - 1);
+                    clip(0.5 - _OcclusionMask.Load(int3((uint2)data.MaskPixels.xy + pixel, 0)).r);
+                }
+                if (data.Flags.y > 0.5)
                 {
                     float2 tileUv = saturate(input.lightUv);
-                    float4 lighting = lerp(lerp(_LightBottomLeft, _LightBottomRight, tileUv.x),
-                        lerp(_LightTopLeft, _LightTopRight, tileUv.x), tileUv.y);
+                    float4 lighting = lerp(lerp(data.BottomLeft, data.BottomRight, tileUv.x),
+                        lerp(data.TopLeft, data.TopRight, tileUv.x), tileUv.y);
                     // Same ambient floor and corner interpolation as ChunkProcedural.
-                    color.rgb *= saturate(_ItemAmbient * lerp(0.08, 1.0, lighting.a) + lighting.rgb + _ItemSunlight);
+                    color.rgb *= saturate(data.Ambient.rgb * lerp(0.08, 1.0, lighting.a) + lighting.rgb + data.Sunlight.rgb);
                 }
                 return color;
             }

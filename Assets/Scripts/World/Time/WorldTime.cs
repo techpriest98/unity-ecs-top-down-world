@@ -6,5 +6,6 @@ namespace Game.World.Time
     {
         public int Hour;
         public float UpdateTimer;
+        public double SimulationSeconds;
     }
 }

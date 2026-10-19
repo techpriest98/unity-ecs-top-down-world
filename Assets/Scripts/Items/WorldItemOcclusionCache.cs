@@ -15,17 +15,21 @@ namespace Game.Items
             public float Depth;
             public float Height;
             public bool Top;
+            public int Next;
         }
 
         private sealed class Mask
         {
             public Texture2D Texture;
             public uint Revision;
+            public uint Version;
             public float3 Position;
             public Vector4 Rect;
         }
 
-        private readonly Dictionary<int2, List<Face>> faces = new Dictionary<int2, List<Face>>();
+        // Reusable flat chains: no List + backing array per projected tile.
+        private readonly Dictionary<int2, int> faces = new Dictionary<int2, int>();
+        private readonly List<Face> faceEntries = new List<Face>();
         private readonly HashSet<int2> clipped = new HashSet<int2>();
         private readonly HashSet<int3> visibleTopSurfaces = new HashSet<int3>();
         private readonly Dictionary<Entity, Mask> masks = new Dictionary<Entity, Mask>();
@@ -35,6 +39,7 @@ namespace Game.Items
         private ulong signature;
         private ViewDirection direction;
         private uint revision;
+        private uint maskVersion;
         private bool initialized;
 
         public void BeginFrame() => seen.Clear();
@@ -65,7 +70,7 @@ namespace Game.Items
             if (initialized && next == signature && view == direction) return false;
             signature = next; direction = view; initialized = true;
             revision++;
-            faces.Clear(); clipped.Clear(); visibleTopSurfaces.Clear();
+            faces.Clear(); faceEntries.Clear(); clipped.Clear(); visibleTopSurfaces.Clear();
             return true;
         }
 
@@ -98,8 +103,9 @@ namespace Game.Items
                         (cell.FaceType == ProjectedFaceType.Top && cell.IsLowerHalf ? .5f : 0f),
                     Depth = depth + (cell.IsCutSide ? 0.5f : -0.5f)
                 };
-                if (!faces.TryGetValue(key, out var list)) { list = new List<Face>(2); faces.Add(key, list); }
-                list.Add(face);
+                face.Next = faces.TryGetValue(key, out int head) ? head : -1;
+                faces[key] = faceEntries.Count;
+                faceEntries.Add(face);
             }
         }
 
@@ -127,6 +133,9 @@ namespace Game.Items
         }
 
         public Texture2D GetMask(Entity entity, float3 position, Vector4 rect, int width, int height)
+            => GetMask(entity, position, rect, width, height, out _, true);
+
+        public Texture2D GetMask(Entity entity, float3 position, Vector4 rect, int width, int height, out uint version, bool upload)
         {
             seen.Add(entity);
             width = math.clamp(width, 1, 256); height = math.clamp(height, 1, 256);
@@ -139,7 +148,7 @@ namespace Game.Items
                 { name = "Ground item occlusion", filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
             }
             if (!resized && mask.Revision == revision && math.all(mask.Position == position) && mask.Rect == rect)
-                return mask.Texture;
+            { version = mask.Version; return mask.Texture; }
             var pixels = mask.Texture.GetRawTextureData<byte>();
             float2 anchor = WorldPositionProjectionUtility.Project(position, direction);
             anchor.y += 0.25f;
@@ -154,9 +163,10 @@ namespace Game.Items
                 // The projection is y_screen = y_world - depth / 2 + constant.
                 float pixelDepth = itemDepth - 2f * (py - anchor.y);
                 bool hidden = false;
-                if (faces.TryGetValue(Key(px, py), out var list))
-                    foreach (var face in list)
+                if (faces.TryGetValue(Key(px, py), out int head))
+                    for (int index = head; index >= 0; index = faceEntries[index].Next)
                     {
+                        var face = faceEntries[index];
                         float depth = face.Top ? pixelDepth + 2f * (face.Height - position.y) : face.Depth;
                         if (depth <= pixelDepth + 0.001f) continue;
                         hidden = true;
@@ -164,7 +174,9 @@ namespace Game.Items
                     }
                 pixels[x + y * width] = hidden ? (byte)255 : (byte)0;
             }
-            mask.Texture.Apply(false, false);
+            if (upload) mask.Texture.Apply(false, false);
+            mask.Version = ++maskVersion;
+            version = mask.Version;
             mask.Position = position; mask.Rect = rect; mask.Revision = revision;
             return mask.Texture;
         }
@@ -179,7 +191,7 @@ namespace Game.Items
         public void Dispose()
         {
             foreach (var mask in masks.Values) if (mask.Texture != null) Object.Destroy(mask.Texture);
-            masks.Clear(); faces.Clear(); clipped.Clear(); visibleTopSurfaces.Clear(); chunkHashes.Clear();
+            masks.Clear(); faces.Clear(); faceEntries.Clear(); clipped.Clear(); visibleTopSurfaces.Clear(); chunkHashes.Clear();
             initialized = false;
         }
     }

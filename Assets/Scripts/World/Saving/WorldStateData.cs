@@ -13,6 +13,7 @@ namespace Game.World.Saving
         public int View;
         public int Hour;
         public float UpdateTimer;
+        public double SimulationSeconds;
         public float VerticalVelocity;
         public int ChunkSizeX, ChunkSizeY, ChunkSizeZ;
         public ChunkChangesData[] Chunks;
@@ -31,6 +32,7 @@ namespace Game.World.Saving
         public float X, Y, Z, Vx, Vy, Vz;
         public float Gravity, CollisionRadius;
         public bool Grounded;
+        public double LastSimulationSeconds;
     }
 
     [Serializable]

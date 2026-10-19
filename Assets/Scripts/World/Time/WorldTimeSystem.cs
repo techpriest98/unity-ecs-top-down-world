@@ -120,6 +120,7 @@ namespace Game.World.Time
             RefRW<WorldTime> worldTime = SystemAPI.GetSingletonRW<WorldTime>();
 
             worldTime.ValueRW.UpdateTimer += SystemAPI.Time.DeltaTime;
+            worldTime.ValueRW.SimulationSeconds += SystemAPI.Time.DeltaTime;
 
             if (worldTime.ValueRO.UpdateTimer < SecondsPerHour)
             {

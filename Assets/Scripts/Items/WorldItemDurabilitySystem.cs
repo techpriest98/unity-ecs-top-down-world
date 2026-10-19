@@ -6,6 +6,7 @@ namespace Game.Items
 {
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateBefore(typeof(PlayerEquipmentDurabilitySystem))]
+    [UpdateAfter(typeof(Game.World.Time.WorldTimeSystem))]
     public partial struct WorldItemDurabilitySystem : ISystem
     {
         public void OnCreate(ref SystemState state)

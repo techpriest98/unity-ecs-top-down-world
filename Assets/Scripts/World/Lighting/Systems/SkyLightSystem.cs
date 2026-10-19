@@ -124,8 +124,6 @@ namespace Game.World.Lighting
             {
                 for (int x = 0; x < ChunkSettings.SizeX; x++)
                 {
-                    bool openToSky = true;
-
                     for (int y = ChunkSettings.SizeY - 1; y >= 0; y--)
                     {
                         int index = ChunkUtility.ToIndex(x, y, z);
@@ -133,18 +131,13 @@ namespace Game.World.Lighting
                         BlockData block = LightBlock(blocks, splits, index);
                         if (BlockLightGeometry.IsFull(block) || BlockLightGeometry.IsUpperHalf(block))
                         {
-                            openToSky = false;
-                            continue;
-                        }
-
-                        if (!openToSky)
-                        {
-                            continue;
+                            // Everything below is shadowed; lateral light is handled by SpreadLight.
+                            break;
                         }
 
                         SetSkyLight(voxelLight, index, MaximumLight);
                         queue.Enqueue(new int3(x, y, z));
-                        if (BlockLightGeometry.IsHalf(block)) openToSky = false;
+                        if (BlockLightGeometry.IsHalf(block)) break;
                     }
                 }
             }
@@ -193,6 +186,11 @@ namespace Game.World.Lighting
 
             int index = ChunkUtility.ToIndex(position.x, position.y, position.z);
 
+            // Most neighbours of a vertical seed already have maximum skylight.
+            // Reject them before resolving either block's split-cell geometry.
+            if (voxelLight[index].Sky >= light)
+                return;
+
             BlockData sourceBlock = LightBlock(blocks, splits, ChunkUtility.ToIndex(source.x, source.y, source.z));
             BlockData targetBlock = LightBlock(blocks, splits, index);
             if (BlockLightGeometry.IsFull(targetBlock) ||
@@ -202,8 +200,7 @@ namespace Game.World.Lighting
                 (position.y < source.y && BlockLightGeometry.IsUpperHalf(targetBlock)) ||
                 (position.y == source.y &&
                     ((BlockLightGeometry.IsHalf(sourceBlock) && BlockLightGeometry.IsUpperHalf(targetBlock)) ||
-                     (BlockLightGeometry.IsUpperHalf(sourceBlock) && BlockLightGeometry.IsHalf(targetBlock)))) ||
-                voxelLight[index].Sky >= light)
+                     (BlockLightGeometry.IsUpperHalf(sourceBlock) && BlockLightGeometry.IsHalf(targetBlock)))))
             {
                 return;
             }

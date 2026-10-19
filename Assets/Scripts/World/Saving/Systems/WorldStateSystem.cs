@@ -142,14 +142,7 @@ namespace Game.World.Saving
                         MarkLoadFailed($"Could not restore world item {saved.Instance.DefinitionId}. Check the item database.");
                         return;
                     }
-                foreach (var saved in data.WorldItems)
-                    WorldItemEntityUtility.Create(EntityManager, new WorldItem
-                    {
-                        Instance = saved.Instance,
-                        Position = new float3(saved.X, saved.Y, saved.Z),
-                        Velocity = new float3(saved.Vx, saved.Vy, saved.Vz),
-                        Gravity = saved.Gravity, CollisionRadius = saved.CollisionRadius, Grounded = saved.Grounded
-                    });
+                World.GetOrCreateSystemManaged<WorldItemStreamingSystem>().Import(data.WorldItems);
             }
 
             if (data.Chunks != null)
@@ -222,6 +215,7 @@ namespace Game.World.Saving
                 new WorldTime
                 {
                     Hour = data.Hour,
+                    SimulationSeconds = data.SimulationSeconds,
                     UpdateTimer = data.UpdateTimer
                 });
 
@@ -392,19 +386,14 @@ namespace Game.World.Saving
         {
             using var query = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<WorldItem>());
             using var items = query.ToComponentDataArray<WorldItem>(Allocator.Temp);
-            var result = new WorldItemData[items.Length];
+            double now = timeQuery.GetSingleton<WorldTime>().SimulationSeconds;
+            var result = new List<WorldItemData>(items.Length);
             for (int i = 0; i < items.Length; i++)
             {
-                var item = items[i];
-                result[i] = new WorldItemData
-                {
-                    Instance = item.Instance,
-                    X = item.Position.x, Y = item.Position.y, Z = item.Position.z,
-                    Vx = item.Velocity.x, Vy = item.Velocity.y, Vz = item.Velocity.z,
-                    Gravity = item.Gravity, CollisionRadius = item.CollisionRadius, Grounded = item.Grounded
-                };
+                result.Add(WorldItemStreamingUtility.Save(items[i], now));
             }
-            return result;
+            World.GetExistingSystemManaged<WorldItemStreamingSystem>()?.AppendInactive(result);
+            return result.ToArray();
         }
 
         private ChunkChangesData[] CaptureChanges()
@@ -520,6 +509,7 @@ namespace Game.World.Saving
                         .GetSingleton<ViewDirectionComponent>().Value,
 
                     Hour = time.Hour,
+                    SimulationSeconds = time.SimulationSeconds,
                     UpdateTimer = time.UpdateTimer,
 
                     VerticalVelocity = EntityManager
