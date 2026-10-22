@@ -1,0 +1,72 @@
+#pragma kernel BuildVisibility
+#pragma kernel BuildEdges
+StructuredBuffer<uint> _PlayerLightOccupancy;
+RWStructuredBuffer<uint> _DiagnosticBlockVisibility;
+RWStructuredBuffer<uint> _DiagnosticBlockEdges;
+float4 _PlayerLightGridOrigin;
+float4 _VisibilitySource;
+float4 _VisibilityOrigin;
+int _VisibilitySlot;
+
+float Trace(float3 origin, float3 target)
+{
+    float3 ray = target - origin;
+    float len = length(ray);
+    if (len < .06) return 1;
+    origin += ray / len * .03;
+    float3 start = (origin - _PlayerLightGridOrigin.xyz) * float3(1,2,1);
+    float3 end = (target - _PlayerLightGridOrigin.xyz) * float3(1,2,1);
+    float3 direction = end - start;
+    int3 cell = (int3)floor(start), last = (int3)floor(end);
+    int3 stepCell = (int3)sign(direction);
+    float3 inverse = 1 / max(abs(direction), .000001);
+    float3 boundary = (float3(cell) + step(0, direction) - start) * sign(direction) * inverse;
+    boundary = float3(abs(direction.x) < .000001 ? 1e20 : boundary.x,
+        abs(direction.y) < .000001 ? 1e20 : boundary.y,
+        abs(direction.z) < .000001 ? 1e20 : boundary.z);
+    [loop] for (int n=0; n<128; n++)
+    {
+        if (all(cell == last)) return 1;
+        int size = (int)_PlayerLightGridOrigin.w;
+        if (any(cell < 0) || any(cell >= int3(size,size*2,size))) return 0;
+        if (_PlayerLightOccupancy[(cell.z * (size*2) + cell.y) * size + cell.x] != 0) return 0;
+        if (boundary.x <= boundary.y && boundary.x <= boundary.z) {cell.x += stepCell.x; boundary.x += inverse.x;}
+        else if (boundary.y <= boundary.z) {cell.y += stepCell.y; boundary.y += inverse.y;}
+        else {cell.z += stepCell.z; boundary.z += inverse.z;}
+    }
+    return 0;
+}
+
+// 20 x 40 x 20 cells per light, with a margin around radius-eight sources.
+[numthreads(4,4,4)]
+void BuildVisibility(uint3 id : SV_DispatchThreadID)
+{
+    if (any(id >= uint3(20,40,20))) return;
+    float3 receiver = _VisibilityOrigin.xyz + (float3(id) + .5) * float3(1,.5,1);
+    uint index = _VisibilitySlot * 16000 + (id.z * 40 + id.y) * 20 + id.x;
+    float visible = 0;
+    // Small margin keeps cells at a smooth attenuation radius from dropping early.
+    if (distance(receiver, _VisibilitySource.xyz) < _VisibilitySource.w + 1)
+        visible = Trace(receiver, _VisibilitySource.xyz);
+    _DiagnosticBlockVisibility[index] = visible > .5 ? 1u : 0u;
+}
+
+[numthreads(4,4,4)]
+void BuildEdges(uint3 id : SV_DispatchThreadID)
+{
+    if (any(id >= uint3(20,40,20))) return;
+    uint index = _VisibilitySlot * 16000 + (id.z * 40 + id.y) * 20 + id.x;
+    uint center = _DiagnosticBlockVisibility[index];
+    uint edge = 0;
+    // Include diagonal neighbours so corners do not retain a coarse staircase.
+    [loop] for (int z=-1; z<=1; z++)
+    [loop] for (int y=-1; y<=1; y++)
+    [loop] for (int x=-1; x<=1; x++)
+    {
+        int3 p = int3(id) + int3(x,y,z);
+        if (any(p < 0) || any(p >= int3(20,40,20))) continue;
+        uint neighbour = _DiagnosticBlockVisibility[_VisibilitySlot * 16000 + (p.z * 40 + p.y) * 20 + p.x];
+        if (neighbour != center) edge = 1;
+    }
+    _DiagnosticBlockEdges[index] = edge;
+}

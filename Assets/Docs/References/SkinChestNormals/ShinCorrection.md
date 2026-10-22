@@ -1,0 +1,13 @@
+# Upright shin normal correction
+
+Requested file resolved to `Art/Player/Animations/Body/body_idle_normal_skin_draft.png` (not a new body_idle_skin_draft asset).
+
+Only existing opaque skin pixels at local rows 82-95 in each 128-pixel source cell are changed, across eight frames. Head, the user's chest revision, side necks, all foot pixels from row 96 onward, transparent RGB and every alpha value are preserved. Backup: `body_idle_normal_skin_before_shins.png` in this folder. The combined player normal map is deliberately untouched.
+
+Built-in imagegen proposed leg facets. `FixSkinShinNormals.ps1` registers the lower-leg components, samples that proposal through the original skin alpha, removes upward Y tilt and restricts shins strictly to the exact current picker row 2: Front/vertical left, centre, right. Brightness of the original skin colour is never used to choose Up. This is a faceted upright-cylinder correction, not recovered 3D anatomy; knees and foot transitions still warrant manual review in moving light.
+
+The script validates every resulting shin pixel against the vertical palette, verifies every alpha and all RGBA outside the shin region before replacing the file. It refuses to overwrite an existing backup.
+
+## Built-in imagegen prompt
+
+Precise local technical normal-map edit of supplied 128x512 skin-only 2-column 4-row sprite sheet. Fix ONLY lower legs/shins/calves and feet of all 8 sprites; everything above legs MUST remain unchanged, including user-corrected chest. Current legs incorrectly use up-facing green/yellow normals for vertical shins. Treat EACH calf as an upright convex cylinder, not as lit skin colors. Vertical forward surfaces are BLUE #8080FF, screen-left flanks #3680E8, screen-right flanks #C980E8. NO green/yellow at all on shin vertical surfaces. Maintain consistent blue-front cylinders in both idle frames and all four character facings (these normals are sprite-view-oriented, so screen-left/right remain left/right). Small upward-facing surfaces may exist ONLY on dorsum/top of foot and tiny kneecap tops, not whole calf. Use colors ONLY from block editor palette #36E880 #80FF80 #C9E880 up; #25C0BF #80DAD9 #DAC0BF up45; #3680E8 #8080FF #C980E8 vertical; #3636C9 #8025DA #C936C9 down45. Preserve exact original alpha, each pixel position, 128x512 aspect and all8 skin-fragment placements. Not an albedo image, no light/shadow colors, no generated gradients, pixel art flat facets only. Do not redraw head, neckline or silhouette. Do not add knees, anatomy or missing limbs. Transparent background. No labels no reference charts. Output same complete registered skin map, with only anatomically appropriate lower-leg normals corrected.

@@ -8,5 +8,7 @@ namespace Game.Player
     public sealed class AnimationDatabase : ScriptableObject
     {
         public AnimationDefinition[] Animations;
+        [Tooltip("Optional material to receive both arrays after a successful build.")]
+        public Material TargetMaterial;
     }
 }

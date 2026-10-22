@@ -898,8 +898,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.PlayerAuthoring
   moveSpeed: 5
   jumpSpeed: 10
-  collisionWidth: 0.6
-  collisionHeight: 2
+  collisionWidth: 0.7
+  collisionHeight: 1.9
   visualParts:
   - {fileID: 1953463375}
   - {fileID: 2089946002}

@@ -42,6 +42,26 @@ namespace Game.Player
                 }
 
                 DependsOn(atlas.TextureArray);
+                if (atlas.NormalTextureArray == null ||
+                    atlas.NormalTextureArray.width != atlas.TextureArray.width ||
+                    atlas.NormalTextureArray.height != atlas.TextureArray.height ||
+                    atlas.NormalTextureArray.depth != atlas.TextureArray.depth)
+                {
+                    Debug.LogError("Rebuild Animation Atlas: matching normal array is missing.", atlas);
+                    return;
+                }
+                DependsOn(atlas.NormalTextureArray);
+                if (atlas.PaintedTextureArray != null)
+                {
+                    DependsOn(atlas.PaintedTextureArray);
+                    if (atlas.PaintedTextureArray.width != atlas.TextureArray.width ||
+                        atlas.PaintedTextureArray.height != atlas.TextureArray.height ||
+                        atlas.PaintedTextureArray.depth != atlas.TextureArray.depth)
+                    {
+                        Debug.LogError("Painted atlas dimensions do not match diffuse. Rebuild Animation Atlas.", atlas);
+                        return;
+                    }
+                }
 
                 var keys = new HashSet<(CharacterPart, AnimationID)>();
 
@@ -56,6 +76,11 @@ namespace Game.Player
                     }
 
                     DependsOn(clip.Definition);
+                    if (clip.Definition.PaintedMap != null && atlas.PaintedTextureArray == null)
+                    {
+                        Debug.LogError("Rebuild Animation Atlas to include the assigned PaintedMap.", clip.Definition);
+                        return;
+                    }
 
                     if (!keys.Add((clip.Part, clip.Id)))
                     {
@@ -118,6 +143,8 @@ namespace Game.Player
                                 var result = new PlayerAnimationFrameBlob
                                 {
                                     PageIndex = packed.PageIndex,
+                                    OverrideLightPosition = layers[frame].OverrideLightPosition,
+                                    LightPosition = (float3)layers[frame].LightPosition,
                                     ZIndex = layers[frame].ZIndex
                                 };
 
@@ -186,6 +213,8 @@ namespace Game.Player
                 }
 
                 if (clip.Part != definition.Part ||
+                    clip.PaintedMap != definition.PaintedMap ||
+                    clip.NormalMap != definition.NormalMap ||
                     clip.Id != definition.Id ||
                     clip.FrameCount != definition.FrameCount ||
                     clip.FrameCount < 1 ||
@@ -205,6 +234,13 @@ namespace Game.Player
 
                     for (int frame = 0; frame < clip.FrameCount; frame++)
                     {
+                        Vector3 anchor = layers[frame].LightPosition;
+                        if (layers[frame].OverrideLightPosition &&
+                            (!math.all(math.isfinite((float3)anchor))))
+                        {
+                            Debug.LogError($"{definition.name}: light anchor must be finite (direction {direction}, frame {frame}).", definition);
+                            return false;
+                        }
                         int index = direction * clip.FrameCount + frame;
                         AnimationAtlas.Frame packed = clip.Frames[index];
 

@@ -1,0 +1,756 @@
+fileFormatVersion: 2
+guid: 2af8fb241c7db2045987eb8ff15990f2
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 5503627258441811326
+    second: body_idle_normal_skin_before_shins_0
+  - first:
+      213: 8573257067694681277
+    second: body_idle_normal_skin_before_shins_1
+  - first:
+      213: 8503525612951518535
+    second: body_idle_normal_skin_before_shins_2
+  - first:
+      213: -4783446084769889658
+    second: body_idle_normal_skin_before_shins_3
+  - first:
+      213: -8418057261562415032
+    second: body_idle_normal_skin_before_shins_4
+  - first:
+      213: 1254819185841103072
+    second: body_idle_normal_skin_before_shins_5
+  - first:
+      213: -2440789465418027612
+    second: body_idle_normal_skin_before_shins_6
+  - first:
+      213: -6297360093123056139
+    second: body_idle_normal_skin_before_shins_7
+  - first:
+      213: 1341019949385446440
+    second: body_idle_normal_skin_before_shins_8
+  - first:
+      213: -325117413844007215
+    second: body_idle_normal_skin_before_shins_9
+  - first:
+      213: -9073675629741756403
+    second: body_idle_normal_skin_before_shins_10
+  - first:
+      213: 8691687742460564964
+    second: body_idle_normal_skin_before_shins_11
+  - first:
+      213: 7061301900519079151
+    second: body_idle_normal_skin_before_shins_12
+  - first:
+      213: -218275163402182603
+    second: body_idle_normal_skin_before_shins_13
+  - first:
+      213: -8233792242357286632
+    second: body_idle_normal_skin_before_shins_14
+  - first:
+      213: 5891250358981694891
+    second: body_idle_normal_skin_before_shins_15
+  - first:
+      213: -2199367164086396464
+    second: body_idle_normal_skin_before_shins_16
+  - first:
+      213: -735407306297277297
+    second: body_idle_normal_skin_before_shins_17
+  - first:
+      213: 447138306263928837
+    second: body_idle_normal_skin_before_shins_18
+  - first:
+      213: -3075605454721399380
+    second: body_idle_normal_skin_before_shins_19
+  - first:
+      213: 4020743973827762705
+    second: body_idle_normal_skin_before_shins_20
+  - first:
+      213: 7725775679167683933
+    second: body_idle_normal_skin_before_shins_21
+  - first:
+      213: -4202585395707659
+    second: body_idle_normal_skin_before_shins_22
+  - first:
+      213: -2490944868911892679
+    second: body_idle_normal_skin_before_shins_23
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_0
+      rect:
+        serializedVersion: 2
+        x: 21
+        y: 477
+        width: 24
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e75c49305dfc06c40800000000000000
+      internalID: 5503627258441811326
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_1
+      rect:
+        serializedVersion: 2
+        x: 22
+        y: 463
+        width: 22
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dbc6c0841e35af670800000000000000
+      internalID: 8573257067694681277
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_2
+      rect:
+        serializedVersion: 2
+        x: 85
+        y: 476
+        width: 24
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 74d396acd77920670800000000000000
+      internalID: 8503525612951518535
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_3
+      rect:
+        serializedVersion: 2
+        x: 86
+        y: 462
+        width: 22
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 682ce033129cd9db0800000000000000
+      internalID: -4783446084769889658
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_4
+      rect:
+        serializedVersion: 2
+        x: 19
+        y: 409
+        width: 12
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 848bca9758d0d2b80800000000000000
+      internalID: -8418057261562415032
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_5
+      rect:
+        serializedVersion: 2
+        x: 35
+        y: 409
+        width: 12
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0e06765b6630a6110800000000000000
+      internalID: 1254819185841103072
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_6
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 409
+        width: 12
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4ad2e3eb9e2902ed0800000000000000
+      internalID: -2440789465418027612
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_7
+      rect:
+        serializedVersion: 2
+        x: 99
+        y: 409
+        width: 12
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5fdeda23c584b98a0800000000000000
+      internalID: -6297360093123056139
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_8
+      rect:
+        serializedVersion: 2
+        x: 20
+        y: 343
+        width: 24
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 824f4d7f9824c9210800000000000000
+      internalID: 1341019949385446440
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_9
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 342
+        width: 24
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1d6c8854f63fc7bf0800000000000000
+      internalID: -325117413844007215
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_10
+      rect:
+        serializedVersion: 2
+        x: 20
+        y: 282
+        width: 10
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d00bf12d614d31280800000000000000
+      internalID: -9073675629741756403
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_11
+      rect:
+        serializedVersion: 2
+        x: 34
+        y: 282
+        width: 10
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4e59af383f31f9870800000000000000
+      internalID: 8691687742460564964
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_12
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 282
+        width: 10
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fecfa388aa8cef160800000000000000
+      internalID: 7061301900519079151
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_13
+      rect:
+        serializedVersion: 2
+        x: 98
+        y: 282
+        width: 10
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5306f1635e788fcf0800000000000000
+      internalID: -218275163402182603
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_14
+      rect:
+        serializedVersion: 2
+        x: 20
+        y: 223
+        width: 12
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8194def7491bbbd80800000000000000
+      internalID: -8233792242357286632
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_15
+      rect:
+        serializedVersion: 2
+        x: 22
+        y: 206
+        width: 18
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ba51ff10dfce1c150800000000000000
+      internalID: 5891250358981694891
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_16
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 222
+        width: 12
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0d9d8fd87374a71e0800000000000000
+      internalID: -2199367164086396464
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_17
+      rect:
+        serializedVersion: 2
+        x: 86
+        y: 205
+        width: 18
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f848ce683fe4bc5f0800000000000000
+      internalID: -735407306297277297
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_18
+      rect:
+        serializedVersion: 2
+        x: 24
+        y: 153
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 500d456abed843600800000000000000
+      internalID: 447138306263928837
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_19
+      rect:
+        serializedVersion: 2
+        x: 88
+        y: 153
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ca5c31a52214155d0800000000000000
+      internalID: -3075605454721399380
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_20
+      rect:
+        serializedVersion: 2
+        x: 24
+        y: 78
+        width: 20
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 11adbc4675d8cc730800000000000000
+      internalID: 4020743973827762705
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_21
+      rect:
+        serializedVersion: 2
+        x: 88
+        y: 77
+        width: 20
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d5d542b1c08773b60800000000000000
+      internalID: 7725775679167683933
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_22
+      rect:
+        serializedVersion: 2
+        x: 24
+        y: 25
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5f0c95655c111fff0800000000000000
+      internalID: -4202585395707659
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_idle_normal_skin_before_shins_23
+      rect:
+        serializedVersion: 2
+        x: 88
+        y: 25
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 937bc6dd6d26e6dd0800000000000000
+      internalID: -2490944868911892679
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      body_idle_normal_skin_before_shins_0: 5503627258441811326
+      body_idle_normal_skin_before_shins_1: 8573257067694681277
+      body_idle_normal_skin_before_shins_10: -9073675629741756403
+      body_idle_normal_skin_before_shins_11: 8691687742460564964
+      body_idle_normal_skin_before_shins_12: 7061301900519079151
+      body_idle_normal_skin_before_shins_13: -218275163402182603
+      body_idle_normal_skin_before_shins_14: -8233792242357286632
+      body_idle_normal_skin_before_shins_15: 5891250358981694891
+      body_idle_normal_skin_before_shins_16: -2199367164086396464
+      body_idle_normal_skin_before_shins_17: -735407306297277297
+      body_idle_normal_skin_before_shins_18: 447138306263928837
+      body_idle_normal_skin_before_shins_19: -3075605454721399380
+      body_idle_normal_skin_before_shins_2: 8503525612951518535
+      body_idle_normal_skin_before_shins_20: 4020743973827762705
+      body_idle_normal_skin_before_shins_21: 7725775679167683933
+      body_idle_normal_skin_before_shins_22: -4202585395707659
+      body_idle_normal_skin_before_shins_23: -2490944868911892679
+      body_idle_normal_skin_before_shins_3: -4783446084769889658
+      body_idle_normal_skin_before_shins_4: -8418057261562415032
+      body_idle_normal_skin_before_shins_5: 1254819185841103072
+      body_idle_normal_skin_before_shins_6: -2440789465418027612
+      body_idle_normal_skin_before_shins_7: -6297360093123056139
+      body_idle_normal_skin_before_shins_8: 1341019949385446440
+      body_idle_normal_skin_before_shins_9: -325117413844007215
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

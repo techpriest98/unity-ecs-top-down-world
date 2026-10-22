@@ -107,6 +107,8 @@ namespace Game.World.Blocks
     }
 
     public struct ChunkSurfaceRevision : IComponentData { public uint Value; }
+    // Actual block edits/generation only; unaffected by read-only lighting/projection passes.
+    public struct ChunkGeometryRevision : IComponentData { public uint Value; }
 
     [InternalBufferCapacity(0)]
     public struct ChunkSurfaceSample : IBufferElementData

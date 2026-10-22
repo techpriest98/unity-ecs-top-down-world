@@ -56,9 +56,13 @@ namespace Game.World.Lighting
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            bool cpuDisabled = SystemAPI.TryGetSingleton<SunLightingSettings>(out var settings) && !settings.CpuShadows;
+            if (cpuDisabled)
+                foreach (var pending in SystemAPI.Query<EnabledRefRW<ChunkNeedsSunShadowUpdate>>().WithAll<ChunkGenerated>())
+                    pending.ValueRW = false;
             bool needsLighting =
                 chunksNeedingLightingQuery.CalculateEntityCount() > 0;
-            bool needsShadowUpdate =
+            bool needsShadowUpdate = !cpuDisabled &&
                 chunksNeedingShadowUpdateQuery.CalculateEntityCount() > 0;
 
             if (!needsLighting && !needsShadowUpdate)
@@ -402,7 +406,7 @@ namespace Game.World.Lighting
             SunShadowState shadowState,
             byte targetMaskIndex)
         {
-            bool activeVisible = IsSunVisible(
+            bool activeVisible = shadowState.CpuShadowsDisabled || IsSunVisible(
                 cell,
                 chunkCoordinate,
                 blockAccessor,

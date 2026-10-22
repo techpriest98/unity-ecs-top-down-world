@@ -25,6 +25,8 @@ namespace Game.Editor
             public int FrameIndex;
 
             public Color32[] SourcePixels;
+            public Color32[] NormalPixels;
+            public Color32[] PaintedPixels;
             public int SourceWidth;
             public int SourceX;
             public int SourceY;
@@ -36,6 +38,8 @@ namespace Game.Editor
         {
             public readonly Color32[] Pixels =
                 new Color32[PageSize * PageSize];
+            public readonly Color32[] Normals = new Color32[PageSize * PageSize];
+            public readonly Color32[] Painted = new Color32[PageSize * PageSize];
 
             private int cursorX;
             private int cursorY;
@@ -99,6 +103,8 @@ namespace Game.Editor
 
             AnimationAtlas atlas = null;
             Texture2DArray textureArray = null;
+            Texture2DArray normalArray = null;
+            Texture2DArray paintedArray = null;
             string createdPath = null;
             bool completed = false;
 
@@ -143,10 +149,15 @@ namespace Game.Editor
 
                     Texture2D source = definition.SpriteSheet;
                     Color32[] pixels = source.GetPixels32(0);
+                    Color32[] painted = definition.PaintedMap != null ? definition.PaintedMap.GetPixels32(0) : null;
+                    Color32[] normals = definition.NormalMap != null
+                        ? definition.NormalMap.GetPixels32(0) : null;
 
                     var clip = new AnimationAtlas.Clip
                     {
                         Definition = definition,
+                        NormalMap = definition.NormalMap,
+                        PaintedMap = definition.PaintedMap,
                         Part = definition.Part,
                         Id = definition.Id,
                         FrameCount = definition.FrameCount,
@@ -203,6 +214,8 @@ namespace Game.Editor
                                 ClipIndex = clipIndex,
                                 FrameIndex = frameIndex,
                                 SourcePixels = pixels,
+                                NormalPixels = normals,
+                                PaintedPixels = painted,
                                 SourceWidth = source.width,
                                 SourceX = frame * CellWidth + bounds.x,
                                 SourceY =
@@ -274,6 +287,8 @@ namespace Game.Editor
                     }
 
                     CopyFrame(item, pages[pageIndex].Pixels, atlasRect);
+                    CopyNormals(item, pages[pageIndex].Normals, atlasRect);
+                    CopyPainted(item, pages[pageIndex].Painted, atlasRect);
 
                     AnimationAtlas.Frame data =
                         clips[item.ClipIndex].Frames[item.FrameIndex];
@@ -306,11 +321,34 @@ namespace Game.Editor
                     textureArray.SetPixels32(pages[i].Pixels, i);
 
                 textureArray.Apply(false, false);
+                normalArray = new Texture2DArray(PageSize, PageSize, pages.Count,
+                    TextureFormat.RGBA32, false, true)
+                {
+                    name = database.name + "_Normals",
+                    filterMode = FilterMode.Point,
+                    wrapMode = TextureWrapMode.Clamp,
+                    anisoLevel = 0
+                };
+                for (int i = 0; i < pages.Count; i++)
+                    normalArray.SetPixels32(pages[i].Normals, i);
+                normalArray.Apply(false, false);
+                paintedArray = new Texture2DArray(PageSize, PageSize, pages.Count,
+                    TextureFormat.RGBA32, false, false)
+                {
+                    name = database.name + "_Painted",
+                    filterMode = FilterMode.Point,
+                    wrapMode = TextureWrapMode.Clamp,
+                    anisoLevel = 0
+                };
+                for (int i = 0; i < pages.Count; i++) paintedArray.SetPixels32(pages[i].Painted, i);
+                paintedArray.Apply(false, false);
 
                 atlas = ScriptableObject.CreateInstance<AnimationAtlas>();
                 atlas.name = database.name + "_Atlas";
                 atlas.SourceDatabase = database;
                 atlas.TextureArray = textureArray;
+                atlas.NormalTextureArray = normalArray;
+                atlas.PaintedTextureArray = paintedArray;
                 atlas.CellWidth = CellWidth;
                 atlas.CellHeight = CellHeight;
                 atlas.PageSize = PageSize;
@@ -323,6 +361,18 @@ namespace Game.Editor
                 createdPath = outputPath;
 
                 AssetDatabase.AddObjectToAsset(textureArray, atlas);
+                AssetDatabase.AddObjectToAsset(normalArray, atlas);
+                AssetDatabase.AddObjectToAsset(paintedArray, atlas);
+                if (database.TargetMaterial != null)
+                {
+                    Undo.RecordObject(database.TargetMaterial, "Assign animation atlases");
+                    database.TargetMaterial.SetTexture("_SpriteArray", textureArray);
+                    database.TargetMaterial.SetTexture("_NormalArray", normalArray);
+                    database.TargetMaterial.SetTexture("_PaintedArray", paintedArray);
+                    database.TargetMaterial.SetFloat("_PaintedDetailsEnabled",
+                        Array.Exists(definitions, d => d != null && d.PaintedMap != null) ? 1f : 0f);
+                    EditorUtility.SetDirty(database.TargetMaterial);
+                }
                 EditorUtility.SetDirty(atlas);
                 AssetDatabase.SaveAssets();
 
@@ -345,6 +395,10 @@ namespace Game.Editor
             {
                 if (!completed)
                 {
+                    if (paintedArray != null && !AssetDatabase.Contains(paintedArray))
+                        UnityEngine.Object.DestroyImmediate(paintedArray);
+                    if (normalArray != null && !AssetDatabase.Contains(normalArray))
+                        UnityEngine.Object.DestroyImmediate(normalArray);
                     // Видаляємо лише новий незавершений результат.
                     if (!string.IsNullOrEmpty(createdPath))
                         AssetDatabase.DeleteAsset(createdPath);
@@ -391,6 +445,27 @@ namespace Game.Editor
             }
 
             string path = AssetDatabase.GetAssetPath(texture);
+            if (definition.PaintedMap != null)
+            {
+                Texture2D painted = definition.PaintedMap;
+                var paintedImporter = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(painted)) as TextureImporter;
+                if (painted.width != texture.width || painted.height != texture.height || !painted.isReadable ||
+                    paintedImporter == null || !paintedImporter.sRGBTexture ||
+                    paintedImporter.textureType == TextureImporterType.NormalMap)
+                    throw new InvalidOperationException($"{definition.name}: PaintedMap must match diffuse dimensions and use readable sRGB color import.");
+            }
+            if (definition.NormalMap != null)
+            {
+                Texture2D normal = definition.NormalMap;
+                var normalImporter = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(normal)) as TextureImporter;
+                if (normal.width != texture.width || normal.height != texture.height ||
+                    !normal.isReadable || normalImporter == null || normalImporter.sRGBTexture ||
+                    normalImporter.textureType == TextureImporterType.NormalMap ||
+                    normal.filterMode != FilterMode.Point || normal.mipmapCount != 1 ||
+                    normalImporter.textureCompression != TextureImporterCompression.Uncompressed ||
+                    normalImporter.alphaIsTransparency)
+                    throw new InvalidOperationException($"{definition.name}: NormalMap must match SpriteSheet dimensions and use readable raw RGB, sRGB off, Point, no mipmaps/compression, Alpha Is Transparency off.");
+            }
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
 
             if (importer == null || !importer.sRGBTexture)
@@ -423,6 +498,34 @@ namespace Game.Editor
                     $"{animationName}: invalid PackedRect " +
                     $"at direction {direction}, frame {frame}. " +
                     "Run Trim All.");
+            }
+        }
+
+        private static void CopyPainted(PendingFrame source, Color32[] destination, RectInt target)
+        {
+            for (int y = -Padding; y < target.height + Padding; y++)
+            for (int x = -Padding; x < target.width + Padding; x++)
+            {
+                int index = (source.SourceY + Mathf.Clamp(y, 0, target.height - 1)) * source.SourceWidth
+                    + source.SourceX + Mathf.Clamp(x, 0, target.width - 1);
+                Color32 color = source.PaintedPixels == null ? source.SourcePixels[index] : source.PaintedPixels[index];
+                // Missing painted coverage must not erase or brighten the diffuse silhouette.
+                if (color.a < 128) color = source.SourcePixels[index];
+                destination[(target.y + y) * PageSize + target.x + x] = color;
+            }
+        }
+
+        private static void CopyNormals(PendingFrame source, Color32[] destination, RectInt target)
+        {
+            // Reuse diffuse placement and padding; never trim or pack normals independently.
+            for (int y = -Padding; y < target.height + Padding; y++)
+            for (int x = -Padding; x < target.width + Padding; x++)
+            {
+                int index = (source.SourceY + Mathf.Clamp(y, 0, target.height - 1)) * source.SourceWidth
+                    + source.SourceX + Mathf.Clamp(x, 0, target.width - 1);
+                Color32 normal = source.NormalPixels == null ? new Color32(128, 128, 255, 0) : source.NormalPixels[index];
+                // Alpha marks availability, not silhouette; diffuse alone controls cutout.
+                destination[(target.y + y) * PageSize + target.x + x] = normal;
             }
         }
 

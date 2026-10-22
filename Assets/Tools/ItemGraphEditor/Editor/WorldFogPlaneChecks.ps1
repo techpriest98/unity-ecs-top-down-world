@@ -16,6 +16,7 @@ foreach ($name in 'WorldFog','WorldFogMask','ChunkProcedural') {
     $program = $program.Replace('#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"', $core)
     $program = $program.Replace('#include "ProjectedCellPacking.hlsl"', (Get-Content (Join-Path $root 'Shaders/ProjectedCellPacking.hlsl') -Raw))
     $program = $program.Replace('#include "ShoreFoam.hlsl"', (Get-Content (Join-Path $root 'Shaders/ShoreFoam.hlsl') -Raw))
+    $program = $program.Replace('#include "GpuSunTrace.hlsl"', (Get-Content (Join-Path $root 'Shaders/GpuSunTrace.hlsl') -Raw))
     [ItemBatchShaderCompile]::Compile($program,'Vert','vs_5_0')
     [ItemBatchShaderCompile]::Compile($program,'Frag','ps_5_0')
     if ($name -eq 'ChunkProcedural') {

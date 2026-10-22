@@ -1,0 +1,340 @@
+fileFormatVersion: 2
+guid: 6f42b4a051dc5a14bb5fcb286c3b7f57
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -8204695636844179323
+    second: left_arm_bent_idle_normals_before_palette_20261020_0
+  - first:
+      213: -990888107364382361
+    second: left_arm_bent_idle_normals_before_palette_20261020_1
+  - first:
+      213: 2407056645624131918
+    second: left_arm_bent_idle_normals_before_palette_20261020_2
+  - first:
+      213: 2487190856932565624
+    second: left_arm_bent_idle_normals_before_palette_20261020_3
+  - first:
+      213: 1941739688783853390
+    second: left_arm_bent_idle_normals_before_palette_20261020_4
+  - first:
+      213: 495086760697750899
+    second: left_arm_bent_idle_normals_before_palette_20261020_5
+  - first:
+      213: -2615538376616262535
+    second: left_arm_bent_idle_normals_before_palette_20261020_6
+  - first:
+      213: 237079888887283667
+    second: left_arm_bent_idle_normals_before_palette_20261020_7
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: left_arm_bent_idle_normals_before_palette_20261020_0
+      rect:
+        serializedVersion: 2
+        x: 44
+        y: 446
+        width: 14
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 58094b3e9c0132e80800000000000000
+      internalID: -8204695636844179323
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_idle_normals_before_palette_20261020_1
+      rect:
+        serializedVersion: 2
+        x: 108
+        y: 445
+        width: 14
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 769036c2488af32f0800000000000000
+      internalID: -990888107364382361
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_idle_normals_before_palette_20261020_2
+      rect:
+        serializedVersion: 2
+        x: 5
+        y: 321
+        width: 16
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e417bac1445976120800000000000000
+      internalID: 2407056645624131918
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_idle_normals_before_palette_20261020_3
+      rect:
+        serializedVersion: 2
+        x: 69
+        y: 320
+        width: 16
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 872a01c18e6448220800000000000000
+      internalID: 2487190856932565624
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_idle_normals_before_palette_20261020_4
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 190
+        width: 30
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e473d3c85f172fa10800000000000000
+      internalID: 1941739688783853390
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_idle_normals_before_palette_20261020_5
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 189
+        width: 30
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 375636829c6eed600800000000000000
+      internalID: 495086760697750899
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_idle_normals_before_palette_20261020_6
+      rect:
+        serializedVersion: 2
+        x: 33
+        y: 66
+        width: 19
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 974c26544bdb3bbd0800000000000000
+      internalID: -2615538376616262535
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_idle_normals_before_palette_20261020_7
+      rect:
+        serializedVersion: 2
+        x: 97
+        y: 65
+        width: 19
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3dff38027e64a4300800000000000000
+      internalID: 237079888887283667
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      left_arm_bent_idle_normals_before_palette_20261020_0: -8204695636844179323
+      left_arm_bent_idle_normals_before_palette_20261020_1: -990888107364382361
+      left_arm_bent_idle_normals_before_palette_20261020_2: 2407056645624131918
+      left_arm_bent_idle_normals_before_palette_20261020_3: 2487190856932565624
+      left_arm_bent_idle_normals_before_palette_20261020_4: 1941739688783853390
+      left_arm_bent_idle_normals_before_palette_20261020_5: 495086760697750899
+      left_arm_bent_idle_normals_before_palette_20261020_6: -2615538376616262535
+      left_arm_bent_idle_normals_before_palette_20261020_7: 237079888887283667
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

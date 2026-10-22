@@ -1,0 +1,548 @@
+fileFormatVersion: 2
+guid: 14b4187d487aed545af216d6eed79adf
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 5782247627322182259
+    second: left_arm_bent_walk_normals_0
+  - first:
+      213: 732347644424772054
+    second: left_arm_bent_walk_normals_1
+  - first:
+      213: -7696895932518240483
+    second: left_arm_bent_walk_normals_2
+  - first:
+      213: -2683312679847532124
+    second: left_arm_bent_walk_normals_3
+  - first:
+      213: 5722367102901208311
+    second: left_arm_bent_walk_normals_4
+  - first:
+      213: 435003142830056868
+    second: left_arm_bent_walk_normals_5
+  - first:
+      213: -8105932778163631928
+    second: left_arm_bent_walk_normals_6
+  - first:
+      213: -2571457626629529665
+    second: left_arm_bent_walk_normals_7
+  - first:
+      213: -1762979774816646952
+    second: left_arm_bent_walk_normals_8
+  - first:
+      213: 6403365252120737294
+    second: left_arm_bent_walk_normals_9
+  - first:
+      213: -1971389682147376609
+    second: left_arm_bent_walk_normals_10
+  - first:
+      213: -1730236972390167256
+    second: left_arm_bent_walk_normals_11
+  - first:
+      213: -2949246719795596882
+    second: left_arm_bent_walk_normals_12
+  - first:
+      213: 7096647069962816738
+    second: left_arm_bent_walk_normals_13
+  - first:
+      213: -7608363105928893742
+    second: left_arm_bent_walk_normals_14
+  - first:
+      213: 8793646842558105415
+    second: left_arm_bent_walk_normals_15
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 0
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 1
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 0
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 0
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: left_arm_bent_walk_normals_0
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 444
+        width: 14
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 37a42e5d49bae3050800000000000000
+      internalID: 5782247627322182259
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_walk_normals_1
+      rect:
+        serializedVersion: 2
+        x: 108
+        y: 444
+        width: 14
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d9580e6d42d92a00800000000000000
+      internalID: 732347644424772054
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_walk_normals_2
+      rect:
+        serializedVersion: 2
+        x: 169
+        y: 444
+        width: 15
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d1fe915ede12f2590800000000000000
+      internalID: -7696895932518240483
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_walk_normals_3
+      rect:
+        serializedVersion: 2
+        x: 236
+        y: 444
+        width: 14
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4a9e260a555f2cad0800000000000000
+      internalID: -2683312679847532124
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_walk_normals_4
+      rect:
+        serializedVersion: 2
+        x: 8
+        y: 321
+        width: 16
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7f4cecacf8ee96f40800000000000000
+      internalID: 5722367102901208311
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_walk_normals_5
+      rect:
+        serializedVersion: 2
+        x: 69
+        y: 321
+        width: 16
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4a5609cbd01790600800000000000000
+      internalID: 435003142830056868
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_walk_normals_6
+      rect:
+        serializedVersion: 2
+        x: 134
+        y: 321
+        width: 16
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8c88c58d511f18f80800000000000000
+      internalID: -8105932778163631928
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_walk_normals_7
+      rect:
+        serializedVersion: 2
+        x: 197
+        y: 321
+        width: 16
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fbf17c9a9e8505cd0800000000000000
+      internalID: -2571457626629529665
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_walk_normals_8
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 188
+        width: 30
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8d80bd74c33a887e0800000000000000
+      internalID: -1762979774816646952
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_walk_normals_9
+      rect:
+        serializedVersion: 2
+        x: 80
+        y: 190
+        width: 30
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e067cb335c25dd850800000000000000
+      internalID: 6403365252120737294
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_walk_normals_10
+      rect:
+        serializedVersion: 2
+        x: 144
+        y: 188
+        width: 30
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f124cb9678734a4e0800000000000000
+      internalID: -1971389682147376609
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_walk_normals_11
+      rect:
+        serializedVersion: 2
+        x: 208
+        y: 190
+        width: 30
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 82dcf6b04a6fcf7e0800000000000000
+      internalID: -1730236972390167256
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_walk_normals_12
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 62
+        width: 19
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea1f89febbb2217d0800000000000000
+      internalID: -2949246719795596882
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_walk_normals_13
+      rect:
+        serializedVersion: 2
+        x: 97
+        y: 66
+        width: 19
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2ec437519ea5c7260800000000000000
+      internalID: 7096647069962816738
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_walk_normals_14
+      rect:
+        serializedVersion: 2
+        x: 159
+        y: 64
+        width: 19
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2daabe4e01aa96690800000000000000
+      internalID: -7608363105928893742
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_bent_walk_normals_15
+      rect:
+        serializedVersion: 2
+        x: 224
+        y: 65
+        width: 19
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 74749ea663f490a70800000000000000
+      internalID: 8793646842558105415
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      left_arm_bent_walk_normals_0: 5782247627322182259
+      left_arm_bent_walk_normals_1: 732347644424772054
+      left_arm_bent_walk_normals_10: -1971389682147376609
+      left_arm_bent_walk_normals_11: -1730236972390167256
+      left_arm_bent_walk_normals_12: -2949246719795596882
+      left_arm_bent_walk_normals_13: 7096647069962816738
+      left_arm_bent_walk_normals_14: -7608363105928893742
+      left_arm_bent_walk_normals_15: 8793646842558105415
+      left_arm_bent_walk_normals_2: -7696895932518240483
+      left_arm_bent_walk_normals_3: -2683312679847532124
+      left_arm_bent_walk_normals_4: 5722367102901208311
+      left_arm_bent_walk_normals_5: 435003142830056868
+      left_arm_bent_walk_normals_6: -8105932778163631928
+      left_arm_bent_walk_normals_7: -2571457626629529665
+      left_arm_bent_walk_normals_8: -1762979774816646952
+      left_arm_bent_walk_normals_9: 6403365252120737294
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

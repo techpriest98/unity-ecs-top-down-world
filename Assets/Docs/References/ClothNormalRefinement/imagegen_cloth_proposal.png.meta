@@ -1,0 +1,1120 @@
+fileFormatVersion: 2
+guid: 5737a2ead06c5a142b1ecd9279efdf50
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 6193824978305499900
+    second: imagegen_cloth_proposal_0
+  - first:
+      213: -2130858963778970349
+    second: imagegen_cloth_proposal_1
+  - first:
+      213: -1824295456415902497
+    second: imagegen_cloth_proposal_2
+  - first:
+      213: -2742448011782281707
+    second: imagegen_cloth_proposal_3
+  - first:
+      213: 5553031415723076457
+    second: imagegen_cloth_proposal_4
+  - first:
+      213: 7010247562932613835
+    second: imagegen_cloth_proposal_5
+  - first:
+      213: -1501242686766700626
+    second: imagegen_cloth_proposal_6
+  - first:
+      213: 462225723120844932
+    second: imagegen_cloth_proposal_7
+  - first:
+      213: 6418817340697076045
+    second: imagegen_cloth_proposal_8
+  - first:
+      213: 5367889685541575441
+    second: imagegen_cloth_proposal_9
+  - first:
+      213: -3139520348059028078
+    second: imagegen_cloth_proposal_10
+  - first:
+      213: 1014106884259769231
+    second: imagegen_cloth_proposal_11
+  - first:
+      213: -1860822749779663464
+    second: imagegen_cloth_proposal_12
+  - first:
+      213: 4278662331914570758
+    second: imagegen_cloth_proposal_13
+  - first:
+      213: -2940669334875258695
+    second: imagegen_cloth_proposal_14
+  - first:
+      213: -2326424575108142705
+    second: imagegen_cloth_proposal_15
+  - first:
+      213: 5827717544830578718
+    second: imagegen_cloth_proposal_16
+  - first:
+      213: 4405596015518785568
+    second: imagegen_cloth_proposal_17
+  - first:
+      213: 1426737903820158052
+    second: imagegen_cloth_proposal_18
+  - first:
+      213: -1733833740893815313
+    second: imagegen_cloth_proposal_19
+  - first:
+      213: -5499552906047910982
+    second: imagegen_cloth_proposal_20
+  - first:
+      213: -2955700250764414378
+    second: imagegen_cloth_proposal_21
+  - first:
+      213: -5332531500692423819
+    second: imagegen_cloth_proposal_22
+  - first:
+      213: -8104354864306875739
+    second: imagegen_cloth_proposal_23
+  - first:
+      213: -6606618858684480287
+    second: imagegen_cloth_proposal_24
+  - first:
+      213: -4305204438477740003
+    second: imagegen_cloth_proposal_25
+  - first:
+      213: 8205232884351607798
+    second: imagegen_cloth_proposal_26
+  - first:
+      213: -2660820461449747580
+    second: imagegen_cloth_proposal_27
+  - first:
+      213: -4434749296167126688
+    second: imagegen_cloth_proposal_28
+  - first:
+      213: -2914245636476231198
+    second: imagegen_cloth_proposal_29
+  - first:
+      213: -5869518066499886270
+    second: imagegen_cloth_proposal_30
+  - first:
+      213: -7132378675866831567
+    second: imagegen_cloth_proposal_31
+  - first:
+      213: -4584492035836190261
+    second: imagegen_cloth_proposal_32
+  - first:
+      213: 6413467512463573951
+    second: imagegen_cloth_proposal_33
+  - first:
+      213: 4055475329559807284
+    second: imagegen_cloth_proposal_34
+  - first:
+      213: 78069675561267458
+    second: imagegen_cloth_proposal_35
+  - first:
+      213: -5117470026672450479
+    second: imagegen_cloth_proposal_36
+  - first:
+      213: 8998802614660044626
+    second: imagegen_cloth_proposal_37
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1454
+        width: 390
+        height: 702
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cf247d06003e4f550800000000000000
+      internalID: 6193824978305499900
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_1
+      rect:
+        serializedVersion: 2
+        x: 368
+        y: 2143
+        width: 16
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 31d5f7def0bad62e0800000000000000
+      internalID: -2130858963778970349
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_2
+      rect:
+        serializedVersion: 2
+        x: 385
+        y: 1661
+        width: 319
+        height: 509
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fd498faa2fccea6e0800000000000000
+      internalID: -1824295456415902497
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_3
+      rect:
+        serializedVersion: 2
+        x: 20
+        y: 2048
+        width: 68
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 516adba301ed0f9d0800000000000000
+      internalID: -2742448011782281707
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_4
+      rect:
+        serializedVersion: 2
+        x: 360
+        y: 2036
+        width: 28
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 96b22c0c6a4501d40800000000000000
+      internalID: 5553031415723076457
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_5
+      rect:
+        serializedVersion: 2
+        x: 596
+        y: 2054
+        width: 9
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bc275204407694160800000000000000
+      internalID: 7010247562932613835
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_6
+      rect:
+        serializedVersion: 2
+        x: 626
+        y: 2024
+        width: 14
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea72e95fab38a2be0800000000000000
+      internalID: -1501242686766700626
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_7
+      rect:
+        serializedVersion: 2
+        x: 78
+        y: 1261
+        width: 231
+        height: 384
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4808aa0a8d72a6600800000000000000
+      internalID: 462225723120844932
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_8
+      rect:
+        serializedVersion: 2
+        x: 332
+        y: 1024
+        width: 376
+        height: 620
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d41ed5eec58341950800000000000000
+      internalID: 6418817340697076045
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_9
+      rect:
+        serializedVersion: 2
+        x: 572
+        y: 1620
+        width: 19
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 11b503c8a339e7a40800000000000000
+      internalID: 5367889685541575441
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_10
+      rect:
+        serializedVersion: 2
+        x: 588
+        y: 1622
+        width: 11
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 295b4d890ee2e64d0800000000000000
+      internalID: -3139520348059028078
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_11
+      rect:
+        serializedVersion: 2
+        x: 588
+        y: 1574
+        width: 23
+        height: 59
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f8be49896d4d21e00800000000000000
+      internalID: 1014106884259769231
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_12
+      rect:
+        serializedVersion: 2
+        x: 572
+        y: 1593
+        width: 7
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 895ea6171970d26e0800000000000000
+      internalID: -1860822749779663464
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_13
+      rect:
+        serializedVersion: 2
+        x: 620
+        y: 1534
+        width: 26
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 60ccc97b8bcd06b30800000000000000
+      internalID: 4278662331914570758
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_14
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 971
+        width: 148
+        height: 245
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9b040ecf1d4a037d0800000000000000
+      internalID: -2940669334875258695
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_15
+      rect:
+        serializedVersion: 2
+        x: 493
+        y: 1199
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f89a0f3cc21e6bfd0800000000000000
+      internalID: -2326424575108142705
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_16
+      rect:
+        serializedVersion: 2
+        x: 439
+        y: 1162
+        width: 19
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e1030fefa3630e050800000000000000
+      internalID: 5827717544830578718
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_17
+      rect:
+        serializedVersion: 2
+        x: 18
+        y: 521
+        width: 315
+        height: 640
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 020afd8fb32d32d30800000000000000
+      internalID: 4405596015518785568
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_18
+      rect:
+        serializedVersion: 2
+        x: 354
+        y: 1100
+        width: 12
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 46439c8709accc310800000000000000
+      internalID: 1426737903820158052
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_19
+      rect:
+        serializedVersion: 2
+        x: 427
+        y: 746
+        width: 152
+        height: 379
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fedff6e166f20f7e0800000000000000
+      internalID: -1733833740893815313
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_20
+      rect:
+        serializedVersion: 2
+        x: 293
+        y: 1072
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: abb0c8315c9ada3b0800000000000000
+      internalID: -5499552906047910982
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_21
+      rect:
+        serializedVersion: 2
+        x: 379
+        y: 1076
+        width: 21
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 65277aa284e3bf6d0800000000000000
+      internalID: -2955700250764414378
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_22
+      rect:
+        serializedVersion: 2
+        x: 217
+        y: 683
+        width: 8
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 57bb5a36ada0ff5b0800000000000000
+      internalID: -5332531500692423819
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_23
+      rect:
+        serializedVersion: 2
+        x: 300
+        y: 49
+        width: 386
+        height: 636
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5a2974b803c878f80800000000000000
+      internalID: -8104354864306875739
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_24
+      rect:
+        serializedVersion: 2
+        x: 80
+        y: 264
+        width: 209
+        height: 361
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1e407b1c6239054a0800000000000000
+      internalID: -6606618858684480287
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_25
+      rect:
+        serializedVersion: 2
+        x: 644
+        y: 537
+        width: 28
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d1869178f57d044c0800000000000000
+      internalID: -4305204438477740003
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_26
+      rect:
+        serializedVersion: 2
+        x: 683
+        y: 489
+        width: 42
+        height: 76
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6f3a12bc5d7ded170800000000000000
+      internalID: 8205232884351607798
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_27
+      rect:
+        serializedVersion: 2
+        x: 304
+        y: 174
+        width: 17
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 483623053edd21bd0800000000000000
+      internalID: -2660820461449747580
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_28
+      rect:
+        serializedVersion: 2
+        x: 515
+        y: 182
+        width: 8
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0697b0ee20b9472c0800000000000000
+      internalID: -4434749296167126688
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_29
+      rect:
+        serializedVersion: 2
+        x: 522
+        y: 158
+        width: 9
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2e12a91b8058e87d0800000000000000
+      internalID: -2914245636476231198
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_30
+      rect:
+        serializedVersion: 2
+        x: 56
+        y: 136
+        width: 78
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2436983aa684b8ea0800000000000000
+      internalID: -5869518066499886270
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_31
+      rect:
+        serializedVersion: 2
+        x: 89
+        y: 0
+        width: 103
+        height: 149
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 135f26d1263b40d90800000000000000
+      internalID: -7132378675866831567
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_32
+      rect:
+        serializedVersion: 2
+        x: 125
+        y: 127
+        width: 21
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bc1606878cc9060c0800000000000000
+      internalID: -4584492035836190261
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_33
+      rect:
+        serializedVersion: 2
+        x: 207
+        y: 128
+        width: 98
+        height: 52
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fb346eaf8b6310950800000000000000
+      internalID: 6413467512463573951
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_34
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 125
+        width: 21
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 435c5cd4351f74830800000000000000
+      internalID: 4055475329559807284
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_35
+      rect:
+        serializedVersion: 2
+        x: 431
+        y: 111
+        width: 23
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2013f8fc4fb551100800000000000000
+      internalID: 78069675561267458
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_36
+      rect:
+        serializedVersion: 2
+        x: 483
+        y: 136
+        width: 18
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 154da7fcf181bf8b0800000000000000
+      internalID: -5117470026672450479
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: imagegen_cloth_proposal_37
+      rect:
+        serializedVersion: 2
+        x: 513
+        y: 156
+        width: 10
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2571ba2ec4b22ec70800000000000000
+      internalID: 8998802614660044626
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      imagegen_cloth_proposal_0: 6193824978305499900
+      imagegen_cloth_proposal_1: -2130858963778970349
+      imagegen_cloth_proposal_10: -3139520348059028078
+      imagegen_cloth_proposal_11: 1014106884259769231
+      imagegen_cloth_proposal_12: -1860822749779663464
+      imagegen_cloth_proposal_13: 4278662331914570758
+      imagegen_cloth_proposal_14: -2940669334875258695
+      imagegen_cloth_proposal_15: -2326424575108142705
+      imagegen_cloth_proposal_16: 5827717544830578718
+      imagegen_cloth_proposal_17: 4405596015518785568
+      imagegen_cloth_proposal_18: 1426737903820158052
+      imagegen_cloth_proposal_19: -1733833740893815313
+      imagegen_cloth_proposal_2: -1824295456415902497
+      imagegen_cloth_proposal_20: -5499552906047910982
+      imagegen_cloth_proposal_21: -2955700250764414378
+      imagegen_cloth_proposal_22: -5332531500692423819
+      imagegen_cloth_proposal_23: -8104354864306875739
+      imagegen_cloth_proposal_24: -6606618858684480287
+      imagegen_cloth_proposal_25: -4305204438477740003
+      imagegen_cloth_proposal_26: 8205232884351607798
+      imagegen_cloth_proposal_27: -2660820461449747580
+      imagegen_cloth_proposal_28: -4434749296167126688
+      imagegen_cloth_proposal_29: -2914245636476231198
+      imagegen_cloth_proposal_3: -2742448011782281707
+      imagegen_cloth_proposal_30: -5869518066499886270
+      imagegen_cloth_proposal_31: -7132378675866831567
+      imagegen_cloth_proposal_32: -4584492035836190261
+      imagegen_cloth_proposal_33: 6413467512463573951
+      imagegen_cloth_proposal_34: 4055475329559807284
+      imagegen_cloth_proposal_35: 78069675561267458
+      imagegen_cloth_proposal_36: -5117470026672450479
+      imagegen_cloth_proposal_37: 8998802614660044626
+      imagegen_cloth_proposal_4: 5553031415723076457
+      imagegen_cloth_proposal_5: 7010247562932613835
+      imagegen_cloth_proposal_6: -1501242686766700626
+      imagegen_cloth_proposal_7: 462225723120844932
+      imagegen_cloth_proposal_8: 6418817340697076045
+      imagegen_cloth_proposal_9: 5367889685541575441
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

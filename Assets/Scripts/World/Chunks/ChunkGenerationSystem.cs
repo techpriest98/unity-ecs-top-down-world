@@ -145,6 +145,9 @@ namespace Game.World.Chunks
                         TerrainMinimapUtility.UpdateColumn(blocks, surfaceSplits, surface, x, z);
                     }
                 state.EntityManager.SetComponentData(entity, new ChunkSurfaceRevision { Value = 1 });
+                var geometryRevision = state.EntityManager.GetComponentData<ChunkGeometryRevision>(entity);
+                geometryRevision.Value++;
+                state.EntityManager.SetComponentData(entity, geometryRevision);
 
                 ecb.AddComponent<ChunkGenerated>(entity);
                 ecb.SetComponentEnabled<ChunkNeedsProjection>(

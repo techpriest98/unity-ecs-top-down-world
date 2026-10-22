@@ -1,0 +1,470 @@
+fileFormatVersion: 2
+guid: 91ed9ff80dbbda340b67e95959860f6f
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 3889171769561502492
+    second: left_arm_walk_diffuse_before_0
+  - first:
+      213: 1404302704484174831
+    second: left_arm_walk_diffuse_before_1
+  - first:
+      213: 5102333602263853375
+    second: left_arm_walk_diffuse_before_2
+  - first:
+      213: 2823216759190304280
+    second: left_arm_walk_diffuse_before_3
+  - first:
+      213: 2740481868198279506
+    second: left_arm_walk_diffuse_before_4
+  - first:
+      213: -4146955865617345636
+    second: left_arm_walk_diffuse_before_5
+  - first:
+      213: 9170392649387927516
+    second: left_arm_walk_diffuse_before_6
+  - first:
+      213: 7899858228507452030
+    second: left_arm_walk_diffuse_before_7
+  - first:
+      213: 1508299564935945171
+    second: left_arm_walk_diffuse_before_8
+  - first:
+      213: -7974873081122046987
+    second: left_arm_walk_diffuse_before_9
+  - first:
+      213: 2968635832380046350
+    second: left_arm_walk_diffuse_before_10
+  - first:
+      213: -2076848235580270628
+    second: left_arm_walk_diffuse_before_11
+  - first:
+      213: 2838397906249415066
+    second: left_arm_walk_diffuse_before_12
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: left_arm_walk_diffuse_before_0
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 434
+        width: 11
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c13d0336e1d19f530800000000000000
+      internalID: 3889171769561502492
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_walk_diffuse_before_1
+      rect:
+        serializedVersion: 2
+        x: 109
+        y: 435
+        width: 13
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: feb46e19ed51d7310800000000000000
+      internalID: 1404302704484174831
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_walk_diffuse_before_2
+      rect:
+        serializedVersion: 2
+        x: 171
+        y: 437
+        width: 11
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f39e970c0612fc640800000000000000
+      internalID: 5102333602263853375
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_walk_diffuse_before_3
+      rect:
+        serializedVersion: 2
+        x: 237
+        y: 435
+        width: 13
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 816b7773fa41e2720800000000000000
+      internalID: 2823216759190304280
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_walk_diffuse_before_4
+      rect:
+        serializedVersion: 2
+        x: 12
+        y: 304
+        width: 13
+        height: 47
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2597b5b4db5280620800000000000000
+      internalID: 2740481868198279506
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_walk_diffuse_before_5
+      rect:
+        serializedVersion: 2
+        x: 72
+        y: 307
+        width: 12
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c93d7aa9c9d0376c0800000000000000
+      internalID: -4146955865617345636
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_walk_diffuse_before_6
+      rect:
+        serializedVersion: 2
+        x: 139
+        y: 309
+        width: 11
+        height: 42
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cd7ee9d1787c34f70800000000000000
+      internalID: 9170392649387927516
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_walk_diffuse_before_7
+      rect:
+        serializedVersion: 2
+        x: 200
+        y: 307
+        width: 12
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e72222e143fe1ad60800000000000000
+      internalID: 7899858228507452030
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_walk_diffuse_before_8
+      rect:
+        serializedVersion: 2
+        x: 33
+        y: 179
+        width: 17
+        height: 43
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3db12e6867e8ee410800000000000000
+      internalID: 1508299564935945171
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_walk_diffuse_before_9
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 180
+        width: 14
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5fb35e67f2f835190800000000000000
+      internalID: -7974873081122046987
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_walk_diffuse_before_10
+      rect:
+        serializedVersion: 2
+        x: 156
+        y: 179
+        width: 17
+        height: 43
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e0c3280af86b23920800000000000000
+      internalID: 2968635832380046350
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_walk_diffuse_before_11
+      rect:
+        serializedVersion: 2
+        x: 224
+        y: 180
+        width: 14
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cd757d9888d8d23e0800000000000000
+      internalID: -2076848235580270628
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: left_arm_walk_diffuse_before_12
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 54
+        width: 12
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a9975357bd3046720800000000000000
+      internalID: 2838397906249415066
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      left_arm_walk_diffuse_before_0: 3889171769561502492
+      left_arm_walk_diffuse_before_1: 1404302704484174831
+      left_arm_walk_diffuse_before_10: 2968635832380046350
+      left_arm_walk_diffuse_before_11: -2076848235580270628
+      left_arm_walk_diffuse_before_12: 2838397906249415066
+      left_arm_walk_diffuse_before_2: 5102333602263853375
+      left_arm_walk_diffuse_before_3: 2823216759190304280
+      left_arm_walk_diffuse_before_4: 2740481868198279506
+      left_arm_walk_diffuse_before_5: -4146955865617345636
+      left_arm_walk_diffuse_before_6: 9170392649387927516
+      left_arm_walk_diffuse_before_7: 7899858228507452030
+      left_arm_walk_diffuse_before_8: 1508299564935945171
+      left_arm_walk_diffuse_before_9: -7974873081122046987
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

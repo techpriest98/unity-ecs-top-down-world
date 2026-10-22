@@ -43,6 +43,7 @@ namespace Game.World.Chunks
                 typeof(SplitCellData),
                 typeof(ChunkSurfaceSample),
                 typeof(ChunkSurfaceRevision),
+                typeof(ChunkGeometryRevision),
                 typeof(ChunkColumnData),
                 typeof(ProjectedCellData),
                 typeof(ProjectedClipCell),

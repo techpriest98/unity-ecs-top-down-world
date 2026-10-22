@@ -137,6 +137,9 @@ namespace Game.Player
                     Value = new float4(1f, 1f, 1f, 1f)
                 });
 
+                AddComponent(entity, new PlayerNormalLighting());
+                AddBuffer<PlayerNormalPointLight>(entity);
+
                 DynamicBuffer<PlayerVisualPart> parts =
                     AddBuffer<PlayerVisualPart>(entity);
 

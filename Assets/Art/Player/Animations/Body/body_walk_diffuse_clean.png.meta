@@ -1,0 +1,548 @@
+fileFormatVersion: 2
+guid: 12fa32ccde0d2ed4e8997aae3cf82130
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 8014345282197825249
+    second: body_walk_diffuse_clean_0
+  - first:
+      213: -1377578147740743623
+    second: body_walk_diffuse_clean_1
+  - first:
+      213: 3663388564261696071
+    second: body_walk_diffuse_clean_2
+  - first:
+      213: -2217791067759614538
+    second: body_walk_diffuse_clean_3
+  - first:
+      213: 1691807240872497255
+    second: body_walk_diffuse_clean_4
+  - first:
+      213: 7971449754013825258
+    second: body_walk_diffuse_clean_5
+  - first:
+      213: -1402384633156309786
+    second: body_walk_diffuse_clean_6
+  - first:
+      213: 7345428345785376172
+    second: body_walk_diffuse_clean_7
+  - first:
+      213: 9178591381363795979
+    second: body_walk_diffuse_clean_8
+  - first:
+      213: -7239358512830535782
+    second: body_walk_diffuse_clean_9
+  - first:
+      213: -8461773232876460466
+    second: body_walk_diffuse_clean_10
+  - first:
+      213: -6530821336913719274
+    second: body_walk_diffuse_clean_11
+  - first:
+      213: -7255728141325134776
+    second: body_walk_diffuse_clean_12
+  - first:
+      213: 5854862736992306577
+    second: body_walk_diffuse_clean_13
+  - first:
+      213: -5029060114532331306
+    second: body_walk_diffuse_clean_14
+  - first:
+      213: 8953507949459791437
+    second: body_walk_diffuse_clean_15
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 1
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: body_walk_diffuse_clean_0
+      rect:
+        serializedVersion: 2
+        x: 14
+        y: 407
+        width: 39
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1e6aab4829ca83f60800000000000000
+      internalID: 8014345282197825249
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_diffuse_clean_1
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 408
+        width: 33
+        height: 100
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 938829d29fbd1ece0800000000000000
+      internalID: -1377578147740743623
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_diffuse_clean_2
+      rect:
+        serializedVersion: 2
+        x: 145
+        y: 407
+        width: 37
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 742fb0f5d78f6d230800000000000000
+      internalID: 3663388564261696071
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_diffuse_clean_3
+      rect:
+        serializedVersion: 2
+        x: 209
+        y: 408
+        width: 33
+        height: 100
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6b5672436c2d831e0800000000000000
+      internalID: -2217791067759614538
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_diffuse_clean_4
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 280
+        width: 33
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 76093a4d8b18a7710800000000000000
+      internalID: 1691807240872497255
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_diffuse_clean_5
+      rect:
+        serializedVersion: 2
+        x: 80
+        y: 281
+        width: 32
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ae87ed4115740ae60800000000000000
+      internalID: 7971449754013825258
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_diffuse_clean_6
+      rect:
+        serializedVersion: 2
+        x: 143
+        y: 280
+        width: 38
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6ec60463b9ab98ce0800000000000000
+      internalID: -1402384633156309786
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_diffuse_clean_7
+      rect:
+        serializedVersion: 2
+        x: 208
+        y: 281
+        width: 32
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cad5f99a92430f560800000000000000
+      internalID: 7345428345785376172
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_diffuse_clean_8
+      rect:
+        serializedVersion: 2
+        x: 9
+        y: 150
+        width: 45
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b08a6a82b38e06f70800000000000000
+      internalID: 9178591381363795979
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_diffuse_clean_9
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 152
+        width: 28
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a972901d9c1a88b90800000000000000
+      internalID: -7239358512830535782
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_diffuse_clean_10
+      rect:
+        serializedVersion: 2
+        x: 137
+        y: 150
+        width: 45
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e466d7cb31eb19a80800000000000000
+      internalID: -8461773232876460466
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_diffuse_clean_11
+      rect:
+        serializedVersion: 2
+        x: 209
+        y: 152
+        width: 28
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 61057b9889cdd55a0800000000000000
+      internalID: -6530821336913719274
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_diffuse_clean_12
+      rect:
+        serializedVersion: 2
+        x: 10
+        y: 22
+        width: 45
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 844928da2b97e4b90800000000000000
+      internalID: -7255728141325134776
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_diffuse_clean_13
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 24
+        width: 29
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 195091f83a6a04150800000000000000
+      internalID: 5854862736992306577
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_diffuse_clean_14
+      rect:
+        serializedVersion: 2
+        x: 138
+        y: 23
+        width: 45
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d0173f8870353ab0800000000000000
+      internalID: -5029060114532331306
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_diffuse_clean_15
+      rect:
+        serializedVersion: 2
+        x: 211
+        y: 24
+        width: 29
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d4edf25da00414c70800000000000000
+      internalID: 8953507949459791437
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      body_walk_diffuse_clean_0: 8014345282197825249
+      body_walk_diffuse_clean_1: -1377578147740743623
+      body_walk_diffuse_clean_10: -8461773232876460466
+      body_walk_diffuse_clean_11: -6530821336913719274
+      body_walk_diffuse_clean_12: -7255728141325134776
+      body_walk_diffuse_clean_13: 5854862736992306577
+      body_walk_diffuse_clean_14: -5029060114532331306
+      body_walk_diffuse_clean_15: 8953507949459791437
+      body_walk_diffuse_clean_2: 3663388564261696071
+      body_walk_diffuse_clean_3: -2217791067759614538
+      body_walk_diffuse_clean_4: 1691807240872497255
+      body_walk_diffuse_clean_5: 7971449754013825258
+      body_walk_diffuse_clean_6: -1402384633156309786
+      body_walk_diffuse_clean_7: 7345428345785376172
+      body_walk_diffuse_clean_8: 9178591381363795979
+      body_walk_diffuse_clean_9: -7239358512830535782
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

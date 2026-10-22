@@ -1,0 +1,548 @@
+fileFormatVersion: 2
+guid: 43d2056e7724dcb43880c3e15956ad81
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -6877041398684169266
+    second: body_walk_normals_before_hair_0
+  - first:
+      213: -6729574837328530456
+    second: body_walk_normals_before_hair_1
+  - first:
+      213: -8735492280121993904
+    second: body_walk_normals_before_hair_2
+  - first:
+      213: 6554818546716201271
+    second: body_walk_normals_before_hair_3
+  - first:
+      213: 8333738557321944066
+    second: body_walk_normals_before_hair_4
+  - first:
+      213: 6213638459871346579
+    second: body_walk_normals_before_hair_5
+  - first:
+      213: -8183498208428858892
+    second: body_walk_normals_before_hair_6
+  - first:
+      213: -4339708832545036431
+    second: body_walk_normals_before_hair_7
+  - first:
+      213: 7543816259724076889
+    second: body_walk_normals_before_hair_8
+  - first:
+      213: -1621433661149249912
+    second: body_walk_normals_before_hair_9
+  - first:
+      213: -3833096687526971423
+    second: body_walk_normals_before_hair_10
+  - first:
+      213: 5571216621895455551
+    second: body_walk_normals_before_hair_11
+  - first:
+      213: -5632605785667438099
+    second: body_walk_normals_before_hair_12
+  - first:
+      213: 3682861940872889234
+    second: body_walk_normals_before_hair_13
+  - first:
+      213: 5761096062262065708
+    second: body_walk_normals_before_hair_14
+  - first:
+      213: -5634771186844911902
+    second: body_walk_normals_before_hair_15
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: body_walk_normals_before_hair_0
+      rect:
+        serializedVersion: 2
+        x: 18
+        y: 407
+        width: 31
+        height: 100
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ecb46c5b847df80a0800000000000000
+      internalID: -6877041398684169266
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normals_before_hair_1
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 408
+        width: 33
+        height: 100
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8e330ab175fbb92a0800000000000000
+      internalID: -6729574837328530456
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normals_before_hair_2
+      rect:
+        serializedVersion: 2
+        x: 147
+        y: 407
+        width: 32
+        height: 100
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0555929cd0c45c680800000000000000
+      internalID: -8735492280121993904
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normals_before_hair_3
+      rect:
+        serializedVersion: 2
+        x: 209
+        y: 408
+        width: 33
+        height: 100
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 73159244db467fa50800000000000000
+      internalID: 6554818546716201271
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normals_before_hair_4
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 280
+        width: 31
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 20c9628501367a370800000000000000
+      internalID: 8333738557321944066
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normals_before_hair_5
+      rect:
+        serializedVersion: 2
+        x: 80
+        y: 281
+        width: 32
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 39f365b02474b3650800000000000000
+      internalID: 6213638459871346579
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normals_before_hair_6
+      rect:
+        serializedVersion: 2
+        x: 145
+        y: 280
+        width: 34
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4f16d8accbf5e6e80800000000000000
+      internalID: -8183498208428858892
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normals_before_hair_7
+      rect:
+        serializedVersion: 2
+        x: 208
+        y: 281
+        width: 32
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 177278f3fc146c3c0800000000000000
+      internalID: -4339708832545036431
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normals_before_hair_8
+      rect:
+        serializedVersion: 2
+        x: 11
+        y: 153
+        width: 43
+        height: 96
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9576bab5be401b860800000000000000
+      internalID: 7543816259724076889
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normals_before_hair_9
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 152
+        width: 28
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 88e76580da28f79e0800000000000000
+      internalID: -1621433661149249912
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normals_before_hair_10
+      rect:
+        serializedVersion: 2
+        x: 139
+        y: 153
+        width: 43
+        height: 96
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1e77a3e0fda1ecac0800000000000000
+      internalID: -3833096687526971423
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normals_before_hair_11
+      rect:
+        serializedVersion: 2
+        x: 209
+        y: 152
+        width: 28
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f3394d20000f05d40800000000000000
+      internalID: 5571216621895455551
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normals_before_hair_12
+      rect:
+        serializedVersion: 2
+        x: 10
+        y: 24
+        width: 43
+        height: 97
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: de97b7971e6f4d1b0800000000000000
+      internalID: -5632605785667438099
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normals_before_hair_13
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 24
+        width: 29
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 293c88e2c672c1330800000000000000
+      internalID: 3682861940872889234
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normals_before_hair_14
+      rect:
+        serializedVersion: 2
+        x: 138
+        y: 25
+        width: 43
+        height: 97
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c2a3804585683ff40800000000000000
+      internalID: 5761096062262065708
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normals_before_hair_15
+      rect:
+        serializedVersion: 2
+        x: 211
+        y: 24
+        width: 29
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2e6b089b5754dc1b0800000000000000
+      internalID: -5634771186844911902
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      body_walk_normals_before_hair_0: -6877041398684169266
+      body_walk_normals_before_hair_1: -6729574837328530456
+      body_walk_normals_before_hair_10: -3833096687526971423
+      body_walk_normals_before_hair_11: 5571216621895455551
+      body_walk_normals_before_hair_12: -5632605785667438099
+      body_walk_normals_before_hair_13: 3682861940872889234
+      body_walk_normals_before_hair_14: 5761096062262065708
+      body_walk_normals_before_hair_15: -5634771186844911902
+      body_walk_normals_before_hair_2: -8735492280121993904
+      body_walk_normals_before_hair_3: 6554818546716201271
+      body_walk_normals_before_hair_4: 8333738557321944066
+      body_walk_normals_before_hair_5: 6213638459871346579
+      body_walk_normals_before_hair_6: -8183498208428858892
+      body_walk_normals_before_hair_7: -4339708832545036431
+      body_walk_normals_before_hair_8: 7543816259724076889
+      body_walk_normals_before_hair_9: -1621433661149249912
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

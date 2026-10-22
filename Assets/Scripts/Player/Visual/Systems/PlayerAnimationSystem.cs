@@ -58,6 +58,7 @@ namespace Game.Player
 
             var spriteIndexLookup =
                 SystemAPI.GetComponentLookup<PlayerSpriteIndex>();
+            var normalUvLookup = SystemAPI.GetComponentLookup<PlayerBodyNormalUv>();
 
             var transformLookup =
                 SystemAPI.GetComponentLookup<LocalTransform>();
@@ -131,6 +132,7 @@ namespace Game.Player
                             PageIndex = -1
                         };
 
+                    float4 normalUv = float4.zero;
                     if (part.IsVisible)
                     {
                         int clipIndex = FindClip(
@@ -152,11 +154,14 @@ namespace Game.Player
                             frameData =
                                 clip.Frames[
                                     direction * clip.FrameCount + frame];
+                            normalUv = new float4(frameData.Size, frameData.Offset);
                         }
                     }
 
                     bool visible =
                         part.IsVisible && frameData.PageIndex >= 0;
+                    if (normalUvLookup.HasComponent(visualEntity))
+                        normalUvLookup[visualEntity] = new PlayerBodyNormalUv { Value = visible ? normalUv : float4.zero };
 
                     spriteIndexLookup[visualEntity] = new PlayerSpriteIndex
                     {

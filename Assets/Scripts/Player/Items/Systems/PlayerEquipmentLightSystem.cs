@@ -1,6 +1,10 @@
 using Game.Items;
 using Game.World.Lighting;
+using Game.World.Rendering;
+using Game.World.Blocks;
+using Game.World.Chunks;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -12,14 +16,18 @@ namespace Game.Player
     [UpdateAfter(typeof(PlayerSkillInputSystem))]
     [UpdateAfter(typeof(PlayerMovementSystem))]
     [UpdateBefore(typeof(DynamicLightSystem))]
-    [UpdateBefore(typeof(PlayerAnimationSystem))]
+    [UpdateAfter(typeof(PlayerAnimationSystem))]
+    [UpdateAfter(typeof(ViewDirectionInputSystem))]
     public partial struct PlayerEquipmentLightSystem : ISystem
     {
+        private EntityQuery generatedChunks;
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<ItemLibrary>();
             state.RequireForUpdate<DynamicLightingRevision>();
             state.RequireForUpdate<PlayerEquipmentLight>();
+            generatedChunks = new EntityQueryBuilder(Allocator.Temp)
+                .WithAll<ChunkComponent, ChunkGenerated, BlockData>().Build(ref state);
         }
 
         [BurstCompile]
@@ -38,6 +46,7 @@ namespace Game.Player
 
             state.EntityManager
                 .CompleteDependencyBeforeRO<PlayerCollisionShape>();
+            state.EntityManager.CompleteDependencyBeforeRO<PlayerFacing>();
 
             var equipmentLookup =
                 SystemAPI.GetBufferLookup<PlayerEquipmentSlot>(true);
@@ -47,10 +56,21 @@ namespace Game.Player
 
             var collisionLookup =
                 SystemAPI.GetComponentLookup<PlayerCollisionShape>(true);
+            var facingLookup = SystemAPI.GetComponentLookup<PlayerFacing>(true);
+            var animationLookup = SystemAPI.GetComponentLookup<PlayerAnimationData>(true);
+            var libraryLookup = SystemAPI.GetComponentLookup<PlayerAnimationLibrary>(true);
+            var partsLookup = SystemAPI.GetBufferLookup<PlayerVisualPart>(true);
+            ViewDirection view = SystemAPI.HasSingleton<ViewDirectionComponent>()
+                ? SystemAPI.GetSingleton<ViewDirectionComponent>().Value : ViewDirection.Front;
 
             ref ItemLibraryBlob items = ref library.Value.Value;
 
             bool enabledStateChanged = false;
+            using var chunks = new NativeParallelHashMap<int2, Entity>(math.max(1, generatedChunks.CalculateEntityCount()), Allocator.Temp);
+            foreach (var (chunk, entity) in SystemAPI.Query<RefRO<ChunkComponent>>().WithAll<ChunkGenerated, BlockData>().WithEntityAccess())
+                chunks.TryAdd(chunk.ValueRO.Coordinate, entity);
+            var blockAccessor = new ChunkBlockAccessor(chunks, SystemAPI.GetBufferLookup<BlockData>(true),
+                SystemAPI.GetBufferLookup<SplitCellData>(true));
 
             foreach (var (
                          equipmentLight,
@@ -58,7 +78,7 @@ namespace Game.Player
                          position,
                          enabled)
                      in SystemAPI.Query<
-                             RefRO<PlayerEquipmentLight>,
+                             RefRW<PlayerEquipmentLight>,
                              RefRW<DynamicLightSource>,
                              RefRW<DynamicLightWorldPosition>,
                              EnabledRefRW<DynamicLightSource>>()
@@ -70,6 +90,7 @@ namespace Game.Player
 
                 bool shouldEnable = false;
                 DynamicLightSource nextSource = default;
+                ItemHandAnimationData hand = default;
 
                 if (equipmentLookup.HasBuffer(owner) &&
                     positionLookup.HasComponent(owner))
@@ -79,24 +100,57 @@ namespace Game.Player
                     {
                         if (slots[i].Slot != slot)
                             continue;
-                        shouldEnable = TryGetLight(ref items, slots[i], out nextSource);
+                        shouldEnable = TryGetLight(ref items, slots[i], out nextSource, out hand);
                         break;
                     }
 
-                    float3 worldPosition = positionLookup[owner].Value;
-
-                    if (collisionLookup.HasComponent(owner))
+                    float height = collisionLookup.HasComponent(owner) ? collisionLookup[owner].Height : 2f;
+                    PlayerFacingDirection facing = facingLookup.HasComponent(owner)
+                        ? facingLookup[owner].Value : PlayerFacingDirection.PositiveZ;
+                    float3 worldPosition = PlayerHeldLightPositionUtility.Position(
+                        positionLookup[owner].Value, height, facing, slot, view);
+                    if (shouldEnable && hand.HasVisual && animationLookup.HasComponent(owner) &&
+                        libraryLookup.HasComponent(owner) && partsLookup.HasBuffer(owner) &&
+                        libraryLookup[owner].Value.IsCreated)
                     {
-                        worldPosition.y +=
-                            collisionLookup[owner].Height * 0.5f;
+                        var playerLibrary = libraryLookup[owner];
+                        ref PlayerAnimationLibraryBlob animationLibrary = ref playerLibrary.Value.Value;
+                        var visualParts = partsLookup[owner];
+                        int screenDirection = (int)PlayerSpriteDirectionUtility.WorldToScreen(facing, view);
+                        for (int p = 0; p < visualParts.Length; p++)
+                        {
+                            var part = visualParts[p];
+                            if (!part.IsVisible || part.Part != hand.VisualPart) continue;
+                            for (int c = 0; c < animationLibrary.Clips.Length; c++)
+                            {
+                                ref PlayerAnimationClipBlob clip = ref animationLibrary.Clips[c];
+                                if (clip.Part != part.Part || clip.Id != part.AnimationId || clip.FrameCount < 1) continue;
+                                int playbackFrame = math.max(0, animationLookup[owner].Frame);
+                                int frame = clip.Loop ? playbackFrame % clip.FrameCount : math.min(playbackFrame, clip.FrameCount - 1);
+                                var anchor = clip.Frames[screenDirection * clip.FrameCount + frame];
+                                if (anchor.PageIndex >= 0 && anchor.OverrideLightPosition)
+                                {
+                                    float3 runtimeAnchor = PlayerHeldLightPositionUtility.RuntimeAnchor(
+                                        anchor.LightPosition, (PlayerSpriteDirection)screenDirection);
+                                    worldPosition = PlayerHeldLightPositionUtility.FromSpriteAnchor(
+                                        positionLookup[owner].Value, height, runtimeAnchor, view);
+                                }
+                                break;
+                            }
+                            break;
+                        }
                     }
 
+                    if (shouldEnable)
+                        worldPosition = PlayerHeldLightWallUtility.Clamp(positionLookup[owner].Value, height, worldPosition, blockAccessor);
                     if (math.any(position.ValueRO.Value != worldPosition))
                     {
                         position.ValueRW.Value = worldPosition;
                     }
                 }
 
+                equipmentLight.ValueRW.HasVisualPart = shouldEnable && hand.HasVisual;
+                equipmentLight.ValueRW.VisualPart = hand.VisualPart;
                 if (shouldEnable)
                 {
                     DynamicLightSource current = source.ValueRO;
@@ -129,9 +183,10 @@ namespace Game.Player
         private static bool TryGetLight(
             ref ItemLibraryBlob library,
             PlayerEquipmentSlot equipment,
-            out DynamicLightSource light)
+            out DynamicLightSource light, out ItemHandAnimationData hand)
         {
             light = default;
+            hand = default;
 
             if (equipment.Instance.DefinitionId == 0)
                 return false;
@@ -152,6 +207,8 @@ namespace Game.Player
                 }
 
                 light = item.Light;
+                if (item.HasAnimation)
+                    hand = equipment.Slot == EquipmentSlot.LeftHand ? item.LeftHand : item.RightHand;
                 if (item.LightRadiusFromDurability)
                 {
                     float fraction = equipment.Instance.MaxDurability > 0f

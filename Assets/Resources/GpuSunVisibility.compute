@@ -1,0 +1,31 @@
+#pragma kernel BuildSun
+#pragma kernel BuildSunEdges
+StructuredBuffer<uint> _PlayerLightOccupancy;
+RWStructuredBuffer<uint> _GpuSunCache;
+float4 _PlayerLightGridOrigin, _GpuSunOrigin, _GpuSunDirection;
+#include "../Shaders/GpuSunTrace.hlsl"
+[numthreads(4,4,4)]
+void BuildSun(uint3 id : SV_DispatchThreadID)
+{
+    if (any(id >= uint3(20,40,20))) return;
+    float3 receiver = _GpuSunOrigin.xyz + (float3(id)+.5) * float3(1,.5,1);
+    float visible = TraceGpuSun(receiver);
+    _GpuSunCache[(id.z*40+id.y)*20+id.x] = visible < 0 ? 2u : (visible > .5 ? 1u : 0u);
+}
+[numthreads(4,4,4)]
+void BuildSunEdges(uint3 id : SV_DispatchThreadID)
+{
+    if (any(id >= uint3(20,40,20))) return;
+    uint index = (id.z*40+id.y)*20+id.x;
+    uint center = _GpuSunCache[index] & 3u;
+    uint edge = 0;
+    [loop] for (int z=-1;z<=1;z++)
+    [loop] for (int y=-1;y<=1;y++)
+    [loop] for (int x=-1;x<=1;x++)
+    {
+        int3 p = int3(id)+int3(x,y,z);
+        if (any(p<0) || any(p>=int3(20,40,20))) continue;
+        if ((_GpuSunCache[(p.z*40+p.y)*20+p.x]&3u)!=center) edge=4u;
+    }
+    _GpuSunCache[index]=center|edge;
+}

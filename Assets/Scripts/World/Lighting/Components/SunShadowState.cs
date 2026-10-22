@@ -10,5 +10,6 @@ namespace Game.World.Lighting
         public byte ActiveMaskIndex;
         public bool IsTransitioning;
         public bool Initialized;
+        public bool CpuShadowsDisabled;
     }
 }

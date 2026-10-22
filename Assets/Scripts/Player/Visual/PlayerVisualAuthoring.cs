@@ -38,6 +38,9 @@ namespace Game.Player
                     Value = new float4(1f, 1f, 0f, 0f)
                 });
 
+                AddComponent(entity, new PlayerBodyNormalUv());
+                AddComponent(entity, new PlayerSpriteLightingDepth());
+
                 AddComponent(entity, new PlayerSpriteIndex
                 {
                     Value = 0f

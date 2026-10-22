@@ -1,0 +1,470 @@
+fileFormatVersion: 2
+guid: c33a3eaaa8723284fa3d17b7d52091e7
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -6429077665242619404
+    second: right_arm_walk_diffuse_0
+  - first:
+      213: 554577094351292371
+    second: right_arm_walk_diffuse_1
+  - first:
+      213: 5572975344873125797
+    second: right_arm_walk_diffuse_2
+  - first:
+      213: -4110395400062686526
+    second: right_arm_walk_diffuse_3
+  - first:
+      213: 9220279786911463960
+    second: right_arm_walk_diffuse_4
+  - first:
+      213: 828321924408741891
+    second: right_arm_walk_diffuse_5
+  - first:
+      213: -5722968409650941638
+    second: right_arm_walk_diffuse_6
+  - first:
+      213: 4252583680430298600
+    second: right_arm_walk_diffuse_7
+  - first:
+      213: 2779578011768901369
+    second: right_arm_walk_diffuse_8
+  - first:
+      213: 4165988006478514375
+    second: right_arm_walk_diffuse_9
+  - first:
+      213: 4511677463981056234
+    second: right_arm_walk_diffuse_10
+  - first:
+      213: -1485157490390757790
+    second: right_arm_walk_diffuse_11
+  - first:
+      213: -7205926015735604517
+    second: right_arm_walk_diffuse_12
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 1
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: right_arm_walk_diffuse_0
+      rect:
+        serializedVersion: 2
+        x: 12
+        y: 436
+        width: 11
+        height: 42
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4f1e0d91de357c6a0800000000000000
+      internalID: -6429077665242619404
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_arm_walk_diffuse_1
+      rect:
+        serializedVersion: 2
+        x: 73
+        y: 435
+        width: 12
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3d78065dde042b700800000000000000
+      internalID: 554577094351292371
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_arm_walk_diffuse_2
+      rect:
+        serializedVersion: 2
+        x: 141
+        y: 434
+        width: 12
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5a73c2d9c8f275d40800000000000000
+      internalID: 5572975344873125797
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_arm_walk_diffuse_3
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 435
+        width: 12
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2ca2dd45921f4f6c0800000000000000
+      internalID: -4110395400062686526
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_arm_walk_diffuse_4
+      rect:
+        serializedVersion: 2
+        x: 43
+        y: 308
+        width: 11
+        height: 43
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 81a72947d9305ff70800000000000000
+      internalID: 9220279786911463960
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_arm_walk_diffuse_5
+      rect:
+        serializedVersion: 2
+        x: 108
+        y: 307
+        width: 12
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3001d00d66ace7b00800000000000000
+      internalID: 828321924408741891
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_arm_walk_diffuse_6
+      rect:
+        serializedVersion: 2
+        x: 168
+        y: 305
+        width: 12
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a3139f19d8ee390b0800000000000000
+      internalID: -5722968409650941638
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_arm_walk_diffuse_7
+      rect:
+        serializedVersion: 2
+        x: 236
+        y: 307
+        width: 12
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8e5dba18356340b30800000000000000
+      internalID: 4252583680430298600
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_arm_walk_diffuse_8
+      rect:
+        serializedVersion: 2
+        x: 16
+        y: 182
+        width: 13
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9fec8f0997b039620800000000000000
+      internalID: 2779578011768901369
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_arm_walk_diffuse_9
+      rect:
+        serializedVersion: 2
+        x: 14
+        y: 51
+        width: 17
+        height: 43
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7c880b0050090d930800000000000000
+      internalID: 4165988006478514375
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_arm_walk_diffuse_10
+      rect:
+        serializedVersion: 2
+        x: 82
+        y: 52
+        width: 14
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ae0e9b5efb2bc9e30800000000000000
+      internalID: 4511677463981056234
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_arm_walk_diffuse_11
+      rect:
+        serializedVersion: 2
+        x: 146
+        y: 52
+        width: 18
+        height: 43
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 26e8fb59129a36be0800000000000000
+      internalID: -1485157490390757790
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: right_arm_walk_diffuse_12
+      rect:
+        serializedVersion: 2
+        x: 210
+        y: 52
+        width: 14
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bda5552a7786ffb90800000000000000
+      internalID: -7205926015735604517
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      right_arm_walk_diffuse_0: -6429077665242619404
+      right_arm_walk_diffuse_1: 554577094351292371
+      right_arm_walk_diffuse_10: 4511677463981056234
+      right_arm_walk_diffuse_11: -1485157490390757790
+      right_arm_walk_diffuse_12: -7205926015735604517
+      right_arm_walk_diffuse_2: 5572975344873125797
+      right_arm_walk_diffuse_3: -4110395400062686526
+      right_arm_walk_diffuse_4: 9220279786911463960
+      right_arm_walk_diffuse_5: 828321924408741891
+      right_arm_walk_diffuse_6: -5722968409650941638
+      right_arm_walk_diffuse_7: 4252583680430298600
+      right_arm_walk_diffuse_8: 2779578011768901369
+      right_arm_walk_diffuse_9: 4165988006478514375
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

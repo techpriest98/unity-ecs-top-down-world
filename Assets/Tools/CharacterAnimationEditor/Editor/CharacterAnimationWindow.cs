@@ -5,7 +5,7 @@ using Game.Player;
 using UnityEditor;
 using UnityEngine;
 
-public sealed class CharacterAnimationWindow : EditorWindow
+public sealed partial class CharacterAnimationWindow : EditorWindow
 {
     private const int CellWidth = 64;
     private const int CellHeight = 128;
@@ -37,6 +37,7 @@ public sealed class CharacterAnimationWindow : EditorWindow
     [SerializeField] private int frame;
     [SerializeField] private int zoom = 3;
     [SerializeField] private bool showTrimBounds = true;
+    [SerializeField] private bool showLightMarkers = true;
 
     private readonly AnimationDefinition[] layers =
         new AnimationDefinition[5];
@@ -83,7 +84,7 @@ public sealed class CharacterAnimationWindow : EditorWindow
 
         selectedState = Mathf.Clamp(selectedState, 0, 1);
         direction = Mathf.Clamp(direction, 0, DirectionCount - 1);
-        zoom = Mathf.Clamp(zoom, 1, 4);
+        zoom = Mathf.Clamp(zoom, 1, 16);
 
         if (visible == null || visible.Length != 5)
         {
@@ -104,6 +105,7 @@ public sealed class CharacterAnimationWindow : EditorWindow
 
     private void OnDisable()
     {
+        ReleaseNormalPreviewResources();
         EditorApplication.update -= Tick;
         EditorApplication.projectChanged -= RequestRefresh;
         Undo.undoRedoPerformed -= RequestRefresh;
@@ -116,6 +118,7 @@ public sealed class CharacterAnimationWindow : EditorWindow
 
     private void RequestRefresh()
     {
+        ClearNormalPreviewInputs();
         refreshRequired = true;
         Repaint();
     }
@@ -246,6 +249,7 @@ public sealed class CharacterAnimationWindow : EditorWindow
         GUILayout.Label("Playback", EditorStyles.boldLabel);
 
         DrawPlayback();
+        DrawNormalTools();
 
         EditorGUILayout.Space(10f);
         GUILayout.Label("Trimming", EditorStyles.boldLabel);
@@ -387,6 +391,123 @@ public sealed class CharacterAnimationWindow : EditorWindow
         }
 
         DrawResolvedClip(layerIndex, 44f);
+        DrawLightControls(layerIndex, options, selection);
+    }
+
+    private ItemDefinition GetLightItem(List<ItemDefinition> options, int selection)
+    {
+        foreach (var item in options)
+            if (item != null && item.Id == selection && item.Light != null) return item;
+        return null;
+    }
+
+    private Vector3 DefaultLightAnchor(int layerIndex)
+    {
+        var world = PlayerHeldLightPositionUtility.SpriteOffset((PlayerSpriteDirection)direction,
+            layerIndex == 3 ? EquipmentSlot.LeftHand : EquipmentSlot.RightHand, previewHeight);
+        // RuntimeAnchor is its own inverse: initialize stored Z so enabling an
+        // override does not move the automatic emitter to the opposite side.
+        world = PlayerHeldLightPositionUtility.RuntimeAnchor(world, (PlayerSpriteDirection)direction);
+        float pixelsPerUnit = 98f / Mathf.Max(.001f, previewHeight);
+        return new Vector3(32f + world.x * pixelsPerUnit, 25f + world.y * pixelsPerUnit, world.z);
+    }
+
+    private void DrawLightControls(int index, List<ItemDefinition> options, int selection)
+    {
+        if (paintNormals) return;
+        if (GetLightItem(options, selection) == null || !HasValidSheet(layers[index])) return;
+        var clip = layers[index];
+        var entries = GetDirectionEntries(clip, direction);
+        int f = GetLayerFrame(clip);
+        if (entries == null || f >= entries.Length) return;
+        var entry = entries[f];
+        EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+        GUILayout.Label($"Light / {DirectionNames[direction]} / frame {f}", EditorStyles.miniBoldLabel);
+        EditorGUI.BeginChangeCheck();
+        bool custom = EditorGUILayout.Toggle("Custom position", entry.OverrideLightPosition);
+        Vector3 anchor = entry.OverrideLightPosition ? entry.LightPosition : DefaultLightAnchor(index);
+        using (new EditorGUI.DisabledScope(!custom))
+            anchor = EditorGUILayout.Vector3Field("Pixel X/Y + depth", anchor);
+        if (EditorGUI.EndChangeCheck())
+        {
+            Undo.RecordObject(clip, "Edit held light anchor");
+            entry.OverrideLightPosition = custom;
+            entry.LightPosition = anchor;
+            entries[f] = entry;
+            EditorUtility.SetDirty(clip);
+            AssetDatabase.SaveAssetIfDirty(clip);
+            Repaint();
+        }
+        using (new EditorGUI.DisabledScope(!entry.OverrideLightPosition))
+        {
+            if (GUILayout.Button("Copy to all frames in this direction"))
+            {
+                Undo.RecordObject(clip, "Copy held light anchors");
+                for (int i = 0; i < entries.Length; i++)
+                {
+                    entries[i].OverrideLightPosition = true;
+                    entries[i].LightPosition = entry.LightPosition;
+                }
+                EditorUtility.SetDirty(clip);
+                AssetDatabase.SaveAssetIfDirty(clip);
+            }
+        }
+        GUILayout.Label("Drag marker. X/Y: cell pixels; Z: world depth toward camera.\nSaved in this item animation, not the texture atlas.", EditorStyles.wordWrappedMiniLabel);
+        EditorGUILayout.EndVertical();
+    }
+
+    private void DrawLightMarkers(Rect target)
+    {
+        if (paintNormals || !showLightMarkers) return;
+        for (int index = 3; index <= 4; index++)
+        {
+            var item = GetLightItem(index == 3 ? leftOptions : rightOptions, index == 3 ? leftItem : rightItem);
+            var clip = layers[index];
+            if (item == null || !visible[index] || !HasValidSheet(clip)) continue;
+            var entries = GetDirectionEntries(clip, direction);
+            int f = GetLayerFrame(clip);
+            if (entries == null || f >= entries.Length) continue;
+            var entry = entries[f];
+            Vector3 anchor = entry.OverrideLightPosition ? entry.LightPosition : DefaultLightAnchor(index);
+            Vector2 point = new Vector2(target.x + anchor.x * zoom, target.yMax - anchor.y * zoom);
+            Rect hit = new Rect(point.x - 9, point.y - 9, 18, 18);
+            int id = GUIUtility.GetControlID(174830 + index, FocusType.Passive);
+            EditorGUIUtility.AddCursorRect(hit, MouseCursor.MoveArrow);
+            var evt = Event.current;
+            if (evt.type == EventType.MouseDown && evt.button == 0 && hit.Contains(evt.mousePosition))
+            {
+                playing = false;
+                GUIUtility.hotControl = id;
+                Undo.RegisterCompleteObjectUndo(clip, "Drag held light anchor");
+                evt.Use();
+            }
+            if (GUIUtility.hotControl == id && evt.type == EventType.MouseDrag)
+            {
+                anchor.x = Mathf.Round((evt.mousePosition.x - target.x) / zoom);
+                anchor.y = Mathf.Round((target.yMax - evt.mousePosition.y) / zoom);
+                entry.OverrideLightPosition = true;
+                entry.LightPosition = anchor;
+                entries[f] = entry;
+                EditorUtility.SetDirty(clip);
+                evt.Use();
+                Repaint();
+            }
+            if (GUIUtility.hotControl == id && evt.type == EventType.MouseUp)
+            {
+                GUIUtility.hotControl = 0;
+                AssetDatabase.SaveAssetIfDirty(clip);
+                evt.Use();
+            }
+            if (evt.type == EventType.Repaint)
+            {
+                Color color = index == 3 ? Color.yellow : Color.cyan;
+                EditorGUI.DrawRect(new Rect(point.x - 7, point.y - 1, 14, 2), Color.black);
+                EditorGUI.DrawRect(new Rect(point.x - 1, point.y - 7, 2, 14), Color.black);
+                EditorGUI.DrawRect(new Rect(point.x - 5, point.y, 11, 1), color);
+                EditorGUI.DrawRect(new Rect(point.x, point.y - 5, 1, 11), color);
+                GUI.Label(new Rect(point.x + 8, point.y - 18, 100, 20), index == 3 ? "L light" : "R light", EditorStyles.whiteMiniLabel);
+            }
+        }
     }
 
     private void DrawResolvedClip(int index, float indent)
@@ -479,7 +600,7 @@ public sealed class CharacterAnimationWindow : EditorWindow
             "Zoom",
             zoom,
             1,
-            4);
+            16);
     }
 
     private void DrawTrimControls()
@@ -773,13 +894,6 @@ public sealed class CharacterAnimationWindow : EditorWindow
             height + 16f,
             GUILayout.ExpandWidth(true));
 
-        if (Event.current.type != EventType.Repaint)
-            return;
-
-        EditorGUI.DrawRect(
-            area,
-            new Color(0.16f, 0.16f, 0.16f));
-
         Rect target = new Rect(
             area.center.x - width * 0.5f,
             area.y + 8f,
@@ -793,6 +907,13 @@ public sealed class CharacterAnimationWindow : EditorWindow
 
         target.y =
             Mathf.Round(target.y * pixelsPerPoint) / pixelsPerPoint;
+
+        if (Event.current.type != EventType.Repaint)
+        {
+            if (!HandleNormalPainting(target)) DrawLightMarkers(target);
+            return;
+        }
+        EditorGUI.DrawRect(area, new Color(0.16f, 0.16f, 0.16f));
 
         for (int i = 0; i < drawOrder.Length; i++)
             drawOrder[i] = i;
@@ -829,15 +950,14 @@ public sealed class CharacterAnimationWindow : EditorWindow
                 frameWidth,
                 frameHeight);
 
-            GUI.DrawTextureWithTexCoords(
-                target,
-                definition.SpriteSheet,
-                uv,
-                true);
+            if (!DrawNormalPreviewLayer(target, definition, index))
+                GUI.DrawTextureWithTexCoords(target, definition.SpriteSheet, uv, true);
         }
 
         if (showTrimBounds)
             DrawTrimBounds(target);
+        DrawLightMarkers(target);
+        DrawFootLightMarker(target);
     }
 
     private void DrawTrimBounds(Rect target)

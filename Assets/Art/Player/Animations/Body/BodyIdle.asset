@@ -14,18 +14,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.AnimationDefinition
   Part: 0
   Id: 0
-  SpriteSheet: {fileID: 2800000, guid: 660da847993284adab605ae490db91c2, type: 3}
+  SpriteSheet: {fileID: 2800000, guid: 7bc63c17503c4c6298f201c5d51c8f0a, type: 3}
+  NormalMap: {fileID: 2800000, guid: 6d0a9b7ac4e8445ea865df578101fafd, type: 3}
+  PaintedMap: {fileID: 2800000, guid: 660da847993284adab605ae490db91c2, type: 3}
   FrameCount: 2
   FrameDuration: 1
   Loop: 1
   Down:
   - ZIndex: 0
+    OverrideLightPosition: 0
+    LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
       x: 18
       y: 25
       width: 31
       height: 98
   - ZIndex: 0
+    OverrideLightPosition: 0
+    LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
       x: 17
       y: 25
@@ -33,12 +39,16 @@ MonoBehaviour:
       height: 97
   Up:
   - ZIndex: 0
+    OverrideLightPosition: 0
+    LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
       x: 17
       y: 26
       width: 30
       height: 96
   - ZIndex: 0
+    OverrideLightPosition: 0
+    LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
       x: 17
       y: 26
@@ -46,12 +56,16 @@ MonoBehaviour:
       height: 95
   Left:
   - ZIndex: 0
+    OverrideLightPosition: 0
+    LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
       x: 18
       y: 25
       width: 26
       height: 97
   - ZIndex: 0
+    OverrideLightPosition: 0
+    LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
       x: 18
       y: 25
@@ -59,12 +73,16 @@ MonoBehaviour:
       height: 96
   Right:
   - ZIndex: 0
+    OverrideLightPosition: 0
+    LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
       x: 20
       y: 25
       width: 27
       height: 97
   - ZIndex: 0
+    OverrideLightPosition: 0
+    LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
       x: 20
       y: 25

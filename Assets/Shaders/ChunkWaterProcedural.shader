@@ -130,6 +130,7 @@ Shader "Game/World/ChunkWaterProcedural"
             float3 _AmbientColor;
             float3 _SideFaceNormal;
             int _SunShadowMaskIndex;
+            float _CpuSunShadowsDisabled;
 
 
             // ============================================================
@@ -144,6 +145,7 @@ Shader "Game/World/ChunkWaterProcedural"
 
             float GetSunVisibility(uint packedLightData)
             {
+                if (_CpuSunShadowsDisabled > .5) return 1;
                 return GetPackedSunVisibility(packedLightData, (uint)_SunShadowMaskIndex);
             }
 

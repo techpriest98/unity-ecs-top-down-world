@@ -15,17 +15,23 @@ MonoBehaviour:
   Part: 2
   Id: 2
   SpriteSheet: {fileID: 2800000, guid: aad1864070d7e4206b4ab6e4c1f93f49, type: 3}
+  NormalMap: {fileID: 0}
+  PaintedMap: {fileID: 0}
   FrameCount: 2
   FrameDuration: 1
   Loop: 1
   Down:
   - ZIndex: 0
+    OverrideLightPosition: 0
+    LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
       x: 10
       y: 63
       width: 11
       height: 32
   - ZIndex: 0
+    OverrideLightPosition: 0
+    LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
       x: 10
       y: 62
@@ -33,12 +39,16 @@ MonoBehaviour:
       height: 32
   Up:
   - ZIndex: 0
+    OverrideLightPosition: 0
+    LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
       x: 44
       y: 66
       width: 14
       height: 28
   - ZIndex: 0
+    OverrideLightPosition: 0
+    LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
       x: 44
       y: 65
@@ -46,12 +56,16 @@ MonoBehaviour:
       height: 29
   Left:
   - ZIndex: -1
+    OverrideLightPosition: 0
+    LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
       x: 13
       y: 66
       width: 17
       height: 26
   - ZIndex: -1
+    OverrideLightPosition: 0
+    LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
       x: 13
       y: 65
@@ -59,12 +73,16 @@ MonoBehaviour:
       height: 26
   Right:
   - ZIndex: 1
+    OverrideLightPosition: 0
+    LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
       x: 18
       y: 63
       width: 28
       height: 33
   - ZIndex: 1
+    OverrideLightPosition: 0
+    LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
       x: 18
       y: 62

@@ -698,6 +698,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1238157590}
   - component: {fileID: 1238157589}
+  - component: {fileID: 1238157591}
+  - component: {fileID: 1238157592}
   m_Layer: 0
   m_Name: ChunkRenderer
   m_TagString: Untagged
@@ -717,10 +719,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0fc087742498944499b3d049914edf66, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.World.Rendering.ChunkProceduralRenderer
+  fogMaterial: {fileID: 0}
+  fogNoise: {fileID: 0}
+  fogHeightAboveSea: 4
+  fogOpacity: 0.774
+  fogCoverage: 0.64
+  fogColor: {r: 0.6, g: 0.64, b: 0.61, a: 1}
+  fogPatchSize: 32
+  fogEdgeHeight: 0.8
+  fogEdgeNoiseSize: 8
+  fogWindThresholds: {x: 0.2, y: 0.4}
+  fogBuildSeconds: 45
+  fogClearSeconds: 15
+  fogPlayerClearRadius: 1.5
+  fogPlayerClearSoftness: 1.5
+  fogPlayerClearOffsetUp: 1
   material: {fileID: 2100000, guid: aaf6d3886463549bd88f181df4b19b92, type: 2}
   clippedMaterial: {fileID: 2100000, guid: 0ac8596eff77e43528473688993be69a, type: 2}
   waterMaterial: {fileID: 2100000, guid: 3689cef086b864c6797be1af3b981ab4, type: 2}
   clippedWaterMaterial: {fileID: 2100000, guid: f5dba8fd20fa04b27be4c8719e182443, type: 2}
+  terrainHeightStrength: 0.3
+  terrainHeightTint: {r: 0.62, g: 0.73, b: 0.85, a: 1}
+  terrainHeightRange: {x: 0.5, y: 6}
+  terrainHeightDesaturation: 0.65
+  playerSunShadow: 1
+  playerSunShadowStrength: 1
+  playerSunShadowOffset: {x: 0, y: 0.05}
+  playerLocalShadows: 1
+  playerLocalShadowStrength: 1
+  playerLocalShadowRadiusPadding: 1.2
   blockAtlas: {fileID: 2800000, guid: caf39e18ac09544eb9b2d58568b020f8, type: 3}
   blockNormalAtlas: {fileID: 2800000, guid: 5651b7213f69a4275ade1f5005a192c2, type: 3}
   blockDatabase: {fileID: 11400000, guid: 4fb11d0e05fb84bf0a6c7d04dd2f682a, type: 2}
@@ -739,6 +766,33 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1238157591
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1238157588}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b50d0f64022b4f57883c1d8cd55876d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Player.LocalLightingDebug
+  enableLocalLighting: 1
+--- !u!114 &1238157592
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1238157588}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4281e7b17b594c878f1ec8a294e48f53, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.World.Lighting.SunLightingDebug
+  cpuSunShadows: 1
+  gpuSunLighting: 1
 --- !u!1 &1378615480
 GameObject:
   m_ObjectHideFlags: 0
@@ -1349,7 +1403,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 743a32dc00a445f3a18a87f5e00c32ab, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.UI.SettingsMenu
   hostPanel: {fileID: 1672955430}
   panelPrefab: {fileID: 5335655854925384093, guid: 92992f9edf7c34c079661840071b6734, type: 3}

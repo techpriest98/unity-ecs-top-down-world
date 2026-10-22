@@ -11,6 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 273b5f23e52fd402ea5dc6ed48521921, type: 3}
   m_Name: PlayerAnimationsDatabase
+  TargetMaterial: {fileID: 2100000, guid: 9f123a8ce88b74caa8bdbe5519935cc7, type: 2}
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.AnimationDatabase
   Animations:
   - {fileID: 11400000, guid: fdc3d9b77fb3948089e0528f60fa1de6, type: 2}

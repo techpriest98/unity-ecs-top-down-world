@@ -27,6 +27,8 @@ namespace Game.Player
 
     public struct PlayerAnimationFrameBlob
     {
+        public bool OverrideLightPosition;
+        public float3 LightPosition;
         public int PageIndex;
 
         public int ZIndex;

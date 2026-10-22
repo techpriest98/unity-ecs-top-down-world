@@ -7,5 +7,7 @@ namespace Game.Player
     {
         public Entity Owner;
         public EquipmentSlot Slot;
+        public CharacterPart VisualPart;
+        public bool HasVisualPart;
     }
 }

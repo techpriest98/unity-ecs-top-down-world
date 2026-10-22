@@ -1,0 +1,1016 @@
+fileFormatVersion: 2
+guid: 33b57e03c78de904cb8160908ce53105
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 570810303170898
+    second: body_walk_normal_cloth_before_center_folds_0
+  - first:
+      213: 3133744884802968815
+    second: body_walk_normal_cloth_before_center_folds_1
+  - first:
+      213: -2253520249792999574
+    second: body_walk_normal_cloth_before_center_folds_2
+  - first:
+      213: 280091915649504784
+    second: body_walk_normal_cloth_before_center_folds_3
+  - first:
+      213: -1032224205297691081
+    second: body_walk_normal_cloth_before_center_folds_4
+  - first:
+      213: 5163259458223281488
+    second: body_walk_normal_cloth_before_center_folds_5
+  - first:
+      213: -8150734927083126742
+    second: body_walk_normal_cloth_before_center_folds_6
+  - first:
+      213: 3575080861407899056
+    second: body_walk_normal_cloth_before_center_folds_7
+  - first:
+      213: 3182872841597294589
+    second: body_walk_normal_cloth_before_center_folds_8
+  - first:
+      213: 6634002444986345051
+    second: body_walk_normal_cloth_before_center_folds_9
+  - first:
+      213: -6584405995837913444
+    second: body_walk_normal_cloth_before_center_folds_10
+  - first:
+      213: 5865732618484992776
+    second: body_walk_normal_cloth_before_center_folds_11
+  - first:
+      213: 7228964713326182172
+    second: body_walk_normal_cloth_before_center_folds_12
+  - first:
+      213: -865979319676016487
+    second: body_walk_normal_cloth_before_center_folds_13
+  - first:
+      213: 5949537182268242436
+    second: body_walk_normal_cloth_before_center_folds_14
+  - first:
+      213: 8651371154637733045
+    second: body_walk_normal_cloth_before_center_folds_15
+  - first:
+      213: -1850488502077197383
+    second: body_walk_normal_cloth_before_center_folds_16
+  - first:
+      213: -6291348782301840509
+    second: body_walk_normal_cloth_before_center_folds_17
+  - first:
+      213: -9028026788552430365
+    second: body_walk_normal_cloth_before_center_folds_18
+  - first:
+      213: 4692366925481560873
+    second: body_walk_normal_cloth_before_center_folds_19
+  - first:
+      213: 2118296342315759038
+    second: body_walk_normal_cloth_before_center_folds_20
+  - first:
+      213: 6692512955462716175
+    second: body_walk_normal_cloth_before_center_folds_21
+  - first:
+      213: 8079296324918027662
+    second: body_walk_normal_cloth_before_center_folds_22
+  - first:
+      213: 8483538144017052709
+    second: body_walk_normal_cloth_before_center_folds_23
+  - first:
+      213: -8953266350458138236
+    second: body_walk_normal_cloth_before_center_folds_24
+  - first:
+      213: -2770064194818104231
+    second: body_walk_normal_cloth_before_center_folds_25
+  - first:
+      213: -8446819043493998423
+    second: body_walk_normal_cloth_before_center_folds_26
+  - first:
+      213: -364305972963590325
+    second: body_walk_normal_cloth_before_center_folds_27
+  - first:
+      213: 7150690916428438649
+    second: body_walk_normal_cloth_before_center_folds_28
+  - first:
+      213: -5904046651586392630
+    second: body_walk_normal_cloth_before_center_folds_29
+  - first:
+      213: -5013588462410892525
+    second: body_walk_normal_cloth_before_center_folds_30
+  - first:
+      213: 1270549423719798793
+    second: body_walk_normal_cloth_before_center_folds_31
+  - first:
+      213: 5791510023615799184
+    second: body_walk_normal_cloth_before_center_folds_32
+  - first:
+      213: 4249231252872044210
+    second: body_walk_normal_cloth_before_center_folds_33
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_0
+      rect:
+        serializedVersion: 2
+        x: 18
+        y: 447
+        width: 29
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 259ca512627020000800000000000000
+      internalID: 570810303170898
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_1
+      rect:
+        serializedVersion: 2
+        x: 19
+        y: 423
+        width: 26
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fecd0639e5c4d7b20800000000000000
+      internalID: 3133744884802968815
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_2
+      rect:
+        serializedVersion: 2
+        x: 82
+        y: 425
+        width: 30
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a6f40f0c543e9b0e0800000000000000
+      internalID: -2253520249792999574
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_3
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 447
+        width: 28
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0165fb00d1613e300800000000000000
+      internalID: 280091915649504784
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_4
+      rect:
+        serializedVersion: 2
+        x: 147
+        y: 447
+        width: 29
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 736dba2ed8dcca1f0800000000000000
+      internalID: -1032224205297691081
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_5
+      rect:
+        serializedVersion: 2
+        x: 149
+        y: 423
+        width: 26
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 05513920f1597a740800000000000000
+      internalID: 5163259458223281488
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_6
+      rect:
+        serializedVersion: 2
+        x: 210
+        y: 425
+        width: 30
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a2047dca4c5c2ee80800000000000000
+      internalID: -8150734927083126742
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_7
+      rect:
+        serializedVersion: 2
+        x: 211
+        y: 447
+        width: 28
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0bde3831a1d3d9130800000000000000
+      internalID: 3575080861407899056
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_8
+      rect:
+        serializedVersion: 2
+        x: 19
+        y: 320
+        width: 29
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: df715a06cf5db2c20800000000000000
+      internalID: 3182872841597294589
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_9
+      rect:
+        serializedVersion: 2
+        x: 20
+        y: 297
+        width: 26
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b56eb744316b01c50800000000000000
+      internalID: 6634002444986345051
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_10
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 297
+        width: 30
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c960129e1ad7f94a0800000000000000
+      internalID: -6584405995837913444
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_11
+      rect:
+        serializedVersion: 2
+        x: 82
+        y: 320
+        width: 28
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 80b48301db4476150800000000000000
+      internalID: 5865732618484992776
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_12
+      rect:
+        serializedVersion: 2
+        x: 146
+        y: 320
+        width: 28
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c1ff3a72b11725460800000000000000
+      internalID: 7228964713326182172
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_13
+      rect:
+        serializedVersion: 2
+        x: 147
+        y: 297
+        width: 26
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 99860eb956c6bf3f0800000000000000
+      internalID: -865979319676016487
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_14
+      rect:
+        serializedVersion: 2
+        x: 209
+        y: 297
+        width: 30
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 40ab3179b80019250800000000000000
+      internalID: 5949537182268242436
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_15
+      rect:
+        serializedVersion: 2
+        x: 210
+        y: 320
+        width: 28
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5bc3e3c6a38df0870800000000000000
+      internalID: 8651371154637733045
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_16
+      rect:
+        serializedVersion: 2
+        x: 21
+        y: 207
+        width: 7
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9b37ebcf28eb156e0800000000000000
+      internalID: -1850488502077197383
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_17
+      rect:
+        serializedVersion: 2
+        x: 22
+        y: 192
+        width: 23
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 38bffc09d93a0b8a0800000000000000
+      internalID: -6291348782301840509
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_18
+      rect:
+        serializedVersion: 2
+        x: 86
+        y: 195
+        width: 22
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3ec2f95e77106b280800000000000000
+      internalID: -9028026788552430365
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_19
+      rect:
+        serializedVersion: 2
+        x: 150
+        y: 192
+        width: 23
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 92bce158bd2ae1140800000000000000
+      internalID: 4692366925481560873
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_20
+      rect:
+        serializedVersion: 2
+        x: 214
+        y: 195
+        width: 22
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eb57db4dc43b56d10800000000000000
+      internalID: 2118296342315759038
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_21
+      rect:
+        serializedVersion: 2
+        x: 21
+        y: 167
+        width: 28
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f0b0e05131590ec50800000000000000
+      internalID: 6692512955462716175
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_22
+      rect:
+        serializedVersion: 2
+        x: 86
+        y: 168
+        width: 22
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e85abd9933d6f1070800000000000000
+      internalID: 8079296324918027662
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_23
+      rect:
+        serializedVersion: 2
+        x: 149
+        y: 167
+        width: 28
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 524fc988ef49bb570800000000000000
+      internalID: 8483538144017052709
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_24
+      rect:
+        serializedVersion: 2
+        x: 214
+        y: 168
+        width: 22
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4811c71d0bb9fb380800000000000000
+      internalID: -8953266350458138236
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_25
+      rect:
+        serializedVersion: 2
+        x: 19
+        y: 64
+        width: 23
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 954a6de8a41ce89d0800000000000000
+      internalID: -2770064194818104231
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_26
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 79
+        width: 7
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9a0198645ded6ca80800000000000000
+      internalID: -8446819043493998423
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_27
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 67
+        width: 22
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4fb3f3d5a9b1faf0800000000000000
+      internalID: -364305972963590325
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_28
+      rect:
+        serializedVersion: 2
+        x: 147
+        y: 65
+        width: 23
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 97c5454a08b5c3360800000000000000
+      internalID: 7150690916428438649
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_29
+      rect:
+        serializedVersion: 2
+        x: 212
+        y: 67
+        width: 22
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: acdcbd2f9dc901ea0800000000000000
+      internalID: -5904046651586392630
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_30
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 39
+        width: 28
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 31b70084bd72c6ab0800000000000000
+      internalID: -5013588462410892525
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_31
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 40
+        width: 22
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 908556e18f5e1a110800000000000000
+      internalID: 1270549423719798793
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_32
+      rect:
+        serializedVersion: 2
+        x: 143
+        y: 39
+        width: 28
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 09fdbb68ea39f5050800000000000000
+      internalID: 5791510023615799184
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: body_walk_normal_cloth_before_center_folds_33
+      rect:
+        serializedVersion: 2
+        x: 212
+        y: 40
+        width: 22
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2be1de3af4d48fa30800000000000000
+      internalID: 4249231252872044210
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      body_walk_normal_cloth_before_center_folds_0: 570810303170898
+      body_walk_normal_cloth_before_center_folds_1: 3133744884802968815
+      body_walk_normal_cloth_before_center_folds_10: -6584405995837913444
+      body_walk_normal_cloth_before_center_folds_11: 5865732618484992776
+      body_walk_normal_cloth_before_center_folds_12: 7228964713326182172
+      body_walk_normal_cloth_before_center_folds_13: -865979319676016487
+      body_walk_normal_cloth_before_center_folds_14: 5949537182268242436
+      body_walk_normal_cloth_before_center_folds_15: 8651371154637733045
+      body_walk_normal_cloth_before_center_folds_16: -1850488502077197383
+      body_walk_normal_cloth_before_center_folds_17: -6291348782301840509
+      body_walk_normal_cloth_before_center_folds_18: -9028026788552430365
+      body_walk_normal_cloth_before_center_folds_19: 4692366925481560873
+      body_walk_normal_cloth_before_center_folds_2: -2253520249792999574
+      body_walk_normal_cloth_before_center_folds_20: 2118296342315759038
+      body_walk_normal_cloth_before_center_folds_21: 6692512955462716175
+      body_walk_normal_cloth_before_center_folds_22: 8079296324918027662
+      body_walk_normal_cloth_before_center_folds_23: 8483538144017052709
+      body_walk_normal_cloth_before_center_folds_24: -8953266350458138236
+      body_walk_normal_cloth_before_center_folds_25: -2770064194818104231
+      body_walk_normal_cloth_before_center_folds_26: -8446819043493998423
+      body_walk_normal_cloth_before_center_folds_27: -364305972963590325
+      body_walk_normal_cloth_before_center_folds_28: 7150690916428438649
+      body_walk_normal_cloth_before_center_folds_29: -5904046651586392630
+      body_walk_normal_cloth_before_center_folds_3: 280091915649504784
+      body_walk_normal_cloth_before_center_folds_30: -5013588462410892525
+      body_walk_normal_cloth_before_center_folds_31: 1270549423719798793
+      body_walk_normal_cloth_before_center_folds_32: 5791510023615799184
+      body_walk_normal_cloth_before_center_folds_33: 4249231252872044210
+      body_walk_normal_cloth_before_center_folds_4: -1032224205297691081
+      body_walk_normal_cloth_before_center_folds_5: 5163259458223281488
+      body_walk_normal_cloth_before_center_folds_6: -8150734927083126742
+      body_walk_normal_cloth_before_center_folds_7: 3575080861407899056
+      body_walk_normal_cloth_before_center_folds_8: 3182872841597294589
+      body_walk_normal_cloth_before_center_folds_9: 6634002444986345051
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

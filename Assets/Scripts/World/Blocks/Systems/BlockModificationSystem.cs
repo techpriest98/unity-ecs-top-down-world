@@ -166,6 +166,9 @@ namespace Game.World.Blocks
                     SplitCellUtility.SetLegacy(blocks, splits, blockIndex, request.Value);
                 }
                 worldChanged = true;
+                var geometryRevision = state.EntityManager.GetComponentData<ChunkGeometryRevision>(chunkEntity);
+                geometryRevision.Value++;
+                state.EntityManager.SetComponentData(chunkEntity, geometryRevision);
                 var surface = state.EntityManager.GetBuffer<ChunkSurfaceSample>(chunkEntity);
                 int previousTop = (surface[localZ * ChunkSettings.SizeX + localX].HeightHalf - 1) / 2;
                 if (TerrainMinimapUtility.UpdateColumn(blocks, splits, surface, localX, localZ,

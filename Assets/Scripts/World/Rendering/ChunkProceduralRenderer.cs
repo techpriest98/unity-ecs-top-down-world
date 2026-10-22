@@ -37,6 +37,22 @@ namespace Game.World.Rendering
         [SerializeField, Range(0f, 1f)] private float terrainHeightDesaturation = .65f;
         private float terrainReferenceHeight;
         private bool hasTerrainReference;
+        [Header("Player Sun Shadow (experimental)")]
+        [SerializeField] private bool playerSunShadow = true;
+        [SerializeField, Range(0f, 1f)] private float playerSunShadowStrength = .8f;
+        [Tooltip("Shadow translation in projected screen-world units: X right, Y up. Does not change receiver height or the player position.")]
+        [SerializeField] private Vector2 playerSunShadowOffset;
+        public bool PlayerSunShadowEnabled => playerSunShadow;
+        public float PlayerSunShadowStrength => playerSunShadowStrength;
+        public Vector2 PlayerSunShadowOffset => playerSunShadowOffset;
+        [Header("Player Local Shadow Parameters")]
+        [SerializeField, HideInInspector] private bool playerLocalShadows = true;
+        [SerializeField, Range(0f, 1f)] private float playerLocalShadowStrength = .8f;
+        // Retain serialized data for compatibility; source-separated lighting uses the real radius.
+        [SerializeField, HideInInspector] private float playerLocalShadowRadiusPadding = 1f;
+        public bool PlayerLocalShadowsEnabled => playerLocalShadows;
+        public float PlayerLocalShadowStrength => playerLocalShadowStrength;
+        public float PlayerLocalShadowRadiusPadding => playerLocalShadowRadiusPadding;
         public void SetTerrainReferenceHeight(float height, bool valid)
         {
             terrainReferenceHeight = height;

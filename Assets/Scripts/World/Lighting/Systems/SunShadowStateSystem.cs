@@ -46,6 +46,28 @@ namespace Game.World.Lighting
                 state.EntityManager.GetComponentData<SunShadowState>(
                     entity);
 
+            bool disableCpu = SystemAPI.TryGetSingleton<SunLightingSettings>(out var settings) && !settings.CpuShadows;
+            if (disableCpu)
+            {
+                // No queued shadow batches or direction-change barrier while measuring CPU-off mode.
+                shadowState.ActiveLight = sampledLight;
+                shadowState.TargetLight = sampledLight;
+                shadowState.IsTransitioning = false;
+                shadowState.Initialized = true;
+                shadowState.CpuShadowsDisabled = true;
+                foreach (var pending in SystemAPI.Query<EnabledRefRW<ChunkNeedsSunShadowUpdate>>().WithAll<ChunkGenerated>()
+                    .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState)) pending.ValueRW = false;
+                state.EntityManager.SetComponentData(entity, shadowState);
+                return;
+            }
+            if (shadowState.CpuShadowsDisabled)
+            {
+                shadowState.CpuShadowsDisabled = false;
+                shadowState.TargetLight = sampledLight;
+                shadowState.IsTransitioning = true;
+                foreach (var pending in SystemAPI.Query<EnabledRefRW<ChunkNeedsSunShadowUpdate>>().WithAll<ChunkGenerated>()
+                    .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState)) pending.ValueRW = true;
+            }
             if (!shadowState.Initialized)
             {
                 shadowState.ActiveLight = sampledLight;

@@ -7,6 +7,8 @@ namespace Game.Player
     {
         public AnimationDatabase SourceDatabase;
         public Texture2DArray TextureArray;
+        public Texture2DArray NormalTextureArray;
+        public Texture2DArray PaintedTextureArray;
 
         public int CellWidth;
         public int CellHeight;
@@ -18,6 +20,8 @@ namespace Game.Player
         public sealed class Clip
         {
             public AnimationDefinition Definition;
+            public Texture2D NormalMap;
+            public Texture2D PaintedMap;
             public CharacterPart Part;
             public AnimationID Id;
             public int FrameCount;
