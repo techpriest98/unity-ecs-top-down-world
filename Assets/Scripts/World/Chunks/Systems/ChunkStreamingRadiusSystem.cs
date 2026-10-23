@@ -10,13 +10,9 @@ namespace Game.World.Chunks
     [UpdateBefore(typeof(ChunkStreamingSystem))]
     public partial struct ChunkStreamingRadiusSystem : ISystem
     {
-        private const int PreloadMargin = 1;
 
         private int searchRadius;
         private bool searchStarted;
-        private int cameraRadius;
-        private float shrinkDelay;
-        private bool cameraRadiusInitialized;
 
         public void OnCreate(ref SystemState state)
         {
@@ -30,30 +26,16 @@ namespace Game.World.Chunks
 
         public void OnUpdate(ref SystemState state)
         {
-            int configuredRadius = math.max(
-                SystemAPI.GetSingleton<ChunkStreamingSettings>().LoadRadius,
-                0);
+            int configuredRadius = Game.UI.GraphicsPreferences.ChunkLoadingRadius;
+            // Shared by main-menu/pause-menu settings and read before streaming runs.
+            if (SystemAPI.GetSingleton<ChunkStreamingSettings>().LoadRadius != configuredRadius)
+                SystemAPI.GetSingletonRW<ChunkStreamingSettings>().ValueRW.LoadRadius = configuredRadius;
 
             WorldStartupState startup = SystemAPI.GetSingleton<WorldStartupState>();
 
-            if (startup.Phase != WorldStartupPhase.SearchingSpawn &&
-                Game.Player.PlayerCameraFollow.TryGetStreamingRadius(state.World, out int desiredRadius))
-            {
-                // Keep the startup guarantee until the initial view is ready.
-                if (startup.Phase != WorldStartupPhase.Ready)
-                    desiredRadius = math.max(desiredRadius, configuredRadius);
-                if (!cameraRadiusInitialized)
-                {
-                    cameraRadius = desiredRadius;
-                    shrinkDelay = 3f;
-                    cameraRadiusInitialized = true;
-                }
-                cameraRadius = CameraStreamingRadiusUtility.Update(cameraRadius, desiredRadius,
-                    SystemAPI.Time.DeltaTime, ref shrinkDelay);
-                configuredRadius = cameraRadius;
-            }
-            else cameraRadiusInitialized = false;
-
+            // Fixed user-selected radius during normal play: zoom, camera angle and
+            // window size must not trigger chunk load/unload waves.
+            // Keep startup spawn-search expansion so a distant valid spawn can be found.
             if (startup.Phase != WorldStartupPhase.SearchingSpawn)
             {
                 searchStarted = false;
@@ -91,7 +73,7 @@ namespace Game.World.Chunks
                 generatedCoordinates.Add(chunk.ValueRO.Coordinate);
             }
 
-            int checkRadius = searchRadius + PreloadMargin;
+            int checkRadius = searchRadius;
             bool areaGenerated = true;
 
             for (int z = -checkRadius; z <= checkRadius; z++)

@@ -490,6 +490,8 @@ namespace Game.World.Rendering
             Texture2D normalAtlas)
         {
             layerPropertyBlock.Clear();
+            layerPropertyBlock.SetFloat("_ChunkBordersEnabled", ChunkBorderDebug.Enabled ? 1f : 0f);
+            layerPropertyBlock.SetVector("_ChunkBorderFacing", new Vector4(sideFaceNormal.x,sideFaceNormal.y,sideFaceNormal.z,0));
             layerPropertyBlock.SetVector("_TerrainHeightParams", new Vector4(terrainReferenceHeight,
                 hasTerrainReference ? terrainHeightStrength : 0f, terrainHeightRange.x,
                 Mathf.Max(.01f, terrainHeightRange.y - terrainHeightRange.x)));

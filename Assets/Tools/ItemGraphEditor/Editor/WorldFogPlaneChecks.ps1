@@ -15,10 +15,20 @@ foreach ($name in 'WorldFog','WorldFogMask','ChunkProcedural') {
     $program = [regex]::Match($shader,'(?s)HLSLPROGRAM(.*?)ENDHLSL').Groups[1].Value
     $program = $program.Replace('#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"', $core)
     $program = $program.Replace('#include "ProjectedCellPacking.hlsl"', (Get-Content (Join-Path $root 'Shaders/ProjectedCellPacking.hlsl') -Raw))
+    $program = $program.Replace('#include "ChunkBorders.hlsl"', (Get-Content (Join-Path $root 'Shaders/ChunkBorders.hlsl') -Raw))
     $program = $program.Replace('#include "ShoreFoam.hlsl"', (Get-Content (Join-Path $root 'Shaders/ShoreFoam.hlsl') -Raw))
     $program = $program.Replace('#include "GpuSunTrace.hlsl"', (Get-Content (Join-Path $root 'Shaders/GpuSunTrace.hlsl') -Raw))
+    $program = $program.Replace('#include "DetailedLocalLighting.hlsl"', (Get-Content (Join-Path $root 'Shaders/DetailedLocalLighting.hlsl') -Raw))
     [ItemBatchShaderCompile]::Compile($program,'Vert','vs_5_0')
     [ItemBatchShaderCompile]::Compile($program,'Frag','ps_5_0')
+    if ($name -eq 'WorldFogMask') {
+        $alphaProgram = "#define _FOG_SKY_ALPHA 1`n" + $program
+        [ItemBatchShaderCompile]::Compile($alphaProgram,'Vert','vs_5_0')
+        [ItemBatchShaderCompile]::Compile($alphaProgram,'Frag','ps_5_0')
+    }
+    if ($name -eq 'WorldFog') {
+        [ItemBatchShaderCompile]::Compile(("#define UNITY_UV_STARTS_AT_TOP 1`n" + $program),'Frag','ps_5_0')
+    }
     if ($name -eq 'ChunkProcedural') {
         foreach ($variant in '_PLAYER_CLIPPING','_DEBUG_NORMALS') {
             $variantProgram = "#define $variant 1`n" + $program

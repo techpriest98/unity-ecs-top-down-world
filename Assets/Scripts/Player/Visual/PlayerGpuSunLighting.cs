@@ -26,9 +26,16 @@ namespace Game.Player
             Dependency.Complete();
             PrepareLocalBlockGrid(feet);
             direction = math.normalize(direction);
-            int3 origin = (int3)math.floor(feet / 4) * 4 - 8;
+            int size = ((DetailedRadius * 2 + 4 + 3) / 4) * 4;
+            int3 origin = (int3)math.floor(feet / 4) * 4 - DetailedRadius;
+            int count = size * size * size * 2;
+            if (gpuSunCache != null && gpuSunCache.count != count)
+            {
+                gpuSunCache.Dispose();
+                gpuSunCache = null;
+            }
             bool fresh = gpuSunCache == null;
-            if (fresh) gpuSunCache = new ComputeBuffer(16000, sizeof(uint));
+            if (fresh) gpuSunCache = new ComputeBuffer(count, sizeof(uint));
             if (fresh || gpuSunGeometryVersion != occupancyVersion || math.any(gpuSunCachedDirection != direction) || math.any(gpuSunCachedOrigin != origin))
             {
                 using var marker = GpuSunMarker.Auto();
@@ -37,10 +44,10 @@ namespace Game.Player
                 gpuSunCompute.SetBuffer(build, "_GpuSunCache", gpuSunCache);
                 gpuSunCompute.SetBuffer(edges, "_GpuSunCache", gpuSunCache);
                 gpuSunCompute.SetVector("_PlayerLightGridOrigin", new Vector4(gridOrigin.x,gridOrigin.y,gridOrigin.z,GridSize));
-                gpuSunCompute.SetVector("_GpuSunOrigin", new Vector4(origin.x,origin.y,origin.z,0));
+                gpuSunCompute.SetVector("_GpuSunOrigin", new Vector4(origin.x,origin.y,origin.z,size));
                 gpuSunCompute.SetVector("_GpuSunDirection", new Vector4(direction.x,direction.y,direction.z,0));
-                gpuSunCompute.Dispatch(build,5,10,5);
-                gpuSunCompute.Dispatch(edges,5,10,5);
+                gpuSunCompute.Dispatch(build,size / 4,size / 2,size / 4);
+                gpuSunCompute.Dispatch(edges,size / 4,size / 2,size / 4);
                 gpuSunGeometryVersion = occupancyVersion;
                 gpuSunCachedDirection = direction;
                 gpuSunCachedOrigin = origin;
@@ -50,7 +57,7 @@ namespace Game.Player
             Shader.SetGlobalVector("_GpuSunFeet", new Vector4(feet.x,feet.y,feet.z,0));
             Shader.SetGlobalVector("_GpuSunProjection", new Vector4(projected.x,projected.y,0,0));
             Shader.SetGlobalVector("_GpuSunBasis", new Vector4(right.x,right.y,toward.x,toward.y));
-            Shader.SetGlobalVector("_GpuSunOrigin", new Vector4(origin.x,origin.y,origin.z,0));
+            Shader.SetGlobalVector("_GpuSunOrigin", new Vector4(origin.x,origin.y,origin.z,size));
             Shader.SetGlobalVector("_GpuSunDirection", new Vector4(direction.x,direction.y,direction.z,0));
             Shader.SetGlobalBuffer("_GpuSunCache",gpuSunCache);
             Shader.SetGlobalFloat("_GpuSunEnabled",1f);

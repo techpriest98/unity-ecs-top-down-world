@@ -30,6 +30,11 @@ namespace Game.World.Rendering
         private readonly List<Vector4> fogChunks = new();
         private GraphicsBuffer fogChunksBuffer;
         private Material fogMaskMaterial;
+        private Material fogWaterMaskMaterial;
+        private Material fogSkyMaterial;
+        private RenderTexture fogSkyTexture;
+        private UnityEngine.Rendering.CommandBuffer fogSkyCommands;
+        private Matrix4x4 fogSkyViewProjection;
         private MaterialPropertyBlock fogProperties;
         private MaterialPropertyBlock fogMaskProperties;
         private Texture2D generatedFogNoise;
@@ -107,12 +112,17 @@ namespace Game.World.Rendering
             if (fogNoise == null && generatedFogNoise == null) generatedFogNoise = CreateFogNoise();
 
             float height = fogSeaLevel + fogHeightAboveSea;
+            BuildFogSkyMask(height);
             // ZTest Equal + stencil marks only already-visible high terrain.
             DrawFogMask(projectedCellsBuffer, projectedCellsCount, opaqueWorldBounds, false, height);
             DrawFogMask(projectedClippedCellsBuffer, projectedClippedCellsCount, clippedWorldBounds, true, height);
+            DrawFogMask(projectedWaterCellsBuffer, projectedWaterCellsCount, waterWorldBounds, false, height, true);
+            DrawFogMask(projectedClippedWaterCellsBuffer, projectedClippedWaterCellsCount, clippedWaterWorldBounds, true, height, true);
             fogProperties.Clear();
             fogProperties.SetBuffer("_FogChunks", fogChunksBuffer);
             fogProperties.SetTexture("_FogNoise", fogNoise != null ? fogNoise : generatedFogNoise);
+            fogProperties.SetTexture("_FogSkyMask", fogSkyTexture != null ? fogSkyTexture : Texture2D.whiteTexture);
+            fogProperties.SetMatrix("_FogSkyViewProjection", fogSkyViewProjection);
             fogProperties.SetVector("_FogPlane", new Vector4(height, density, Mathf.Max(1, fogPatchSize), ChunkSettings.SizeX));
             fogProperties.SetFloat("_FogCoverage", fogCoverage);
             fogProperties.SetVector("_FogPlayerCentre", new Vector4(fogPlayerProjection.x,
@@ -135,11 +145,60 @@ namespace Game.World.Rendering
             Graphics.RenderPrimitives(parameters, MeshTopology.Triangles, 6, fogChunkCount);
         }
 
-        private void DrawFogMask(GraphicsBuffer buffer, int count, Bounds bounds, bool clippedLayer, float height)
+        private void BuildFogSkyMask(float height)
+        {
+            Camera camera = Camera.main;
+            if (camera == null) return;
+            int width = Mathf.Clamp(camera.pixelWidth, 1, 2048);
+            int textureHeight = Mathf.Max(1, Mathf.RoundToInt(width * camera.pixelHeight / (float)Mathf.Max(1, camera.pixelWidth)));
+            if (fogSkyTexture == null || fogSkyTexture.width != width || fogSkyTexture.height != textureHeight)
+            {
+                if (fogSkyTexture != null) { fogSkyTexture.Release(); Destroy(fogSkyTexture); }
+                fogSkyTexture = new RenderTexture(width, textureHeight, 24, RenderTextureFormat.R8, RenderTextureReadWrite.Linear)
+                { name = "Fog skylight alpha", filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                fogSkyTexture.Create();
+            }
+            if (fogSkyMaterial == null)
+            {
+                fogSkyMaterial = new Material(fogMaskMaterial) { name = "Fog skylight alpha writer" };
+                fogSkyMaterial.EnableKeyword("_FOG_SKY_ALPHA");
+                fogSkyMaterial.SetFloat("_FogZTest", (float)UnityEngine.Rendering.CompareFunction.LessEqual);
+                fogSkyMaterial.SetFloat("_FogZWrite", 1);
+                fogSkyMaterial.SetFloat("_FogColorMask", (float)UnityEngine.Rendering.ColorWriteMask.Red);
+                fogSkyMaterial.SetFloat("_FogStencilWrite", 0);
+            }
+            fogSkyViewProjection = GL.GetGPUProjectionMatrix(camera.projectionMatrix, true) * camera.worldToCameraMatrix;
+            fogSkyCommands ??= new UnityEngine.Rendering.CommandBuffer { name = "Fog skylight alpha" };
+            fogSkyCommands.Clear();
+            fogSkyCommands.SetRenderTarget(fogSkyTexture);
+            fogSkyCommands.ClearRenderTarget(true, true, Color.white);
+            DrawFogMask(projectedCellsBuffer, projectedCellsCount, opaqueWorldBounds, false, height, false, true);
+            DrawFogMask(projectedClippedCellsBuffer, projectedClippedCellsCount, clippedWorldBounds, true, height, false, true);
+            DrawFogMask(projectedWaterCellsBuffer, projectedWaterCellsCount, waterWorldBounds, false, height, true, true);
+            DrawFogMask(projectedClippedWaterCellsBuffer, projectedClippedWaterCellsCount, clippedWaterWorldBounds, true, height, true, true);
+            Graphics.ExecuteCommandBuffer(fogSkyCommands);
+        }
+
+        private void DrawFogMask(GraphicsBuffer buffer, int count, Bounds bounds, bool clippedLayer, float height, bool water = false, bool skyAlpha = false)
         {
             if (buffer == null || count == 0) return;
+            Material maskMaterial = fogMaskMaterial;
+            if (water)
+            {
+                // Water does not write depth; test against opaque depth instead.
+                if (fogWaterMaskMaterial == null)
+                {
+                    fogWaterMaskMaterial = new Material(fogMaskMaterial) { name = "World fog sheltered water mask" };
+                    fogWaterMaskMaterial.SetFloat("_FogZTest", (float)UnityEngine.Rendering.CompareFunction.LessEqual);
+                }
+                maskMaterial = fogWaterMaskMaterial;
+            }
             fogMaskProperties.Clear();
+            fogMaskProperties.SetFloat("_FogWater", water ? 1 : 0);
+            Material sourceWater = clippedLayer ? clippedWaterMaterial : waterMaterial;
+            fogMaskProperties.SetFloat("_WaterTopInsetPixels", sourceWater != null ? sourceWater.GetFloat("_WaterTopInsetPixels") : 2f);
             fogMaskProperties.SetBuffer("_ProjectedCells", buffer);
+            fogMaskProperties.SetMatrix("_FogSkyViewProjection", fogSkyViewProjection);
             fogMaskProperties.SetFloat("_FogHeight", height);
             fogMaskProperties.SetTexture("_FogNoise", fogNoise != null ? fogNoise : generatedFogNoise);
             fogMaskProperties.SetVector("_FogEdge", new Vector4(fogEdgeHeight, Mathf.Max(1f, fogEdgeNoiseSize), 0, 0));
@@ -150,7 +209,12 @@ namespace Game.World.Rendering
             fogMaskProperties.SetFloat("_FogClipEnabled", clippedLayer && clipMaskEnabled ? 1 : 0);
             fogMaskProperties.SetTexture("_ProjectionClipMask", clipMaskTexture != null ? clipMaskTexture : Texture2D.blackTexture);
             fogMaskProperties.SetVector("_ProjectionClipMaskBounds", clipMaskBounds);
-            var parameters = new RenderParams(fogMaskMaterial) { worldBounds = bounds, matProps = fogMaskProperties };
+            if (skyAlpha)
+            {
+                fogSkyCommands.DrawProcedural(Matrix4x4.identity, fogSkyMaterial, 0, MeshTopology.Triangles, 6, count, fogMaskProperties);
+                return;
+            }
+            var parameters = new RenderParams(maskMaterial) { worldBounds = bounds, matProps = fogMaskProperties };
             Graphics.RenderPrimitives(parameters, MeshTopology.Triangles, 6, count);
         }
 
@@ -183,6 +247,13 @@ namespace Game.World.Rendering
 
         private void ReleaseWorldFog()
         {
+            fogSkyCommands?.Release(); fogSkyCommands = null;
+            if (fogSkyTexture != null) { fogSkyTexture.Release(); Destroy(fogSkyTexture); }
+            fogSkyTexture = null;
+            if (fogSkyMaterial != null) Destroy(fogSkyMaterial);
+            fogSkyMaterial = null;
+            if (fogWaterMaskMaterial != null) Destroy(fogWaterMaskMaterial);
+            fogWaterMaskMaterial = null;
             fogChunksBuffer?.Dispose(); fogChunksBuffer = null;
             if (generatedFogNoise != null) Destroy(generatedFogNoise);
         }

@@ -67,12 +67,11 @@ if($chunks -notmatch 'shadowState.CpuShadowsDisabled \|\| IsSunVisible' -or
  throw 'CPU-off must skip sun tracing/queues, re-enable must rebuild, and GPU must use shared geometry/silhouette with independent controls'
 }
 'PASS independent CPU/GPU modes, actual CPU ray/queue bypass, re-enable invalidation, cached sun and shared silhouette contracts. Loading time/FPS need in-game measurements.'
-if($cache -notmatch 'new ComputeBuffer\(16000' -or
- $compute -notmatch 'uint3\(20,40,20\)' -or
- $shader -notmatch 'if \(bound >= 8\) return legacy' -or
- $shader -notmatch 'smoothstep\(7,8,bound\)' -or
- $shader -notmatch 'length\(receiver.xz\)>=8' -or
- $shader -notmatch 'if \(bound >= 8\) return legacy') {
- throw 'GPU sun and local light regions must retain radius eight with the small sun cache'
+if($cache -notmatch 'new ComputeBuffer\(count' -or
+ $compute -notmatch 'uint3\(size,size\*2,size\)' -or
+ $shader -notmatch 'if \(bound >= radius\) return legacy' -or
+ $shader -notmatch 'smoothstep\(radius-1,radius,bound\)' -or
+ $shader -notmatch 'length\(receiver.xz\)>=max\(8,_DetailedLightingRadius\)') {
+ throw 'GPU sun must use the configurable radius and matching dynamic cache dimensions'
 }
-'PASS restored radius-eight sun/cache bounds and unchanged local-light region.'
+'PASS configurable sun radius, dynamic cache dimensions and matching shader bounds.'

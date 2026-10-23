@@ -5,6 +5,7 @@ Shader "Game/Player/AnimatedNormals"
         _SpriteArray("Animation Atlas", 2DArray) = "" {}
         _NormalArray("Normal Atlas (linear RGB)", 2DArray) = "" {}
         _PaintedArray("Painted Shade Atlas", 2DArray) = "" {}
+        _PaintedBlend("Painted Blend", Range(0,1)) = 1
         [HideInInspector] _PaintedDetailsEnabled("Painted Atlas Available", Float) = 0
         _NormalStrength("Normal Strength", Range(0,1)) = 1
         [Toggle] _NormalDebug("Show Encoded Normals", Float) = 0
@@ -45,6 +46,7 @@ Shader "Game/Player/AnimatedNormals"
                 float _SpriteIndex, _NormalStrength, _NormalDebug;
                 float _Cutoff;
                 float _PaintedDetailsEnabled;
+                float _PaintedBlend;
                 float _SpriteLightingDepth;
             CBUFFER_END
             float4 _BodyNormalAmbient, _BodyNormalSun, _BodyNormalLocal;
@@ -56,7 +58,7 @@ Shader "Game/Player/AnimatedNormals"
             {
                 float brightness = dot(direct, float3(.2126, .7152, .0722));
                 float weight = 1 - smoothstep(0, .35, brightness);
-                return lerp(clean, painted, weight);
+                return lerp(clean, painted, weight * saturate(_PaintedBlend));
             }
             float3 EvaluatePointLight(float3 n, float3 surface, float4 positionRadius, float3 color)
             {

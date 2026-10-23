@@ -84,6 +84,7 @@ Shader "Game/World/ChunkWaterProcedural"
             // ============================================================
 
             #include "ProjectedCellPacking.hlsl"
+            #include "ChunkBorders.hlsl"
 
             StructuredBuffer<ProjectedCellRenderData> _ProjectedCells;
             StructuredBuffer<BlockGpuData> _BlockDatabase;
@@ -131,6 +132,9 @@ Shader "Game/World/ChunkWaterProcedural"
             float3 _SideFaceNormal;
             int _SunShadowMaskIndex;
             float _CpuSunShadowsDisabled;
+            // Match the local response strength to the existing ocean-wave normals.
+            static const float _LocalNormalStrength = 1;
+            #include "DetailedLocalLighting.hlsl"
 
 
             // ============================================================
@@ -216,6 +220,8 @@ Shader "Game/World/ChunkWaterProcedural"
                 float4 PositionCS : SV_POSITION;
                 float2 LocalUv : TEXCOORD0;
                 float2 ProjectionPosition : TEXCOORD6;
+                float2 ChunkBorderUv : TEXCOORD10;
+                float ShadowReceiverHeight : TEXCOORD11;
                 nointerpolation uint ShoreMask : TEXCOORD7;
                 nointerpolation float ShoreQuadHeight : TEXCOORD8;
                 nointerpolation uint SkyVisible : TEXCOORD9;
@@ -279,9 +285,18 @@ Shader "Game/World/ChunkWaterProcedural"
 
                 output.PositionCS = TransformWorldToHClip(worldPosition);
                 output.ProjectionPosition = worldPosition.xy;
+                float sourceHeight = (cell.FaceData >> 24) & 255u;
+                uint faceType = GetFaceType(cell.BlockData);
+                bool lowerHalf = (cell.BlockData & (1u << 12)) != 0u;
+                float faceHeight = faceType == 1u ? sourceHeight - (lowerHalf ? .5 : 0) :
+                    sourceHeight + (faceType == 3u || lowerHalf ? .25 : .75);
+                output.ShadowReceiverHeight = faceHeight + (faceType == 1u ? 0 : (corner.y - .5) * .5);
+                // The inset is a physical lowering of the top surface, not just its UV.
+                if (faceType == 1u) output.ShadowReceiverHeight -= insetHeight;
                 output.LocalUv = corner;
                 output.BlockId = GetBlockId(cell.BlockData);
                 output.FaceIndex = faceIndex;
+                output.ChunkBorderUv = ChunkBorderCoordinates(cell.FaceData,corner,faceIndex);
                 output.ShoreMask = faceIndex == 0 ? ((cell.FaceData >> 9) & 127u) |
                     (((cell.BlockData >> 15) & 1u) << 7) : 0u;
                 output.ShoreQuadHeight = _CellHeight - insetHeight;
@@ -415,6 +430,9 @@ Shader "Game/World/ChunkWaterProcedural"
                     localUv.y);
 
                 float3 localLight = smoothLight.rgb;
+                float3 referenceNormal = GetFaceNormal(input.FaceIndex);
+                localLight = SingleLocalLightDiagnostic(input.ProjectionPosition, input.ShadowReceiverHeight,
+                    referenceNormal, worldNormal, referenceNormal, localLight);
                 float skyVisibility = smoothLight.a;
                 float sunVisibility = GetSunVisibility(input.LightData);
 
@@ -472,6 +490,7 @@ Shader "Game/World/ChunkWaterProcedural"
                 color.a = lerp(color.a, 1.0, foam.a);
                 color.a = lerp(color.a, 1.0, oceanCrest * .65);
 
+                color.rgb = ApplyChunkBorders(color.rgb,input.ChunkBorderUv,input.FaceIndex);
                 return color;
             }
 

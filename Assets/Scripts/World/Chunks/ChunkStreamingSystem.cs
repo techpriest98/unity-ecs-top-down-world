@@ -18,11 +18,6 @@ namespace Game.World.Chunks
         private const int
             MaxChunksDestroyedPerFrame = 4;
 
-        private const int
-            PreloadMargin = 1;
-
-        private const int
-            UnloadMargin = 2;
 
 
         private EntityArchetype
@@ -66,12 +61,13 @@ namespace Game.World.Chunks
 
         public void OnUpdate(ref SystemState state)
         {
-            ChunkStreamingSettings settings = SystemAPI.GetSingleton<ChunkStreamingSettings>();
             ChunkStreamingCenter center = SystemAPI.GetSingleton<ChunkStreamingCenter>();
 
             int loadRadius = SystemAPI.GetSingleton<ChunkStreamingRuntime>().LoadRadius;
-            int preloadRadius = loadRadius + PreloadMargin;
-            int unloadRadius = loadRadius + UnloadMargin;
+            // The selected radius INCLUDES the outer preparation ring.
+            // Never add hidden rings on top of the Graphics setting.
+            int preloadRadius = math.max(1, loadRadius);
+            int unloadRadius = preloadRadius;
             int preloadDiameter = preloadRadius * 2 + 1;
 
             int desiredChunkCount = preloadDiameter * preloadDiameter;

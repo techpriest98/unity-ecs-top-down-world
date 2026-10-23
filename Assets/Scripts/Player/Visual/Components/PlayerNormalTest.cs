@@ -31,11 +31,11 @@ namespace Game.Player
         // coplanar with it (which gives an undefined/grazing self-light direction).
         public static float EmitterSurfaceDepth(float emitterDepth, float height) =>
             emitterDepth - math.max(.005f, height / 98f);
-        public static float3 ShadeAlbedo(float3 clean, float3 painted, float3 direct)
+        public static float3 ShadeAlbedo(float3 clean, float3 painted, float3 direct, float paintedBlend = 1f)
         {
             float brightness = math.dot(direct, new float3(.2126f, .7152f, .0722f));
             float weight = 1f - math.smoothstep(0f, .35f, brightness);
-            return math.lerp(clean, painted, weight);
+            return math.lerp(clean, painted, weight * math.saturate(paintedBlend));
         }
         public static float4 SheetUv(float2 size, float2 offset, int frame, int direction)
         {

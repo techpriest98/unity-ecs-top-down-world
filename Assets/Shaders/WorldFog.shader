@@ -17,6 +17,8 @@ Shader "Game/World/WorldFog"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             StructuredBuffer<float4> _FogChunks;
             TEXTURE2D(_FogNoise); SAMPLER(sampler_FogNoise);
+            TEXTURE2D(_FogSkyMask); SAMPLER(sampler_FogSkyMask);
+            float4x4 _FogSkyViewProjection;
             float4 _FogPlane, _FogSeaOrigin, _FogRight, _FogAway, _FogDrift, _FogColor;
             float _FogCoverage;
             float4 _FogPlayerClear; // strength, reserved, inner radius, feather
@@ -54,6 +56,12 @@ Shader "Game/World/WorldFog"
                 float clear = 1.0-smoothstep(_FogPlayerClear.z,
                     _FogPlayerClear.z+_FogPlayerClear.w, distanceFromPlayer);
                 opacity *= 1.0-clear*_FogPlayerClear.x;
+                float4 skyClip=mul(_FogSkyViewProjection,float4(i.view,0,1));
+                float2 skyUv=skyClip.xy/skyClip.w*.5+.5;
+                #if UNITY_UV_STARTS_AT_TOP
+                    skyUv.y=1-skyUv.y;
+                #endif
+                opacity *= SAMPLE_TEXTURE2D(_FogSkyMask,sampler_FogSkyMask,skyUv).r;
                 return float4(_FogColor.rgb, opacity);
             }
             ENDHLSL

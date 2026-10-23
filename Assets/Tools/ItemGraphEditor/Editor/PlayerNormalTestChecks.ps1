@@ -70,6 +70,8 @@ public static class PlayerNormalChecks {
   }
   var cleanAlbedo=new float3(.8f,.7f,.6f);var paintedAlbedo=new float3(.3f,.4f,.5f);
   Check(math.distance(Game.Player.PlayerNormalTestUtility.ShadeAlbedo(cleanAlbedo,paintedAlbedo,float3.zero),paintedAlbedo)<.00001,"Painted map missing in shade");
+  foreach(float blend in new[]{-1f,0f,.25f,.5f,1f,2f})
+   Check(math.distance(Game.Player.PlayerNormalTestUtility.ShadeAlbedo(cleanAlbedo,paintedAlbedo,float3.zero,blend),math.lerp(cleanAlbedo,paintedAlbedo,math.saturate(blend)))<.00001,"Painted blend strength/clamping incorrect");
   Check(math.distance(Game.Player.PlayerNormalTestUtility.ShadeAlbedo(cleanAlbedo,paintedAlbedo,new float3(.5f)),cleanAlbedo)<.00001,"Painted map remains under strong direct light");
   Check(math.distance(Game.Player.PlayerNormalTestUtility.ShadeAlbedo(cleanAlbedo,cleanAlbedo,new float3(.1f)),cleanAlbedo)<.00001,"Absent painted map changes diffuse");
   Check(math.length(Game.Player.PlayerNormalTestUtility.ShadeAlbedo(cleanAlbedo,paintedAlbedo,float3.zero)*float3.zero)==0,"Painted map emits light in complete darkness");
@@ -142,7 +144,8 @@ $sourceText=(($usings|Select-Object -Unique)-join "`n")+"`n"+($bodies -join "`n"
 $shadeFunction=[regex]::Match($shader,'(?s)float3 ShadeAlbedo\([^}]+\}').Value
 if(-not $shadeFunction){throw 'Shader shade blend not found'}
 $shadeFunction=$shadeFunction.Replace('float3 ShadeAlbedo','static float3 ShaderShadeAlbedo')
-$shadeFunction=[regex]::Replace($shadeFunction,'\b(dot|smoothstep|lerp)\(', 'math.$1(')
+$shadeFunction=$shadeFunction.Replace('_PaintedBlend', '1f')
+$shadeFunction=[regex]::Replace($shadeFunction,'\b(dot|smoothstep|lerp|saturate)\(', 'math.$1(')
 $shadeFunction=[regex]::Replace($shadeFunction,'\bfloat3\(', 'new float3(')
 $shadeFunction=[regex]::Replace($shadeFunction,'(?<![\w.])(\.\d+)(?![\w.])','$1f')
 $sourceText=$sourceText.Replace('public static class PlayerNormalChecks {',"public static class PlayerNormalChecks {`n"+$shadeFunction)

@@ -74,6 +74,7 @@ public static class PlayerSunShadowChecks {
 Add-Type -ReferencedAssemblies $refs -TypeDefinition ($tests+$production)
 [PlayerSunShadowChecks]::Run()
 $terrain=Get-Content (Join-Path $root 'Shaders/ChunkProcedural.shader') -Raw
+$terrain = $terrain.Replace('#include "DetailedLocalLighting.hlsl"', (Get-Content (Join-Path $root 'Shaders/DetailedLocalLighting.hlsl') -Raw))
 if($terrain -notmatch 'input.FaceIndex == 0u && input.IsCutSurface == 0u' -or $terrain -notmatch 'directLight \*= 1 - PlayerSunOcclusion'){
  throw 'Shadow must affect only direct sun on real Top receivers'
 }

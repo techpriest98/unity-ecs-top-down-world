@@ -54,7 +54,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalArray:
-        m_Texture: {fileID: 1966129832813211832, guid: 21e458982240a4172a5922e40afedd9b, type: 2}
+        m_Texture: {fileID: -213018181412682512, guid: 21e458982240a4172a5922e40afedd9b, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
@@ -62,11 +62,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _PaintedArray:
-        m_Texture: {fileID: 5992173737995682771, guid: 21e458982240a4172a5922e40afedd9b, type: 2}
+        m_Texture: {fileID: -4604037723073564291, guid: 21e458982240a4172a5922e40afedd9b, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SpriteArray:
-        m_Texture: {fileID: 1913350877435942176, guid: 21e458982240a4172a5922e40afedd9b, type: 2}
+        m_Texture: {fileID: -2657218444919396828, guid: 21e458982240a4172a5922e40afedd9b, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
@@ -96,6 +96,7 @@ Material:
     - _NormalDebug: 0
     - _NormalStrength: 1
     - _PaintedDetailsEnabled: 1
+    - _PaintedBlend: 1
     - _QueueControl: 0
     - _QueueOffset: 0
     - _SampleGI: 0

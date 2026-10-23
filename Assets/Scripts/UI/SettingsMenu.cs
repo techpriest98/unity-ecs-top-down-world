@@ -13,10 +13,10 @@ namespace Game.UI
         [SerializeField] private GameObject panelPrefab;
         [SerializeField] private Button buttonPrefab;
         [SerializeField] private bool pauseMenu;
-        private GameObject settingsPanel, audioPanel;
-        private Button entry, audioButton, audioBack;
-        private Slider music, ambience;
-        public bool IsOpen => settingsPanel != null && (settingsPanel.activeSelf || audioPanel.activeSelf);
+        private GameObject settingsPanel, audioPanel, graphicsPanel;
+        private Button entry, audioButton, audioBack, graphicsButton;
+        private Slider music, ambience, chunkRadius, lightingRadius;
+        public bool IsOpen => settingsPanel != null && (settingsPanel.activeSelf || audioPanel.activeSelf || graphicsPanel.activeSelf);
 
         private void Start()
         {
@@ -29,11 +29,20 @@ namespace Game.UI
             if (background == null) { Debug.LogError("Settings host has no PanelBackground.", this); return; }
             settingsPanel = CreatePanel("SettingsPanel", "Settings", background);
             audioPanel = CreatePanel("AudioSettingsPanel", "Audio", background);
+            graphicsPanel = CreatePanel("GraphicsSettingsPanel", "Graphics", background);
             audioButton = AddButton(settingsPanel, "Audio", 250, ShowAudio);
+            graphicsButton = AddButton(settingsPanel, "Graphics", 370, ShowGraphics);
             AddButton(settingsPanel, "Back", 550, () => TryBack());
             music = AddSlider(audioPanel, "Music", 240, AudioVolumeSettings.Music, v => AudioVolumeSettings.Music = v);
             ambience = AddSlider(audioPanel, "Ambience", 370, AudioVolumeSettings.Ambience, v => AudioVolumeSettings.Ambience = v);
             audioBack = AddButton(audioPanel, "Back", 550, () => TryBack());
+            chunkRadius = AddSlider(graphicsPanel, "Chunks Loading Radius", 240, GraphicsPreferences.ChunkLoadingRadius,
+                v => GraphicsPreferences.ChunkLoadingRadius = Mathf.RoundToInt(v),
+                GraphicsPreferences.MinimumChunkRadius, GraphicsPreferences.MaximumChunkRadius, true);
+            AddButton(graphicsPanel, "Back", 550, () => TryBack());
+            lightingRadius = AddSlider(graphicsPanel, "Detailed Lighting Radius", 370, GraphicsPreferences.DetailedLightingRadius,
+                v => GraphicsPreferences.DetailedLightingRadius = Mathf.RoundToInt(v),
+                GraphicsPreferences.MinimumLightingRadius, GraphicsPreferences.MaximumLightingRadius, true);
             if (pauseMenu)
                 entry = AddButton(hostPanel, "Settings", 450, Open);
             else
@@ -44,6 +53,7 @@ namespace Game.UI
             entry.onClick.AddListener(Open);
             settingsPanel.SetActive(false);
             audioPanel.SetActive(false);
+            graphicsPanel.SetActive(false);
         }
 
         private GameObject CreatePanel(string objectName, string title, RectTransform background)
@@ -81,13 +91,20 @@ namespace Game.UI
             return button;
         }
 
-        private Slider AddSlider(GameObject panel, string caption, float y, float initial, UnityAction<float> action)
+        private Slider AddSlider(GameObject panel, string caption, float y, float initial, UnityAction<float> action,
+            float minimum = 0, float maximum = 1, bool wholeNumbers = false)
         {
             var parent = panel.transform.Find("PanelBackground");
             var label = Instantiate(buttonPrefab.GetComponentInChildren<TMP_Text>(true), parent, false);
             label.name = caption + "Label";
             label.alignment = TextAlignmentOptions.Left;
             label.raycastTarget = false;
+            if (wholeNumbers)
+            {
+                label.fontSizeMax = label.fontSize;
+                label.fontSizeMin = Mathf.Min(18, label.fontSize);
+                label.enableAutoSizing = true;
+            }
             Position(label.rectTransform, y, 380, 44);
             var root = new GameObject(caption + "Slider", typeof(RectTransform), typeof(Image), typeof(Slider));
             root.layer = parent.gameObject.layer;
@@ -124,11 +141,20 @@ namespace Game.UI
             slider.handleRect = handlePosition;
             slider.targetGraphic = handle;
             slider.direction = Slider.Direction.LeftToRight;
-            slider.minValue = 0; slider.maxValue = 1;
+            slider.minValue = minimum; slider.maxValue = maximum; slider.wholeNumbers = wholeNumbers;
             slider.SetValueWithoutNotify(initial);
-            label.text = $"{caption}  {Mathf.RoundToInt(initial * 100)}%";
-            slider.onValueChanged.AddListener(v => { label.text = $"{caption}  {Mathf.RoundToInt(v * 100)}%"; action(v); });
+            label.text = SliderCaption(caption, initial, wholeNumbers);
+            slider.onValueChanged.AddListener(v => { label.text = SliderCaption(caption, v, wholeNumbers); action(v); });
             return slider;
+        }
+
+        private static string SliderCaption(string caption, float value, bool integer) =>
+            integer ? $"{caption}  {Mathf.RoundToInt(value)}" : $"{caption}  {Mathf.RoundToInt(value * 100)}%";
+
+        private static void SavePreferences()
+        {
+            AudioVolumeSettings.Save();
+            GraphicsPreferences.Save();
         }
 
         private static Image Graphic(string name, Transform parent, Color color)
@@ -151,7 +177,7 @@ namespace Game.UI
         public void Open()
         {
             if (settingsPanel == null) return;
-            hostPanel.SetActive(false); audioPanel.SetActive(false); settingsPanel.SetActive(true);
+            hostPanel.SetActive(false); audioPanel.SetActive(false); graphicsPanel.SetActive(false); settingsPanel.SetActive(true);
             audioButton.Select();
         }
         private void ShowAudio()
@@ -160,30 +186,38 @@ namespace Game.UI
             ambience.SetValueWithoutNotify(AudioVolumeSettings.Ambience);
             settingsPanel.SetActive(false); audioPanel.SetActive(true); music.Select();
         }
+        private void ShowGraphics()
+        {
+            chunkRadius.value = GraphicsPreferences.ChunkLoadingRadius;
+            lightingRadius.SetValueWithoutNotify(GraphicsPreferences.DetailedLightingRadius);
+            settingsPanel.SetActive(false); audioPanel.SetActive(false); graphicsPanel.SetActive(true); chunkRadius.Select();
+        }
         public bool TryBack()
         {
             if (!IsOpen) return false;
-            AudioVolumeSettings.Save();
+            SavePreferences();
             if (audioPanel.activeSelf) { audioPanel.SetActive(false); settingsPanel.SetActive(true); audioButton.Select(); }
+            else if (graphicsPanel.activeSelf) { graphicsPanel.SetActive(false); settingsPanel.SetActive(true); graphicsButton.Select(); }
             else { settingsPanel.SetActive(false); hostPanel.SetActive(true); entry.Select(); }
             return true;
         }
         public void Close()
         {
             if (settingsPanel == null) return;
-            settingsPanel.SetActive(false); audioPanel.SetActive(false);
-            AudioVolumeSettings.Save();
+            settingsPanel.SetActive(false); audioPanel.SetActive(false); graphicsPanel.SetActive(false);
+            SavePreferences();
         }
         private void Update()
         {
             if (!pauseMenu && IsOpen && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) TryBack();
         }
-        private void OnApplicationPause(bool value) { if (value) AudioVolumeSettings.Save(); }
-        private void OnApplicationQuit() => AudioVolumeSettings.Save();
+        private void OnApplicationPause(bool value) { if (value) SavePreferences(); }
+        private void OnApplicationQuit() => SavePreferences();
         private void OnDestroy()
         {
             if (settingsPanel != null) Destroy(settingsPanel);
             if (audioPanel != null) Destroy(audioPanel);
+            if (graphicsPanel != null) Destroy(graphicsPanel);
         }
     }
 }

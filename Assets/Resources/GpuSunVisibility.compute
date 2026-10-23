@@ -7,16 +7,18 @@ float4 _PlayerLightGridOrigin, _GpuSunOrigin, _GpuSunDirection;
 [numthreads(4,4,4)]
 void BuildSun(uint3 id : SV_DispatchThreadID)
 {
-    if (any(id >= uint3(20,40,20))) return;
+    uint size = (uint)_GpuSunOrigin.w;
+    if (any(id >= uint3(size,size*2,size))) return;
     float3 receiver = _GpuSunOrigin.xyz + (float3(id)+.5) * float3(1,.5,1);
     float visible = TraceGpuSun(receiver);
-    _GpuSunCache[(id.z*40+id.y)*20+id.x] = visible < 0 ? 2u : (visible > .5 ? 1u : 0u);
+    _GpuSunCache[(id.z*(size*2)+id.y)*size+id.x] = visible < 0 ? 2u : (visible > .5 ? 1u : 0u);
 }
 [numthreads(4,4,4)]
 void BuildSunEdges(uint3 id : SV_DispatchThreadID)
 {
-    if (any(id >= uint3(20,40,20))) return;
-    uint index = (id.z*40+id.y)*20+id.x;
+    int size = (int)_GpuSunOrigin.w;
+    if (any(id >= uint3(size,size*2,size))) return;
+    uint index = (id.z*(size*2)+id.y)*size+id.x;
     uint center = _GpuSunCache[index] & 3u;
     uint edge = 0;
     [loop] for (int z=-1;z<=1;z++)
@@ -24,8 +26,8 @@ void BuildSunEdges(uint3 id : SV_DispatchThreadID)
     [loop] for (int x=-1;x<=1;x++)
     {
         int3 p = int3(id)+int3(x,y,z);
-        if (any(p<0) || any(p>=int3(20,40,20))) continue;
-        if ((_GpuSunCache[(p.z*40+p.y)*20+p.x]&3u)!=center) edge=4u;
+        if (any(p<0) || any(p>=int3(size,size*2,size))) continue;
+        if ((_GpuSunCache[(p.z*(size*2)+p.y)*size+p.x]&3u)!=center) edge=4u;
     }
     _GpuSunCache[index]=center|edge;
 }

@@ -171,6 +171,18 @@ public sealed partial class CharacterAnimationWindow
         previewSun = EditorGUILayout.Toggle("Sun", previewSun);
         previewHour = EditorGUILayout.IntSlider("Hour", previewHour, 0, 23);
         ambientScale = EditorGUILayout.Slider("Ambient", ambientScale, 0, 2);
+        Material paintedMaterial = database != null ? database.TargetMaterial : null;
+        if (paintedMaterial != null && paintedMaterial.HasProperty("_PaintedBlend"))
+        {
+            float currentBlend = paintedMaterial.GetFloat("_PaintedBlend");
+            float nextBlend = EditorGUILayout.Slider("Painted Blend", currentBlend, 0, 1);
+            if (nextBlend != currentBlend)
+            {
+                Undo.RecordObject(paintedMaterial, "Change player painted blend");
+                paintedMaterial.SetFloat("_PaintedBlend", nextBlend);
+                EditorUtility.SetDirty(paintedMaterial);
+            }
+        }
         previewHandLights = EditorGUILayout.Toggle("Item lights", previewHandLights);
         previewFootLight = EditorGUILayout.Toggle("Feet light", previewFootLight);
         if (previewFootLight)
@@ -278,6 +290,8 @@ public sealed partial class CharacterAnimationWindow
             int lights=paintNormals?0:CollectPreviewLights();
             int f=GetLayerFrame(clip),width=clip.SpriteSheet.width;
             bool linear=PlayerSettings.colorSpace==ColorSpace.Linear;
+            float paintedBlend = database != null && database.TargetMaterial != null && database.TargetMaterial.HasProperty("_PaintedBlend")
+                ? database.TargetMaterial.GetFloat("_PaintedBlend") : 1f;
             for(int y=0;y<128;y++) for(int x=0;x<64;x++)
             {
                 int p=((3-direction)*128+y)*width+f*64+x;
@@ -309,7 +323,8 @@ public sealed partial class CharacterAnimationWindow
                     Color detail=painted[p];
                     if(linear)detail=detail.linear;
                     float3 blended=PlayerNormalTestUtility.ShadeAlbedo(new float3(c.r,c.g,c.b),
-                        new float3(detail.r,detail.g,detail.b),directional?direct:illumination);
+                        new float3(detail.r,detail.g,detail.b),directional?direct:illumination,
+                        paintedBlend);
                     c.r=blended.x;c.g=blended.y;c.b=blended.z;
                 }
                 c.r*=illumination.x;c.g*=illumination.y;c.b*=illumination.z;

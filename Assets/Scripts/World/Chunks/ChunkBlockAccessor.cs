@@ -65,7 +65,11 @@ namespace Game.World.Chunks
             int2 target = coordinate + new int2(FloorDiv(x, ChunkSettings.SizeX), FloorDiv(z, ChunkSettings.SizeZ));
             if (!chunkEntities.TryGetValue(target, out Entity entity) || !splitLookup.HasBuffer(entity))
                 return default;
-            SplitCellData split = splitLookup[entity][SplitCellUtility.GetReferenceIndex(value)];
+            var splits = splitLookup[entity];
+            int referenceIndex = SplitCellUtility.GetReferenceIndex(value);
+            // A streaming chunk may not have populated its split-cell buffer yet.
+            if ((uint)referenceIndex >= (uint)splits.Length) return default;
+            SplitCellData split = splits[referenceIndex];
             return new CellContents(split.Lower, split.Upper);
         }
 

@@ -12,8 +12,9 @@ namespace Game.Player
     public partial class PlayerSunShadowRenderSystem
     {
         // Half-height occupancy; updated only on geometry changes or a snapped grid move.
-        private const int GridSize = 40;
-        private readonly uint[] occupancy = new uint[40 * 80 * 40];
+        private int GridSize = 40;
+        private uint[] occupancy = new uint[40 * 80 * 40];
+        private static int DetailedRadius => Game.UI.GraphicsPreferences.DetailedLightingRadius;
         private ComputeBuffer occupancyBuffer;
         private int3 gridOrigin = new int3(int.MinValue);
         private uint geometryHash;
@@ -89,7 +90,7 @@ namespace Game.Player
                 float radius = math.clamp(s.Radius, 0, 8);
                 float3 color = math.saturate(s.Color * s.Intensity);
                 float distance = math.distance(position.ValueRO.Value, feet);
-                if (radius <= 0 || math.cmax(color) <= 0 || distance > 8 + radius) continue;
+                if (radius <= 0 || math.cmax(color) <= 0 || distance > DetailedRadius + radius) continue;
                 if (multiple)
                 {
                     // Complete fallback, not a partial sum, if the bounded test overflows.
@@ -139,7 +140,7 @@ namespace Game.Player
                 float radius = math.clamp(s.Radius, 0, 8);
                 float3 delta = position.ValueRO.Value - feet;
                 if (radius <= 0 || s.Intensity <= 0 || math.cmax(s.Color) <= 0 ||
-                    math.length(delta.xz) > 8 + radius || math.abs(delta.y) > 8 + radius) continue;
+                    math.length(delta.xz) > DetailedRadius + radius || math.abs(delta.y) > DetailedRadius + radius) continue;
                 // Never replace a mixed field with an incomplete subset of sources.
                 if (count == 8) return false;
                 float3 p = PlayerNormalTestUtility.SpriteDirection(delta, view);
@@ -160,14 +161,23 @@ namespace Game.Player
 
         private void PrepareLocalBlockGrid(float3 feet)
         {
-            var origin = (int3)math.floor(feet / 4) * 4 - 16;
+            int size = DetailedRadius * 4 + 8;
+            if (GridSize != size)
+            {
+                GridSize = size;
+                occupancy = new uint[size * size * size * 2];
+                occupancyBuffer?.Dispose();
+                occupancyBuffer = null;
+            }
+            Shader.SetGlobalFloat("_DetailedLightingRadius", DetailedRadius);
+            var origin = (int3)math.floor(feet / 4) * 4 - (GridSize / 2 - 4);
             var blocks = GetBufferLookup<BlockData>(true);
             var splits = GetBufferLookup<SplitCellData>(true);
             var blockType = GetBufferTypeHandle<BlockData>(true);
             var splitType = GetBufferTypeHandle<SplitCellData>(true);
             using var chunks = new NativeParallelHashMap<int2, Entity>(64, Allocator.Temp);
             uint hash = 2166136261;
-            foreach (var (chunk, entity) in SystemAPI.Query<RefRO<ChunkComponent>>().WithEntityAccess())
+            foreach (var (chunk, entity) in SystemAPI.Query<RefRO<ChunkComponent>>().WithAll<ChunkGenerated>().WithEntityAccess())
             {
                 int2 c = chunk.ValueRO.Coordinate;
                 if (c.x * 16 + 16 <= origin.x || c.x * 16 >= origin.x + GridSize ||

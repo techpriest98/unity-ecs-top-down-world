@@ -22,7 +22,8 @@ namespace Game.UI
         private EcsWorld ecsWorld;
         private EntityQuery clockQuery, windQuery, speedQuery, startupQuery;
         private const string OverlayStats = "FPS: {0:0}   {1:2} ms\nTime: {2:00}:{3:00}   x{4:2}\nWind: {5:2}  target: {6:2}\n";
-        private const string OverlayKeys = "\nF5/F6: time +/-   F7/F8: wind +/-\nF4: fog Auto/Full/Off   F3: hide";
+        private const string OverlayKeys = "\nF5/F6: time +/-   F7/F8: wind +/-\nF4: fog Auto/Full/Off   F9: chunk borders   F3: hide";
+        private static string BorderStatus => ChunkBorderDebug.Enabled ? "\nChunk Borders: On" : "\nChunk Borders: Off";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Install()
@@ -36,6 +37,8 @@ namespace Game.UI
         private void Update()
         {
             var keyboard = Keyboard.current;
+            // Independent of F3 overlay visibility and simulation pause.
+            if (keyboard != null && keyboard.f9Key.wasPressedThisFrame) ChunkBorderDebug.Toggle();
             if (keyboard != null && keyboard.f3Key.wasPressedThisFrame)
             {
                 if (overlay == null) CreateOverlay();
@@ -105,7 +108,7 @@ namespace Game.UI
         {
             if (!BindWorld())
             {
-                label.SetText("FPS: {0:0}   {1:2} ms\nWorld: not ready\nF3: hide debug overlay", fps, milliseconds);
+                label.SetText("FPS: {0:0}   {1:2} ms\nWorld: not ready" + BorderStatus + "\nF9: chunk borders   F3: hide debug overlay", fps, milliseconds);
                 return;
             }
             var manager = ecsWorld.EntityManager;
@@ -127,7 +130,7 @@ namespace Game.UI
                 ChunkProceduralRenderer.FogDebugState.AutoSteady => OverlayStats + "Fog: Auto / steady   {7:0}%" + OverlayKeys,
                 _ => OverlayStats + "Fog: unavailable" + OverlayKeys
             };
-            label.SetText(format, fps, milliseconds, clock.Hour, WorldTimeDebugUtility.Minute(clock),
+            label.SetText(format + BorderStatus, fps, milliseconds, clock.Hour, WorldTimeDebugUtility.Minute(clock),
                 speed.Value, wind.Strength, wind.TargetStrength, fog != null ? fog.DebugFogDensity * 100f : 0f);
         }
 
@@ -155,7 +158,7 @@ namespace Game.UI
             rect.anchorMin = rect.anchorMax = new Vector2(0, 1);
             rect.pivot = new Vector2(0, 1);
             rect.anchoredPosition = new Vector2(12, -12);
-            rect.sizeDelta = new Vector2(480, 170);
+            rect.sizeDelta = new Vector2(620, 200);
             label = textObject.AddComponent<TextMeshProUGUI>();
             label.fontSize = 18;
             label.color = new Color(.95f, .9f, .7f);

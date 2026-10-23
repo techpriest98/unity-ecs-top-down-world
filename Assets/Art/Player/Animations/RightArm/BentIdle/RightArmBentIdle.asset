@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.AnimationDefinition
   Part: 2
   Id: 2
-  SpriteSheet: {fileID: 2800000, guid: aad1864070d7e4206b4ab6e4c1f93f49, type: 3}
-  NormalMap: {fileID: 0}
-  PaintedMap: {fileID: 0}
+  SpriteSheet: {fileID: 2800000, guid: cfa79e0960c690a40904d11d6582502f, type: 3}
+  NormalMap: {fileID: 2800000, guid: 305e6bc4e219d744abddba4211526eaf, type: 3}
+  PaintedMap: {fileID: 2800000, guid: aad1864070d7e4206b4ab6e4c1f93f49, type: 3}
   FrameCount: 2
   FrameDuration: 1
   Loop: 1
