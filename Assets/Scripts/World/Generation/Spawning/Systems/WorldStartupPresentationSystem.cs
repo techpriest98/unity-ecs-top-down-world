@@ -45,6 +45,10 @@ namespace Game.World.Generation.Spawning
                 return;
             }
 
+            var trees = World.GetExistingSystemManaged<Game.World.Trees.TreeResourcePreparationSystem>();
+            if (Game.World.Trees.PineTreeTest.Active != null &&
+                (trees == null || !trees.PrepareTreeTextures())) return;
+
             bool playerFound = false;
             int2 playerCenter = default;
 

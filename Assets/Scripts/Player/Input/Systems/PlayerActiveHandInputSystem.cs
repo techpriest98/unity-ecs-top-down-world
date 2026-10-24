@@ -13,8 +13,10 @@ namespace Game.Player
 
         protected override void OnUpdate()
         {
-            if (UnityEngine.Time.timeScale <= 0f || Keyboard.current == null ||
-                !Keyboard.current.qKey.wasPressedThisFrame) return;
+            if (UnityEngine.Time.timeScale <= 0f || Mouse.current == null ||
+                !Mouse.current.middleButton.wasPressedThisFrame) return;
+            if (UnityEngine.EventSystems.EventSystem.current != null &&
+                UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) return;
             foreach (var active in SystemAPI.Query<RefRW<PlayerActiveHand>>().WithAll<PlayerTag>())
                 active.ValueRW.Slot = active.ValueRO.Slot == EquipmentSlot.RightHand
                     ? EquipmentSlot.LeftHand : EquipmentSlot.RightHand;

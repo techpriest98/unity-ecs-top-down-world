@@ -7,6 +7,7 @@ using Unity.Entities;
 using Time = UnityEngine.Time;
 using EcsWorld = Unity.Entities.World;
 using Game.World.Rendering;
+using Game.World.Trees;
 
 namespace Game.UI
 {
@@ -130,7 +131,9 @@ namespace Game.UI
                 ChunkProceduralRenderer.FogDebugState.AutoSteady => OverlayStats + "Fog: Auto / steady   {7:0}%" + OverlayKeys,
                 _ => OverlayStats + "Fog: unavailable" + OverlayKeys
             };
-            label.SetText(format + BorderStatus, fps, milliseconds, clock.Hour, WorldTimeDebugUtility.Minute(clock),
+            var treeRenderer = ecsWorld.GetExistingSystemManaged<TreeRenderSystem>();
+            string treeStatus = treeRenderer != null ? $"\nTrees: {treeRenderer.LastVisibleTreeCount}   draws: {treeRenderer.LastDrawCallCount}" : "";
+            label.SetText(format + BorderStatus + treeStatus, fps, milliseconds, clock.Hour, WorldTimeDebugUtility.Minute(clock),
                 speed.Value, wind.Strength, wind.TargetStrength, fog != null ? fog.DebugFogDensity * 100f : 0f);
         }
 
@@ -158,7 +161,7 @@ namespace Game.UI
             rect.anchorMin = rect.anchorMax = new Vector2(0, 1);
             rect.pivot = new Vector2(0, 1);
             rect.anchoredPosition = new Vector2(12, -12);
-            rect.sizeDelta = new Vector2(620, 200);
+            rect.sizeDelta = new Vector2(620, 230);
             label = textObject.AddComponent<TextMeshProUGUI>();
             label.fontSize = 18;
             label.color = new Color(.95f, .9f, .7f);

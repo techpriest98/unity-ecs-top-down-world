@@ -95,8 +95,8 @@ Material:
     - _EnableExternalAlpha: 0
     - _NormalDebug: 0
     - _NormalStrength: 1
-    - _PaintedDetailsEnabled: 1
     - _PaintedBlend: 1
+    - _PaintedDetailsEnabled: 1
     - _QueueControl: 0
     - _QueueOffset: 0
     - _SampleGI: 0

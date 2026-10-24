@@ -1758,7 +1758,7 @@ public sealed class ItemGraphWindow : EditorWindow
             style.width = 350;
             var serialized = new SerializedObject(skill);
             AddIconPreview(this, serialized);
-            foreach (var property in new[] { "DisplayName", "Description", "Icon" })
+            foreach (var property in new[] { "DisplayName", "Description", "Icon", "InputBinding" })
                 extensionContainer.Add(new PropertyField(serialized.FindProperty(property)));
             if (skill.UseChain)
             {

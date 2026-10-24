@@ -19,6 +19,7 @@ foreach ($name in 'WorldFog','WorldFogMask','ChunkProcedural') {
     $program = $program.Replace('#include "ShoreFoam.hlsl"', (Get-Content (Join-Path $root 'Shaders/ShoreFoam.hlsl') -Raw))
     $program = $program.Replace('#include "GpuSunTrace.hlsl"', (Get-Content (Join-Path $root 'Shaders/GpuSunTrace.hlsl') -Raw))
     $program = $program.Replace('#include "DetailedLocalLighting.hlsl"', (Get-Content (Join-Path $root 'Shaders/DetailedLocalLighting.hlsl') -Raw))
+    $program = $program.Replace('#include "TreeShadowTrace.hlsl"', (Get-Content (Join-Path $root 'Shaders/TreeShadowTrace.hlsl') -Raw))
     [ItemBatchShaderCompile]::Compile($program,'Vert','vs_5_0')
     [ItemBatchShaderCompile]::Compile($program,'Frag','ps_5_0')
     if ($name -eq 'WorldFogMask') {

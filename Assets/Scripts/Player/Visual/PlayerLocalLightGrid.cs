@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Game.World.Trees;
 using Game.World.Blocks;
 using Game.World.Chunks;
 using Game.World.Lighting;
@@ -12,6 +14,133 @@ namespace Game.Player
     public partial class PlayerSunShadowRenderSystem
     {
         // Half-height occupancy; updated only on geometry changes or a snapped grid move.
+        private ComputeBuffer treeHeadsBuffer, treeLinksBuffer, treeShapesBuffer;
+        private int[] treeHeads;
+        private int treeShapeCount;
+        private readonly List<int2> treeLinks = new List<int2>();
+        private readonly List<PineShadowVolume> treeShapes = new List<PineShadowVolume>();
+        private readonly List<ChunkTree> treeCasters = new List<ChunkTree>();
+        private readonly Dictionary<int, List<PineShadowVolume>> treeProxyCache = new Dictionary<int, List<PineShadowVolume>>();
+        private string treeShapeSignature;
+        private PineSettings treeShapeSettings = new PineSettings();
+
+        private static void TreeBuffer(ref ComputeBuffer buffer, int count, int stride)
+        {
+            count = math.max(1, count);
+            if (buffer != null && buffer.count >= count) return;
+            buffer?.Release(); buffer = new ComputeBuffer(math.ceilpow2(count), stride);
+        }
+        private void InitializeTreeShadowBuffers()
+        {
+            TreeBuffer(ref treeHeadsBuffer, 1, 4); TreeBuffer(ref treeLinksBuffer, 1, 8); TreeBuffer(ref treeShapesBuffer, 1, 32);
+            treeHeadsBuffer.SetData(new[] { -1 });
+            treeLinksBuffer.SetData(new[] { new int2(-1) });
+            treeShapesBuffer.SetData(new[] { default(PineShadowVolume) });
+            PublishTreeShadows();
+        }
+        private uint HashTreeCasters(int3 origin, uint hash)
+        {
+            treeCasters.Clear();
+            if (PineTreeTest.Active == null || !PineTreeTest.Active.DetailedShadows) return hash;
+            string signature = PineTreeTest.Active != null ? JsonUtility.ToJson(PineTreeTest.Active.Shape) : "default";
+            if (signature != treeShapeSignature)
+            {
+                treeProxyCache.Clear(); treeShapeSignature = signature;
+                treeShapeSettings = signature == "default" ? new PineSettings() : JsonUtility.FromJson<PineSettings>(signature);
+            }
+            foreach (var buffer in SystemAPI.Query<DynamicBuffer<ChunkTree>>().WithAll<ChunkGenerated>())
+            foreach (var tree in buffer)
+            {
+                float radius = (math.clamp(treeShapeSettings.CrownRadius, .5f, 5) * 1.8f + 2) * tree.Scale;
+                if (tree.Position.x + radius < origin.x || tree.Position.x - radius > origin.x + GridSize ||
+                    tree.Position.z + radius < origin.z || tree.Position.z - radius > origin.z + GridSize) continue;
+                treeCasters.Add(tree);
+                hash = (hash ^ math.hash(new float4(tree.Position, tree.Scale))) * 16777619;
+                hash = (hash ^ math.hash(new int4(tree.Seed, tree.GeneratorVersion, tree.QuarterTurn, tree.Id))) * 16777619;
+            }
+            return treeCasters.Count == 0 ? hash : (hash ^ (uint)signature.GetHashCode()) * 16777619;
+        }
+        private static float3 RotateTree(float3 p, int turn)
+        {
+            switch (turn & 3)
+            {
+                case 1: return new float3(p.z, p.y, -p.x);
+                case 2: return new float3(-p.x, p.y, -p.z);
+                case 3: return new float3(-p.z, p.y, p.x);
+                default: return p;
+            }
+        }
+        private void BuildTreeShadowGrid(int3 origin)
+        {
+            int count = GridSize * GridSize * GridSize * 2;
+            if (treeHeads == null || treeHeads.Length != count) treeHeads = new int[count];
+            for (int i = 0; i < count; i++) treeHeads[i] = -1;
+            treeShapes.Clear(); treeLinks.Clear();
+            foreach (var tree in treeCasters)
+            {
+                if (!treeProxyCache.TryGetValue(tree.Seed, out var shapes))
+                {
+                    treeShapeSettings.Seed = tree.Seed;
+                    shapes = new PineTreeModel(treeShapeSettings, true).ShadowVolumes;
+                    treeProxyCache.Add(tree.Seed, shapes);
+                }
+                foreach (var local in shapes)
+                {
+                    var world = local;
+                    world.A.xyz = tree.Position + RotateTree(local.A.xyz, tree.QuarterTurn) * tree.Scale;
+                    float3 min, max;
+                    if (local.B.w > .5f)
+                    {
+                        world.A.w *= tree.Scale;
+                        world.B.xyz = tree.Position + RotateTree(local.B.xyz, tree.QuarterTurn) * tree.Scale;
+                        min = math.min(world.A.xyz, world.B.xyz) - world.A.w;
+                        max = math.max(world.A.xyz, world.B.xyz) + world.A.w;
+                    }
+                    else
+                    {
+                        world.B.xyz = math.abs(RotateTree(local.B.xyz, tree.QuarterTurn)) * tree.Scale;
+                        min = world.A.xyz - world.B.xyz; max = world.A.xyz + world.B.xyz;
+                    }
+                    int3 lo = math.max(0, (int3)math.floor((min - origin) * new float3(1, 2, 1)));
+                    int3 hi = math.min(new int3(GridSize - 1, GridSize * 2 - 1, GridSize - 1),
+                        (int3)math.floor((max - origin) * new float3(1, 2, 1)));
+                    if (math.any(lo > hi)) continue;
+                    int shapeIndex = treeShapes.Count; treeShapes.Add(world);
+                    for (int z = lo.z; z <= hi.z; z++) for (int y = lo.y; y <= hi.y; y++) for (int x = lo.x; x <= hi.x; x++)
+                    {
+                        int index = (z * (GridSize * 2) + y) * GridSize + x;
+                        treeLinks.Add(new int2(shapeIndex, treeHeads[index])); treeHeads[index] = treeLinks.Count - 1;
+                    }
+                }
+            }
+            treeShapeCount = treeShapes.Count;
+            TreeBuffer(ref treeHeadsBuffer, treeHeads.Length, 4);
+            TreeBuffer(ref treeLinksBuffer, treeLinks.Count, 8); TreeBuffer(ref treeShapesBuffer, treeShapes.Count, 32);
+            treeHeadsBuffer.SetData(treeHeads);
+            if (treeLinks.Count > 0) treeLinksBuffer.SetData(treeLinks);
+            if (treeShapes.Count > 0) treeShapesBuffer.SetData(treeShapes);
+        }
+        private void PublishTreeShadows()
+        {
+            Shader.SetGlobalBuffer("_PlayerTreeHeads", treeHeadsBuffer);
+            Shader.SetGlobalBuffer("_PlayerTreeLinks", treeLinksBuffer);
+            Shader.SetGlobalBuffer("_PlayerTreeShapes", treeShapesBuffer);
+            Shader.SetGlobalFloat("_PlayerTreeShadowEnabled", treeShapeCount > 0 ? 1 : 0);
+        }
+        private void BindTreeShadows(ComputeShader shader, int kernel)
+        {
+            shader.SetBuffer(kernel, "_PlayerTreeHeads", treeHeadsBuffer);
+            shader.SetBuffer(kernel, "_PlayerTreeLinks", treeLinksBuffer);
+            shader.SetBuffer(kernel, "_PlayerTreeShapes", treeShapesBuffer);
+            shader.SetFloat("_PlayerTreeShadowEnabled", treeShapeCount > 0 ? 1 : 0);
+        }
+        private void DisposeTreeShadows()
+        {
+            Shader.SetGlobalFloat("_PlayerTreeShadowEnabled", 0);
+            treeHeadsBuffer?.Release(); treeLinksBuffer?.Release(); treeShapesBuffer?.Release();
+            treeProxyCache.Clear();
+        }
+
         private int GridSize = 40;
         private uint[] occupancy = new uint[40 * 80 * 40];
         private static int DetailedRadius => Game.UI.GraphicsPreferences.DetailedLightingRadius;
@@ -45,6 +174,7 @@ namespace Game.Player
             if (visibilityEdgeBuffer == null) visibilityEdgeBuffer = new ComputeBuffer(8 * 16000, sizeof(uint));
             int kernel = visibilityCompute.FindKernel("BuildVisibility");
             int edgeKernel = visibilityCompute.FindKernel("BuildEdges");
+            BindTreeShadows(visibilityCompute, kernel);
             visibilityCompute.SetBuffer(kernel, "_PlayerLightOccupancy", occupancyBuffer);
             visibilityCompute.SetBuffer(kernel, "_DiagnosticBlockVisibility", visibilityBuffer);
             visibilityCompute.SetBuffer(edgeKernel, "_DiagnosticBlockVisibility", visibilityBuffer);
@@ -191,6 +321,7 @@ namespace Game.Player
                     versioned ? EntityManager.GetComponentData<ChunkGeometryRevision>(entity).Value : archetype.GetChangeVersion(ref blockType),
                     versioned ? 0u : (splits.HasBuffer(entity) ? archetype.GetChangeVersion(ref splitType) : 0)))) * 16777619;
             }
+            hash = HashTreeCasters(origin, hash);
             if (occupancyBuffer == null || math.any(origin != gridOrigin) || hash != geometryHash)
             {
                 using var rebuildMarker = GridRebuildMarker.Auto();
@@ -207,6 +338,7 @@ namespace Game.Player
                     // Locals treat unknown as opaque; directional sun can request a fallback.
                     occupancy[(z * (GridSize*2) + y) * GridSize + x] = !chunks.ContainsKey(c) ? 2u : (solid ? 1u : 0u);
                 }
+                BuildTreeShadowGrid(origin);
                 if (occupancyBuffer == null) occupancyBuffer = new ComputeBuffer(occupancy.Length, sizeof(uint));
                 occupancyBuffer.SetData(occupancy);
                 occupancyVersion++;
@@ -214,6 +346,7 @@ namespace Game.Player
                 geometryHash = hash;
             }
             Shader.SetGlobalBuffer("_PlayerLightOccupancy", occupancyBuffer);
+            PublishTreeShadows();
             Shader.SetGlobalVector("_PlayerLightGridOrigin", new Vector4(origin.x, origin.y, origin.z, GridSize));
         }
     }

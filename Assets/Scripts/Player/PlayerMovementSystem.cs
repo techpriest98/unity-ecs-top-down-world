@@ -6,6 +6,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Game.World.Trees;
 
 namespace Game.Player
 {
@@ -62,6 +63,10 @@ namespace Game.Player
             }
 
             UpdateChunkLookup(ref state);
+            using var treeList = new NativeList<ChunkTree>(Allocator.Temp);
+            foreach (var trees in SystemAPI.Query<DynamicBuffer<ChunkTree>>().WithAll<ChunkGenerated>())
+                foreach (var tree in trees) treeList.Add(tree);
+            var trunks = treeList.AsArray();
 
             BufferLookup<BlockData> blockLookup = SystemAPI.GetBufferLookup<BlockData>(isReadOnly: true);
             ChunkBlockAccessor blockAccessor = new ChunkBlockAccessor(chunkEntities, blockLookup, SystemAPI.GetBufferLookup<SplitCellData>(true));
@@ -111,7 +116,7 @@ namespace Game.Player
                     float previousHeight = position.y;
                     position = PlayerCollisionUtility.MoveHorizontally(position, worldDirection * distance,
                         collisionShape.ValueRO, blockAccessor,
-                        allowStep: velocity <= 0f && !jumpInput.ValueRO.IsPressed);
+                        allowStep: velocity <= 0f && !jumpInput.ValueRO.IsPressed, trunks: trunks);
                     if (position.y > previousHeight) velocity = 0f;
                 }
 
@@ -122,7 +127,7 @@ namespace Game.Player
                 bool grounded = IsGrounded(
                     position,
                     collisionShape.ValueRO,
-                    blockAccessor);
+                    blockAccessor, trunks);
 
                 if (jumpInput.ValueRO.IsPressed && grounded)
                 {
@@ -141,7 +146,7 @@ namespace Game.Player
                     ref velocity,
                     collisionShape.ValueRO,
                     blockAccessor,
-                    deltaTime);
+                    deltaTime, trunks);
 
                 verticalVelocity.ValueRW.Value = velocity;
                 worldPosition.ValueRW.Value = position;
@@ -155,9 +160,9 @@ namespace Game.Player
         private static bool IsGrounded(
             float3 position,
             in PlayerCollisionShape shape,
-            in ChunkBlockAccessor blockAccessor)
+            in ChunkBlockAccessor blockAccessor, NativeArray<ChunkTree> trunks)
         {
-            return PlayerCollisionUtility.IsGrounded(position, shape, blockAccessor);
+            return PlayerCollisionUtility.IsPositionBlocked(position - new float3(0,.02f,0), shape, blockAccessor, trunks);
         }
 
         private static void MoveVertically(
@@ -165,7 +170,7 @@ namespace Game.Player
             ref float velocity,
             in PlayerCollisionShape shape,
             in ChunkBlockAccessor blockAccessor,
-            float deltaTime)
+            float deltaTime, NativeArray<ChunkTree> trunks)
         {
             float remainingDistance = velocity * deltaTime;
 
@@ -183,7 +188,7 @@ namespace Game.Player
                 bool blocked = PlayerCollisionUtility.IsPositionBlocked(
                     candidate,
                     shape,
-                    blockAccessor);
+                    blockAccessor, trunks);
 
                 if (!blocked)
                 {
@@ -197,7 +202,7 @@ namespace Game.Player
                     ref position,
                     step,
                     shape,
-                    blockAccessor);
+                    blockAccessor, trunks);
 
                 velocity = 0f;
 
@@ -209,7 +214,7 @@ namespace Game.Player
             ref float3 position,
             float blockedStep,
             in PlayerCollisionShape shape,
-            in ChunkBlockAccessor blockAccessor)
+            in ChunkBlockAccessor blockAccessor, NativeArray<ChunkTree> trunks)
         {
             float allowedDistance = 0f;
             float blockedDistance = blockedStep;
@@ -225,7 +230,7 @@ namespace Game.Player
                 bool blocked = PlayerCollisionUtility.IsPositionBlocked(
                     candidate,
                     shape,
-                    blockAccessor);
+                    blockAccessor, trunks);
 
                 if (blocked)
                 {

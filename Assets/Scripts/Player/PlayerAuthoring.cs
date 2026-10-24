@@ -45,11 +45,12 @@ namespace Game.Player
 
                         DependsOn(part);
 
-                        if (part.transform == authoring.transform ||
-                            !part.transform.IsChildOf(authoring.transform))
+                        bool prefab = !part.gameObject.scene.IsValid();
+                        if (!prefab && (part.transform == authoring.transform ||
+                            !part.transform.IsChildOf(authoring.transform)))
                         {
                             Debug.LogError(
-                                $"{part.name} must be a child of the player.",
+                                $"{part.name} must be a prefab asset or a child of the player.",
                                 authoring);
                             return;
                         }
@@ -142,12 +143,22 @@ namespace Game.Player
 
                 DynamicBuffer<PlayerVisualPart> parts =
                     AddBuffer<PlayerVisualPart>(entity);
+                DynamicBuffer<PlayerVisualPrefab> prefabs = AddBuffer<PlayerVisualPrefab>(entity);
 
                 if (authoring.visualParts == null)
                     return;
 
                 foreach (PlayerVisualAuthoring part in authoring.visualParts)
                 {
+                    if (!part.gameObject.scene.IsValid())
+                    {
+                        prefabs.Add(new PlayerVisualPrefab
+                        {
+                            Part = part.Part,
+                            Prefab = GetEntity(part.gameObject, TransformUsageFlags.Dynamic)
+                        });
+                        continue;
+                    }
                     parts.Add(new PlayerVisualPart
                     {
                         Part = part.Part,

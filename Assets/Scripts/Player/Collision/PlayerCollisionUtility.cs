@@ -1,6 +1,8 @@
 using Game.World.Blocks;
 using Game.World.Chunks;
 using Unity.Mathematics;
+using Unity.Collections;
+using Game.World.Trees;
 
 namespace Game.Player
 {
@@ -16,14 +18,14 @@ namespace Game.Player
             in ChunkBlockAccessor accessor) => IsPositionBlocked(position - new float3(0f, GroundProbeDistance, 0f), shape, accessor);
 
         public static float3 MoveHorizontally(float3 position, float2 displacement,
-            in PlayerCollisionShape shape, in ChunkBlockAccessor accessor, bool allowStep)
+            in PlayerCollisionShape shape, in ChunkBlockAccessor accessor, bool allowStep, NativeArray<ChunkTree> trunks = default)
         {
             int steps = math.max(1, (int)math.ceil(math.length(displacement) / MaximumHorizontalStep));
             float3 increment = new float3(displacement.x, 0f, displacement.y) / steps;
             for (int i = 0; i < steps; i++)
             {
                 float3 candidate = position + increment;
-                if (!IsPositionBlocked(candidate, shape, accessor))
+                if (!IsPositionBlocked(candidate, shape, accessor, trunks))
                 {
                     position = candidate;
                     continue;
@@ -33,10 +35,10 @@ namespace Game.Player
                 // Check the entire upward sweep, not only the raised endpoint.
                 PlayerCollisionShape upwardSweep = shape;
                 upwardSweep.Height += StepHeight;
-                if (IsPositionBlocked(position, upwardSweep, accessor)) break;
+                if (IsPositionBlocked(position, upwardSweep, accessor, trunks)) break;
 
                 candidate.y += StepHeight;
-                if (IsPositionBlocked(candidate, shape, accessor) || !IsGrounded(candidate, shape, accessor)) break;
+                if (IsPositionBlocked(candidate, shape, accessor, trunks) || !IsGrounded(candidate, shape, accessor)) break;
                 position = candidate;
             }
             return position;
@@ -45,8 +47,11 @@ namespace Game.Player
         public static bool IsPositionBlocked(
             float3 position,
             in PlayerCollisionShape shape,
-            in ChunkBlockAccessor blockAccessor)
+            in ChunkBlockAccessor blockAccessor, NativeArray<ChunkTree> trunks = default)
         {
+            if (trunks.IsCreated)
+                foreach (var trunk in trunks)
+                    if (TreeTrunkCollision.Intersects(position, shape.HalfExtentsXZ, shape.Height, trunk)) return true;
             int2 sourceChunkCoordinate =
                 GetChunkCoordinate(
                     position);

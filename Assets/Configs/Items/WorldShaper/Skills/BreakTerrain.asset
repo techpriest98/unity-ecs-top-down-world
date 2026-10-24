@@ -16,6 +16,9 @@ MonoBehaviour:
   DisplayName: Nigredo
   Description: Let decomposition begin
   Icon: {fileID: 3620863573912337706, guid: cde1502764c493b43b2946b7a80175c7, type: 3}
+  InputBinding:
+    Button: 2
+    Key: 0
   UseChain: 1
   FirstNode: {fileID: 11400000, guid: b1fc67415cf54edc903fb8765e612ac1, type: 2}
   Conditions: []

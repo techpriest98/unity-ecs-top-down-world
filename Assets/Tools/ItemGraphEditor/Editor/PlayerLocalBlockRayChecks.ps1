@@ -14,6 +14,7 @@ using System;
 using Unity.Mathematics;
 using static Unity.Mathematics.math;
 public static class LocalBlockRayChecks {
+ static float TreeCellVisibility(int3 cell,int size,float3 origin,float3 target)=>1;
  static float4 _PlayerLightGridOrigin = new float4(0,0,0,40);
  static uint[] _PlayerLightOccupancy = new uint[40*80*40];
  static float Ray(float3 origin, float3 target) {

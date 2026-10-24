@@ -27,12 +27,25 @@ namespace Game.Items
             public Vector4 Rect;
         }
 
+        private sealed class TreeMask
+        {
+            public byte[] Pixels;
+            public uint Revision, Version;
+            public float3 Position;
+            public Vector4 Rect;
+            public float[] TreeSurface;
+            public float TreeScale;
+        }
+
         // Reusable flat chains: no List + backing array per projected tile.
         private readonly Dictionary<int2, int> faces = new Dictionary<int2, int>();
         private readonly List<Face> faceEntries = new List<Face>();
         private readonly HashSet<int2> clipped = new HashSet<int2>();
         private readonly HashSet<int3> visibleTopSurfaces = new HashSet<int3>();
         private readonly Dictionary<Entity, Mask> masks = new Dictionary<Entity, Mask>();
+        private readonly Dictionary<(Entity Owner, int Id), TreeMask> treeMasks = new Dictionary<(Entity, int), TreeMask>();
+        private readonly HashSet<(Entity Owner, int Id)> seenTrees = new HashSet<(Entity, int)>();
+        private readonly List<(Entity Owner, int Id)> removedTrees = new List<(Entity, int)>();
         private readonly Dictionary<Entity, ulong> chunkHashes = new Dictionary<Entity, ulong>();
         private readonly HashSet<Entity> seen = new HashSet<Entity>();
         private readonly List<Entity> removed = new List<Entity>();
@@ -42,7 +55,7 @@ namespace Game.Items
         private uint maskVersion;
         private bool initialized;
 
-        public void BeginFrame() => seen.Clear();
+        public void BeginFrame() { seen.Clear(); seenTrees.Clear(); }
 
         public ulong HashChunk(Entity entity, DynamicBuffer<ProjectedCellData> cells,
             DynamicBuffer<ProjectedClipCell> clipCells, int2 coordinate, bool shaderClipping, bool changed)
@@ -181,8 +194,49 @@ namespace Game.Items
             return mask.Texture;
         }
 
+        public byte[] GetTreeMaskPixels(Entity owner, int treeId, float3 position, Vector4 rect, int width, int height, float[] surface, float scale, out uint version)
+        {
+            var key = (owner, treeId);
+            seenTrees.Add(key);
+            if (!treeMasks.TryGetValue(key, out var mask)) { mask = new TreeMask(); treeMasks.Add(key, mask); }
+            bool resized = mask.Pixels == null || mask.Pixels.Length != width * height;
+            if (resized)
+            {
+                mask.Pixels = new byte[width * height];
+            }
+            if (!resized && mask.Revision == revision && math.all(mask.Position == position) && mask.Rect == rect &&
+                ReferenceEquals(mask.TreeSurface, surface) && mask.TreeScale == scale)
+            { version = mask.Version; return mask.Pixels; }
+            var pixels = mask.Pixels;
+            float baseDepth = math.dot(position.xz, (float2)ViewDirectionUtility.Forward(direction));
+            for (int y = 0; y < height; y++) for (int x = 0; x < width; x++)
+            {
+                int i = y * width + x;
+                if (surface[i * 4 + 3] == 0) { pixels[i] = 0; continue; }
+                float px = rect.x + (x + .5f) * rect.z / width, py = rect.y + (y + .5f) * rect.w / height;
+                float treeDepth = baseDepth + surface[i * 4 + 1] * scale;
+                float treeHeight = position.y + surface[i * 4] * scale;
+                bool hidden = false;
+                if (faces.TryGetValue(Key(px, py), out int first))
+                    for (int faceIndex = first; faceIndex >= 0; faceIndex = faceEntries[faceIndex].Next)
+                    {
+                        var face = faceEntries[faceIndex];
+                        float faceDepth = face.Top ? treeDepth + 2 * (face.Height - treeHeight) : face.Depth;
+                        if (faceDepth > treeDepth + .001f) { hidden = true; break; }
+                    }
+                pixels[i] = hidden ? (byte)255 : (byte)0;
+            }
+            mask.Position = position; mask.Rect = rect; mask.Revision = revision;
+            mask.TreeSurface = surface; mask.TreeScale = scale;
+            version = mask.Version = ++maskVersion;
+            return pixels;
+        }
+
         public void EndFrame()
         {
+            removedTrees.Clear();
+            foreach (var pair in treeMasks) if (!seenTrees.Contains(pair.Key)) removedTrees.Add(pair.Key);
+            foreach (var key in removedTrees) treeMasks.Remove(key);
             removed.Clear();
             foreach (var pair in masks) if (!seen.Contains(pair.Key)) removed.Add(pair.Key);
             foreach (var entity in removed) { Object.Destroy(masks[entity].Texture); masks.Remove(entity); }
@@ -190,6 +244,7 @@ namespace Game.Items
 
         public void Dispose()
         {
+            treeMasks.Clear(); seenTrees.Clear(); removedTrees.Clear();
             foreach (var mask in masks.Values) if (mask.Texture != null) Object.Destroy(mask.Texture);
             masks.Clear(); faces.Clear(); faceEntries.Clear(); clipped.Clear(); visibleTopSurfaces.Clear(); chunkHashes.Clear();
             initialized = false;

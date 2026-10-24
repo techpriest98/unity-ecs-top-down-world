@@ -24,10 +24,7 @@ namespace Game.Player
 
         protected override void OnUpdate()
         {
-            int pressedIndex = GetPressedSkillIndex();
-
-            if (pressedIndex < 0)
-                return;
+            if (UnityEngine.Time.timeScale <= 0f) return;
             
             Entity libraryEntity = libraryQuery.GetSingletonEntity();
 
@@ -45,37 +42,42 @@ namespace Game.Player
                          .WithAll<PlayerTag>()
                          .WithEntityAccess())
             {
-                if (pressedIndex >= skills.Length)
-                    continue;
-
-                PlayerAvailableSkill entry = skills[pressedIndex];
-                if (entry.SkillIndex < 0) continue;
-
-                int equippedItem = PlayerEquipmentUtility.GetItem(
-                    slots,
-                    entry.SourceSlot);
-
-                if (equippedItem != entry.SourceItem)
-                    continue;
-
-                var producerSkills = SkillProducerUtility.GetSkills(EntityManager, libraryEntity, library, entry.SourceItem);
-                if (producerSkills == null ||
-                    entry.SkillIndex < 0 ||
-                    entry.SkillIndex >= producerSkills.Length)
+                for (int index = 0; index < skills.Length; index++)
                 {
-                    continue;
+                    PlayerAvailableSkill entry = skills[index];
+                    if (entry.SkillIndex < 0) continue;
+
+                    int equippedItem = PlayerEquipmentUtility.GetItem(
+                        slots,
+                        entry.SourceSlot);
+
+                    if (equippedItem != entry.SourceItem)
+                        continue;
+
+                    var producerSkills = SkillProducerUtility.GetSkills(EntityManager, libraryEntity, library, entry.SourceItem);
+                    if (producerSkills == null ||
+                        entry.SkillIndex < 0 ||
+                        entry.SkillIndex >= producerSkills.Length)
+                    {
+                        continue;
+                    }
+
+                    ItemSkillDefinition skill =
+                        producerSkills[entry.SkillIndex];
+
+                    if (skill == null || !skill.HasActions)
+                        continue;
+                    if (!skill.InputBinding.WasPressed(index)) continue;
+                    // UI clicks must not also throw/use a world item.
+                    if (skill.InputBinding.IsMouse && UnityEngine.EventSystems.EventSystem.current != null &&
+                        UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) continue;
+
+                    selectedDefinition = skill;
+                    player = entity;
+                    selectedSkill = entry;
+                    break;
                 }
-
-                ItemSkillDefinition skill =
-                    producerSkills[entry.SkillIndex];
-
-                if (skill == null || !skill.HasActions)
-                    continue;
-
-                selectedDefinition = skill;
-                player = entity;
-                selectedSkill = entry;
-                break;
+                if (selectedDefinition != null) break;
             }
 
             // Викликаємо після виходу з обходу ECS-буферів.
@@ -135,20 +137,5 @@ namespace Game.Player
             else EntityManager.AddComponentData(player, value);
         }
 
-        private static int GetPressedSkillIndex()
-        {
-            Keyboard keyboard = Keyboard.current;
-
-            if (keyboard == null)
-                return -1;
-
-            if (keyboard.digit1Key.wasPressedThisFrame) return 0;
-            if (keyboard.digit2Key.wasPressedThisFrame) return 1;
-            if (keyboard.digit3Key.wasPressedThisFrame) return 2;
-            if (keyboard.digit4Key.wasPressedThisFrame) return 3;
-            if (keyboard.digit5Key.wasPressedThisFrame) return 4;
-
-            return -1;
-        }
     }
 }

@@ -23,6 +23,7 @@ float _DetailedLightingRadius;
             float4 _DiagnosticVisibilityOrigins[8];
             float LocalSilhouetteOcclusion(float3 receiver, float3 source);
             float WorldBlockVisibility(float3 origin, float3 target);
+            #include "TreeShadowTrace.hlsl"
             float LocalPointNormalResponse(float3 normal, float3 referenceNormal, float3 toLight)
             {
                 float3 direction = toLight * rsqrt(max(dot(toLight, toLight), .000001));
@@ -104,11 +105,16 @@ float _DetailedLightingRadius;
                 [loop] for (int n=0; n<128; n++)
                 {
                     // The source cell is allowed to contain its own mounted item.
-                    if (all(cell == last)) return 1;
+                    if (all(cell == last))
+                    {
+                        int sourceSize = (int)_PlayerLightGridOrigin.w;
+                        return any(cell<0) || any(cell>=int3(sourceSize,sourceSize*2,sourceSize)) ? 1 : TreeCellVisibility(cell,sourceSize,origin,target);
+                    }
                     int size = (int)_PlayerLightGridOrigin.w;
                     if (any(cell < 0) || any(cell >= int3(size,size*2,size))) return 0;
                     uint index = (cell.z * (size*2) + cell.y) * size + cell.x;
                     if (_PlayerLightOccupancy[index] != 0) return 0;
+                    if (TreeCellVisibility(cell,size,origin,target)<.5) return 0;
                     if (boundary.x <= boundary.y && boundary.x <= boundary.z) {cell.x += stepCell.x; boundary.x += inverse.x;}
                     else if (boundary.y <= boundary.z) {cell.y += stepCell.y; boundary.y += inverse.y;}
                     else {cell.z += stepCell.z; boundary.z += inverse.z;}

@@ -1,5 +1,6 @@
 #ifndef GPU_SUN_TRACE_INCLUDED
 #define GPU_SUN_TRACE_INCLUDED
+#include "TreeShadowTrace.hlsl"
 // -1: incomplete terrain coverage; use CPU shadow or unoccluded sun when CPU is off.
 float TraceGpuSun(float3 origin)
 {
@@ -20,6 +21,7 @@ float TraceGpuSun(float3 origin)
         uint occupied = _PlayerLightOccupancy[(cell.z * (size*2) + cell.y) * size + cell.x];
         if (occupied == 2u) return -1;
         if (occupied != 0u) return 0;
+        if (TreeCellVisibility(cell,size,origin,origin+_GpuSunDirection.xyz*16)<.5) return 0;
         float next = min(boundary.x,min(boundary.y,boundary.z));
         if (next > 1) return 1;
         if (boundary.x <= next + .000001) {cell.x += stepCell.x; boundary.x += inverse.x;}

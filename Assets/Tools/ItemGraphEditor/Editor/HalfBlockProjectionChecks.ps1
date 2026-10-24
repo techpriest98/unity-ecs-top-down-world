@@ -26,6 +26,7 @@ $halfFiles = @(
  'Scripts/World/Rendering/ChunkProjectionBuilder.cs','Scripts/World/Rendering/ChunkProjectionBuilder.Split.cs',
  'Scripts/World/Interaction/Components/SelectedProjectedCell.cs','Scripts/World/Interaction/ProjectedCellInteractionUtility.cs',
  'Scripts/Player/Collision/Components/PlayerCollisionShape.cs','Scripts/Player/Collision/PlayerCollisionUtility.cs',
+ 'Scripts/World/Trees/ChunkTree.cs',
  'Scripts/World/Saving/WorldStateData.cs','Scripts/World/Saving/WorldStateStorage.cs',
  'Scripts/World/Saving/Components/WorldBlockChanges.cs',
  'Scripts/World/Lighting/Utilities/VoxelShadowUtility.cs')
@@ -106,6 +107,7 @@ namespace Unity.Collections {
  public enum Allocator {Temp}
  public struct NativeArray<T> {
   T[] data;
+    public IEnumerator<T> GetEnumerator()=>((IEnumerable<T>)(data??Array.Empty<T>())).GetEnumerator();
   public NativeArray(int length,Allocator allocator){data=new T[length];}
   public int Length=>data.Length;
   public T this[int i]{get=>data[i];set=>data[i]=value;}

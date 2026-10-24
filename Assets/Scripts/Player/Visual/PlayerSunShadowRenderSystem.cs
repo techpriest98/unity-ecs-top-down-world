@@ -27,6 +27,7 @@ namespace Game.Player
 
         protected override void OnCreate()
         {
+            InitializeTreeShadowBuffers();
             RequireForUpdate<PlayerNormalLighting>();
             RequireForUpdate<ViewDirectionComponent>();
             Shader.SetGlobalFloat("_GpuSunEnabled", 0f);
@@ -39,6 +40,7 @@ namespace Game.Player
 
         protected override void OnStopRunning()
         {
+            Shader.SetGlobalFloat("_PlayerTreeShadowEnabled", 0);
             Shader.SetGlobalFloat("_GpuSunEnabled", 0f);
             Shader.SetGlobalFloat("_SingleLocalLightTestEnabled", 0f);
             Shader.SetGlobalFloat("_DiagnosticLocalShadowStrength", 0f);
@@ -49,6 +51,7 @@ namespace Game.Player
 
         protected override void OnDestroy()
         {
+            DisposeTreeShadows();
             Shader.SetGlobalFloat("_GpuSunEnabled", 0f);
             Shader.SetGlobalFloat("_SingleLocalLightTestEnabled", 0f);
             Shader.SetGlobalFloat("_DiagnosticLocalShadowStrength", 0f);

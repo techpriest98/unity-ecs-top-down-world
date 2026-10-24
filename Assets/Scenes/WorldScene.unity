@@ -700,6 +700,7 @@ GameObject:
   - component: {fileID: 1238157589}
   - component: {fileID: 1238157591}
   - component: {fileID: 1238157592}
+  - component: {fileID: 1238157593}
   m_Layer: 0
   m_Name: ChunkRenderer
   m_TagString: Untagged
@@ -1409,6 +1410,34 @@ MonoBehaviour:
   panelPrefab: {fileID: 5335655854925384093, guid: 92992f9edf7c34c079661840071b6734, type: 3}
   buttonPrefab: {fileID: 1044404767601426280, guid: 0b971797c26574811b4deca807afad45, type: 3}
   pauseMenu: 1
+--- !u!114 &1238157593
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1238157588}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 226e74a945a74bb889aee60a69050c3a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.World.Trees.PineTreeTest
+  PopulateTurf: 1
+  DetailedShadows: 1
+  TurfDensity: 0.65
+  Shape:
+    Seed: 42
+    Height: 10
+    TrunkRadius: 0.23
+    CrownRadius: 2.1
+    CrownStart: 0.58
+    Branches: 24
+    NeedlePairs: 12
+    NeedleWidth: 0.014
+    BarkStrength: 0.7
+    BarkScale: 1
+  QuarterTurn: 0
+  Scale: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

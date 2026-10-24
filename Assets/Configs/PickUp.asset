@@ -16,6 +16,9 @@ MonoBehaviour:
   DisplayName: Pick Up
   Description: Take it with you
   Icon: {fileID: -1996122451363449188, guid: e3cb67e68e44384418ea9ac42a120ba8, type: 3}
+  InputBinding:
+    Button: 1
+    Key: 20
   UseChain: 1
   FirstNode: {fileID: 11400000, guid: 51ac67415cf54edc903fb8765e612ac1, type: 2}
   Conditions: []

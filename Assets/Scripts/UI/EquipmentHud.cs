@@ -183,6 +183,7 @@ namespace Game.UI
         }
 
         private readonly ItemSkillDefinition[] skillItems = new ItemSkillDefinition[5];
+        private readonly TMP_Text[] skillKeys = new TMP_Text[5];
         private readonly EquipmentSlot[] skillSources = new EquipmentSlot[5];
         private RectTransform tooltip;
         private TMP_Text tooltipTitle;
@@ -202,6 +203,19 @@ namespace Game.UI
                 return;
             skillItems[index] = skill;
             skillSources[index] = source;
+            if (skillKeys[index] == null && icons[index + 2] != null)
+            {
+                Transform key = icons[index + 2].transform.parent.Find("Key");
+                if (key != null) skillKeys[index] = key.GetComponent<TMP_Text>();
+            }
+            if (skillKeys[index] != null)
+            {
+                string label = skill != null ? skill.InputBinding.Label(index) : (index + 1).ToString();
+                if (skillKeys[index].text != label) skillKeys[index].text = label;
+                skillKeys[index].enableAutoSizing = true;
+                skillKeys[index].fontSizeMin = 8;
+                skillKeys[index].fontSizeMax = 14;
+            }
         }
 
         private void OnDisable()

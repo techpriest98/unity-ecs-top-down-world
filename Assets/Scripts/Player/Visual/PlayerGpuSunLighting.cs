@@ -40,6 +40,7 @@ namespace Game.Player
             {
                 using var marker = GpuSunMarker.Auto();
                 int build = gpuSunCompute.FindKernel("BuildSun"), edges = gpuSunCompute.FindKernel("BuildSunEdges");
+                BindTreeShadows(gpuSunCompute, build);
                 gpuSunCompute.SetBuffer(build, "_PlayerLightOccupancy", occupancyBuffer);
                 gpuSunCompute.SetBuffer(build, "_GpuSunCache", gpuSunCache);
                 gpuSunCompute.SetBuffer(edges, "_GpuSunCache", gpuSunCache);

@@ -139,6 +139,7 @@ if ($single -notmatch 'if \(_DiagnosticLocalBlockOcclusion > .5\)' -or
 }
 'PASS optional direct world-space block visibility and lifecycle gating.'
 $compute = Get-Content (Join-Path $root 'Resources/PlayerLocalVisibility.compute') -Raw
+$compute=$compute.Replace('#include "../Shaders/TreeShadowTrace.hlsl"',(Get-Content (Join-Path $root 'Shaders/TreeShadowTrace.hlsl') -Raw))
 [ItemBatchShaderCompile]::Compile(($compute -replace '(?m)^#pragma[^\r\n]*',''),'BuildVisibility','cs_5_0')
 [ItemBatchShaderCompile]::Compile(($compute -replace '(?m)^#pragma[^\r\n]*',''),'BuildEdges','cs_5_0')
 if ($grid -notmatch 'cachedVisibilitySources\[i\].Equals\(source\) && cachedVisibilityVersions\[i\] == occupancyVersion' -or

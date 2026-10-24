@@ -2,6 +2,7 @@ $ErrorActionPreference='Stop'
 $root=(Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
 . (Join-Path $PSScriptRoot 'WorldItemBatchShaderChecks.ps1')
 $trace=Get-Content (Join-Path $root 'Shaders/GpuSunTrace.hlsl') -Raw
+$trace=$trace.Replace('#include "TreeShadowTrace.hlsl"',(Get-Content (Join-Path $root 'Shaders/TreeShadowTrace.hlsl') -Raw))
 $compute=(Get-Content (Join-Path $root 'Resources/GpuSunVisibility.compute') -Raw).Replace('#include "../Shaders/GpuSunTrace.hlsl"',$trace)
 $compute=$compute -replace '(?m)^#pragma[^\r\n]*',''
 foreach($kernel in 'BuildSun','BuildSunEdges'){[ItemBatchShaderCompile]::Compile($compute,$kernel,'cs_5_0')}
@@ -17,6 +18,7 @@ using System;
 using Unity.Mathematics;
 using static Unity.Mathematics.math;
 public static class SunModeChecks {
+ static float TreeCellVisibility(int3 cell,int size,float3 origin,float3 target)=>1;
  static uint[] _PlayerLightOccupancy=new uint[40*80*40];
  static float4 _PlayerLightGridOrigin=new float4(0,0,0,40);
  static float4 _GpuSunDirection=new float4(0,1,0,0);

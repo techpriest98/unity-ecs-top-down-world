@@ -16,6 +16,9 @@ MonoBehaviour:
   DisplayName: Throw
   Description: Let it fly
   Icon: {fileID: -6559549409133317034, guid: 89f11d956e2a8d34d93cc2fb05ec3fc3, type: 3}
+  InputBinding:
+    Button: 1
+    Key: 31
   UseChain: 1
   FirstNode: {fileID: 11400000, guid: 1106c7415cf54edc903fb8765e612ac1, type: 2}
   Conditions: []
