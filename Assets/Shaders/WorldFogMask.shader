@@ -21,12 +21,13 @@ Shader "Game/World/WorldFogMask"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "ProjectedCellPacking.hlsl"
             StructuredBuffer<ProjectedCellRenderData> _ProjectedCells;
-            TEXTURE2D(_ProjectionClipMask); SAMPLER(sampler_ProjectionClipMask);
             TEXTURE2D(_FogNoise); SAMPLER(sampler_FogNoise);
             float4 _FogEdge, _FogSeaOrigin, _FogRight, _FogAway, _FogDrift;
-            float4 _ProjectionClipMaskBounds;
-            float _FogHeight, _FogClipEnabled;
+            float _FogHeight;
             float _FogWater, _WaterTopInsetPixels;
+            TEXTURE2D(_LocalTileCoverage); SAMPLER(sampler_LocalTileCoverage);
+            float4 _LocalTileCoverageBounds;
+            float _LocalTileCoverageEnabled;
             float4x4 _FogSkyViewProjection;
             struct Varyings {
                 float4 position:SV_POSITION; float2 projected:TEXCOORD0;
@@ -70,11 +71,11 @@ Shader "Game/World/WorldFogMask"
             }
             float4 Frag(Varyings i):SV_Target
             {
-                if(_FogClipEnabled>.5 && i.cut==0u)
+                if (_LocalTileCoverageEnabled > .5)
                 {
-                    float2 uv=(i.projected-_ProjectionClipMaskBounds.xy)/_ProjectionClipMaskBounds.zw;
-                    if(all(uv>=0)&&all(uv<1))
-                        clip(.5-SAMPLE_TEXTURE2D_LOD(_ProjectionClipMask,sampler_ProjectionClipMask,uv,0).r);
+                    float2 uv = (i.projected - _LocalTileCoverageBounds.xy) / _LocalTileCoverageBounds.zw;
+                    if (all(uv >= 0) && all(uv < 1))
+                        clip(.5 - SAMPLE_TEXTURE2D_LOD(_LocalTileCoverage, sampler_LocalTileCoverage, uv, 0).r);
                 }
                 #if defined(_FOG_SKY_ALPHA)
                     return smoothstep(.05,.85,saturate(i.sky)).xxxx;

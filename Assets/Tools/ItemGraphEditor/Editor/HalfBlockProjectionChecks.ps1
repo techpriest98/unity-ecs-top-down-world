@@ -235,7 +235,9 @@ public static class HalfProjectionChecks {
  }
  static (List<Game.World.Rendering.ProjectedCellData> solid,List<Game.World.Rendering.ProjectedCellData> water) Build(
   Dictionary<Unity.Mathematics.int3,Game.World.Blocks.BlockData> map,Game.World.Rendering.ViewDirection view,bool clip=false,
-  Dictionary<Unity.Mathematics.int3,Game.World.Blocks.CellContents> contents=null,float playerHeight=7f) {
+  Dictionary<Unity.Mathematics.int3,Game.World.Blocks.CellContents> contents=null,float playerHeight=7f,
+  int firstColumn=0,int columnCount=int.MaxValue,float playerX=7f,float playerZ=7f,
+  List<Game.World.Rendering.ProjectedClipCell> clipOutput=null,int firstRow=-10000,int lastRow=10000) {
   map=new Dictionary<Unity.Mathematics.int3,Game.World.Blocks.BlockData>(map);
   if(contents!=null) foreach(var pair in contents) map[pair.Key]=new Game.World.Blocks.BlockData {Shape=Game.World.Blocks.SplitCellUtility.ReferenceShape};
   var source=new List<Game.World.Blocks.BlockData>(new Game.World.Blocks.BlockData[16*256*16]);
@@ -243,13 +245,93 @@ public static class HalfProjectionChecks {
   var solid=new List<Game.World.Rendering.ProjectedCellData>();var water=new List<Game.World.Rendering.ProjectedWaterCellData>();
   var opaque=new Game.World.Rendering.ProjectionOccupancy(1024,Unity.Collections.Allocator.Temp);
   var translucent=new Game.World.Rendering.ProjectionOccupancy(1024,Unity.Collections.Allocator.Temp);
-  var clips=new Unity.Entities.DynamicBuffer<Game.World.Rendering.ProjectedClipCell>(new List<Game.World.Rendering.ProjectedClipCell>());
-  Game.World.Rendering.ChunkProjectionBuilder.Build(new Unity.Entities.DynamicBuffer<Game.World.Blocks.BlockData>(source),
+  var clips=new Unity.Entities.DynamicBuffer<Game.World.Rendering.ProjectedClipCell>(clipOutput??new List<Game.World.Rendering.ProjectedClipCell>());
+  Game.World.Rendering.ChunkProjectionBuilder.BuildColumns(new Unity.Entities.DynamicBuffer<Game.World.Blocks.BlockData>(source),
    Unity.Mathematics.int2.zero,new Game.World.Chunks.ChunkBlockAccessor(map,contents),
    new Game.World.Rendering.ProjectionWriter(opaque,new Unity.Entities.DynamicBuffer<Game.World.Rendering.ProjectedCellData>(solid),clips),
    new Game.World.Rendering.WaterProjectionWriter(opaque,translucent,new Unity.Entities.DynamicBuffer<Game.World.Rendering.ProjectedWaterCellData>(water)),
-   view,clip,new Unity.Mathematics.float3(7,playerHeight,7));
+   view,clip,new Unity.Mathematics.float3(playerX,playerHeight,playerZ),firstColumn,columnCount,firstRow,lastRow);
   return (solid,water.Select(x=>x.Value).ToList());
+ }
+ static void CheckLocalColumns() {
+  foreach(var centre in new[]{new Unity.Mathematics.float2(-16.4f,-20.2f),Unity.Mathematics.float2.zero,new Unity.Mathematics.float2(17.25f,40.75f)}) {
+   int minX=(int)Math.Floor(centre.x-5),minY=(int)Math.Floor((centre.y-5)*2);
+   var coverage=new HashSet<Unity.Mathematics.int2>();
+   for(int y=0;y<24;y++) for(int x=0;x<12;x++) {
+    var key=new Unity.Mathematics.int2(minX+x,minY+y);
+    var mid=new Unity.Mathematics.float2(key.x+.5f,key.y*.5f+.25f);
+    if(ChunkProjectionBuilder.TileTouchesLocalProjection(mid,centre)) coverage.Add(key);
+   }
+   for(int y=minY-10;y<minY+34;y++) for(int x=minX-10;x<minX+22;x++) {
+    var key=new Unity.Mathematics.int2(x,y);var mid=new Unity.Mathematics.float2(x+.5f,y*.5f+.25f);
+    Check(coverage.Contains(key)==ChunkProjectionBuilder.TileTouchesLocalProjection(mid,centre),"Whole-tile coverage missed a local or empty tile");
+    if(coverage.Contains(key)) Check(x-minX>=0&&x-minX<12&&y-minY>=0&&y-minY<24,"Coverage texture index outside bounds");
+   }
+  }
+  var region=Unity.Mathematics.float2.zero;
+  Check(ChunkProjectionBuilder.TileTouchesLocalProjection(new Unity.Mathematics.float2(4,0),region),"Boundary tile was excluded to expose base-world fallback");
+  Check(ChunkProjectionBuilder.TileTouchesLocalProjection(new Unity.Mathematics.float2(4.49f,0),region),"Intersecting boundary tile was dropped");
+  Check(!ChunkProjectionBuilder.TileTouchesLocalProjection(new Unity.Mathematics.float2(4.51f,0),region),"Outside column leaked into local region");
+  Check(ChunkProjectionBuilder.TileTouchesLocalProjection(new Unity.Mathematics.float2(0,4.24f),region),"Top boundary tile was dropped");
+  Check(!ChunkProjectionBuilder.TileTouchesLocalProjection(new Unity.Mathematics.float2(0,4.26f),region),"Outside vertical rows leaked into local region");
+  Check(!ChunkProjectionBuilder.TileTouchesLocalProjection(new Unity.Mathematics.float2(0,40),region),"Full-height column restored");
+  foreach(var face in new[]{ProjectedFaceType.Top,ProjectedFaceType.SideUpper,ProjectedFaceType.SideLower}) {
+   var cap=new ProjectedCellData(new Game.World.Blocks.BlockData(Game.World.Blocks.BlockId.Stone,255),face,255,0,0);
+   if(face==ProjectedFaceType.Top) cap.SetCutTop(); else cap.SetCutSide();
+   var outside=new Unity.Mathematics.float2(100,100);var centre=Unity.Mathematics.float2.zero;
+   Check(ChunkProjectionBuilder.UsesLocalProjectionLayer(true,cap,false,outside,centre),"Cut cap left in base projection");
+   Check(!ChunkProjectionBuilder.UsesLocalProjectionLayer(false,cap,true,centre,centre),"Disabled overlay consumed cut cap");
+   cap.FaceData=0;
+   Check(!ChunkProjectionBuilder.UsesLocalProjectionLayer(true,cap,true,outside,centre),"Ordinary distant face leaked into cap layer");
+   Check(ChunkProjectionBuilder.UsesLocalProjectionLayer(true,cap,true,centre,centre),"Local ordinary face lost");
+  }
+  for(int x=-12;x<=12;x++) for(int y=-12;y<=12;y++) foreach(bool enabled in new[]{false,true}) foreach(bool candidate in new[]{false,true}) {
+   var p=new Unity.Mathematics.float2(x,y);var centre=new Unity.Mathematics.float2(.5f,.25f);
+   bool local=ChunkProjectionBuilder.UsesLocalProjectionOverlay(enabled,candidate,p,centre);
+   Check(local==(enabled && candidate && (x-.5f)*(x-.5f)+(y-.25f)*(y-.25f)<16f),"Overlay circular partition boundary mismatch");
+   Check(!ChunkProjectionBuilder.UsesLocalProjectionOverlay(enabled,false,p,centre),"Ineligible face moved into overlay");
+  }
+  var map=new Dictionary<Unity.Mathematics.int3,Game.World.Blocks.BlockData>();
+  for(int x=0;x<16;x++) for(int z=0;z<16;z++) {
+   int y=(x+z)%11;
+   map[new Unity.Mathematics.int3(x,y,z)]=new Game.World.Blocks.BlockData(
+    (x+z)%3==0?Game.World.Blocks.BlockId.OceanWater:Game.World.Blocks.BlockId.Stone,255,
+    (x+z)%2==0?Game.World.Blocks.BlockShape.Full:Game.World.Blocks.BlockShape.LowerHalf);
+  }
+  foreach(ViewDirection view in Enum.GetValues(typeof(ViewDirection))) foreach(bool clip in new[]{false,true}) {
+   var full=Build(map,view,clip);
+   int low=490, high=510;
+   var window=Build(map,view,clip,firstRow:low,lastRow:high);
+   Check(window.solid.Where(c=>c.ProjectionY>=low&&c.ProjectionY<=high).SequenceEqual(
+    full.solid.Where(c=>c.ProjectionY>=low&&c.ProjectionY<=high)),"Local vertical window lost opaque background");
+   Check(window.water.Where(c=>c.ProjectionY>=low&&c.ProjectionY<=high).SequenceEqual(
+    full.water.Where(c=>c.ProjectionY>=low&&c.ProjectionY<=high)),"Local vertical window lost water background");
+   for(int u=0;u<16;u++) {
+    var local=Build(map,view,clip,firstColumn:u,columnCount:1);
+    Check(local.solid.SequenceEqual(full.solid.Where(c=>c.ProjectionX==u)),"Local opaque column differs from full projection");
+    Check(local.water.SequenceEqual(full.water.Where(c=>c.ProjectionX==u)),"Local water column differs from full projection");
+   }
+   Check(Build(map,view,clip,firstColumn:16,columnCount:int.MaxValue).solid.Count==0,"Out-of-range columns not empty");
+   Check(Build(map,view,clip,columnCount:0).solid.Count==0,"Empty range generated faces");
+  }
+  foreach(ViewDirection view in Enum.GetValues(typeof(ViewDirection)))
+  foreach(bool oldClip in new[]{false,true}) foreach(bool newClip in new[]{false,true}) {
+   var oldMasks=new List<ProjectedClipCell>();var newMasks=new List<ProjectedClipCell>();var partialMasks=new List<ProjectedClipCell>();
+   var old=Build(map,view,oldClip,clipOutput:oldMasks);
+   var next=Build(map,view,newClip,playerHeight:7.5f,playerX:8,playerZ:6,clipOutput:newMasks);
+   var columns=ChunkProjectionBuilder.MovingClipColumns(Unity.Mathematics.int2.zero,view,
+    new Unity.Mathematics.float3(7,7,7),oldClip,new Unity.Mathematics.float3(8,7.5f,6),newClip);
+   if(!ChunkProjectionBuilder.CanReuseProjectionColumns(new Unity.Mathematics.float3(7,7,7),oldClip,
+    new Unity.Mathematics.float3(8,7.5f,6),newClip)) columns=new Unity.Mathematics.int2(0,16);
+   var partial=Build(map,view,newClip,playerHeight:7.5f,firstColumn:columns.x,columnCount:columns.y,
+    playerX:8,playerZ:6,clipOutput:partialMasks);
+   var solids=old.solid.Where(c=>c.ProjectionX<columns.x||c.ProjectionX>=columns.x+columns.y).Concat(partial.solid).OrderBy(c=>c.ProjectionX);
+   var water=old.water.Where(c=>c.ProjectionX<columns.x||c.ProjectionX>=columns.x+columns.y).Concat(partial.water).OrderBy(c=>c.ProjectionX);
+   var masks=oldMasks.Where(c=>c.X<columns.x||c.X>=columns.x+columns.y).Concat(partialMasks).OrderBy(c=>c.X);
+   Check(solids.SequenceEqual(next.solid.OrderBy(c=>c.ProjectionX)),"Moving clipping cache differs from full opaque rebuild: "+view+" "+oldClip+" -> "+newClip+" range "+columns);
+   Check(water.SequenceEqual(next.water.OrderBy(c=>c.ProjectionX)),"Moving clipping cache differs from full water rebuild");
+   Check(masks.SequenceEqual(newMasks.OrderBy(c=>c.X)),"Moving clipping cache differs from full clip mask");
+  }
  }
  static void CheckTopFrontTransition() {
   foreach(ViewDirection view in Enum.GetValues(typeof(ViewDirection)))
@@ -274,6 +356,7 @@ public static class HalfProjectionChecks {
   }
  }
  public static string Run() {
+  CheckLocalColumns();
   CheckTopFrontTransition();
   CheckProjectionOptimization();
   CheckRockyShore();
@@ -1069,3 +1152,18 @@ public static class HalfProjectionChecks {
 $halfSource=(($halfUsings | Sort-Object -Unique) -join "`n")+"`n"+($halfBodies -join "`n")+"`n"+$halfHarness
 Add-Type -TypeDefinition $halfSource -ReferencedAssemblies $halfReferences -ErrorAction Stop
 [HalfProjectionChecks]::Run()
+$localSource=Get-Content (Join-Path $halfAssetsRoot 'Scripts/World/Rendering/ChunkProceduralRenderSystem.cs') -Raw
+$localSource=$localSource.Substring($localSource.IndexOf('public partial class LocalProjectionRenderSystem'))
+if ($localSource -notmatch 'BuildColumns\(blocks\[entity\]' -or
+ $localSource -notmatch 'GetBuffer<ProjectedCellData>\(scratch\)' -or
+ $localSource -match 'SetComponentEnabled<ChunkNeedsProjection>|GetBuffer<ProjectedCellData>\(entity\)' -or
+ $localSource -notmatch 'foreach \(var entity in entities\)' -or
+ $localSource -notmatch 'ChunkLightingSystem.UpdateChunkFully') { throw 'Independent voxel projection ownership/depth/lighting contract missing' }
+$clipSource=Get-Content (Join-Path $halfAssetsRoot 'Scripts/World/Rendering/Clipping/ChunkClippingSystem.cs') -Raw
+if ($clipSource -notmatch 'if \(normalized\) return;' -or
+ $clipSource -notmatch 'projectionClipping.ValueRW = false;' -or $clipSource -notmatch 'shaderClipping.ValueRW = false;' -or
+ $clipSource -match 'PlayerWorldPosition|playerCellChanged|shouldClipInProjection' -or
+ $clipSource -notmatch 'normalized = true;') {
+ throw 'Base projection still depends on player clipping in overlay mode'
+}
+'PASS independent local scratch buffers, loaded-world traversal, local lighting and player-independent base projection (source contracts).'

@@ -24,6 +24,7 @@ namespace Game.World.Interaction
 
         protected override void OnUpdate()
         {
+            if (!WorldRenderDebug.Enabled) return;
             if (material == null)
                 material = Resources.Load<Material>("ProjectedCellCursor");
             if (material == null)

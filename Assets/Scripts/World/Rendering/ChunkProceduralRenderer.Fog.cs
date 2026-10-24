@@ -115,6 +115,11 @@ namespace Game.World.Rendering
             BuildFogSkyMask(height);
             // ZTest Equal + stencil marks only already-visible high terrain.
             DrawFogMask(projectedCellsBuffer, projectedCellsCount, opaqueWorldBounds, false, height);
+            if (LocalProjectionRenderer.Instance is { IsActive: true } local)
+            {
+                DrawFogMask(local.OpaqueBuffer, local.OpaqueCount, local.WorldBounds, false, height);
+                DrawFogMask(local.WaterBuffer, local.WaterCount, local.WorldBounds, false, height, true);
+            }
             DrawFogMask(projectedClippedCellsBuffer, projectedClippedCellsCount, clippedWorldBounds, true, height);
             DrawFogMask(projectedWaterCellsBuffer, projectedWaterCellsCount, waterWorldBounds, false, height, true);
             DrawFogMask(projectedClippedWaterCellsBuffer, projectedClippedWaterCellsCount, clippedWaterWorldBounds, true, height, true);
@@ -173,6 +178,11 @@ namespace Game.World.Rendering
             fogSkyCommands.SetRenderTarget(fogSkyTexture);
             fogSkyCommands.ClearRenderTarget(true, true, Color.white);
             DrawFogMask(projectedCellsBuffer, projectedCellsCount, opaqueWorldBounds, false, height, false, true);
+            if (LocalProjectionRenderer.Instance is { IsActive: true } local)
+            {
+                DrawFogMask(local.OpaqueBuffer, local.OpaqueCount, local.WorldBounds, false, height, false, true);
+                DrawFogMask(local.WaterBuffer, local.WaterCount, local.WorldBounds, false, height, true, true);
+            }
             DrawFogMask(projectedClippedCellsBuffer, projectedClippedCellsCount, clippedWorldBounds, true, height, false, true);
             DrawFogMask(projectedWaterCellsBuffer, projectedWaterCellsCount, waterWorldBounds, false, height, true, true);
             DrawFogMask(projectedClippedWaterCellsBuffer, projectedClippedWaterCellsCount, clippedWaterWorldBounds, true, height, true, true);
@@ -194,8 +204,10 @@ namespace Game.World.Rendering
                 maskMaterial = fogWaterMaskMaterial;
             }
             fogMaskProperties.Clear();
+            if (LocalProjectionRenderer.Instance is { } local)
+                local.ApplyCoverage(fogMaskProperties, local.OwnsBuffer(buffer));
             fogMaskProperties.SetFloat("_FogWater", water ? 1 : 0);
-            Material sourceWater = clippedLayer ? clippedWaterMaterial : waterMaterial;
+            Material sourceWater = waterMaterial;
             fogMaskProperties.SetFloat("_WaterTopInsetPixels", sourceWater != null ? sourceWater.GetFloat("_WaterTopInsetPixels") : 2f);
             fogMaskProperties.SetBuffer("_ProjectedCells", buffer);
             fogMaskProperties.SetMatrix("_FogSkyViewProjection", fogSkyViewProjection);
@@ -206,9 +218,6 @@ namespace Game.World.Rendering
             fogMaskProperties.SetVector("_FogRight", new Vector4(sideFaceNormal.z, -sideFaceNormal.x, 0, 0));
             fogMaskProperties.SetVector("_FogAway", new Vector4(-sideFaceNormal.x, -sideFaceNormal.z, 0, 0));
             fogMaskProperties.SetVector("_FogDrift", new Vector4(worldWind.Drift.x, worldWind.Drift.y, 0, 0));
-            fogMaskProperties.SetFloat("_FogClipEnabled", clippedLayer && clipMaskEnabled ? 1 : 0);
-            fogMaskProperties.SetTexture("_ProjectionClipMask", clipMaskTexture != null ? clipMaskTexture : Texture2D.blackTexture);
-            fogMaskProperties.SetVector("_ProjectionClipMaskBounds", clipMaskBounds);
             if (skyAlpha)
             {
                 fogSkyCommands.DrawProcedural(Matrix4x4.identity, fogSkyMaterial, 0, MeshTopology.Triangles, 6, count, fogMaskProperties);

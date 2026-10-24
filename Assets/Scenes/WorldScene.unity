@@ -735,10 +735,11 @@ MonoBehaviour:
   fogPlayerClearRadius: 1.5
   fogPlayerClearSoftness: 1.5
   fogPlayerClearOffsetUp: 1
+  LocalProjectionOverlay: 0
   material: {fileID: 2100000, guid: aaf6d3886463549bd88f181df4b19b92, type: 2}
-  clippedMaterial: {fileID: 2100000, guid: 0ac8596eff77e43528473688993be69a, type: 2}
+  clippedMaterial: {fileID: 0}
   waterMaterial: {fileID: 2100000, guid: 3689cef086b864c6797be1af3b981ab4, type: 2}
-  clippedWaterMaterial: {fileID: 2100000, guid: f5dba8fd20fa04b27be4c8719e182443, type: 2}
+  clippedWaterMaterial: {fileID: 0}
   terrainHeightStrength: 0.3
   terrainHeightTint: {r: 0.62, g: 0.73, b: 0.85, a: 1}
   terrainHeightRange: {x: 0.5, y: 6}
@@ -794,6 +795,34 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.World.Lighting.SunLightingDebug
   cpuSunShadows: 1
   gpuSunLighting: 1
+--- !u!114 &1238157593
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1238157588}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 226e74a945a74bb889aee60a69050c3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.World.Trees.PineTreeTest
+  Shape:
+    Seed: 42
+    Height: 10
+    TrunkRadius: 0.23
+    CrownRadius: 2.1
+    CrownStart: 0.58
+    Branches: 24
+    NeedlePairs: 12
+    NeedleWidth: 0.014
+    BarkStrength: 0.7
+    BarkScale: 1
+  PopulateTurf: 1
+  DetailedShadows: 1
+  TurfDensity: 0.65
+  QuarterTurn: 0
+  Scale: 1
 --- !u!1 &1378615480
 GameObject:
   m_ObjectHideFlags: 0
@@ -1410,34 +1439,6 @@ MonoBehaviour:
   panelPrefab: {fileID: 5335655854925384093, guid: 92992f9edf7c34c079661840071b6734, type: 3}
   buttonPrefab: {fileID: 1044404767601426280, guid: 0b971797c26574811b4deca807afad45, type: 3}
   pauseMenu: 1
---- !u!114 &1238157593
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1238157588}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 226e74a945a74bb889aee60a69050c3a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Game.World.Trees.PineTreeTest
-  PopulateTurf: 1
-  DetailedShadows: 1
-  TurfDensity: 0.65
-  Shape:
-    Seed: 42
-    Height: 10
-    TrunkRadius: 0.23
-    CrownRadius: 2.1
-    CrownStart: 0.58
-    Branches: 24
-    NeedlePairs: 12
-    NeedleWidth: 0.014
-    BarkStrength: 0.7
-    BarkScale: 1
-  QuarterTurn: 0
-  Scale: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

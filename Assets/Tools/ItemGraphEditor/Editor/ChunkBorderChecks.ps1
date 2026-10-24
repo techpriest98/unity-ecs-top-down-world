@@ -55,3 +55,55 @@ foreach($name in 'ChunkProcedural','ChunkWaterProcedural'){
  }
 }
 'PASS F9 independent toggle, F3 state, shared terrain/water integration and disabled shader fast path. Unity visual/input checks remain manual.'
+if ($ui.IndexOf('keyboard.f10Key.wasPressedThisFrame') -lt 0 -or
+ $ui.IndexOf('keyboard.f10Key.wasPressedThisFrame') -gt $ui.IndexOf('if (overlay == null || !overlay.enabled) return;')) {
+ throw 'F10 must work independently of F3 overlay visibility'
+}
+$gate=Get-Content (Join-Path $root 'Scripts/World/Rendering/Clipping/Components/ChunkShaderClippingEnabled.cs') -Raw
+if ($gate -notmatch 'SharedStatic<int>' -or $gate -notmatch 'SetComponentEnabled<ChunkNeedsProjection>\(chunks, true\)') {
+ throw 'Burst-safe world render gate or resume invalidation missing'
+}
+foreach ($path in @('Scripts/World/Rendering/ChunkProjectionSystem.cs',
+ 'Scripts/World/Lighting/Systems/ChunkLightingSystem.cs',
+ 'Scripts/World/Rendering/ChunkProceduralRenderSystem.cs',
+ 'Scripts/World/Rendering/ChunkProceduralRenderer.cs',
+ 'Scripts/World/Trees/PineTreeTestSystem.cs',
+ 'Scripts/Items/WorldItemRenderSystem.cs',
+ 'Scripts/Player/Visual/PlayerSunShadowRenderSystem.cs')) {
+ if ((Get-Content (Join-Path $root $path) -Raw) -notmatch '!.*WorldRenderDebug\.(Enabled|ProjectionRequired)') {
+  throw "Missing world render gate: $path"
+ }
+}
+'PASS F10 input, visual consumer gates and forced projection refresh on resume (source contracts).'
+if ($gate -notmatch 'ProjectionRequired => Enabled \|\| OverlayRequested' -or
+ $ui -notmatch 'Local overlay: On' -or
+ $ui -notmatch 'LocalProjectionCellCount') { throw 'Independent overlay gate/status missing' }
+$draw=Get-Content (Join-Path $root 'Scripts/World/Rendering/ChunkProceduralRenderer.cs') -Raw
+$localDraw=Get-Content (Join-Path $root 'Scripts/World/Rendering/LocalProjectionRenderer.cs') -Raw
+if ($draw -notmatch 'if \(WorldRenderDebug.Enabled\) \{ RenderOpaque\(\); RenderClipped\(\); RenderWater\(\); RenderClippedWater\(\); \}' -or
+ $draw -notmatch 'if \(WorldRenderDebug.Enabled\) RenderWorldFog\(\)' -or
+ $localDraw -notmatch 'OnDisable\(') { throw 'Overlay-only draw isolation or disable cleanup missing' }
+'PASS overlay-only preparation/draw gate, full-world fog isolation and F3 counts (source contracts).'
+foreach ($path in @('Shaders/ChunkProcedural.shader','Shaders/ChunkWaterProcedural.shader','Shaders/WorldFogMask.shader',
+ 'Scripts/World/Rendering/ChunkProceduralRenderer.cs','Scripts/World/Rendering/ChunkProceduralRenderer.Fog.cs',
+ 'Scripts/World/Rendering/ChunkProceduralRenderSystem.cs')) {
+ if ((Get-Content (Join-Path $root $path) -Raw) -match '_LocalProjectionCircle|_LocalProjectionMode|SetLocalProjectionCircle|Intersects\(face') {
+  throw "Unexpected pixel-cropping overlay mask: $path"
+ }
+}
+'PASS local projection tiles are not cropped by a circular shader mask.'
+$background=Get-Content (Join-Path $root 'Shaders/LocalProjectionBackground.shader') -Raw
+if ($background -notmatch 'Geometry-1' -or $background -notmatch 'ZWrite Off' -or
+ $background -notmatch 'ZTest Always' -or $localDraw -notmatch '!localLayer && IsActive' -or
+ $localDraw -notmatch 'TextureFormat.R8' -or $localDraw -notmatch 'filterMode = FilterMode.Point') {
+ throw 'Whole-tile background/coverage draw ordering or local-layer exemption missing'
+}
+'PASS whole-tile replacement covers empty cells without altering world buffers or local fragment shapes (source contracts).'
+if ($draw -match 'localProjectionBuffer|localWaterBuffer|localTileBuffer|UploadLocalCoverage|clippedMaterial|clippedWaterMaterial|UploadClipMask' -or
+ $localDraw -notmatch 'GetComponent<ChunkProceduralRenderer>' -or $ui -notmatch 'var terrain = LocalProjectionRenderer.Instance') {
+ throw 'Local projection resources still owned by chunk renderer or debug UI is bound to the wrong component'
+}
+foreach ($path in @('Art/World/ChunkProceduralClipped.mat','Art/World/ChunkWaterProceduralClipped.mat')) {
+ if (Test-Path (Join-Path $root $path)) { throw "Retired clipping material remains: $path" }
+}
+'PASS local resource ownership, separate component/debug binding and removal of retired clipping materials.'

@@ -40,6 +40,7 @@ namespace Game.UI
             var keyboard = Keyboard.current;
             // Independent of F3 overlay visibility and simulation pause.
             if (keyboard != null && keyboard.f9Key.wasPressedThisFrame) ChunkBorderDebug.Toggle();
+            if (keyboard != null && keyboard.f10Key.wasPressedThisFrame) WorldRenderDebug.Toggle();
             if (keyboard != null && keyboard.f3Key.wasPressedThisFrame)
             {
                 if (overlay == null) CreateOverlay();
@@ -133,7 +134,11 @@ namespace Game.UI
             };
             var treeRenderer = ecsWorld.GetExistingSystemManaged<TreeRenderSystem>();
             string treeStatus = treeRenderer != null ? $"\nTrees: {treeRenderer.LastVisibleTreeCount}   draws: {treeRenderer.LastDrawCallCount}" : "";
-            label.SetText(format + BorderStatus + treeStatus, fps, milliseconds, clock.Hour, WorldTimeDebugUtility.Minute(clock),
+            var terrain = LocalProjectionRenderer.Instance;
+            string localStatus = terrain != null && terrain.IsActive
+                ? $"\nLocal overlay: On ({terrain.LocalProjectionCellCount} faces, {terrain.LocalWaterCellCount} water, {terrain.LocalCapCount} caps)\nProjection builds: world {WorldRenderDebug.BaseProjectionBuilds}, local {terrain.LocalProjectionUploads}"
+                : "\nLocal overlay: Off";
+            label.SetText(format + BorderStatus + treeStatus + (WorldRenderDebug.Enabled ? "\nF10 World Rendering: On" : "\nF10 World Rendering: Off") + localStatus, fps, milliseconds, clock.Hour, WorldTimeDebugUtility.Minute(clock),
                 speed.Value, wind.Strength, wind.TargetStrength, fog != null ? fog.DebugFogDensity * 100f : 0f);
         }
 
@@ -161,7 +166,7 @@ namespace Game.UI
             rect.anchorMin = rect.anchorMax = new Vector2(0, 1);
             rect.pivot = new Vector2(0, 1);
             rect.anchoredPosition = new Vector2(12, -12);
-            rect.sizeDelta = new Vector2(620, 230);
+            rect.sizeDelta = new Vector2(760, 280);
             label = textObject.AddComponent<TextMeshProUGUI>();
             label.fontSize = 18;
             label.color = new Color(.95f, .9f, .7f);

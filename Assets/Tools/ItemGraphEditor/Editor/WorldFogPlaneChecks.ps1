@@ -10,7 +10,7 @@ static const float4x4 UNITY_MATRIX_V = float4x4(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)
 float4 TransformWorldToHClip(float3 p) {return float4(p,1);}
 float4 TransformObjectToHClip(float3 p) {return float4(p,1);}
 '@
-foreach ($name in 'WorldFog','WorldFogMask','ChunkProcedural') {
+foreach ($name in 'WorldFog','WorldFogMask','ChunkProcedural','LocalProjectionBackground') {
     $shader = Get-Content (Join-Path $root ('Shaders/'+$name+'.shader')) -Raw
     $program = [regex]::Match($shader,'(?s)HLSLPROGRAM(.*?)ENDHLSL').Groups[1].Value
     $program = $program.Replace('#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"', $core)

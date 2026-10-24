@@ -2,8 +2,6 @@ Shader "Game/World/ChunkProcedural"
 {
     Properties
     {
-        [Toggle(_PLAYER_CLIPPING)]
-        _PlayerClipping("Player Clipping", Float) = 0
         _ShoreFoamStrength("Shore Foam Strength", Range(0, 1)) = 0.85
         _ShoreFoamWidth("Shore Foam Width", Range(0.05, 0.5)) = 0.28
         _ShoreFoamScale("Shore Foam Scale", Range(0.5, 4)) = 2
@@ -48,7 +46,6 @@ Shader "Game/World/ChunkProcedural"
 
             HLSLPROGRAM
 
-            #pragma shader_feature_local_fragment _PLAYER_CLIPPING
             #pragma shader_feature_local_fragment _DEBUG_NORMALS
             #pragma target 4.5
             #pragma vertex Vert
@@ -89,10 +86,9 @@ Shader "Game/World/ChunkProcedural"
 
             StructuredBuffer<ProjectedCellRenderData> _ProjectedCells;
             StructuredBuffer<BlockGpuData> _BlockDatabase;
-            TEXTURE2D(_ProjectionClipMask);
-            SAMPLER(sampler_ProjectionClipMask);
-            float4 _ProjectionClipMaskBounds;
-            float _ProjectionClipMaskEnabled;
+            TEXTURE2D(_LocalTileCoverage); SAMPLER(sampler_LocalTileCoverage);
+            float4 _LocalTileCoverageBounds;
+            float _LocalTileCoverageEnabled;
 
             int _BlockDatabaseCount;
 
@@ -616,22 +612,15 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
 
             float4 Frag(Varyings input) : SV_Target
             {
+                if (_LocalTileCoverageEnabled > .5)
+                {
+                    float2 uv = (input.ProjectionPosition - _LocalTileCoverageBounds.xy) / _LocalTileCoverageBounds.zw;
+                    if (all(uv >= 0) && all(uv < 1))
+                        clip(.5 - SAMPLE_TEXTURE2D_LOD(_LocalTileCoverage, sampler_LocalTileCoverage, uv, 0).r);
+                }
                 if (input.IsCutSurface != 0u)
                     return float4(0.0, 0.0, 0.0, 1.0);
 
-                #if defined(_PLAYER_CLIPPING)
-                    if (_ProjectionClipMaskEnabled > 0.5)
-                    {
-                        float2 maskUv = (input.ProjectionPosition - _ProjectionClipMaskBounds.xy)
-                            / _ProjectionClipMaskBounds.zw;
-                        if (all(maskUv >= 0.0) && all(maskUv < 1.0))
-                        {
-                            float mask = SAMPLE_TEXTURE2D_LOD(
-                                _ProjectionClipMask, sampler_ProjectionClipMask, maskUv, 0).r;
-                            clip(0.5 - mask);
-                        }
-                    }
-                #endif
 
                 if (input.BlockId == 0 ||
                     input.BlockId >= (uint)_BlockDatabaseCount)

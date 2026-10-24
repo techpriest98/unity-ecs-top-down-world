@@ -52,29 +52,29 @@ namespace Game.World.Lighting
             }
 
             var blocks = new ChunkBlockAccessor(entities, SystemAPI.GetBufferLookup<BlockData>(true), SystemAPI.GetBufferLookup<SplitCellData>(true));
-            var lights = new ChunkLightAccessor(entities, SystemAPI.GetBufferLookup<VoxelLightData>(true));
+            var voxelLightLookup = SystemAPI.GetBufferLookup<VoxelLightData>(true);
+            var lights = new ChunkLightAccessor(entities, voxelLightLookup);
             var directionCache = new LocalLightDirectionCache(1024, Allocator.Temp);
             ViewDirection direction = SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
             if (SystemAPI.TryGetSingleton<ViewDirectionTransitionComponent>(out var transition) &&
                 transition.IsActive)
                 direction = transition.TargetDirection;
 
-            foreach (var (chunk, voxelLight, projectedCells, projectedWaterCells, needsUpdate, needsRender) in
+            foreach (var (chunk, projectedCells, projectedWaterCells, needsUpdate, needsRender, entity) in
                 SystemAPI.Query<
                     RefRO<ChunkComponent>,
-                    DynamicBuffer<VoxelLightData>,
                     DynamicBuffer<ProjectedCellData>,
                     DynamicBuffer<ProjectedWaterCellData>,
                     EnabledRefRW<ChunkNeedsLocalLightUpdate>,
                     EnabledRefRW<ChunkNeedsRender>>()
-                .WithAll<ChunkGenerated>()
-                .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState))
+                .WithAll<ChunkGenerated, VoxelLightData>()
+                .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState).WithEntityAccess())
             {
                 int2 coordinate = chunk.ValueRO.Coordinate;
                 if (!affected.Contains(coordinate)) continue;
 
-                UpdateOpaqueCells(projectedCells, voxelLight, coordinate, blocks, lights, direction, ref directionCache);
-                UpdateWaterCells(projectedWaterCells, voxelLight, coordinate, blocks, lights, direction, ref directionCache);
+                UpdateOpaqueCells(projectedCells, voxelLightLookup[entity], coordinate, blocks, lights, direction, ref directionCache);
+                UpdateWaterCells(projectedWaterCells, voxelLightLookup[entity], coordinate, blocks, lights, direction, ref directionCache);
                 needsUpdate.ValueRW = false;
                 needsRender.ValueRW = true;
             }

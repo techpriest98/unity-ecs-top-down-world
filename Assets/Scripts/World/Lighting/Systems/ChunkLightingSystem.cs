@@ -57,6 +57,7 @@ namespace Game.World.Lighting
         public void OnUpdate(ref SystemState state)
         {
             bool cpuDisabled = SystemAPI.TryGetSingleton<SunLightingSettings>(out var settings) && !settings.CpuShadows;
+            if (!WorldRenderDebug.ProjectionRequired) return;
             if (cpuDisabled)
                 foreach (var pending in SystemAPI.Query<EnabledRefRW<ChunkNeedsSunShadowUpdate>>().WithAll<ChunkGenerated>())
                     pending.ValueRW = false;
@@ -99,8 +100,8 @@ namespace Game.World.Lighting
                 chunkEntities,
                 blockLookup, SystemAPI.GetBufferLookup<Game.World.Blocks.SplitCellData>(true));
 
-            ChunkLightAccessor lightAccessor = new(
-                chunkEntities, SystemAPI.GetBufferLookup<VoxelLightData>(true));
+            var voxelLightLookup = SystemAPI.GetBufferLookup<VoxelLightData>(true);
+            ChunkLightAccessor lightAccessor = new(chunkEntities, voxelLightLookup);
 
             ViewDirection direction = SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
             if (SystemAPI.TryGetSingleton<ViewDirectionTransitionComponent>(out var transition) &&
@@ -110,21 +111,20 @@ namespace Game.World.Lighting
             EntityCommandBuffer ecb = new(Allocator.Temp);
             var directionCache = new LocalLightDirectionCache(1024, Allocator.Temp);
 
-            foreach (var (chunk, voxelLight, cells, waterCells, entity) in
+            foreach (var (chunk, cells, waterCells, entity) in
                      SystemAPI.Query<
                              RefRO<ChunkComponent>,
-                             DynamicBuffer<VoxelLightData>,
                              DynamicBuffer<ProjectedCellData>,
                              DynamicBuffer<ProjectedWaterCellData>>()
                          .WithAll<ChunkGenerated, ChunkNeedsLighting,
-                             ChunkNeedsImmediateLighting>()
+                             ChunkNeedsImmediateLighting>().WithAll<VoxelLightData>()
                          .WithDisabled<ChunkNeedsSkyLight>()
                          .WithEntityAccess())
             {
                 UpdateChunkFully(
                     cells,
                     waterCells,
-                    voxelLight,
+                    voxelLightLookup[entity],
                     chunk.ValueRO.Coordinate,
                     blockAccessor,
                     lightAccessor,
@@ -139,13 +139,12 @@ namespace Game.World.Lighting
 
             int processedCount = 0;
 
-            foreach (var (chunk, voxelLight, cells, waterCells, entity) in
+            foreach (var (chunk, cells, waterCells, entity) in
                      SystemAPI.Query<
                              RefRO<ChunkComponent>,
-                             DynamicBuffer<VoxelLightData>,
                              DynamicBuffer<ProjectedCellData>,
                              DynamicBuffer<ProjectedWaterCellData>>()
-                         .WithAll<ChunkGenerated, ChunkNeedsLighting>()
+                         .WithAll<ChunkGenerated, VoxelLightData, ChunkNeedsLighting>()
                          .WithDisabled<ChunkNeedsSkyLight>()
                          .WithDisabled<ChunkNeedsImmediateLighting>()
                          .WithEntityAccess())
@@ -158,7 +157,7 @@ namespace Game.World.Lighting
                 UpdateChunkFully(
                     cells,
                     waterCells,
-                    voxelLight,
+                    voxelLightLookup[entity],
                     chunk.ValueRO.Coordinate,
                     blockAccessor,
                     lightAccessor,
@@ -241,7 +240,7 @@ namespace Game.World.Lighting
             }
         }
 
-        private static void UpdateChunkFully(
+        public static void UpdateChunkFully(
             DynamicBuffer<ProjectedCellData> cells,
             DynamicBuffer<ProjectedWaterCellData> waterCells,
             DynamicBuffer<VoxelLightData> voxelLight,

@@ -71,6 +71,7 @@ namespace Game.Player
 
         protected override void OnUpdate()
         {
+            if (!WorldRenderDebug.ProjectionRequired) { OnStopRunning(); return; }
             Shader.SetGlobalFloat("_GpuSunEnabled", 0f);
             Shader.SetGlobalFloat("_SingleLocalLightTestEnabled", 0f);
             Shader.SetGlobalFloat("_DiagnosticLocalShadowStrength", 0f);

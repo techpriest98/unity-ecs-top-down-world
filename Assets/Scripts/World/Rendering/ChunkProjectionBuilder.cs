@@ -10,6 +10,40 @@ namespace Game.World.Rendering
         private const float PlayerClipCenterOffset = 1f;
 
         public const float ProjectionClipRadius = 4f;
+        // Select complete quads touching the local region; never crop pixels inside a selected tile.
+        public static bool TileTouchesLocalProjection(float2 tileCenter, float2 regionCenter)
+        {
+            float2 nearest = math.max(math.abs(tileCenter - regionCenter) - new float2(.5f, .25f), float2.zero);
+            return math.lengthsq(nearest) < ProjectionClipRadius * ProjectionClipRadius;
+        }
+        public static bool CanReuseProjectionColumns(float3 previous, bool previousClipping, float3 current, bool currentClipping) =>
+            (previousClipping && GetClippingHeight(previous) % 1f != 0f) ==
+            (currentClipping && GetClippingHeight(current) % 1f != 0f);
+        // Conservative horizontal support of the old and new clipping circles, including edge faces.
+        public static int2 MovingClipColumns(int2 coordinate, ViewDirection direction, float3 previous,
+            bool previousClipping, float3 current, bool currentClipping)
+        {
+            float first = 16, last = -1;
+            for (int u = 0; u < 16; u++)
+            {
+                int3 local = ViewCoordinateUtility.ViewToWorld(new ViewCoordinate(u, 0, 0), new int2(16), direction);
+                bool xAxis = direction == ViewDirection.Front || direction == ViewDirection.Back;
+                float horizontal = xAxis ? coordinate.x * 16 + local.x + .5f : coordinate.y * 16 + local.z + .5f;
+                float oldCenter = xAxis ? previous.x : previous.z;
+                float newCenter = xAxis ? current.x : current.z;
+                if ((previousClipping && math.abs(horizontal - oldCenter) <= ProjectionClipRadius + 2) ||
+                    (currentClipping && math.abs(horizontal - newCenter) <= ProjectionClipRadius + 2))
+                { first = math.min(first, u); last = math.max(last, u); }
+            }
+            return last < first ? new int2(0, 0) : new int2((int)first, (int)(last - first + 1));
+        }
+        public static bool UsesLocalProjectionOverlay(bool enabled, bool candidate, float2 cellCenter, float2 playerCenter) =>
+            enabled && candidate && math.distancesq(cellCenter, playerCenter) < ProjectionClipRadius * ProjectionClipRadius;
+        // Cut faces close the boundary of the clipping volume. Their quad centres can lie
+        // outside the circle even though the face itself forms its edge; never leave them in the base layer.
+        public static bool UsesLocalProjectionLayer(bool enabled, ProjectedCellData cell, bool candidate,
+            float2 cellCenter, float2 playerCenter) => enabled && (cell.IsCutTop || cell.IsCutSide ||
+                UsesLocalProjectionOverlay(true, candidate, cellCenter, playerCenter));
 
         public static void Build(
             DynamicBuffer<BlockData> blocks,
@@ -40,6 +74,27 @@ namespace Game.World.Rendering
             bool projectionClippingEnabled,
             float3 playerPosition)
         {
+            BuildColumns(blocks, chunkCoordinate, blockAccessor, writer, waterWriter, direction,
+                projectionClippingEnabled, playerPosition, 0, int.MaxValue);
+        }
+
+        // Horizontal output selection only. Depth and height traversal remain complete,
+        // so a local screen region never implies a local world-space background limit.
+        // The caller owns output clearing/merging and must use fresh occupancy for this build.
+        public static void BuildColumns(
+            DynamicBuffer<BlockData> blocks,
+            int2 chunkCoordinate,
+            ChunkBlockAccessor blockAccessor,
+            ProjectionWriter writer,
+            WaterProjectionWriter waterWriter,
+            ViewDirection direction,
+            bool projectionClippingEnabled,
+            float3 playerPosition,
+            int firstColumn,
+            int columnCount,
+            int firstRow = -10000,
+            int lastRow = 10000)
+        {
             int2 chunkSizeXZ = new int2(
                 ChunkSettings.SizeX,
                 ChunkSettings.SizeZ);
@@ -55,7 +110,9 @@ namespace Game.World.Rendering
                 blockAccessor.HasSplitCells(chunkCoordinate + new int2(away.x, away.z)) ||
                 (projectionClippingEnabled && GetClippingHeight(playerPosition) % 1f != 0f);
 
-            for (int u = 0; u < bounds.Width; u++)
+            int startColumn = math.clamp(firstColumn, 0, bounds.Width);
+            int endColumn = startColumn + math.min(math.max(columnCount, 0), bounds.Width - startColumn);
+            for (int u = startColumn; u < endColumn; u++)
             {
                 for (int h = bounds.Height - 1; h >= 0; h--)
                 {
@@ -64,6 +121,8 @@ namespace Game.World.Rendering
                     for (int v = bounds.Depth - 1; v >= 0; v--)
                     {
                         int projectionY = heightFromTop * 2 + v;
+                        // Emission may touch neighbouring half-height rows (caps and side halves).
+                        if (projectionY < firstRow - 3 || projectionY > lastRow + 3) continue;
 
                         ViewCoordinate view = new ViewCoordinate(
                             u,

@@ -74,3 +74,18 @@ Add-Type -Path $mathPath
 $refs = @((Get-ChildItem (Join-Path $PSHOME 'ref') -Filter '*.dll').FullName) + $mathPath
 Add-Type -TypeDefinition ($adapter+$geometry+'public static class Current { const byte MaximumLight=15,SpreadAttenuation=2;'+$methods+'}public static class Previous { const byte MaximumLight=15,SpreadAttenuation=2;'+$old+'}'+$tests) -ReferencedAssemblies $refs
 [SkyChecks]::Run()
+$update=$source.Substring($source.IndexOf('public void OnUpdate'),$source.IndexOf('        private static void Calculate(')-$source.IndexOf('public void OnUpdate'))
+if ($update -match 'DynamicBuffer<VoxelLightData>|GetBufferLookup<VoxelLightData>\(' -or
+ ([regex]::Matches($update,'state.EntityManager.GetBuffer<VoxelLightData>\(entity\)')).Count -ne 2 -or
+ $update.IndexOf('state.EntityManager.GetBuffer<VoxelLightData>(entity)') -lt $update.IndexOf('if (!needsSkyLight.ValueRO')) {
+ throw 'Skylight must acquire writable voxel buffers only after a pending-work guard, not through broad query access'
+}
+foreach($path in @('Scripts/World/Lighting/Systems/ChunkLightingSystem.cs','Scripts/World/Lighting/Systems/ChunkLocalLightUpdateSystem.cs')) {
+ $reader=Get-Content (Join-Path $root $path) -Raw
+ if ($reader -notmatch 'GetBufferLookup<VoxelLightData>\(true\)' -or
+  $reader -match 'SystemAPI.Query<[^;]*?DynamicBuffer<VoxelLightData>' -or
+  $reader -match 'GetBufferLookup<VoxelLightData>\(\)') {
+  throw "Projection light consumer must not acquire writable voxel buffers: $path"
+ }
+}
+'PASS voxel-light access contracts: lazy writable skylight buffers and read-only projection light lookups. Actual ECS change-version/FPS validation remains in Unity.'

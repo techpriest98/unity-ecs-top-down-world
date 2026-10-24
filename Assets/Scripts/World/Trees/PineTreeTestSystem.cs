@@ -376,6 +376,7 @@ namespace Game.World.Trees
         protected override void OnUpdate()
         {
             LastVisibleTreeCount = LastDrawCallCount = 0;
+            if (!WorldRenderDebug.Enabled) return;
             var config = PineTreeTest.Active;
             resources = World.GetExistingSystemManaged<TreeResourcePreparationSystem>();
             if (config == null || resources == null || !resources.Ready) return;

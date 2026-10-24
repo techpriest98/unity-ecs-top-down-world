@@ -66,6 +66,7 @@ namespace Game.Items
 
         protected override void OnUpdate()
         {
+            if (!Game.World.Rendering.WorldRenderDebug.Enabled) { LastVisibleItemCount = LastDrawCallCount = 0; return; }
             using var renderMarker = RenderMarker.Auto();
             if (material == null) material = Resources.Load<Material>("WorldItemSprite");
             if (material == null) return;
