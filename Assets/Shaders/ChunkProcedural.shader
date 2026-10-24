@@ -674,6 +674,7 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
                     input.ProjectionPosition, true, color.rgb);
                 color.rgb = lerp(color.rgb, foam.rgb, foam.a);
 
+
                 // ========================================================
                 // Lighting
                 // ========================================================

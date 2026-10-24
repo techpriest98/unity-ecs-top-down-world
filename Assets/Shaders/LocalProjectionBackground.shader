@@ -24,7 +24,10 @@ Shader "Game/World/LocalProjectionBackground"
                 output.position = TransformWorldToHClip(float3(rect.xy + corner * rect.zw, 0));
                 return output;
             }
-            float4 Frag(Varyings input) : SV_Target { return float4(0,0,0,1); }
+            float4 Frag(Varyings input) : SV_Target
+            {
+                return float4(0,0,0,1);
+            }
             ENDHLSL
         }
     }

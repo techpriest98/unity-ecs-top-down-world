@@ -325,7 +325,7 @@ namespace Game.World.Rendering
                     playerPosition,
                     facePosition,
                     belowWorld.y,
-                    direction))
+                    direction, chunkCoordinate, projectionX, projectionY))
             {
                 writer.RecordClippedCell(projectionX, projectionY);
                 return;
@@ -387,7 +387,7 @@ namespace Game.World.Rendering
                     playerPosition,
                     facePosition,
                     blockWorld.y,
-                    direction))
+                    direction, chunkCoordinate, projectionX, projectionY - (half ? 1 : 2), !half && !upperOnly ? projectionY - 1 : -1))
             {
                 writer.RecordClippedCell(projectionX, checked((ushort)(projectionY - (half ? 1 : 2))));
                 if (!half && !upperOnly) writer.RecordClippedCell(projectionX, checked((ushort)(projectionY - 1)));
@@ -503,7 +503,7 @@ namespace Game.World.Rendering
             if (half != halfOnly) return;
             if (half) projectionY++;
             if (ShouldClipOpaqueFace(clipping, player,
-                    GetGlobalPosition(chunkCoordinate, belowWorld, half ? .5f : 1f), belowWorld.y, direction)) return;
+                    GetGlobalPosition(chunkCoordinate, belowWorld, half ? .5f : 1f), belowWorld.y, direction, chunkCoordinate, projectionX, projectionY)) return;
 
             int3 awayFromCamera =
                 ViewDirectionUtility.GetAwayFromCameraOffset(direction);
@@ -572,7 +572,7 @@ namespace Game.World.Rendering
             bool half = block.Shape == BlockShape.LowerHalf;
             if (half && upperOnly) return;
             if (ShouldClipOpaqueFace(clipping, player,
-                    GetGlobalPosition(chunkCoordinate, blockWorld, half ? .25f : .5f), blockWorld.y, direction)) return;
+                    GetGlobalPosition(chunkCoordinate, blockWorld, half ? .25f : .5f), blockWorld.y, direction, chunkCoordinate, projectionX, projectionY - (half ? 1 : 2), !half && !upperOnly ? projectionY - 1 : -1)) return;
 
             // Центр передньої грані, повернутої до камери.
             float3 faceCenter =
@@ -746,10 +746,22 @@ namespace Game.World.Rendering
             ushort x, ushort y, bool clipping, float3 player, ViewDirection direction)
         {
             if (!clipping) return;
-            if (ShouldClipOpaqueFace(clipping, player, GetGlobalPosition(coordinate, position, .25f), position.y, direction))
+            if (ShouldClipOpaqueFace(clipping, player, GetGlobalPosition(coordinate, position, .25f), position.y, direction, coordinate, x, y))
                 writer.RecordClippedCell(x, y);
-            if (y > 0 && ShouldClipOpaqueFace(clipping, player, GetGlobalPosition(coordinate, position, .75f), position.y, direction))
+            if (y > 0 && ShouldClipOpaqueFace(clipping, player, GetGlobalPosition(coordinate, position, .75f), position.y, direction, coordinate, x, y - 1))
                 writer.RecordClippedCell(x, (ushort)(y - 1));
+        }
+
+        // Match the current tile-region contract; baseline traversal and geometry sampling stay unoptimized.
+        private static bool IsLocalProjectionCell(int2 coordinate, int x, int y, float3 player, ViewDirection direction)
+        {
+            if (y < 0) return false;
+            float3 origin = ChunkRenderPositionUtility.GetPosition(coordinate, direction, 1, .5f, 0);
+            float2 tileCenter = new float2(origin.x - ChunkSettings.SizeX * .5f + x + .5f,
+                origin.y + (ChunkSettings.SizeY * 2 + ChunkSettings.SizeZ) * .5f - (y + .5f) * .5f);
+            float2 center = WorldPositionProjectionUtility.Project(player + new float3(0, PlayerClipCenterOffset, 0), direction);
+            float2 nearest = math.max(math.abs(tileCenter - center) - new float2(.5f, .25f), float2.zero);
+            return math.lengthsq(nearest) < ProjectionClipRadius * ProjectionClipRadius;
         }
 
         private static bool ShouldClipOpaqueFace(
@@ -757,7 +769,7 @@ namespace Game.World.Rendering
             float3 playerPosition,
             float3 facePosition,
             int blockY,
-            ViewDirection direction)
+            ViewDirection direction, int2 coordinate, int projectionX, int projectionY, int secondRow = -1)
         {
             if (!projectionClippingEnabled)
                 return false;
@@ -773,12 +785,8 @@ namespace Game.World.Rendering
             if (depthDistance <= 0)
                 return false;
 
-            return IsInsideClippingRadius(
-                playerPosition,
-                facePosition,
-                direction,
-                PlayerClipCenterOffset,
-                ProjectionClipRadius);
+            return IsLocalProjectionCell(coordinate, projectionX, projectionY, playerPosition, direction) ||
+                (secondRow >= 0 && IsLocalProjectionCell(coordinate, projectionX, secondRow, playerPosition, direction));
         }
 
         private static void TryEmitCutTop(
@@ -810,7 +818,7 @@ namespace Game.World.Rendering
                 if (!IsOpaque(contents.Lower.Id) || !IsOpaque(contents.Upper.Id) || projectionY == 0 ||
                     upperWorld.y + 1 >= ChunkSettings.SizeY ||
                     !ShouldClipOpaqueFace(true, playerPosition, GetGlobalPosition(chunkCoordinate, upperWorld, .75f),
-                        upperWorld.y, direction)) return;
+                        upperWorld.y, direction, chunkCoordinate, projectionX, projectionY - 1)) return;
                 writer.TryAddCutTop(new BlockData(contents.Lower.Id, contents.Lower.Durability, BlockShape.LowerHalf),
                     (ushort)ChunkUtility.ToIndex(upperWorld + new int3(0, 1, 0)), projectionX, (ushort)(projectionY - 1));
                 return;
@@ -846,7 +854,7 @@ namespace Game.World.Rendering
                     playerPosition,
                     upperFacePosition,
                     upperWorld.y,
-                    direction))
+                    direction, chunkCoordinate, projectionX, projectionY))
             {
                 return;
             }
@@ -896,12 +904,8 @@ namespace Game.World.Rendering
                 behindWorld,
                 0.5f);
 
-            if (!IsInsideClippingRadius(
-                    playerPosition,
-                    facePosition,
-                    direction,
-                    PlayerClipCenterOffset,
-                    ProjectionClipRadius))
+            if (!IsLocalProjectionCell(chunkCoordinate, projectionX, projectionY - (half ? 1 : 2), playerPosition, direction) &&
+                (half || upperOnly || !IsLocalProjectionCell(chunkCoordinate, projectionX, projectionY - 1, playerPosition, direction)))
             {
                 return;
             }

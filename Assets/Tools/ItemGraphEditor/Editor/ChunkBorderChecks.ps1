@@ -67,12 +67,20 @@ foreach ($path in @('Scripts/World/Rendering/ChunkProjectionSystem.cs',
  'Scripts/World/Lighting/Systems/ChunkLightingSystem.cs',
  'Scripts/World/Rendering/ChunkProceduralRenderSystem.cs',
  'Scripts/World/Rendering/ChunkProceduralRenderer.cs',
- 'Scripts/World/Trees/PineTreeTestSystem.cs',
- 'Scripts/Items/WorldItemRenderSystem.cs',
  'Scripts/Player/Visual/PlayerSunShadowRenderSystem.cs')) {
  if ((Get-Content (Join-Path $root $path) -Raw) -notmatch '!.*WorldRenderDebug\.(Enabled|ProjectionRequired)') {
   throw "Missing world render gate: $path"
  }
+}
+$treeRendering = Get-Content (Join-Path $root 'Scripts/World/Trees/PineTreeTestSystem.cs') -Raw
+if ($treeRendering -notmatch 'bool worldVisible = WorldRenderDebug.Enabled;' -or
+    $treeRendering -notmatch 'if \(!worldVisible && !hasLocal\)') {
+ throw 'Trees must follow the world gate while supporting the independent local layer.'
+}
+$itemRendering = Get-Content (Join-Path $root 'Scripts/Items/WorldItemRenderSystem.cs') -Raw
+if ($itemRendering -notmatch 'bool worldVisible = WorldRenderDebug.Enabled;' -or
+    $itemRendering -notmatch 'if \(!worldVisible && !hasLocal\)') {
+ throw 'Items must follow the world gate while supporting the independent local layer.'
 }
 'PASS F10 input, visual consumer gates and forced projection refresh on resume (source contracts).'
 if ($gate -notmatch 'ProjectionRequired => Enabled \|\| OverlayRequested' -or

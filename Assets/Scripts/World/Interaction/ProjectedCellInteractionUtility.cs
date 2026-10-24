@@ -53,7 +53,7 @@ namespace Game.World.Interaction
             in SelectedProjectedCell selection,
             out int3 worldPosition)
         {
-            if (!selection.IsValid)
+            if (!selection.IsValid || selection.IsCutSurface)
             {
                 worldPosition = int3.zero;
                 return false;

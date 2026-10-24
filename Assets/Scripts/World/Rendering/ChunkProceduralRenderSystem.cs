@@ -5,6 +5,7 @@ using Game.World.Lighting;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Jobs;
 using UnityEngine;
 
 namespace Game.World.Rendering
@@ -185,6 +186,12 @@ namespace Game.World.Rendering
                 return;
             }
 
+            // Existing GPU ranges stay valid until the next full snapshot. Refresh
+            // ready chunks even while unrelated chunks are being built or streamed.
+            bool rangesUpToDate = !transitionCompleted && uploadedRenderer == renderer &&
+                uploadedDirection == direction && TryUpdateLightingRanges(renderer);
+            if (!centerChanged && rangesUpToDate) return;
+
             // All chunks share one mask and GPU upload. Publishing a partial
             // rebuild can remove an old mask contributor before its replacement
             // is ready, exposing unclipped geometry for a frame.
@@ -195,10 +202,6 @@ namespace Game.World.Rendering
             {
                 return;
             }
-
-            if (!centerChanged && !transitionCompleted && uploadedRenderer == renderer &&
-                uploadedDirection == direction &&
-                TryUpdateLightingRanges(renderer)) return;
 
             // Reuse per-chunk CPU arrays on geometry rebuilds; do not create
             // a managed copy of the entire world on each clipping change.
@@ -480,9 +483,10 @@ namespace Game.World.Rendering
         private bool TryUpdateLightingRanges(ChunkProceduralRenderer renderer)
         {
             using var marker = LightRangeMarker.Auto();
-            // Validate the complete layout BEFORE publishing any range. A
-            // removal, clipping change or rebuilt geometry takes the old atomic
-            // full-snapshot path instead (including a changed clip mask).
+            // Validate each chunk against its OWN published range. A changed or
+            // unfinished neighbour must not prevent safe lighting-only uploads.
+            using var ready = new NativeParallelHashSet<Entity>(math.max(uploadedChunks.Count, 1), Allocator.Temp);
+            bool layoutReady = true;
             int count = 0;
             foreach (var (chunk, clipped, cells, water, caps, entity) in SystemAPI.Query<
                 RefRO<ChunkComponent>, EnabledRefRO<ChunkShaderClippingEnabled>, DynamicBuffer<ProjectedCellData>,
@@ -495,22 +499,28 @@ namespace Game.World.Rendering
                     snapshot.Opaque.Length != cells.Length || snapshot.Water.Length != water.Length ||
                     snapshot.ClipCells.Length != caps.Length ||
                     !renderer.CanUpdateRange(snapshot.OpaqueStart, cells.Length, snapshot.Clipped, false) ||
-                    !renderer.CanUpdateRange(snapshot.WaterStart, water.Length, snapshot.Clipped, true)) return false;
+                    !renderer.CanUpdateRange(snapshot.WaterStart, water.Length, snapshot.Clipped, true))
+                { layoutReady = false; continue; }
+                if (EntityManager.IsComponentEnabled<ChunkNeedsProjection>(entity) ||
+                    EntityManager.IsComponentEnabled<ChunkNeedsLighting>(entity))
+                { layoutReady = false; continue; }
                 if (!EntityManager.IsComponentEnabled<ChunkNeedsRender>(entity)) continue;
+                bool sameGeometry = true;
                 for (int i = 0; i < cells.Length; i++)
-                    if (!snapshot.Opaque[i].HasSameGeometry(cells[i].BlockData, cells[i].Position, cells[i].FaceData, cells[i].SourceAirIndex, cells[i].TopFrontMaterial)) return false;
+                    if (!snapshot.Opaque[i].HasSameGeometry(cells[i].BlockData, cells[i].Position, cells[i].FaceData, cells[i].SourceAirIndex, cells[i].TopFrontMaterial)) { sameGeometry = false; break; }
                 for (int i = 0; i < water.Length; i++)
-                    if (!snapshot.Water[i].HasSameGeometry(water[i].Value.BlockData, water[i].Value.Position, water[i].Value.FaceData, water[i].Value.SourceAirIndex, water[i].Value.TopFrontMaterial)) return false;
+                    if (!snapshot.Water[i].HasSameGeometry(water[i].Value.BlockData, water[i].Value.Position, water[i].Value.FaceData, water[i].Value.SourceAirIndex, water[i].Value.TopFrontMaterial)) { sameGeometry = false; break; }
                 for (int i = 0; i < caps.Length; i++)
-                    if (snapshot.ClipCells[i].X != caps[i].X || snapshot.ClipCells[i].Y != caps[i].Y) return false;
+                    if (snapshot.ClipCells[i].X != caps[i].X || snapshot.ClipCells[i].Y != caps[i].Y) { sameGeometry = false; break; }
+                if (!sameGeometry) { layoutReady = false; continue; }
+                ready.Add(entity);
             }
-            if (count != uploadedChunks.Count) return false;
             if (!lightUploadScratch.IsCreated) lightUploadScratch = new NativeList<ProjectedCellRenderData>(1024, Allocator.Persistent);
 
             using var dirty = dirtyQuery.ToEntityArray(Allocator.Temp);
             foreach (var entity in dirty)
             {
-                if (!uploadedChunks.TryGetValue(entity, out var snapshot)) continue;
+                if (!ready.Contains(entity) || !uploadedChunks.TryGetValue(entity, out var snapshot)) continue;
                 var cells = EntityManager.GetBuffer<ProjectedCellData>(entity, true);
                 var water = EntityManager.GetBuffer<ProjectedWaterCellData>(entity, true);
                 lightUploadScratch.Clear();
@@ -541,7 +551,7 @@ namespace Game.World.Rendering
                 }
                 EntityManager.SetComponentEnabled<ChunkNeedsRender>(entity, false);
             }
-            return true;
+            return layoutReady && count == uploadedChunks.Count;
         }
 
         private static bool UpdateLightRecord(ref ProjectedCellRenderData record, in ProjectedCellData cell)
@@ -555,6 +565,29 @@ namespace Game.World.Rendering
 
 namespace Game.World.Rendering
 {
+    [Unity.Burst.BurstCompile]
+    internal struct LocalProjectionBuildJob : IJob
+    {
+        [ReadOnly] public DynamicBuffer<Game.World.Blocks.BlockData> Blocks;
+        [ReadOnly] public ChunkBlockAccessor Accessor;
+        public ProjectionOccupancy Occupancy, WaterOccupancy;
+        public DynamicBuffer<ProjectedCellData> Solids;
+        public DynamicBuffer<ProjectedWaterCellData> Water;
+        public DynamicBuffer<ProjectedClipCell> Clips;
+        public int2 Coordinate;
+        public ViewDirection View;
+        public float3 Feet;
+        public int FirstColumn, ColumnCount, FirstRow, LastRow;
+        public void Execute()
+        {
+            // Construct shared occupancy writers here so job validation sees each container only once.
+            var writer = new ProjectionWriter(Occupancy, Solids, Clips);
+            var waterWriter = new WaterProjectionWriter(Occupancy, WaterOccupancy, Water);
+            ChunkProjectionBuilder.BuildColumns(Blocks, Coordinate, Accessor, writer,
+                waterWriter, View, true, Feet, FirstColumn, ColumnCount, FirstRow, LastRow);
+        }
+    }
+
     // Owns scratch projection buffers, never the projection buffers of terrain chunks.
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class LocalProjectionRenderSystem : SystemBase
@@ -589,7 +622,8 @@ namespace Game.World.Rendering
         {
             var renderer = LocalProjectionRenderer.Instance;
             if (renderer == null || !renderer.IsActive)
-            { published = false; return; }
+            { if (renderer != null) renderer.Invalidate(); published = false; return; }
+            renderer.Invalidate();
             if (SystemAPI.TryGetSingleton<ViewDirectionTransitionComponent>(out var transition) && transition.IsActive) return;
             float3 feet = SystemAPI.GetSingleton<PlayerWorldPosition>().Value;
             var view = SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
@@ -599,7 +633,7 @@ namespace Game.World.Rendering
             int3 cell = (int3)math.floor(feet);
             cell.y = (int)(ChunkProjectionBuilder.GetClippingHeight(feet) * 2);
             using var entities = sources.ToEntityArray(Allocator.Temp);
-            using var chunks = new NativeParallelHashMap<int2, Entity>(math.max(entities.Length, 1), Allocator.Temp);
+            using var chunks = new NativeParallelHashMap<int2, Entity>(math.max(entities.Length, 1), Allocator.TempJob);
             var voxelLights = GetBufferLookup<VoxelLightData>(true);
             uint geometry = (uint)entities.Length;
             bool lightChanged = false;
@@ -614,9 +648,11 @@ namespace Game.World.Rendering
             }
             uint sunHash = math.hash(new float4(sun.ActiveLight.DirectionToLight, sun.ActiveLight.Intensity)) ^ (uint)sun.ActiveMaskIndex;
             if (published && lastRenderer == renderer && math.all(lastCell == cell) && math.all(lastRegionStep == regionStep) && lastView == view &&
-                lastGeometry == geometry && lastSun == sunHash && !lightChanged) return;
+                lastGeometry == geometry && lastSun == sunHash && !lightChanged)
+            { renderer.MarkReady(); return; }
 
             using var marker = BuildMarker.Auto();
+            renderer.BeginOcclusionSnapshot(feet, view);
             var blocks = GetBufferLookup<Game.World.Blocks.BlockData>(true);
             var accessor = new ChunkBlockAccessor(chunks, blocks, GetBufferLookup<Game.World.Blocks.SplitCellData>(true),
                 GetBufferLookup<Game.World.Blocks.ChunkSurfaceSample>(true));
@@ -626,62 +662,70 @@ namespace Game.World.Rendering
             var clips = EntityManager.GetBuffer<ProjectedClipCell>(scratch);
             using var opaqueOutput = new NativeList<ProjectedCellRenderData>(Allocator.Temp);
             using var waterOutput = new NativeList<ProjectedCellRenderData>(Allocator.Temp);
-            var occupancy = new ProjectionOccupancy(4096, Allocator.Temp);
-            var waterOccupancy = new ProjectionOccupancy(4096, Allocator.Temp);
+            using var occupancy = new ProjectionOccupancy(4096, Allocator.TempJob);
+            using var waterOccupancy = new ProjectionOccupancy(4096, Allocator.TempJob);
             var directionCache = new LocalLightDirectionCache(1024, Allocator.Temp);
             using var coverage = new NativeList<float4>(Allocator.Temp);
             int2 coverageMin = new int2((int)math.floor(center.x - 5), (int)math.floor((center.y - 5) * 2));
             int2 coverageSize = new int2(12, 24);
             int caps = 0;
-            foreach (var entity in entities)
+            try
             {
-                // Generation publishes buffers in stages; never index partially initialized data.
-                if (blocks[entity].Length != ChunkSettings.BlockCount || voxelLights[entity].Length != ChunkSettings.BlockCount)
-                    continue;
-                int2 coordinate = EntityManager.GetComponentData<ChunkComponent>(entity).Coordinate;
-                float3 position = ChunkRenderPositionUtility.GetPosition(coordinate, view, 1, .5f, .01f);
-                float left = position.x - 8;
-                float top = position.y + (ChunkSettings.SizeY * 2 + ChunkSettings.SizeZ) * .5f;
-                int first = math.max(0, (int)math.floor(center.x - ChunkProjectionBuilder.ProjectionClipRadius - left) - 1);
-                int end = math.min(16, (int)math.ceil(center.x + ChunkProjectionBuilder.ProjectionClipRadius - left) + 1);
-                if (end <= first) continue;
-                int firstRow = (int)math.floor((top - center.y - ChunkProjectionBuilder.ProjectionClipRadius) * 2) - 1;
-                int lastRow = (int)math.ceil((top - center.y + ChunkProjectionBuilder.ProjectionClipRadius) * 2) + 1;
-                solids.Clear(); water.Clear(); clips.Clear(); occupancy.Clear(); waterOccupancy.Clear();
-                var writer = new ProjectionWriter(occupancy, solids, clips);
-                var waterWriter = new WaterProjectionWriter(occupancy, waterOccupancy, water);
-                using (GeometryMarker.Auto())
-                    ChunkProjectionBuilder.BuildColumns(blocks[entity], coordinate, accessor, writer, waterWriter, view,
-                        true, feet, first, end - first, firstRow, lastRow);
-                // Build has a conservative neighbour margin. Keep only whole tiles touching the region,
-                // before calculating their lighting or uploading them.
-                int kept = 0;
-                for (int i = 0; i < solids.Length; i++)
+                foreach (var entity in entities)
                 {
-                    var face = solids[i];
-                    if (TouchesRegion(face, left, top, center)) solids[kept++] = face;
-                }
-                solids.ResizeUninitialized(kept);
-                kept = 0;
-                for (int i = 0; i < water.Length; i++)
-                {
-                    var face = water[i];
-                    if (TouchesRegion(face.Value, left, top, center)) water[kept++] = face;
-                }
-                water.ResizeUninitialized(kept);
-                using (LightingMarker.Auto())
-                    ChunkLightingSystem.UpdateChunkFully(solids, water, voxelLights[entity], coordinate, accessor, lightAccessor,
-                        view, sun, ref directionCache);
-                foreach (var face in solids)
+                    // Generation publishes buffers in stages; never index partially initialized data.
+                    if (blocks[entity].Length != ChunkSettings.BlockCount || voxelLights[entity].Length != ChunkSettings.BlockCount)
+                        continue;
+                    int2 coordinate = EntityManager.GetComponentData<ChunkComponent>(entity).Coordinate;
+                    float3 position = ChunkRenderPositionUtility.GetPosition(coordinate, view, 1, .5f, .01f);
+                    float left = position.x - 8;
+                    float top = position.y + (ChunkSettings.SizeY * 2 + ChunkSettings.SizeZ) * .5f;
+                    int first = math.max(0, (int)math.floor(center.x - ChunkProjectionBuilder.ProjectionClipRadius - left) - 1);
+                    int end = math.min(16, (int)math.ceil(center.x + ChunkProjectionBuilder.ProjectionClipRadius - left) + 1);
+                    if (end <= first) continue;
+                    int firstRow = (int)math.floor((top - center.y - ChunkProjectionBuilder.ProjectionClipRadius) * 2) - 1;
+                    int lastRow = (int)math.ceil((top - center.y + ChunkProjectionBuilder.ProjectionClipRadius) * 2) + 1;
+                    solids.Clear(); water.Clear(); clips.Clear(); occupancy.Clear(); waterOccupancy.Clear();
+                    using (GeometryMarker.Auto())
+                        new LocalProjectionBuildJob
+                        {
+                            Blocks = blocks[entity], Accessor = accessor, Occupancy = occupancy, WaterOccupancy = waterOccupancy,
+                            Solids = solids, Water = water, Clips = clips,
+                            Coordinate = coordinate, View = view, Feet = feet,
+                            FirstColumn = first, ColumnCount = end - first, FirstRow = firstRow, LastRow = lastRow
+                        }.Run();
+                    // Build has a conservative neighbour margin. Keep only whole tiles touching the region,
+                    // before calculating their lighting or uploading them.
+                    int kept = 0;
+                    for (int i = 0; i < solids.Length; i++)
                     {
-                        opaqueOutput.Add(Pack(face, position));
-                        if (face.IsCutTop || face.IsCutSide) caps++;
+                        var face = solids[i];
+                        if (TouchesRegion(face, left, top, center)) solids[kept++] = face;
                     }
-                foreach (var face in water)
-                {
-                    waterOutput.Add(Pack(face.Value, position));
+                    solids.ResizeUninitialized(kept);
+                    kept = 0;
+                    for (int i = 0; i < water.Length; i++)
+                    {
+                        var face = water[i];
+                        if (TouchesRegion(face.Value, left, top, center)) water[kept++] = face;
+                    }
+                    water.ResizeUninitialized(kept);
+                    using (LightingMarker.Auto())
+                        ChunkLightingSystem.UpdateChunkFully(solids, water, voxelLights[entity], coordinate, accessor, lightAccessor,
+                            view, sun, ref directionCache);
+                    renderer.AddOcclusionFaces(coordinate, solids, water);
+                    foreach (var face in solids)
+                        {
+                            opaqueOutput.Add(Pack(face, position));
+                            if (face.IsCutTop || face.IsCutSide) caps++;
+                        }
+                    foreach (var face in water)
+                    {
+                        waterOutput.Add(Pack(face.Value, position));
+                    }
                 }
             }
+            finally { directionCache.Dispose(); }
             // Cover the full selected region, including empty boundary tiles.
             // Never substitute base-world geometry for missing local results.
             for (int y = 0; y < coverageSize.y; y++)
@@ -692,13 +736,13 @@ namespace Game.World.Rendering
                     if (ChunkProjectionBuilder.TileTouchesLocalProjection(lower + new float2(.5f, .25f), center))
                         coverage.Add(new float4(lower, 1, .5f));
                 }
-            directionCache.Dispose(); occupancy.Dispose(); waterOccupancy.Dispose();
             // Include the complete build window and neighbouring emitted side/cap rows.
             var bounds = new Bounds(new Vector3(center.x, center.y, 0), new Vector3(20, 20, 1000));
             using (UploadMarker.Auto())
             {
                 renderer.UploadLocalProjection(opaqueOutput.AsArray(), waterOutput.AsArray(), bounds, caps);
                 renderer.UploadLocalCoverage(coverage.AsArray(), coverageMin, coverageSize);
+                renderer.MarkReady();
             }
             lastRenderer = renderer; lastCell = cell; lastRegionStep = regionStep; lastView = view; lastGeometry = geometry; lastSun = sunHash; published = true;
         }
@@ -715,10 +759,32 @@ namespace Game.World.Rendering
         private static bool TouchesRegion(ProjectedCellData cell, float left, float top, float2 center) =>
             ChunkProjectionBuilder.TileTouchesLocalProjection(
                 new float2(left + cell.ProjectionX + .5f, top - (cell.ProjectionY + .5f) * .5f), center);
-        protected override void OnStopRunning() { published = false; }
+        protected override void OnStopRunning()
+        {
+            published = false;
+            if (lastRenderer != null) lastRenderer.Invalidate();
+        }
         protected override void OnDestroy()
         {
             if (EntityManager.Exists(scratch)) EntityManager.DestroyEntity(scratch);
+        }
+    }
+
+    // LateUpdate precedes ECS presentation in Unity's player loop. Submit both
+    // layers only after publication so copied draw bounds/counts cannot refer to
+    // an older state than the mutable coverage texture and GPU buffers.
+    [UpdateInGroup(typeof(PresentationSystemGroup), OrderLast = true)]
+    [UpdateAfter(typeof(LocalProjectionRenderSystem))]
+    [UpdateAfter(typeof(PlayerSunShadowRenderSystem))]
+    public partial class WorldProjectionDrawSystem : SystemBase
+    {
+        protected override void OnUpdate()
+        {
+            var terrain = ChunkProceduralRenderer.Instance;
+            if (terrain == null || !terrain.isActiveAndEnabled) return;
+            terrain.SubmitFrame();
+            var local = LocalProjectionRenderer.Instance;
+            if (local != null) local.SubmitFrame();
         }
     }
 }

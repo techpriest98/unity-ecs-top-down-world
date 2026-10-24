@@ -115,7 +115,7 @@ namespace Game.World.Rendering
             BuildFogSkyMask(height);
             // ZTest Equal + stencil marks only already-visible high terrain.
             DrawFogMask(projectedCellsBuffer, projectedCellsCount, opaqueWorldBounds, false, height);
-            if (LocalProjectionRenderer.Instance is { IsActive: true } local)
+            if (LocalProjectionRenderer.Instance is { IsReady: true } local)
             {
                 DrawFogMask(local.OpaqueBuffer, local.OpaqueCount, local.WorldBounds, false, height);
                 DrawFogMask(local.WaterBuffer, local.WaterCount, local.WorldBounds, false, height, true);
@@ -178,7 +178,7 @@ namespace Game.World.Rendering
             fogSkyCommands.SetRenderTarget(fogSkyTexture);
             fogSkyCommands.ClearRenderTarget(true, true, Color.white);
             DrawFogMask(projectedCellsBuffer, projectedCellsCount, opaqueWorldBounds, false, height, false, true);
-            if (LocalProjectionRenderer.Instance is { IsActive: true } local)
+            if (LocalProjectionRenderer.Instance is { IsReady: true } local)
             {
                 DrawFogMask(local.OpaqueBuffer, local.OpaqueCount, local.WorldBounds, false, height, false, true);
                 DrawFogMask(local.WaterBuffer, local.WaterCount, local.WorldBounds, false, height, true, true);

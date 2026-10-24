@@ -15,7 +15,6 @@ namespace Game.World.Interaction
         private const float CellWidth = 1f;
         private const float CellHeight = 0.5f;
         private const float DepthStep = 0.01f;
-        private const float MaximumInteractionDistance = 4f;
 
         private Camera playerCamera;
 
@@ -27,6 +26,13 @@ namespace Game.World.Interaction
         }
 
         protected override void OnUpdate()
+        {
+            RefreshSelection();
+        }
+
+        // Simulation consumers retain their normal update; the cursor also refreshes
+        // after local publication so its highlight matches this frame's visible tiles.
+        internal void RefreshSelection()
         {
             if (playerCamera == null)
             {
@@ -42,9 +48,8 @@ namespace Game.World.Interaction
                 SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
 
             Mouse mouse = Mouse.current;
-            foreach (var (playerPosition, selection) in
+            foreach (var selection in
                      SystemAPI.Query<
-                             RefRO<PlayerWorldPosition>,
                              RefRW<SelectedProjectedCell>>()
                          .WithAll<PlayerTag>())
             {
@@ -63,7 +68,6 @@ namespace Game.World.Interaction
 
                 FindSelection(
                     new float2(pointerWorld.x, pointerWorld.y),
-                    playerPosition.ValueRO.Value,
                     direction,
                     ref selection.ValueRW);
             }
@@ -71,91 +75,44 @@ namespace Game.World.Interaction
 
         private void FindSelection(
             float2 pointerWorld,
-            float3 playerPosition,
             ViewDirection direction,
             ref SelectedProjectedCell selection)
         {
-            float chunkWidth = ChunkSettings.SizeX * CellWidth;
-
-            float projectionHeight =
-                (ChunkSettings.SizeY * 2 + ChunkSettings.SizeZ) *
-                CellHeight;
-
-            float maximumDistanceSquared =
-                MaximumInteractionDistance *
-                MaximumInteractionDistance;
+            var localProjection = LocalProjectionRenderer.Instance;
+            int2 tileKey = new int2((int)math.floor(pointerWorld.x), (int)math.floor(pointerWorld.y * 2f));
+            if (localProjection == null || !localProjection.CoversTile(tileKey)) return;
 
             float nearestDepth = float.MaxValue;
+            // The completed local projection is the interaction boundary.
+            // Water wins equal-depth ties; hidden global geometry is never queried.
+            foreach (var face in localProjection.WaterSelectionFaces)
+                TrySelectLocalCell(face, pointerWorld, direction, ref nearestDepth, ref selection);
+            foreach (var face in localProjection.OcclusionFaces)
+                TrySelectLocalCell(face, pointerWorld, direction, ref nearestDepth, ref selection);
+        }
 
-            var waterLookup = SystemAPI.GetBufferLookup<ProjectedWaterCellData>(true);
-            foreach (var (chunk, projectedCells, entity) in
-                     SystemAPI.Query<
-                             RefRO<ChunkComponent>,
-                             DynamicBuffer<ProjectedCellData>>()
-                         .WithAll<ChunkGenerated>().WithEntityAccess())
-            {
-                float3 chunkPosition =
-                    ChunkRenderPositionUtility.GetPosition(
-                        chunk.ValueRO.Coordinate,
-                        direction,
-                        CellWidth,
-                        CellHeight,
-                        DepthStep);
-
-                float chunkLeft =
-                    chunkPosition.x -
-                    chunkWidth * 0.5f;
-
-                float chunkTop =
-                    chunkPosition.y +
-                    projectionHeight;
-
-                int cellX = (int)math.floor(
-                    (pointerWorld.x - chunkLeft) /
-                    CellWidth);
-
-                int cellY = (int)math.floor(
-                    (chunkTop - pointerWorld.y) /
-                    CellHeight);
-
-                if (cellX < 0 ||
-                    cellX >= ChunkSettings.SizeX ||
-                    cellY < 0 ||
-                    cellY >= ChunkSettings.SizeY * 2 + ChunkSettings.SizeZ)
-                {
-                    continue;
-                }
-
-                uint packedPosition =
-                    (uint)cellX |
-                    ((uint)cellY << 16);
-
-                // Water can overlap the visible floor. Equal-depth solid faces
-                // must not replace the water surface under the pointer.
-                if (waterLookup.HasBuffer(entity))
-                    foreach (var water in waterLookup[entity])
-                        TrySelectCell(water.Value, packedPosition, chunk.ValueRO.Coordinate,
-                            chunkPosition, playerPosition, maximumDistanceSquared, ref nearestDepth, ref selection);
-
-                foreach (var cell in projectedCells)
-                    TrySelectCell(cell, packedPosition, chunk.ValueRO.Coordinate,
-                        chunkPosition, playerPosition, maximumDistanceSquared, ref nearestDepth, ref selection);
-            }
+        private void TrySelectLocalCell(LocalProjectionRenderer.OcclusionFace face,
+            float2 pointer, ViewDirection direction,
+            ref float nearestDepth, ref SelectedProjectedCell selection)
+        {
+            float3 origin = ChunkRenderPositionUtility.GetPosition(face.Coordinate, direction, CellWidth, CellHeight, DepthStep);
+            int x = (int)math.floor((pointer.x - (origin.x - ChunkSettings.SizeX * CellWidth * .5f)) / CellWidth);
+            int y = (int)math.floor((origin.y + (ChunkSettings.SizeY * 2 + ChunkSettings.SizeZ) * CellHeight - pointer.y) / CellHeight);
+            if (x < 0 || x >= ChunkSettings.SizeX || y < 0 || y >= ChunkSettings.SizeY * 2 + ChunkSettings.SizeZ) return;
+            TrySelectCell(face.Cell, (uint)x | ((uint)y << 16), face.Coordinate, origin,
+                ref nearestDepth, ref selection);
         }
 
         private void TrySelectCell(in ProjectedCellData cell, uint packedPosition,
-            int2 coordinate, float3 chunkPosition, float3 playerPosition, float maximumDistanceSquared,
+            int2 coordinate, float3 chunkPosition,
             ref float nearestDepth, ref SelectedProjectedCell selection)
         {
             if (cell.Position != packedPosition) return;
-            int3 local = ChunkUtility.ToLocalPosition(cell.SourceAirIndex);
-            float3 source = new float3(coordinate.x * ChunkSettings.SizeX + local.x + 0.5f,
-                local.y + 0.5f, coordinate.y * ChunkSettings.SizeZ + local.z + 0.5f);
-            if (math.distancesq(playerPosition, source) > maximumDistanceSquared) return;
             float depth = playerCamera.WorldToScreenPoint(
                 new Vector3(chunkPosition.x, chunkPosition.y, chunkPosition.z)).z;
             if (depth < 0f || depth >= nearestDepth) return;
             nearestDepth = depth;
+            selection.IsCutSurface = cell.IsCutTop || cell.IsCutSide;
             selection.ChunkCoordinate = coordinate;
             selection.ProjectionPosition = cell.Position;
             selection.BlockData = cell.BlockData;

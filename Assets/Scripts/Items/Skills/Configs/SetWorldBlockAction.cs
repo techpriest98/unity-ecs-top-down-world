@@ -32,6 +32,10 @@ namespace Game.Items.Skills
 
         public bool CanSetAt(EntityManager manager, Entity player, EquipmentSlot slot, int item, int3 position, bool checkDistance = true)
         {
+            // Cut faces expose their owning solid for excavation only, not painting or placement.
+            if (manager.Exists(player) && manager.HasComponent<SelectedProjectedCell>(player) &&
+                manager.GetComponentData<SelectedProjectedCell>(player) is { IsValid: true, IsCutSurface: true } &&
+                !(BlockSource == BlockValueSource.Constant && ConstantBlock == BlockId.Air)) return false;
             if (!manager.Exists(player) || !manager.HasBuffer<PlayerEquipmentSlot>(player) ||
                 PlayerEquipmentUtility.GetItem(manager.GetBuffer<PlayerEquipmentSlot>(player, true), slot) != item ||
                 !CursorWorldUtility.TryGetBlock(manager, position, out _) ||

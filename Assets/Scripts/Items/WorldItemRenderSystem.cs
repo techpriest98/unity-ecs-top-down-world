@@ -10,6 +10,7 @@ using UnityEngine;
 namespace Game.Items
 {
     [UpdateInGroup(typeof(PresentationSystemGroup))]
+    [UpdateAfter(typeof(LocalProjectionRenderSystem))]
     public partial class WorldItemRenderSystem : SystemBase
     {
         private Material material;
@@ -66,7 +67,10 @@ namespace Game.Items
 
         protected override void OnUpdate()
         {
-            if (!Game.World.Rendering.WorldRenderDebug.Enabled) { LastVisibleItemCount = LastDrawCallCount = 0; return; }
+            var localProjection = LocalProjectionRenderer.Instance;
+            bool hasLocal = localProjection != null && localProjection.IsReady;
+            bool worldVisible = WorldRenderDebug.Enabled;
+            if (!worldVisible && !hasLocal) { LastVisibleItemCount = LastDrawCallCount = 0; return; }
             using var renderMarker = RenderMarker.Auto();
             if (material == null) material = Resources.Load<Material>("WorldItemSprite");
             if (material == null) return;
@@ -77,6 +81,7 @@ namespace Game.Items
             foreach (var item in SystemAPI.Query<RefRO<WorldItem>>())
                 if (item.ValueRO.Grounded) { hasGrounded = true; break; }
             occlusion.BeginFrame();
+            occlusion.SetProjectionLayers(hasLocal ? localProjection : null, worldVisible);
             seenChunks.Clear();
             if (hasGrounded)
             {
@@ -86,6 +91,10 @@ namespace Game.Items
                 var clippingLookup = SystemAPI.GetComponentLookup<ChunkShaderClippingEnabled>(true);
                 using var entities = chunks.ToEntityArray(Allocator.Temp);
                 ulong signature = (ulong)entities.Length;
+                if (hasLocal) signature = unchecked(signature +
+                    (ulong)localProjection.OcclusionRevision * 1099511628211UL +
+                    (ulong)(uint)localProjection.GetHashCode() * 14695981039346656037UL);
+                if (!worldVisible) signature ^= 0x9e3779b97f4a7c15UL;
                 foreach (var entity in entities)
                 {
                     var coordinate = chunkLookup[entity].Coordinate;
@@ -113,6 +122,7 @@ namespace Game.Items
                         occlusion.AddClipped(chunkLookup[entity].Coordinate, clipsLookup[entity]);
                     foreach (var entity in entities)
                         occlusion.AddFaces(chunkLookup[entity].Coordinate, cellsLookup[entity], clippingLookup.IsComponentEnabled(entity));
+                    occlusion.AddLocalFaces();
                 }
             }
             removedChunks.Clear();
@@ -135,6 +145,8 @@ namespace Game.Items
                 // Project() maps a floor-cell centre to the bottom of its Top quad.
                 // The 32x16 world sprite belongs at the centre of that quad.
                 projected.y += 0.25f;
+                if (!worldVisible && !localProjection.CoversTile(new int2(
+                    (int)math.floor(projected.x), (int)math.floor(projected.y * 2f)))) continue;
                 float width = sprite.rect.width / 32f, height = sprite.rect.height / 32f;
                 float left = projected.x - width * 0.5f;
                 float bottom = projected.y - height * 0.5f;
@@ -194,17 +206,26 @@ namespace Game.Items
             int3 key = new int3((int)math.floor(surface.x), (int)math.round(surface.y * 2f), (int)math.floor(surface.z));
             int2 coordinate = (int2)math.floor(new float2(key.x, key.z) /
                 new float2(ChunkSettings.SizeX, ChunkSettings.SizeZ));
-            if (!lightingChunks.TryGetValue(coordinate, out var index)) return;
-            if (index.Dirty)
+            ProjectedCellData tile;
+            var local = LocalProjectionRenderer.Instance;
+            float2 projected = WorldPositionProjectionUtility.Project(new float3(key.x + .5f, key.y * .5f, key.z + .5f), direction);
+            if (local != null && local.CoversTile(new int2((int)math.floor(projected.x), (int)math.floor((projected.y + .25f) * 2f))))
             {
-                using var marker = LightIndexMarker.Auto();
-                BuildLightingIndex(index.Tiles, EntityManager.GetBuffer<ProjectedCellData>(index.Entity, true));
-                index.Dirty = false;
+                if (!local.TryGetGroundTile(key, out tile)) return;
             }
-            var localKey = new int3(key.x - coordinate.x * ChunkSettings.SizeX, key.y,
-                key.z - coordinate.y * ChunkSettings.SizeZ);
-            // A missing tile is also cached: no second scan until invalidation.
-            if (!index.Tiles.TryGetValue(localKey, out var tile)) return;
+            else
+            {
+                if (!lightingChunks.TryGetValue(coordinate, out var index)) return;
+                if (index.Dirty)
+                {
+                    using var marker = LightIndexMarker.Auto();
+                    BuildLightingIndex(index.Tiles, EntityManager.GetBuffer<ProjectedCellData>(index.Entity, true));
+                    index.Dirty = false;
+                }
+                var localKey = new int3(key.x - coordinate.x * ChunkSettings.SizeX, key.y,
+                    key.z - coordinate.y * ChunkSettings.SizeZ);
+                if (!index.Tiles.TryGetValue(localKey, out tile)) return;
+            }
             if (!SystemAPI.TryGetSingleton<SunShadowState>(out var shadow)) return;
             float2 centre = WorldPositionProjectionUtility.Project(new float3(key.x + 0.5f, key.y * .5f, key.z + 0.5f), direction);
             data.LightRect = new Vector4(centre.x - 0.5f, centre.y, 1f, 0.5f);

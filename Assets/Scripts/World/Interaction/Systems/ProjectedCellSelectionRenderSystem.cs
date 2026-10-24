@@ -10,6 +10,7 @@ namespace Game.World.Interaction
 {
     // Draws a reusable world cursor; construction is only one consumer of selection.
     [UpdateInGroup(typeof(PresentationSystemGroup))]
+    [UpdateAfter(typeof(LocalProjectionRenderSystem))]
     public partial class ProjectedCellSelectionRenderSystem : SystemBase
     {
         private Material material;
@@ -24,7 +25,10 @@ namespace Game.World.Interaction
 
         protected override void OnUpdate()
         {
-            if (!WorldRenderDebug.Enabled) return;
+            var selectionSystem = World.GetExistingSystemManaged<ProjectedCellSelectionSystem>();
+            if (selectionSystem == null) return;
+            selectionSystem.RefreshSelection();
+            if (!WorldRenderDebug.Enabled && !(LocalProjectionRenderer.Instance is { IsReady: true })) return;
             if (material == null)
                 material = Resources.Load<Material>("ProjectedCellCursor");
             if (material == null)

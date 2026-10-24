@@ -341,6 +341,7 @@ namespace Game.World.Trees
     }
 
     [UpdateInGroup(typeof(PresentationSystemGroup))]
+    [UpdateAfter(typeof(LocalProjectionRenderSystem))]
     public partial class TreeRenderSystem : SystemBase
     {
         private const int Width = TreeResourcePreparationSystem.Width, Height = TreeResourcePreparationSystem.Height;
@@ -376,7 +377,10 @@ namespace Game.World.Trees
         protected override void OnUpdate()
         {
             LastVisibleTreeCount = LastDrawCallCount = 0;
-            if (!WorldRenderDebug.Enabled) return;
+            bool worldVisible = WorldRenderDebug.Enabled;
+            var local = LocalProjectionRenderer.Instance;
+            bool hasLocal = local != null && local.IsReady;
+            if (!worldVisible && !hasLocal) return;
             var config = PineTreeTest.Active;
             resources = World.GetExistingSystemManaged<TreeResourcePreparationSystem>();
             if (config == null || resources == null || !resources.Ready) return;
@@ -408,8 +412,13 @@ namespace Game.World.Trees
 
         private void UpdateOcclusion(ViewDirection view)
         {
+            var local = LocalProjectionRenderer.Instance;
+            bool hasLocal = local != null && local.IsReady;
+            bool worldVisible = WorldRenderDebug.Enabled;
+            occlusion.SetProjectionLayers(hasLocal ? local : null, worldVisible);
             using var chunks = chunkQuery.ToEntityArray(Allocator.Temp);
             ulong signature = (ulong)chunks.Length;
+            if (!worldVisible) signature ^= 0x9e3779b97f4a7c15UL;
             var projected = GetBufferLookup<ProjectedCellData>(true);
             var clips = GetBufferLookup<ProjectedClipCell>(true);
             foreach (var entity in chunks)
@@ -419,13 +428,18 @@ namespace Game.World.Trees
                     EntityManager.GetComponentData<ChunkComponent>(entity).Coordinate, clipping,
                     projected.DidChange(entity, LastSystemVersion) || clips.DidChange(entity, LastSystemVersion)));
             }
-            if (!occlusion.NeedsRebuild(signature, view)) return;
+            ulong worldSignature = signature;
+            if (hasLocal) signature = unchecked(signature +
+                (ulong)local.OcclusionRevision * 1099511628211UL +
+                (ulong)(uint)local.GetHashCode() * 14695981039346656037UL);
+            if (!occlusion.NeedsRebuild(signature, view, worldSignature)) return;
             foreach (var entity in chunks)
             {
                 int2 c = EntityManager.GetComponentData<ChunkComponent>(entity).Coordinate;
                 occlusion.AddClipped(c, clips[entity]);
                 occlusion.AddFaces(c, projected[entity], EntityManager.IsComponentEnabled<ChunkShaderClippingEnabled>(entity));
             }
+            occlusion.AddLocalFaces();
         }
 
 
@@ -458,6 +472,8 @@ namespace Game.World.Trees
             if (LastVisibleTreeCount == 0) return;
             int2 toward = ViewDirectionUtility.Forward(direction), right = ViewDirectionUtility.Right(direction);
             properties.Clear();
+            properties.SetVector("_TreeLocalClipPlane", Vector4.zero);
+            if (LocalProjectionRenderer.Instance != null) LocalProjectionRenderer.Instance.ApplyTreeClipping(properties);
             properties.SetTexture("_TreeDiffuse", resources.Diffuse); properties.SetTexture("_TreeNormals", resources.Normals);
             properties.SetTexture("_TreeSurfaces", resources.Surfaces);
             properties.SetVector("_TreeRight", new Vector4(right.x, 0, right.y, 0));

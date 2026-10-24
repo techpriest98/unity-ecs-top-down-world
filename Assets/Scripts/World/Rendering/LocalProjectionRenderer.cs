@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Game.World.Chunks;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -11,6 +12,19 @@ namespace Game.World.Rendering
     {
         public static LocalProjectionRenderer Instance { get; private set; }
         public bool IsActive => isActiveAndEnabled && LocalProjectionOverlay && worldRenderer != null && worldRenderer.enabled;
+        // Activation requests a build; it does not make the previous GPU snapshot valid.
+        public bool IsReady => IsActive && hasReadySnapshot;
+        private bool hasReadySnapshot;
+
+        internal void MarkReady()
+        {
+            hasReadySnapshot = true;
+        }
+
+        internal void Invalidate() => hasReadySnapshot = false;
+        // Inspector toggles can happen between ECS presentation and MonoBehaviour rendering.
+        // Invalidate immediately rather than exposing the retained snapshot on re-enable.
+        private void OnValidate() => Invalidate();
         public GraphicsBuffer OpaqueBuffer => localProjectionBuffer;
         public GraphicsBuffer WaterBuffer => localWaterBuffer;
         public int OpaqueCount => localProjectionCount;
@@ -24,6 +38,53 @@ namespace Game.World.Rendering
         public int LocalWaterCellCount => localWaterCount;
         public int LocalCapCount { get; private set; }
         public int LocalProjectionUploads { get; private set; }
+        public uint OcclusionRevision { get; private set; }
+        private ulong nextOcclusionHash, publishedOcclusionHash;
+        private bool hasOcclusionHash;
+        private void HashOcclusion(uint value) => nextOcclusionHash = unchecked((nextOcclusionHash ^ value) * 1099511628211UL);
+        public readonly struct OcclusionFace
+        {
+            public readonly int2 Coordinate;
+            public readonly ProjectedCellData Cell;
+            public OcclusionFace(int2 coordinate, ProjectedCellData cell) { Coordinate = coordinate; Cell = cell; }
+        }
+        private readonly System.Collections.Generic.List<OcclusionFace> occlusionFaces = new();
+        private readonly System.Collections.Generic.List<OcclusionFace> waterSelectionFaces = new();
+        private readonly System.Collections.Generic.HashSet<int2> coverageTiles = new();
+        private readonly System.Collections.Generic.Dictionary<int3, ProjectedCellData> groundTiles = new();
+        public System.Collections.Generic.IReadOnlyList<OcclusionFace> OcclusionFaces => occlusionFaces;
+        public System.Collections.Generic.IReadOnlyList<OcclusionFace> WaterSelectionFaces => waterSelectionFaces;
+        public bool CoversTile(int2 key) => IsReady && coverageTiles.Contains(key);
+        public bool IntersectsCoverage(Vector4 rect) => IsReady &&
+            rect.x < localTileBounds.x + localTileBounds.z && rect.x + rect.z > localTileBounds.x &&
+            rect.y < localTileBounds.y + localTileBounds.w && rect.y + rect.w > localTileBounds.y;
+        public float3 ClippingFeet { get; private set; }
+        public ViewDirection ClippingView { get; private set; }
+        public bool TryGetGroundTile(int3 worldHalfHeightKey, out ProjectedCellData cell) =>
+            groundTiles.TryGetValue(worldHalfHeightKey, out cell);
+
+        internal void BeginOcclusionSnapshot(float3 feet, ViewDirection view)
+        {
+            ClippingFeet = feet; ClippingView = view;
+            nextOcclusionHash = 14695981039346656037UL;
+            occlusionFaces.Clear(); waterSelectionFaces.Clear(); groundTiles.Clear();
+        }
+        internal void AddOcclusionFaces(int2 coordinate, Unity.Entities.DynamicBuffer<ProjectedCellData> cells,
+            Unity.Entities.DynamicBuffer<ProjectedWaterCellData> water)
+        {
+            foreach (var cell in water) waterSelectionFaces.Add(new OcclusionFace(coordinate, cell.Value));
+            foreach (var cell in cells)
+            {
+                HashOcclusion((uint)coordinate.x); HashOcclusion((uint)coordinate.y);
+                HashOcclusion(cell.Position); HashOcclusion(cell.BlockData & 0xffffu);
+                HashOcclusion(cell.SourceAirIndex); HashOcclusion(cell.FaceData);
+                occlusionFaces.Add(new OcclusionFace(coordinate, cell));
+                if (cell.FaceType != ProjectedFaceType.Top || cell.IsCutTop) continue;
+                int3 source = ChunkUtility.ToLocalPosition(cell.SourceAirIndex);
+                groundTiles.TryAdd(new int3(coordinate.x * ChunkSettings.SizeX + source.x,
+                    source.y * 2 - (cell.IsLowerHalf ? 1 : 0), coordinate.y * ChunkSettings.SizeZ + source.z), cell);
+            }
+        }
         private GraphicsBuffer localProjectionBuffer, localWaterBuffer;
         private int localProjectionCount, localWaterCount;
         private Bounds localProjectionBounds;
@@ -48,11 +109,14 @@ namespace Game.World.Rendering
                 localTilePixels = new byte[size.x * size.y];
             }
             System.Array.Clear(localTilePixels, 0, localTilePixels.Length);
+            coverageTiles.Clear();
             foreach (var tile in tiles)
             {
                 int x = (int)math.round(tile.x) - minimum.x;
                 int y = (int)math.round(tile.y * 2) - minimum.y;
                 localTilePixels[y * size.x + x] = 255;
+                coverageTiles.Add(new int2(minimum.x + x, minimum.y + y));
+                HashOcclusion((uint)(minimum.x + x)); HashOcclusion((uint)(minimum.y + y));
             }
             localTileCoverage.SetPixelData(localTilePixels, 0);
             localTileCoverage.Apply(false, false);
@@ -67,6 +131,11 @@ namespace Game.World.Rendering
                 localTileBuffer.SetData(tiles);
             }
             localTileCount = tiles.Length;
+            if (!hasOcclusionHash || publishedOcclusionHash != nextOcclusionHash)
+            {
+                OcclusionRevision = unchecked(OcclusionRevision + 1);
+                publishedOcclusionHash = nextOcclusionHash; hasOcclusionHash = true;
+            }
         }
 
         public void UploadLocalProjection(NativeArray<ProjectedCellRenderData> opaque,
@@ -103,16 +172,27 @@ namespace Game.World.Rendering
             localBackgroundProperties = new MaterialPropertyBlock();
             WorldRenderDebug.SetOverlayRequested(IsActive);
         }
-        private void OnEnable() => WorldRenderDebug.SetOverlayRequested(IsActive);
+        private void OnEnable()
+        {
+            Invalidate();
+            WorldRenderDebug.SetOverlayRequested(IsActive);
+        }
         private void OnDisable()
         {
+            Invalidate();
             if (Instance == this) WorldRenderDebug.SetOverlayRequested(false);
         }
         private void LateUpdate()
         {
             if (Instance != this) return;
             WorldRenderDebug.SetOverlayRequested(IsActive);
-            if (!IsActive || worldRenderer == null || !worldRenderer.enabled) return;
+        }
+
+        // Submission must follow local publication, not MonoBehaviour.LateUpdate.
+        internal void SubmitFrame()
+        {
+            if (Instance != this) return;
+            if (!IsReady) return;
             if (localTileCount > 0 && localTileBuffer != null && localBackgroundMaterial != null)
             {
                 localBackgroundProperties.SetBuffer("_LocalTiles", localTileBuffer);
@@ -125,9 +205,16 @@ namespace Game.World.Rendering
                 worldRenderer.RenderLocalLayer(localWaterBuffer, localWaterCount, localProjectionBounds, localWaterProperties, true);
         }
         public bool OwnsBuffer(GraphicsBuffer buffer) => buffer != null && (buffer == localProjectionBuffer || buffer == localWaterBuffer);
+        public void ApplyTreeClipping(MaterialPropertyBlock properties)
+        {
+            properties.SetVector("_TreeLocalClipPlane", new Vector4(math.floor(ClippingFeet.x), math.floor(ClippingFeet.z),
+                ChunkProjectionBuilder.GetClippingHeight(ClippingFeet), IsReady ? 1f : 0f));
+            properties.SetVector("_TreeLocalCoverageBounds", localTileBounds);
+            properties.SetTexture("_TreeLocalCoverage", localTileCoverage != null ? localTileCoverage : Texture2D.blackTexture);
+        }
         public void ApplyCoverage(MaterialPropertyBlock properties, bool localLayer)
         {
-            properties.SetFloat("_LocalTileCoverageEnabled", !localLayer && IsActive && localTileCount > 0 && localBackgroundMaterial != null ? 1 : 0);
+            properties.SetFloat("_LocalTileCoverageEnabled", !localLayer && IsReady && localTileCount > 0 && localTileCoverage != null ? 1 : 0);
             properties.SetVector("_LocalTileCoverageBounds", localTileBounds);
             properties.SetTexture("_LocalTileCoverage", localTileCoverage != null ? localTileCoverage : Texture2D.blackTexture);
         }

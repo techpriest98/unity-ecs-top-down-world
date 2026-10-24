@@ -35,6 +35,8 @@ namespace Game.Items
             public Vector4 Rect;
             public float[] TreeSurface;
             public float TreeScale;
+            public uint WorldRevision;
+            public bool TouchesLocal;
         }
 
         // Reusable flat chains: no List + backing array per projected tile.
@@ -52,8 +54,17 @@ namespace Game.Items
         private ulong signature;
         private ViewDirection direction;
         private uint revision;
+        private uint worldRevision;
+        private ulong worldSignature;
+        private bool hasWorldSignature;
         private uint maskVersion;
         private bool initialized;
+        private LocalProjectionRenderer localProjection;
+        private bool includeWorld = true;
+
+        public void SetProjectionLayers(LocalProjectionRenderer local, bool worldVisible)
+        { localProjection = local != null && local.IsReady ? local : null; includeWorld = worldVisible; }
+        private bool LocalCovers(int2 key) => localProjection != null && localProjection.CoversTile(key);
 
         public void BeginFrame() { seen.Clear(); seenTrees.Clear(); }
 
@@ -78,9 +89,12 @@ namespace Game.Items
 
         private static void Mix(ref ulong hash, uint value) => hash = unchecked((hash ^ value) * 1099511628211UL);
 
-        public bool NeedsRebuild(ulong next, ViewDirection view)
+        public bool NeedsRebuild(ulong next, ViewDirection view, ulong? worldGeometry = null)
         {
             if (initialized && next == signature && view == direction) return false;
+            if (!worldGeometry.HasValue || !hasWorldSignature || worldGeometry.Value != worldSignature || view != direction)
+                worldRevision++;
+            if (worldGeometry.HasValue) { worldSignature = worldGeometry.Value; hasWorldSignature = true; }
             signature = next; direction = view; initialized = true;
             revision++;
             faces.Clear(); faceEntries.Clear(); clipped.Clear(); visibleTopSurfaces.Clear();
@@ -89,37 +103,61 @@ namespace Game.Items
 
         public void AddClipped(int2 coordinate, DynamicBuffer<ProjectedClipCell> cells)
         {
+            if (!includeWorld) return;
             GetOrigin(coordinate, out float left, out float top);
             foreach (var cell in cells)
-                clipped.Add(Key(left + cell.X + 0.5f, top - (cell.Y + 0.5f) * 0.5f));
+            {
+                int2 key = Key(left + cell.X + 0.5f, top - (cell.Y + 0.5f) * 0.5f);
+                if (!LocalCovers(key)) clipped.Add(key);
+            }
         }
 
         public void AddFaces(int2 coordinate, DynamicBuffer<ProjectedCellData> cells, bool shaderClipping)
         {
+            if (!includeWorld) return;
             GetOrigin(coordinate, out float left, out float top);
             int2 forward = ViewDirectionUtility.Forward(direction);
             foreach (var cell in cells)
             {
                 int2 key = Key(left + cell.ProjectionX + 0.5f, top - (cell.ProjectionY + 0.5f) * 0.5f);
+                if (LocalCovers(key)) continue;
                 // Cut surfaces are opaque in the chunk shader, even in clipped batches.
                 if (shaderClipping && !cell.IsCutTop && !cell.IsCutSide && clipped.Contains(key)) continue;
-                int3 source = ChunkUtility.ToLocalPosition(cell.SourceAirIndex);
-                if (cell.FaceType == ProjectedFaceType.Top)
-                    visibleTopSurfaces.Add(new int3(coordinate.x * ChunkSettings.SizeX + source.x,
-                        source.y * 2 - (cell.IsLowerHalf ? 1 : 0), coordinate.y * ChunkSettings.SizeZ + source.z));
-                float depth = math.dot(new float2(coordinate.x * ChunkSettings.SizeX + source.x + 0.5f,
-                    coordinate.y * ChunkSettings.SizeZ + source.z + 0.5f), (float2)forward);
-                var face = new Face
-                {
-                    Top = cell.FaceType == ProjectedFaceType.Top,
-                    Height = source.y + (cell.IsCutTop ? 1f : 0f) -
-                        (cell.FaceType == ProjectedFaceType.Top && cell.IsLowerHalf ? .5f : 0f),
-                    Depth = depth + (cell.IsCutSide ? 0.5f : -0.5f)
-                };
-                face.Next = faces.TryGetValue(key, out int head) ? head : -1;
-                faces[key] = faceEntries.Count;
-                faceEntries.Add(face);
+                AddFace(coordinate, cell, key, forward);
             }
+        }
+
+        public void AddLocalFaces()
+        {
+            if (localProjection == null) return;
+            int2 forward = ViewDirectionUtility.Forward(direction);
+            foreach (var entry in localProjection.OcclusionFaces)
+            {
+                GetOrigin(entry.Coordinate, out float left, out float top);
+                var cell = entry.Cell;
+                AddFace(entry.Coordinate, cell,
+                    Key(left + cell.ProjectionX + .5f, top - (cell.ProjectionY + .5f) * .5f), forward);
+            }
+        }
+
+        private void AddFace(int2 coordinate, ProjectedCellData cell, int2 key, int2 forward)
+        {
+            int3 source = ChunkUtility.ToLocalPosition(cell.SourceAirIndex);
+            if (cell.FaceType == ProjectedFaceType.Top)
+                visibleTopSurfaces.Add(new int3(coordinate.x * ChunkSettings.SizeX + source.x,
+                    source.y * 2 - (cell.IsLowerHalf ? 1 : 0), coordinate.y * ChunkSettings.SizeZ + source.z));
+            float depth = math.dot(new float2(coordinate.x * ChunkSettings.SizeX + source.x + 0.5f,
+                coordinate.y * ChunkSettings.SizeZ + source.z + 0.5f), (float2)forward);
+            var face = new Face
+            {
+                Top = cell.FaceType == ProjectedFaceType.Top,
+                Height = source.y + (cell.IsCutTop ? 1f : 0f) -
+                    (cell.FaceType == ProjectedFaceType.Top && cell.IsLowerHalf ? .5f : 0f),
+                Depth = depth + (cell.IsCutSide ? 0.5f : -0.5f)
+            };
+            face.Next = faces.TryGetValue(key, out int head) ? head : -1;
+            faces[key] = faceEntries.Count;
+            faceEntries.Add(face);
         }
 
         private void GetOrigin(int2 coordinate, out float left, out float top)
@@ -142,7 +180,8 @@ namespace Game.Items
             if (visibleTopSurfaces.Contains(surfaceCell)) return false;
             float2 centre = WorldPositionProjectionUtility.Project(
                 new float3(surfaceCell.x + 0.5f, surfaceCell.y * .5f, surfaceCell.z + 0.5f), direction);
-            return clipped.Contains(Key(centre.x, centre.y + 0.25f));
+            int2 key = Key(centre.x, centre.y + 0.25f);
+            return LocalCovers(key) || !includeWorld || clipped.Contains(key);
         }
 
         public Texture2D GetMask(Entity entity, float3 position, Vector4 rect, int width, int height)
@@ -175,7 +214,7 @@ namespace Game.Items
                 // The grounded sprite represents a footprint on a horizontal plane.
                 // The projection is y_screen = y_world - depth / 2 + constant.
                 float pixelDepth = itemDepth - 2f * (py - anchor.y);
-                bool hidden = false;
+                bool hidden = !includeWorld && !LocalCovers(Key(px, py));
                 if (faces.TryGetValue(Key(px, py), out int head))
                     for (int index = head; index >= 0; index = faceEntries[index].Next)
                     {
@@ -204,9 +243,12 @@ namespace Game.Items
             {
                 mask.Pixels = new byte[width * height];
             }
-            if (!resized && mask.Revision == revision && math.all(mask.Position == position) && mask.Rect == rect &&
+            bool touchesLocal = localProjection != null && localProjection.IntersectsCoverage(rect);
+            if (!resized && (mask.Revision == revision ||
+                    (mask.WorldRevision == worldRevision && !mask.TouchesLocal && !touchesLocal)) &&
+                math.all(mask.Position == position) && mask.Rect == rect &&
                 ReferenceEquals(mask.TreeSurface, surface) && mask.TreeScale == scale)
-            { version = mask.Version; return mask.Pixels; }
+            { mask.Revision = revision; version = mask.Version; return mask.Pixels; }
             var pixels = mask.Pixels;
             float baseDepth = math.dot(position.xz, (float2)ViewDirectionUtility.Forward(direction));
             for (int y = 0; y < height; y++) for (int x = 0; x < width; x++)
@@ -216,7 +258,7 @@ namespace Game.Items
                 float px = rect.x + (x + .5f) * rect.z / width, py = rect.y + (y + .5f) * rect.w / height;
                 float treeDepth = baseDepth + surface[i * 4 + 1] * scale;
                 float treeHeight = position.y + surface[i * 4] * scale;
-                bool hidden = false;
+                bool hidden = !includeWorld && !LocalCovers(Key(px, py));
                 if (faces.TryGetValue(Key(px, py), out int first))
                     for (int faceIndex = first; faceIndex >= 0; faceIndex = faceEntries[faceIndex].Next)
                     {
@@ -228,6 +270,7 @@ namespace Game.Items
             }
             mask.Position = position; mask.Rect = rect; mask.Revision = revision;
             mask.TreeSurface = surface; mask.TreeScale = scale;
+            mask.WorldRevision = worldRevision; mask.TouchesLocal = touchesLocal;
             version = mask.Version = ++maskVersion;
             return pixels;
         }
@@ -248,6 +291,8 @@ namespace Game.Items
             foreach (var mask in masks.Values) if (mask.Texture != null) Object.Destroy(mask.Texture);
             masks.Clear(); faces.Clear(); faceEntries.Clear(); clipped.Clear(); visibleTopSurfaces.Clear(); chunkHashes.Clear();
             initialized = false;
+            hasWorldSignature = false;
+            localProjection = null; includeWorld = true;
         }
     }
 }

@@ -1,8 +1,11 @@
 # Headless algorithm checks: actual projection sources and Unity math,
 # managed buffer/occupancy adapters. This does not test GPU rendering or ECS safety.
+param([switch]$InteractionOnly)
 $ErrorActionPreference = 'Stop'
 $halfAssetsRoot = (Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
-$halfMathPath = 'C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/Managed/UnityEngine/UnityEngine.MathematicsModule.dll'
+$halfEditorVersion = ((Get-Content (Join-Path $halfAssetsRoot '../ProjectSettings/ProjectVersion.txt') |
+ Select-String '^m_EditorVersion: ').Line -replace '^m_EditorVersion: ', '').Trim()
+$halfMathPath = "C:/Program Files/Unity/Hub/Editor/$halfEditorVersion/Editor/Data/Managed/UnityEngine/UnityEngine.MathematicsModule.dll"
 Add-Type -Path $halfMathPath
 $halfReferences = @((Get-ChildItem (Join-Path $PSHOME 'ref') -Filter '*.dll').FullName) + $halfMathPath
 $halfFiles = @(
@@ -23,6 +26,7 @@ $halfFiles = @(
  'Scripts/World/Rendering/ViewDirection.cs','Scripts/World/Rendering/ViewDirectionUtility.cs',
  'Scripts/World/Rendering/ViewCoordinate.cs','Scripts/World/Rendering/ViewBounds.cs',
  'Scripts/World/Rendering/ViewCoordinateUtility.cs','Scripts/World/Rendering/Autotiling/TopNeighborMaskUtility.cs',
+ 'Scripts/World/Rendering/ChunkRenderPositionUtility.cs','Scripts/World/Rendering/WorldPositionProjectionUtility.cs',
  'Scripts/World/Rendering/ChunkProjectionBuilder.cs','Scripts/World/Rendering/ChunkProjectionBuilder.Split.cs',
  'Scripts/World/Interaction/Components/SelectedProjectedCell.cs','Scripts/World/Interaction/ProjectedCellInteractionUtility.cs',
  'Scripts/Player/Collision/Components/PlayerCollisionShape.cs','Scripts/Player/Collision/PlayerCollisionUtility.cs',
@@ -44,6 +48,13 @@ foreach ($baselinePath in 'Tools/ItemGraphEditor/Editor/Fixtures/ChunkProjection
  $halfBodies += [regex]::Replace($baselineText, '(?m)^using [^;]+;\r?\n', '')
 }
 $halfHarness = @'
+namespace Game.World.Rendering {
+ public static partial class ChunkProjectionBuilder {
+  public static bool CheckClipRegionForTest(Unity.Mathematics.float3 player,Unity.Mathematics.float3 face,
+   ViewDirection view,Unity.Mathematics.int2 chunk,int x,int y) =>
+   ShouldClipOpaqueFace(true,player,face,0,view,chunk,x,y);
+ }
+}
 // Save validation runs against the real storage source; engine IO/JSON and
 // unrelated item fields are adapters, so this does not test Unity JSON or disk IO.
 namespace UnityEngine {
@@ -176,6 +187,7 @@ namespace Game.World.Chunks {
  }
 }
 public static class HalfProjectionChecks {
+ public static string RunInteractionChecks() { CheckPlacement(); CheckRemoval(); return "PASS targeted placement/removal and cut-face interaction checks (headless adapters)."; }
  static void Check(bool ok,string label) {if(!ok)throw new Exception(label);}
  static void CheckProjectionOptimization() {
   var occupancy=new ProjectionOccupancy(65536,Unity.Collections.Allocator.Temp);
@@ -253,7 +265,40 @@ public static class HalfProjectionChecks {
    view,clip,new Unity.Mathematics.float3(playerX,playerHeight,playerZ),firstColumn,columnCount,firstRow,lastRow);
   return (solid,water.Select(x=>x.Value).ToList());
  }
+ static void CheckProjectionTraversal() {
+  int[][] windows={new[]{-10000,10000},new[]{0,0},new[]{1,12},new[]{240,260},new[]{490,510},
+   new[]{527,540},new[]{-100,-50},new[]{600,800},new[]{20,10},new[]{int.MinValue,int.MaxValue}};
+  foreach(int height in new[]{1,2,16,256}) foreach(int depth in new[]{1,16}) foreach(var window in windows) {
+   var expected=new List<Unity.Mathematics.int2>();var actual=new List<Unity.Mathematics.int2>();
+   for(int t=0;t<height;t++) for(int v=depth-1;v>=0;v--) {
+    long row=t*2+v;
+    if(window[0]<=window[1]&&row>=(long)window[0]-3&&row<=(long)window[1]+3) expected.Add(new Unity.Mathematics.int2(t,v));
+   }
+   var range=ChunkProjectionBuilder.ProjectionTraversalRange(height,depth,window[0],window[1]);
+   for(int t=range.x;t<range.y;t++) {
+    int first=Math.Max(0,range.z-2*t),last=Math.Min(depth-1,range.w-2*t);
+    for(int v=last;v>=first;v--) actual.Add(new Unity.Mathematics.int2(t,v));
+   }
+   Check(actual.SequenceEqual(expected),"Bounded traversal changed height/depth coverage or ordering");
+   if(height==256&&depth==16&&window[0]==490) Console.WriteLine("Local traversal PASS: visited pairs per column "+(height*depth)+" -> "+actual.Count+"; identical processing order and emission margin");
+  }
+ }
  static void CheckLocalColumns() {
+  CheckProjectionTraversal();
+  CheckMovingLocalWindow();
+  foreach(ViewDirection view in Enum.GetValues(typeof(ViewDirection))) foreach(int c in new[]{-1,0,1}) {
+   var chunk=new Unity.Mathematics.int2(c,-c);var player=new Unity.Mathematics.float3(c*16+7.4f,7,-c*16+6.8f);
+   var origin=ChunkRenderPositionUtility.GetPosition(chunk,view,1,.5f,0);
+   var centre=WorldPositionProjectionUtility.Project(player+new Unity.Mathematics.float3(0,1,0),view);
+   var toward=ViewDirectionUtility.Forward(view);
+   var front=player+new Unity.Mathematics.float3(toward.x*2,20,toward.y*2);
+   for(int x=0;x<16;x++) for(int y=0;y<528;y++) {
+    var mid=new Unity.Mathematics.float2(origin.x-8+x+.5f,origin.y+264-(y+.5f)*.5f);
+    bool selected=ChunkProjectionBuilder.TileTouchesLocalProjection(mid,centre);
+    Check(ChunkProjectionBuilder.IsLocalProjectionCell(chunk,x,y,player,view)==selected,"Clipping and coverage use different tile regions");
+    Check(ChunkProjectionBuilder.CheckClipRegionForTest(player,front,view,chunk,x,y)==selected,"Selected front/above tile escaped clipping at the boundary");
+   }
+  }
   foreach(var centre in new[]{new Unity.Mathematics.float2(-16.4f,-20.2f),Unity.Mathematics.float2.zero,new Unity.Mathematics.float2(17.25f,40.75f)}) {
    int minX=(int)Math.Floor(centre.x-5),minY=(int)Math.Floor((centre.y-5)*2);
    var coverage=new HashSet<Unity.Mathematics.int2>();
@@ -332,6 +377,35 @@ public static class HalfProjectionChecks {
    Check(water.SequenceEqual(next.water.OrderBy(c=>c.ProjectionX)),"Moving clipping cache differs from full water rebuild");
    Check(masks.SequenceEqual(newMasks.OrderBy(c=>c.X)),"Moving clipping cache differs from full clip mask");
   }
+ }
+ static void CheckMovingLocalWindow() {
+  var map=new Dictionary<Unity.Mathematics.int3,Game.World.Blocks.BlockData>();
+  for(int x=0;x<16;x++) for(int z=0;z<16;z++) for(int y=0;y<12;y++) {
+   int height=x<8?6:10;
+   if(y<height) map[new Unity.Mathematics.int3(x,y,z)]=new Game.World.Blocks.BlockData(Game.World.Blocks.BlockId.Stone,255);
+  }
+  int positions=0;
+  foreach(ViewDirection view in Enum.GetValues(typeof(ViewDirection)))
+  foreach(float height in new[]{6f,6.5f,10f}) for(int step=0;step<=32;step++) {
+   float px=5+step*.125f,pz=7+step*.0625f;
+   var player=new Unity.Mathematics.float3(px,height,pz);
+   var centre=WorldPositionProjectionUtility.Project(player+new Unity.Mathematics.float3(0,1,0),view);
+   float left=-8,top=264,r=ChunkProjectionBuilder.ProjectionClipRadius;
+   int first=Math.Max(0,(int)Math.Floor(centre.x-r-left)-1);
+   int end=Math.Min(16,(int)Math.Ceiling(centre.x+r-left)+1);
+   int low=(int)Math.Floor((top-centre.y-r)*2)-1,high=(int)Math.Ceiling((top-centre.y+r)*2)+1;
+   var full=Build(map,view,true,playerHeight:height,playerX:px,playerZ:pz);
+   var window=Build(map,view,true,playerHeight:height,playerX:px,playerZ:pz,
+    firstColumn:first,columnCount:Math.Max(0,end-first),firstRow:low,lastRow:high);
+   Func<ProjectedCellData,bool> selected=c=>ChunkProjectionBuilder.TileTouchesLocalProjection(
+    new Unity.Mathematics.float2(left+c.ProjectionX+.5f,top-(c.ProjectionY+.5f)*.5f),centre);
+   Check(window.solid.Where(selected).SequenceEqual(full.solid.Where(selected)),
+    $"Moving local window lost/replaced opaque tile: {view}, step {step}, height {height}");
+   Check(window.water.Where(selected).SequenceEqual(full.water.Where(selected)),
+    $"Moving local window lost water tile: {view}, step {step}, height {height}");
+   positions++;
+  }
+  Console.WriteLine($"Moving local window PASS: {positions} positions, four views and integer/half-height cuts match full traversal");
  }
  static void CheckTopFrontTransition() {
   foreach(ViewDirection view in Enum.GetValues(typeof(ViewDirection)))
@@ -935,7 +1009,20 @@ public static class HalfProjectionChecks {
    "Removing upper water destroyed solid underneath");
   selected.BlockData=ProjectedCellPacking.PackBlock(new BlockData(BlockId.Snow,255),ProjectedFaceType.Top,255);
   Check(!Game.World.Interaction.ProjectedCellInteractionUtility.TryRemoveSelectedPart(selected,contents,out result),"Stale selected material deleted another part");
-  Console.WriteLine("Removal PASS: upper/lower Top and Side, full blocks, water, durability and stale selections");
+  foreach(ViewDirection view in Enum.GetValues(typeof(ViewDirection))) foreach(var face in new[]{ProjectedFaceType.Top,ProjectedFaceType.SideUpper,ProjectedFaceType.SideLower}) {
+   var cap=new Game.World.Interaction.SelectedProjectedCell {
+    IsValid=true,IsCutSurface=true,FaceType=face,ChunkCoordinate=new Unity.Mathematics.int2(1,-1),
+    SourceAirIndex=(ushort)ChunkUtility.ToIndex(7,8,7),
+    BlockData=ProjectedCellPacking.PackBlock(new BlockData(BlockId.Stone,132),face,255)};
+   Check(!Game.World.Interaction.ProjectedCellInteractionUtility.TryGetPlacementPosition(cap,out _),"Cut cap allowed placement/albedo target");
+   Check(Game.World.Interaction.ProjectedCellInteractionUtility.TryGetRemovalPosition(cap,view,out var target),"Cut cap blocked excavation target");
+   var source=new Unity.Mathematics.int3(23,8,-9);
+   var expected=source+(face==ProjectedFaceType.Top?new Unity.Mathematics.int3(0,-1,0):ViewDirectionUtility.GetAwayFromCameraOffset(view));
+   Check(Unity.Mathematics.math.all(target==expected),"Cut cap excavation pointed to wrong block");
+   Check(Game.World.Interaction.ProjectedCellInteractionUtility.TryRemoveSelectedPart(cap,new CellContents(stone,stone),out var removed) &&
+    removed.Lower.Id==BlockId.Air&&removed.Upper.Id==BlockId.Air,"Cut cap failed to remove owning solid");
+  }
+  Console.WriteLine("Removal PASS: upper/lower Top and Side, full blocks, water, durability, stale selections and excavation-only cut caps in four views");
  }
  static void CheckPlayerCollision() {
   var shape=new Game.Player.PlayerCollisionShape {HalfExtentsXZ=new float2(.2f,.2f),Height=1.8f};
@@ -1151,10 +1238,18 @@ public static class HalfProjectionChecks {
 '@
 $halfSource=(($halfUsings | Sort-Object -Unique) -join "`n")+"`n"+($halfBodies -join "`n")+"`n"+$halfHarness
 Add-Type -TypeDefinition $halfSource -ReferencedAssemblies $halfReferences -ErrorAction Stop
+if ($InteractionOnly) { [HalfProjectionChecks]::RunInteractionChecks(); return }
 [HalfProjectionChecks]::Run()
 $localSource=Get-Content (Join-Path $halfAssetsRoot 'Scripts/World/Rendering/ChunkProceduralRenderSystem.cs') -Raw
 $localSource=$localSource.Substring($localSource.IndexOf('public partial class LocalProjectionRenderSystem'))
-if ($localSource -notmatch 'BuildColumns\(blocks\[entity\]' -or
+if ($localSource -notmatch 'using var chunks = new NativeParallelHashMap<int2, Entity>\([^\r\n]*Allocator.TempJob\)' -or
+ $localSource -notmatch 'using var occupancy = new ProjectionOccupancy\(4096, Allocator.TempJob\)' -or
+ $localSource -notmatch 'using var waterOccupancy = new ProjectionOccupancy\(4096, Allocator.TempJob\)' -or
+ $localSource -notmatch 'finally \{ directionCache.Dispose\(\); \}') {
+ throw 'Job input/occupancy containers must use TempJob and scoped disposal, including failure paths'
+}
+if ($localSource -notmatch 'new LocalProjectionBuildJob' -or
+ $localSource -notmatch 'Blocks = blocks\[entity\]' -or
  $localSource -notmatch 'GetBuffer<ProjectedCellData>\(scratch\)' -or
  $localSource -match 'SetComponentEnabled<ChunkNeedsProjection>|GetBuffer<ProjectedCellData>\(entity\)' -or
  $localSource -notmatch 'foreach \(var entity in entities\)' -or

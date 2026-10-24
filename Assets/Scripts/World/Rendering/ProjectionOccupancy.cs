@@ -2,7 +2,7 @@ using Unity.Collections;
 using Unity.Mathematics;
 namespace Game.World.Rendering
 {
-    public struct ProjectionOccupancy
+    public struct ProjectionOccupancy : System.IDisposable
     {
         private const uint LowerTopFlag = 1u << 24;
         private NativeParallelHashMap<int2, uint> _occupied;

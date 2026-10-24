@@ -146,7 +146,7 @@ namespace Game.World.Rendering
             BlockPart part = lower ? owner.Lower : owner.Upper;
             if (part.Id == BlockId.Air || IsPartOpaque(above.Id)) return;
             if (IsFluid(part.Id) && ShouldClipOpaqueFace(clipping, player,
-                    GetGlobalPosition(coordinate, ownerPosition, lower ? .5f : 1f), ownerPosition.y, direction)) return;
+                    GetGlobalPosition(coordinate, ownerPosition, lower ? .5f : 1f), ownerPosition.y, direction, coordinate, x, y)) return;
             var block = new BlockData(part.Id, part.Durability, lower ? BlockShape.LowerHalf : BlockShape.Full);
             if (IsFluid(part.Id))
             {
@@ -163,7 +163,7 @@ namespace Game.World.Rendering
                 return;
             }
             if (ShouldClipOpaqueFace(clipping, player,
-                    GetGlobalPosition(coordinate, ownerPosition, lower ? .5f : 1f), ownerPosition.y, direction))
+                    GetGlobalPosition(coordinate, ownerPosition, lower ? .5f : 1f), ownerPosition.y, direction, coordinate, x, y))
             {
                 writer.RecordClippedCell(x, y);
                 return;
@@ -183,7 +183,7 @@ namespace Game.World.Rendering
             BlockPart covering = upper ? front.Upper : front.Lower;
             if (part.Id == BlockId.Air || IsPartOpaque(covering.Id)) return;
             if (IsFluid(part.Id) && ShouldClipOpaqueFace(clipping, player,
-                    GetGlobalPosition(coordinate, ownerPosition, upper ? .75f : .25f), ownerPosition.y, direction)) return;
+                    GetGlobalPosition(coordinate, ownerPosition, upper ? .75f : .25f), ownerPosition.y, direction, coordinate, x, y)) return;
             bool continuousMaterial = owner.Lower.Id == owner.Upper.Id;
             bool lowerTexture = !upper && continuousMaterial;
             var block = new BlockData(part.Id, part.Durability,
@@ -205,7 +205,7 @@ namespace Game.World.Rendering
                 return;
             }
             if (ShouldClipOpaqueFace(clipping, player,
-                    GetGlobalPosition(coordinate, ownerPosition, upper ? .75f : .25f), ownerPosition.y, direction))
+                    GetGlobalPosition(coordinate, ownerPosition, upper ? .75f : .25f), ownerPosition.y, direction, coordinate, x, y))
             {
                 writer.RecordClippedCell(x, y);
                 return;

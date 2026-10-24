@@ -20,6 +20,13 @@ Shader "Game/World/TreeSprite"
             StructuredBuffer<TreeDrawData> _TreeInstances;
             float4 _TreeRight, _TreeToward, _TreePlayer;
             float4 _TreeAmbient, _TreeSun, _TreeSunDirection;
+            TEXTURE2D(_TreeLocalCoverage);
+            SamplerState tree_local_point_clamp_sampler;
+            float4 _TreeLocalCoverageBounds, _TreeLocalClipPlane;
+            bool TreeReceiverInCutVolume(float3 receiver, float4 plane, float2 toward)
+            {
+                return receiver.y > plane.z + .001 && dot(floor(receiver.xz) - plane.xy, toward) > 0;
+            }
             static const float _LocalNormalStrength=1;
             #include "DetailedLocalLighting.hlsl"
             struct Varyings { float4 position:SV_POSITION; float2 uv:TEXCOORD0; float2 projected:TEXCOORD1; nointerpolation uint instance:TEXCOORD2; };
@@ -41,6 +48,12 @@ Shader "Game/World/TreeSprite"
                 float2 surface=SAMPLE_TEXTURE2D_ARRAY(_TreeSurfaces,tree_point_clamp_sampler,i.uv,layer).rg;
                 float x=(i.uv.x*data.Pixels.z-data.Pixels.z*.5)/data.Pixels.x;
                 float3 receiver=data.Base.xyz+(_TreeRight.xyz*x+float3(0,surface.x,0)+_TreeToward.xyz*surface.y)*data.Base.w;
+                if (_TreeLocalClipPlane.w > .5 && TreeReceiverInCutVolume(receiver, _TreeLocalClipPlane, _TreeToward.xz))
+                {
+                    float2 localUv = (i.projected - _TreeLocalCoverageBounds.xy) / max(_TreeLocalCoverageBounds.zw, .0001);
+                    if (all(localUv >= 0) && all(localUv < 1))
+                        clip(.5 - SAMPLE_TEXTURE2D_LOD(_TreeLocalCoverage, tree_local_point_clamp_sampler, localUv, 0).r);
+                }
                 float3 encoded=SAMPLE_TEXTURE2D_ARRAY(_TreeNormals,tree_point_clamp_sampler,i.uv,layer).xyz*2-1;
                 float3 normal=normalize(_TreeRight.xyz*encoded.x+float3(0,encoded.y,0)+_TreeToward.xyz*encoded.z);
                 float3 local=SingleLocalLightDiagnostic(i.projected,receiver.y,normal,normal,float3(0,1,0),float3(0,0,0));

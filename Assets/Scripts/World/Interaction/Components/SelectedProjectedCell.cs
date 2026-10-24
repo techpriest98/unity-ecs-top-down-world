@@ -14,6 +14,7 @@ namespace Game.World.Interaction
         public ushort ProjectionY => ProjectedCellPacking.GetY(ProjectionPosition);
         public ushort SourceAirIndex;
         public ProjectedFaceType FaceType;
+        public bool IsCutSurface;
         public bool IsValid;
     }
 }

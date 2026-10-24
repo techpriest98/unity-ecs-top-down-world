@@ -174,8 +174,10 @@ namespace Game.World.Rendering
             CreateBlockDatabaseBuffer();
         }
 
-        private void LateUpdate()
+        // Called after ECS presentation has finished publishing local buffers and coverage.
+        internal void SubmitFrame()
         {
+            if (Instance != this || !isActiveAndEnabled) return;
             if (!WorldRenderDebug.ProjectionRequired) return;
             var world = Unity.Entities.World.DefaultGameObjectInjectionWorld;
             if (world != null && world.IsCreated &&
