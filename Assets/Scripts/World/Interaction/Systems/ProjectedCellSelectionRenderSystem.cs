@@ -9,8 +9,8 @@ using UnityEngine;
 namespace Game.World.Interaction
 {
     // Draws a reusable world cursor; construction is only one consumer of selection.
-    [UpdateInGroup(typeof(PresentationSystemGroup))]
-    [UpdateAfter(typeof(LocalProjectionRenderSystem))]
+    [UpdateInGroup(typeof(PresentationSystemGroup), OrderLast = true)]
+    [UpdateAfter(typeof(WorldProjectionDrawSystem))]
     public partial class ProjectedCellSelectionRenderSystem : SystemBase
     {
         private Material material;
@@ -65,12 +65,30 @@ namespace Game.World.Interaction
                 (ChunkSettings.SizeY * 2 + ChunkSettings.SizeZ) * 0.5f -
                 (y + (fullHeightSide ? 2 : 1)) * 0.5f;
             properties.SetVector("_CursorRect", new Vector4(left, bottom, 1f, height));
-            properties.SetFloat("_CursorDepth", chunkPosition.z - 0.0001f);
+            float sourceHeight = selection.SourceAirIndex >> 8;
+            bool lowerHalf = ProjectedCellPacking.IsLowerHalf(selection.BlockData);
+            float surfaceBottom, surfaceTop;
+            if (!side)
+            {
+                surfaceBottom = sourceHeight + (selection.IsCutSurface ? 1f : 0f) - (lowerHalf ? .5f : 0f);
+                surfaceTop = surfaceBottom;
+            }
+            else
+            {
+                float faceCenter = sourceHeight +
+                    (selection.FaceType == ProjectedFaceType.SideLower || lowerHalf ? .25f : .75f);
+                surfaceBottom = fullHeightSide ? sourceHeight : faceCenter - .25f;
+                surfaceTop = surfaceBottom + height;
+            }
+            properties.SetVector("_CursorSurface", new Vector4(chunkPosition.y, chunkPosition.z, surfaceBottom, surfaceTop));
+            var bounds = new Bounds(new Vector3(left + .5f, bottom + height * .5f, chunkPosition.z),
+                new Vector3(1f, height, .1f));
+            var terrain = ChunkProceduralRenderer.Instance;
+            if (terrain != null) bounds = terrain.SurfaceDepthBounds(bounds);
             var parameters = new RenderParams(material)
             {
                 matProps = properties,
-                worldBounds = new Bounds(new Vector3(left + 0.5f,
-                    bottom + height * 0.5f, chunkPosition.z), new Vector3(1f, height, 0.1f))
+                worldBounds = bounds
             };
             Graphics.RenderPrimitives(parameters, MeshTopology.Triangles, 6, 1);
         }

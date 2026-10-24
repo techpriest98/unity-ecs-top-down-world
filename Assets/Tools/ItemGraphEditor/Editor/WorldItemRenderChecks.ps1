@@ -6,7 +6,8 @@ $visible=[regex]::Match($source,'(?s)private bool IsVisible\(.*?\n        \}').V
 $localSource=Get-Content (Join-Path $root 'Scripts/World/Chunks/ChunkUtility.cs') -Raw
 $local=[regex]::Match($localSource,'(?s)public static int3 ToLocalPosition\(.*?\n        \}').Value
 if (!$build -or !$visible -or !$local) {throw 'Production methods missing'}
-$mathPath='C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/Managed/UnityEngine/UnityEngine.MathematicsModule.dll'
+$editorVersion=((Get-Content (Join-Path $root '../ProjectSettings/ProjectVersion.txt') | Select-String '^m_EditorVersion: ').Line -replace '^m_EditorVersion: ','').Trim()
+$mathPath="C:/Program Files/Unity/Hub/Editor/$editorVersion/Editor/Data/Managed/UnityEngine/UnityEngine.MathematicsModule.dll"
 Add-Type -Path $mathPath
 $refs=@((Get-ChildItem (Join-Path $PSHOME 'ref') -Filter '*.dll').FullName)+$mathPath
 $adapter=@'
@@ -59,6 +60,6 @@ public static void Run(){
 '@
 Add-Type -TypeDefinition ($adapter+$build+$visible+$tests) -ReferencedAssemblies $refs
 [RenderChecks]::Run()
-if ($source.IndexOf('if (!IsVisible(bounds)) continue;') -gt $source.IndexOf('occlusion.GetMask(entity')) {throw 'Culling must precede masks'}
+if ($source.IndexOf('if (!IsVisible(bounds)) continue;') -gt $source.IndexOf('ApplyGroundLighting(ref data')) {throw 'Culling must precede lighting lookup'}
 if (!$source.Contains('cellsLookup.DidChange(entity, LastSystemVersion)') -or !$source.Contains('index.Entity != entity') -or !$source.Contains('lightingChunks.Remove(coordinate)')) {throw 'Cache invalidation/unload gates missing'}
 'PASS production index vs old scan: full/half tops, cut/side exclusion, duplicate first-match, absent tiles and rebuild; camera adapter: offscreen, edge overlap, multi-camera, no camera. Unity visual/FPS verification pending.'

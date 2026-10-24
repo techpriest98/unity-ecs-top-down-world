@@ -279,7 +279,6 @@ Shader "Game/World/ChunkWaterProcedural"
 
                 Varyings output;
 
-                output.PositionCS = TransformWorldToHClip(worldPosition);
                 output.ProjectionPosition = worldPosition.xy;
                 float sourceHeight = (cell.FaceData >> 24) & 255u;
                 uint faceType = GetFaceType(cell.BlockData);
@@ -289,6 +288,8 @@ Shader "Game/World/ChunkWaterProcedural"
                 output.ShadowReceiverHeight = faceHeight + (faceType == 1u ? 0 : (corner.y - .5) * .5);
                 // The inset is a physical lowering of the top surface, not just its UV.
                 if (faceType == 1u) output.ShadowReceiverHeight -= insetHeight;
+                worldPosition.z = TerrainSurfaceDepth(cell, worldPosition.y, output.ShadowReceiverHeight);
+                output.PositionCS = TransformWorldToHClip(worldPosition);
                 output.LocalUv = corner;
                 output.BlockId = GetBlockId(cell.BlockData);
                 output.FaceIndex = faceIndex;

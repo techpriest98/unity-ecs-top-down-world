@@ -652,7 +652,7 @@ namespace Game.World.Rendering
             { renderer.MarkReady(); return; }
 
             using var marker = BuildMarker.Auto();
-            renderer.BeginOcclusionSnapshot(feet, view);
+            renderer.BeginSelectionSnapshot(feet, view);
             var blocks = GetBufferLookup<Game.World.Blocks.BlockData>(true);
             var accessor = new ChunkBlockAccessor(chunks, blocks, GetBufferLookup<Game.World.Blocks.SplitCellData>(true),
                 GetBufferLookup<Game.World.Blocks.ChunkSurfaceSample>(true));
@@ -713,7 +713,7 @@ namespace Game.World.Rendering
                     using (LightingMarker.Auto())
                         ChunkLightingSystem.UpdateChunkFully(solids, water, voxelLights[entity], coordinate, accessor, lightAccessor,
                             view, sun, ref directionCache);
-                    renderer.AddOcclusionFaces(coordinate, solids, water);
+                    renderer.AddSelectionFaces(coordinate, solids, water);
                     foreach (var face in solids)
                         {
                             opaqueOutput.Add(Pack(face, position));
@@ -782,6 +782,16 @@ namespace Game.World.Rendering
         {
             var terrain = ChunkProceduralRenderer.Instance;
             if (terrain == null || !terrain.isActiveAndEnabled) return;
+            // Publish independently of lighting/shadow debug toggles. The shader
+            // uses the same origin as terrain, published below by SubmitFrame.
+            Vector4 playerDepth = Vector4.zero;
+            if (SystemAPI.TryGetSingleton<PlayerWorldPosition>(out var player) &&
+                SystemAPI.TryGetSingleton<ViewDirectionComponent>(out var view))
+            {
+                float2 feet = WorldPositionProjectionUtility.Project(player.Value, view.Value) + new float2(0, .25f);
+                playerDepth = new Vector4(2f * (feet.y - player.Value.y - 9f), 0, 0, 1);
+            }
+            Shader.SetGlobalVector("_PlayerTerrainAnchor", playerDepth);
             terrain.SubmitFrame();
             var local = LocalProjectionRenderer.Instance;
             if (local != null) local.SubmitFrame();

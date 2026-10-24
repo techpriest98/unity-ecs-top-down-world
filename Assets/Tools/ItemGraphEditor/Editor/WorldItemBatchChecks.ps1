@@ -27,6 +27,7 @@ namespace UnityEngine {
  public void SetData<T>(T[] src,int a,int b,int count){var data=new T[count];Array.Copy(src,a,data,0,count);Data=data;}
  public void Dispose(){Disposed=true;}}
  public class MaterialPropertyBlock {public Texture2D Atlas;public GraphicsBuffer Buffer;public Texture Main;
+ public float LocalOnly; public void Clear(){Main=null;Buffer=null;LocalOnly=0;} public void SetFloat(string n,float v){LocalOnly=v;}
  public void SetBuffer(string n,GraphicsBuffer b){Buffer=b;}
  public void SetTexture(string n,Texture t){if(n=="_OcclusionMask")Atlas=(Texture2D)t;else Main=t;}}
  public struct RenderParams {public MaterialPropertyBlock matProps;public Bounds worldBounds;public RenderParams(Material m){matProps=null;worldBounds=default;}}
@@ -40,39 +41,40 @@ public static class BatchChecks {
  static void Check(bool b,string m){if(!b)throw new System.Exception(m);}
  public static void Run(){
   var material=new UnityEngine.Material();var texture=new UnityEngine.Texture();var other=new UnityEngine.Texture();
-  var mask=new UnityEngine.Texture2D(2,2,UnityEngine.TextureFormat.R8,false,true);mask.Pixels=new byte[]{0,255,255,0};
-  var small=new UnityEngine.Texture2D(1,2,UnityEngine.TextureFormat.R8,false,true);small.Pixels=new byte[]{23,42};
   var b=new Game.Items.WorldItemDrawBatch();b.Begin(texture);
   Check(b.CanAppend(texture)&&!b.CanAppend(other),"Texture compatibility");
   Check(!b.CanAppend(texture,true),"Fog classes mixed in one draw");
   b.Begin(texture,true);Check(b.AboveFog&&b.CanAppend(texture,true)&&!b.CanAppend(texture),"Above-fog batch state missing");
   b.Begin(texture);
-  b.Add(default,mask,1,default);b.Add(default,small,2,default);b.Draw(material);
+  b.Add(default,default);b.Add(default,default);b.Draw(material);
   Check(UnityEngine.Graphics.Calls==1&&UnityEngine.Graphics.Instances==2,"Expected one instanced submission");
-  var p=UnityEngine.Graphics.Last.matProps;var atlas=p.Atlas;var buffer=p.Buffer;
+  var p=UnityEngine.Graphics.Last.matProps;var buffer=p.Buffer;
   Check(buffer.Stride==176,"C#/HLSL stride mismatch");
-  var records=(Game.Items.WorldItemDrawData[])buffer.Data;
-  Check(records[0].MaskPixels.z==2&&records[1].MaskPixels.x==2&&records[1].MaskPixels.z==1,"Mask rects");
-  Check(atlas.Pixels[0]==0&&atlas.Pixels[1]==255&&atlas.Pixels[2]==23&&atlas.Pixels[atlas.width+2]==42,"Atlas slot copy");
-  int applies=atlas.Applies;b.Begin(texture);b.Add(default,mask,1,default);b.Add(default,small,2,default);b.Draw(material);
-  Check(atlas.Applies==applies,"Unchanged atlas uploaded again");
-  mask.Pixels[0]=77;b.Begin(texture);b.Add(default,mask,3,default);b.Draw(material);
-  Check(atlas.Applies==applies+1&&atlas.Pixels[0]==77,"Changed mask not refreshed");
-  b.Begin(texture);b.Add(default,small,2,default);b.Add(default,mask,3,default);b.Draw(material);
-  Check(atlas.Pixels[0]==23&&atlas.Pixels[2]==77,"Reordered slots stale");
-  var large=new UnityEngine.Texture2D(4,3,UnityEngine.TextureFormat.R8,false,true);large.Pixels[0]=91;
-  b.Begin(texture);b.Add(default,small,2,default);b.Add(default,large,4,default);b.Draw(material);
-  var grown=UnityEngine.Graphics.Last.matProps.Atlas;
-  Check(atlas.Destroyed&&grown.Pixels[0]==23&&grown.Pixels[4]==91,"Atlas growth lost earlier slot");
-  b.Begin(texture);for(int i=0;i<Game.Items.WorldItemDrawBatch.Capacity;i++)b.Add(default,null,0,default);
+  Check(p.Atlas==null&&p.Main==texture,"No mask atlas should be bound");
+  Check(p.LocalOnly==0,"World-visible items incorrectly restricted");
+  Game.World.Rendering.WorldRenderDebug.Enabled=false;
+  b.Draw(material);
+  Check(p.LocalOnly==1&&Game.World.Rendering.LocalProjectionRenderer.Instance.Applies==2,"Missing local-only GPU coverage");
+  b.Begin(other);b.Add(default,default);b.Draw(material);
+  Check(p.Main==other&&p.Buffer==buffer,"Texture switch or GPU buffer reuse failed");
+  b.Begin(texture);for(int i=0;i<Game.Items.WorldItemDrawBatch.Capacity;i++)b.Add(default,default);
   Check(!b.CanAppend(texture),"Capacity boundary");b.Draw(material);
   Check(UnityEngine.Graphics.Instances==128,"Full page instance count");
-  b.Dispose();Check(buffer.Disposed&&grown.Destroyed,"GPU resource leak");b.Dispose();
+  b.Dispose();Check(buffer.Disposed,"GPU resource leak");b.Dispose();
+ }
+}
+'@
+$adapter += @'
+namespace Game.World.Rendering {
+ public static class WorldRenderDebug {public static bool Enabled=true;}
+ public class LocalProjectionRenderer {
+  public static LocalProjectionRenderer Instance=new LocalProjectionRenderer(); public int Applies;
+  public void ApplyCoverage(UnityEngine.MaterialPropertyBlock p,bool local){if(!local)throw new System.Exception("Wrong coverage layer");Applies++;}
  }
 }
 '@
 # Usings must precede the adapter namespace declarations.
 $batch=$batch -replace '(?m)^using [^;]+;\r?\n',''
-Add-Type -TypeDefinition ('using System.Collections.Generic; using System.Runtime.InteropServices; using UnityEngine; using Object = UnityEngine.Object;'+$adapter+$batch+$tests)
+Add-Type -TypeDefinition ('using System.Collections.Generic; using System.Runtime.InteropServices; using Game.World.Rendering; using UnityEngine; using Object = UnityEngine.Object;'+$adapter+$batch+$tests)
 [BatchChecks]::Run()
-'PASS production batch code with graphics adapters: 176-byte layout, texture/capacity splits, instanced draw counts, atlas slot copy, no unchanged upload, mask revision/reorder/growth and resource disposal. Actual GPU rendering not executed.'
+'PASS production mask-free batch code: 176-byte layout, texture/fog/capacity splits, instancing, buffer reuse, GPU local-only coverage and resource disposal. Actual GPU rendering not executed.'

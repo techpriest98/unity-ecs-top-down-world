@@ -38,47 +38,36 @@ namespace Game.World.Rendering
         public int LocalWaterCellCount => localWaterCount;
         public int LocalCapCount { get; private set; }
         public int LocalProjectionUploads { get; private set; }
-        public uint OcclusionRevision { get; private set; }
-        private ulong nextOcclusionHash, publishedOcclusionHash;
-        private bool hasOcclusionHash;
-        private void HashOcclusion(uint value) => nextOcclusionHash = unchecked((nextOcclusionHash ^ value) * 1099511628211UL);
-        public readonly struct OcclusionFace
+        public readonly struct SelectionFace
         {
             public readonly int2 Coordinate;
             public readonly ProjectedCellData Cell;
-            public OcclusionFace(int2 coordinate, ProjectedCellData cell) { Coordinate = coordinate; Cell = cell; }
+            public SelectionFace(int2 coordinate, ProjectedCellData cell) { Coordinate = coordinate; Cell = cell; }
         }
-        private readonly System.Collections.Generic.List<OcclusionFace> occlusionFaces = new();
-        private readonly System.Collections.Generic.List<OcclusionFace> waterSelectionFaces = new();
+        private readonly System.Collections.Generic.List<SelectionFace> selectionFaces = new();
+        private readonly System.Collections.Generic.List<SelectionFace> waterSelectionFaces = new();
         private readonly System.Collections.Generic.HashSet<int2> coverageTiles = new();
         private readonly System.Collections.Generic.Dictionary<int3, ProjectedCellData> groundTiles = new();
-        public System.Collections.Generic.IReadOnlyList<OcclusionFace> OcclusionFaces => occlusionFaces;
-        public System.Collections.Generic.IReadOnlyList<OcclusionFace> WaterSelectionFaces => waterSelectionFaces;
+        public System.Collections.Generic.IReadOnlyList<SelectionFace> SelectionFaces => selectionFaces;
+        public System.Collections.Generic.IReadOnlyList<SelectionFace> WaterSelectionFaces => waterSelectionFaces;
         public bool CoversTile(int2 key) => IsReady && coverageTiles.Contains(key);
-        public bool IntersectsCoverage(Vector4 rect) => IsReady &&
-            rect.x < localTileBounds.x + localTileBounds.z && rect.x + rect.z > localTileBounds.x &&
-            rect.y < localTileBounds.y + localTileBounds.w && rect.y + rect.w > localTileBounds.y;
         public float3 ClippingFeet { get; private set; }
         public ViewDirection ClippingView { get; private set; }
         public bool TryGetGroundTile(int3 worldHalfHeightKey, out ProjectedCellData cell) =>
             groundTiles.TryGetValue(worldHalfHeightKey, out cell);
 
-        internal void BeginOcclusionSnapshot(float3 feet, ViewDirection view)
+        internal void BeginSelectionSnapshot(float3 feet, ViewDirection view)
         {
             ClippingFeet = feet; ClippingView = view;
-            nextOcclusionHash = 14695981039346656037UL;
-            occlusionFaces.Clear(); waterSelectionFaces.Clear(); groundTiles.Clear();
+            selectionFaces.Clear(); waterSelectionFaces.Clear(); groundTiles.Clear();
         }
-        internal void AddOcclusionFaces(int2 coordinate, Unity.Entities.DynamicBuffer<ProjectedCellData> cells,
+        internal void AddSelectionFaces(int2 coordinate, Unity.Entities.DynamicBuffer<ProjectedCellData> cells,
             Unity.Entities.DynamicBuffer<ProjectedWaterCellData> water)
         {
-            foreach (var cell in water) waterSelectionFaces.Add(new OcclusionFace(coordinate, cell.Value));
+            foreach (var cell in water) waterSelectionFaces.Add(new SelectionFace(coordinate, cell.Value));
             foreach (var cell in cells)
             {
-                HashOcclusion((uint)coordinate.x); HashOcclusion((uint)coordinate.y);
-                HashOcclusion(cell.Position); HashOcclusion(cell.BlockData & 0xffffu);
-                HashOcclusion(cell.SourceAirIndex); HashOcclusion(cell.FaceData);
-                occlusionFaces.Add(new OcclusionFace(coordinate, cell));
+                selectionFaces.Add(new SelectionFace(coordinate, cell));
                 if (cell.FaceType != ProjectedFaceType.Top || cell.IsCutTop) continue;
                 int3 source = ChunkUtility.ToLocalPosition(cell.SourceAirIndex);
                 groundTiles.TryAdd(new int3(coordinate.x * ChunkSettings.SizeX + source.x,
@@ -116,7 +105,6 @@ namespace Game.World.Rendering
                 int y = (int)math.round(tile.y * 2) - minimum.y;
                 localTilePixels[y * size.x + x] = 255;
                 coverageTiles.Add(new int2(minimum.x + x, minimum.y + y));
-                HashOcclusion((uint)(minimum.x + x)); HashOcclusion((uint)(minimum.y + y));
             }
             localTileCoverage.SetPixelData(localTilePixels, 0);
             localTileCoverage.Apply(false, false);
@@ -131,11 +119,6 @@ namespace Game.World.Rendering
                 localTileBuffer.SetData(tiles);
             }
             localTileCount = tiles.Length;
-            if (!hasOcclusionHash || publishedOcclusionHash != nextOcclusionHash)
-            {
-                OcclusionRevision = unchecked(OcclusionRevision + 1);
-                publishedOcclusionHash = nextOcclusionHash; hasOcclusionHash = true;
-            }
         }
 
         public void UploadLocalProjection(NativeArray<ProjectedCellRenderData> opaque,

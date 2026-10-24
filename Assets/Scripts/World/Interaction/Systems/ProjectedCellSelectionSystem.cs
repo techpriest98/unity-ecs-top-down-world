@@ -87,11 +87,11 @@ namespace Game.World.Interaction
             // Water wins equal-depth ties; hidden global geometry is never queried.
             foreach (var face in localProjection.WaterSelectionFaces)
                 TrySelectLocalCell(face, pointerWorld, direction, ref nearestDepth, ref selection);
-            foreach (var face in localProjection.OcclusionFaces)
+            foreach (var face in localProjection.SelectionFaces)
                 TrySelectLocalCell(face, pointerWorld, direction, ref nearestDepth, ref selection);
         }
 
-        private void TrySelectLocalCell(LocalProjectionRenderer.OcclusionFace face,
+        private void TrySelectLocalCell(LocalProjectionRenderer.SelectionFace face,
             float2 pointer, ViewDirection direction,
             ref float nearestDepth, ref SelectedProjectedCell selection)
         {

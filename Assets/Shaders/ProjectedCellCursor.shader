@@ -18,8 +18,9 @@ Shader "Game/World/ProjectedCellCursor"
             #pragma fragment Frag
             #pragma target 4.5
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "ProjectedCellPacking.hlsl"
             float4 _CursorRect;
-            float _CursorDepth;
+            float4 _CursorSurface;
             float4 _CursorColor;
             struct Varyings
             {
@@ -34,8 +35,12 @@ Shader "Game/World/ProjectedCellCursor"
                 };
                 Varyings output;
                 output.uv = corners[id];
-                output.positionCS = TransformWorldToHClip(float3(
-                    _CursorRect.xy + output.uv * _CursorRect.zw, _CursorDepth));
+                float2 projected = _CursorRect.xy + output.uv * _CursorRect.zw;
+                ProjectedCellRenderData cell = (ProjectedCellRenderData)0;
+                cell.ChunkPosition = float3(0, _CursorSurface.x, _CursorSurface.y);
+                float height = lerp(_CursorSurface.z, _CursorSurface.w, output.uv.y);
+                float surfaceDepth = TerrainSurfaceDepth(cell, projected.y, height) - .001;
+                output.positionCS = TransformWorldToHClip(float3(projected, surfaceDepth));
                 return output;
             }
             float4 Frag(Varyings input) : SV_Target

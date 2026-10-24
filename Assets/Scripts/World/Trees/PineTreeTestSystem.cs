@@ -340,37 +340,28 @@ namespace Game.World.Trees
         protected override void OnStopRunning() { RemoveTest(); RemoveForest(); forestMode = false; }
     }
 
-    [UpdateInGroup(typeof(PresentationSystemGroup))]
+    [UpdateInGroup(typeof(PresentationSystemGroup), OrderLast = true)]
     [UpdateAfter(typeof(LocalProjectionRenderSystem))]
+    [UpdateAfter(typeof(WorldProjectionDrawSystem))]
     public partial class TreeRenderSystem : SystemBase
     {
         private const int Width = TreeResourcePreparationSystem.Width, Height = TreeResourcePreparationSystem.Height;
         private TreeResourcePreparationSystem resources;
         private int resourceRevision = -1;
-        private EntityQuery chunkQuery;
         private readonly Plane[] cameraPlanes = new Plane[6];
         private bool cullToCamera;
         private Material material;
+        private Material fogMaskMaterial;
         private readonly MaterialPropertyBlock properties = new MaterialPropertyBlock();
-        private readonly WorldItemOcclusionCache occlusion = new WorldItemOcclusionCache();
         private readonly List<TreeDrawBatch> batches = new List<TreeDrawBatch>();
         private readonly List<ChunkTree> trees = new List<ChunkTree>();
-        private readonly List<Entity> owners = new List<Entity>();
         public int LastVisibleTreeCount { get; private set; }
         public int LastDrawCallCount { get; private set; }
-        private static readonly ProfilerMarker OcclusionMarker = new ProfilerMarker("Trees.UpdateOcclusion");
         private static readonly ProfilerMarker MasksMarker = new ProfilerMarker("Trees.BuildVisibleBatches");
         private static readonly ProfilerMarker SubmitMarker = new ProfilerMarker("Trees.SubmitBatches");
         protected override void OnCreate()
         {
             RequireForUpdate<PlayerWorldPosition>(); RequireForUpdate<ViewDirectionComponent>();
-            chunkQuery = GetEntityQuery(new EntityQueryDesc
-            {
-                All = new[] { ComponentType.ReadOnly<ChunkComponent>(), ComponentType.ReadOnly<ChunkGenerated>(),
-                    ComponentType.ReadOnly<ProjectedCellData>(), ComponentType.ReadOnly<ProjectedClipCell>(),
-                    ComponentType.ReadOnly<ChunkShaderClippingEnabled>() },
-                Options = EntityQueryOptions.IgnoreComponentEnabledState
-            });
         }
 
 
@@ -388,82 +379,46 @@ namespace Game.World.Trees
             if (SystemAPI.TryGetSingleton<WorldStartupState>(out var startup) && startup.Phase != WorldStartupPhase.Ready) return;
             float3 feet = SystemAPI.GetSingleton<PlayerWorldPosition>().Value;
             var view = SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
-            using (OcclusionMarker.Auto()) UpdateOcclusion(view);
             if (material == null)
             {
                 var template = Resources.Load<Material>("TreeSprite");
                 if (template == null) return;
                 material = new Material(template) { name = "Runtime tree prototype", hideFlags = HideFlags.HideAndDontSave };
             }
-            trees.Clear(); owners.Clear();
+            trees.Clear();
             foreach (var (buffer, entity) in SystemAPI.Query<DynamicBuffer<ChunkTree>>().WithAll<ChunkGenerated>().WithEntityAccess())
-                foreach (var tree in buffer) { trees.Add(tree); owners.Add(entity); }
-            occlusion.BeginFrame();
+                foreach (var tree in buffer) trees.Add(tree);
             Camera camera = Camera.main;
             cullToCamera = camera != null;
             if (cullToCamera) GeometryUtility.CalculateFrustumPlanes(camera, cameraPlanes);
             foreach (var batch in batches) batch.Begin();
             using (MasksMarker.Auto())
-                for (int i = 0; i < trees.Count; i++) DrawTree(trees[i], owners[i], config, view, feet);
+                for (int i = 0; i < trees.Count; i++) DrawTree(trees[i], config, view, feet);
             using (SubmitMarker.Auto()) SubmitBatches(view, feet);
-            occlusion.EndFrame();
 
         }
 
-        private void UpdateOcclusion(ViewDirection view)
-        {
-            var local = LocalProjectionRenderer.Instance;
-            bool hasLocal = local != null && local.IsReady;
-            bool worldVisible = WorldRenderDebug.Enabled;
-            occlusion.SetProjectionLayers(hasLocal ? local : null, worldVisible);
-            using var chunks = chunkQuery.ToEntityArray(Allocator.Temp);
-            ulong signature = (ulong)chunks.Length;
-            if (!worldVisible) signature ^= 0x9e3779b97f4a7c15UL;
-            var projected = GetBufferLookup<ProjectedCellData>(true);
-            var clips = GetBufferLookup<ProjectedClipCell>(true);
-            foreach (var entity in chunks)
-            {
-                bool clipping = EntityManager.IsComponentEnabled<ChunkShaderClippingEnabled>(entity);
-                signature = unchecked(signature + occlusion.HashChunk(entity, projected[entity], clips[entity],
-                    EntityManager.GetComponentData<ChunkComponent>(entity).Coordinate, clipping,
-                    projected.DidChange(entity, LastSystemVersion) || clips.DidChange(entity, LastSystemVersion)));
-            }
-            ulong worldSignature = signature;
-            if (hasLocal) signature = unchecked(signature +
-                (ulong)local.OcclusionRevision * 1099511628211UL +
-                (ulong)(uint)local.GetHashCode() * 14695981039346656037UL);
-            if (!occlusion.NeedsRebuild(signature, view, worldSignature)) return;
-            foreach (var entity in chunks)
-            {
-                int2 c = EntityManager.GetComponentData<ChunkComponent>(entity).Coordinate;
-                occlusion.AddClipped(c, clips[entity]);
-                occlusion.AddFaces(c, projected[entity], EntityManager.IsComponentEnabled<ChunkShaderClippingEnabled>(entity));
-            }
-            occlusion.AddLocalFaces();
-        }
-
-
-        private void DrawTree(ChunkTree tree, Entity owner, PineTreeTest config, ViewDirection direction, float3 feet)
+        private void DrawTree(ChunkTree tree, PineTreeTest config, ViewDirection direction, float3 feet)
         {
             float2 anchor = WorldPositionProjectionUtility.Project(tree.Position, direction) + new float2(0, .25f);
             float extent = (math.clamp(config.Shape.CrownRadius, .5f, 5) + 2) * tree.Scale;
             var approximateBounds = new Bounds(new Vector3(anchor.x, anchor.y + tree.TrunkHeight * .5f, -1),
                 new Vector3(extent * 2, tree.TrunkHeight + extent * 2, 2));
+            if (ChunkProceduralRenderer.Instance != null) approximateBounds = ChunkProceduralRenderer.Instance.SurfaceDepthBounds(approximateBounds);
             if (cullToCamera && !GeometryUtility.TestPlanesAABB(cameraPlanes, approximateBounds)) return;
             var images = resources.FindImages(tree); if (images == null || images.Data == null) return;
             int view = ((int)direction + tree.QuarterTurn) % 4;
             float scale = tree.Scale / images.Data.Scale;
             float2 projected = WorldPositionProjectionUtility.Project(tree.Position, direction) + new float2(0, .25f);
             var rect = new Vector4(projected.x - Width * .5f * scale, projected.y - images.Data.Pivot * scale, Width * scale, Height * scale);
-            var mask = occlusion.GetTreeMaskPixels(owner, tree.Id, tree.Position, rect, Width, Height, images.Data.Surface[view], tree.Scale, out uint version);
             int batchIndex = LastVisibleTreeCount / TreeDrawBatch.Capacity;
             if (batchIndex == batches.Count) { var batch = new TreeDrawBatch(Width, Height); batch.Begin(); batches.Add(batch); }
             batches[batchIndex].Add(new TreeDrawData
             {
                 Rect = rect, Base = new Vector4(tree.Position.x, tree.Position.y, tree.Position.z, tree.Scale),
                 Pixels = new Vector4(images.Data.Scale, images.Data.Pivot, Width, Height),
-                Layers = new Vector4(images.FirstSlice + view, 0, 0, 0)
-            }, owner, tree.Id, mask, version);
+                Layers = new Vector4(images.FirstSlice + view, 0, 2f * (projected.y - tree.Position.y - 9f), 0)
+            });
             LastVisibleTreeCount++;
         }
 
@@ -474,6 +429,7 @@ namespace Game.World.Trees
             properties.Clear();
             properties.SetVector("_TreeLocalClipPlane", Vector4.zero);
             if (LocalProjectionRenderer.Instance != null) LocalProjectionRenderer.Instance.ApplyTreeClipping(properties);
+            properties.SetFloat("_TreeLocalOnly", WorldRenderDebug.Enabled ? 0f : 1f);
             properties.SetTexture("_TreeDiffuse", resources.Diffuse); properties.SetTexture("_TreeNormals", resources.Normals);
             properties.SetTexture("_TreeSurfaces", resources.Surfaces);
             properties.SetVector("_TreeRight", new Vector4(right.x, 0, right.y, 0));
@@ -486,10 +442,29 @@ namespace Game.World.Trees
                 properties.SetVector("_TreeSun", new Vector4(light.Color.x, light.Color.y, light.Color.z, light.Intensity));
                 properties.SetVector("_TreeSunDirection", new Vector4(light.DirectionToLight.x, light.DirectionToLight.y, light.DirectionToLight.z, 0));
             }
+            bool fogActive = ChunkProceduralRenderer.Instance != null && ChunkProceduralRenderer.Instance.ApplyTreeFog(properties);
+            // Explicitly restore the color pass, including after shader hot reload.
+            // Never depend on newly added ShaderLab property defaults in a live material.
+            material.renderQueue = 2451;
+            material.SetFloat("_TreeFogMaskPass", 0f);
+            material.SetFloat("_TreeZTest", (float)UnityEngine.Rendering.CompareFunction.LessEqual);
+            material.SetFloat("_TreeZWrite", 1f);
+            material.SetFloat("_TreeColorMask", 15f);
+            material.SetFloat("_TreeStencilRef", 0f);
+            if (fogActive && fogMaskMaterial == null)
+            {
+                fogMaskMaterial = new Material(material) { name = "Tree visible height fog mask", renderQueue = 3099 };
+                fogMaskMaterial.SetFloat("_TreeFogMaskPass", 1f);
+                fogMaskMaterial.SetFloat("_TreeZTest", (float)UnityEngine.Rendering.CompareFunction.Equal);
+                fogMaskMaterial.SetFloat("_TreeZWrite", 0f);
+                fogMaskMaterial.SetFloat("_TreeColorMask", 0f);
+                fogMaskMaterial.SetFloat("_TreeStencilRef", 8f);
+            }
             foreach (var batch in batches)
             {
                 if (batch.Count == 0) continue;
                 batch.Submit(material, properties); LastDrawCallCount++;
+                if (fogActive) { batch.Submit(fogMaskMaterial, properties, false); LastDrawCallCount++; }
             }
         }
 
@@ -499,8 +474,8 @@ namespace Game.World.Trees
         private void Clear()
         {
             if (material != null) Object.Destroy(material); material = null;
+            if (fogMaskMaterial != null) Object.Destroy(fogMaskMaterial); fogMaskMaterial = null;
             foreach (var batch in batches) batch.Dispose(); batches.Clear();
-            occlusion.Dispose();
         }
     }
 }

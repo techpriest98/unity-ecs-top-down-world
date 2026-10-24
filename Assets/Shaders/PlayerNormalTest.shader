@@ -54,6 +54,15 @@ Shader "Game/Player/AnimatedNormals"
             float4 _BodyNormalPointPositions[8], _BodyNormalPointColors[8];
             int _BodyNormalPointCount;
             float _BodyNormalHeight;
+            float _TerrainDepthOrigin;
+            float4 _PlayerTerrainAnchor;
+            float PlayerSurfaceDepth(float legacyDepth)
+            {
+                // PlayerPresentationSystem supplies -1; retain authored part Z
+                // and animation ordering, replacing only that legacy base plane.
+                float physicalDepth = _PlayerTerrainAnchor.x - _TerrainDepthOrigin + legacyDepth + 1.0 - .001;
+                return _PlayerTerrainAnchor.w > .5 ? physicalDepth : legacyDepth;
+            }
             float3 ShadeAlbedo(float3 clean, float3 painted, float3 direct)
             {
                 float brightness = dot(direct, float3(.2126, .7152, .0722));
@@ -101,7 +110,9 @@ Shader "Game/Player/AnimatedNormals"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-                output.positionCS = TransformObjectToHClip(input.positionOS);
+                float3 positionWS = TransformObjectToWorld(input.positionOS);
+                positionWS.z = PlayerSurfaceDepth(positionWS.z);
+                output.positionCS = TransformWorldToHClip(positionWS);
                 output.uv = input.uv;
                 return output;
             }

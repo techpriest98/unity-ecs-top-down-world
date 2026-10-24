@@ -67,6 +67,19 @@ namespace Game.World.Rendering
         public bool IsAboveFogPlane(float itemBaseHeight) => enabled && hasFogSeaLevel &&
             (fogMode == 1 ? 1f : fogMode == 2 ? 0f : automaticFog) * fogOpacity >= .001f &&
             itemBaseHeight >= fogSeaLevel + fogHeightAboveSea;
+        internal bool ApplyTreeFog(MaterialPropertyBlock properties)
+        {
+            bool active = WorldRenderDebug.Enabled && hasFogSeaLevel && DebugFogDensity >= .001f && fogChunkCount > 0;
+            properties.SetFloat("_TreeFogEnabled", active ? 1f : 0f);
+            properties.SetFloat("_TreeFogHeight", fogSeaLevel + fogHeightAboveSea);
+            properties.SetVector("_TreeFogEdge", new Vector4(fogEdgeHeight, Mathf.Max(1f, fogEdgeNoiseSize), 0, 0));
+            properties.SetVector("_TreeFogSeaOrigin", new Vector4(oceanSurfaceOrigin.x, oceanSurfaceOrigin.y, fogSeaLevel, 0));
+            properties.SetVector("_TreeFogRight", new Vector4(sideFaceNormal.z, -sideFaceNormal.x, 0, 0));
+            properties.SetVector("_TreeFogAway", new Vector4(-sideFaceNormal.x, -sideFaceNormal.z, 0, 0));
+            properties.SetVector("_TreeFogDrift", new Vector4(worldWind.Drift.x, worldWind.Drift.y, 0, 0));
+            properties.SetTexture("_TreeFogNoise", fogNoise != null ? fogNoise : generatedFogNoise != null ? generatedFogNoise : Texture2D.whiteTexture);
+            return active;
+        }
         public void SetFogPlayerPosition(Unity.Mathematics.float2 position, bool valid)
         {
             fogPlayerProjection = position;
@@ -223,7 +236,7 @@ namespace Game.World.Rendering
                 fogSkyCommands.DrawProcedural(Matrix4x4.identity, fogSkyMaterial, 0, MeshTopology.Triangles, 6, count, fogMaskProperties);
                 return;
             }
-            var parameters = new RenderParams(maskMaterial) { worldBounds = bounds, matProps = fogMaskProperties };
+            var parameters = new RenderParams(maskMaterial) { worldBounds = SurfaceDepthBounds(bounds), matProps = fogMaskProperties };
             Graphics.RenderPrimitives(parameters, MeshTopology.Triangles, 6, count);
         }
 

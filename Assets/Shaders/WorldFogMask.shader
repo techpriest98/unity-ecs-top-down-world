@@ -56,9 +56,10 @@ Shader "Game/World/WorldFogMask"
                 float source = (cell.FaceData>>24)&255u;
                 float height = face==1u ? source + (cutTop?1.0:0.0) - (lower?.5:0.0) :
                     source + (face==3u || lower?.25:.75) + (corner.y-.5)*.5;
-                Varyings o; o.position=TransformWorldToHClip(float3(projected,cell.ChunkPosition.z));
+                float depth = TerrainSurfaceDepth(cell, projected.y, height);
+                Varyings o; o.position=TransformWorldToHClip(float3(projected,depth));
                 #if defined(_FOG_SKY_ALPHA)
-                    o.position=mul(_FogSkyViewProjection,float4(projected,cell.ChunkPosition.z,1));
+                    o.position=mul(_FogSkyViewProjection,float4(projected,depth,1));
                 #endif
                 o.projected=projected; o.height=height; o.cut=(cutTop||cutSide)?1u:0u;
                 // Reuse the same smoothed skylight as terrain/water lighting.

@@ -69,6 +69,17 @@ uint GetFootBlockId(uint faceData) { return (faceData >> 8) & 0xFFu; }
 bool HasCutTop(uint faceData) { return (faceData & 0x8000u) != 0u; }
 bool HasCutSide(uint faceData) { return (faceData & 0x0004u) != 0u; }
 uint GetOpticalDepth(uint faceData) { return faceData & 0xFFu; }
+// Uploaded chunk Z still uses the legacy .01/16 scale. Decode it here.
+// Inverse projection: projectedY = chunkY + 9 + height - viewDepth / 2.
+// Top has constant height, hence varying depth; Side varies height and Y
+// together, hence constant depth. No changes to lighting receiver coordinates.
+float _TerrainDepthOrigin;
+float TerrainSurfaceDepth(ProjectedCellRenderData cell, float projectedY, float height)
+{
+    float localDepth = 2.0 * (projectedY - cell.ChunkPosition.y - height) - 18.0;
+    float physicalDepth = cell.ChunkPosition.z * 1600.0 + localDepth - _TerrainDepthOrigin;
+    return physicalDepth;
+}
 bool HasTopInset(uint faceData) { return (faceData & 0x100u) != 0u; }
 float GetPackedSunVisibility(uint lightData, uint maskIndex)
 {

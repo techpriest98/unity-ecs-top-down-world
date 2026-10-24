@@ -22,11 +22,19 @@ Shader "Game/World/ItemSprite"
             #pragma target 4.5
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             TEXTURE2D(_MainTex);
-            TEXTURE2D(_OcclusionMask);
+            TEXTURE2D(_LocalTileCoverage);
+            float4 _LocalTileCoverageBounds;
+            float _ItemLocalOnly;
             SamplerState item_point_clamp_sampler;
+            float _TerrainDepthOrigin;
+            float ItemSurfaceDepth(float anchorDepth, float projectedY, float centreY, float grounded)
+            {
+                float physicalDepth = anchorDepth + 2.0 * (projectedY - centreY) * grounded - _TerrainDepthOrigin - .002;
+                return physicalDepth;
+            }
             struct WorldItemDrawData
             {
-                float4 Rect, Uv, MaskPixels, LightRect;
+                float4 Rect, Uv, Reserved, LightRect;
                 float4 BottomLeft, BottomRight, TopLeft, TopRight;
                 float4 Ambient, Sunlight, Flags;
             };
@@ -38,7 +46,10 @@ Shader "Game/World/ItemSprite"
                 const float2 corners[6] = { float2(0,0), float2(0,1), float2(1,1), float2(0,0), float2(1,1), float2(1,0) };
                 Varyings output;
                 float2 corner = corners[id];
-                output.positionCS = TransformWorldToHClip(float3(data.Rect.xy + corner * data.Rect.zw, data.Flags.x));
+                float2 projected = data.Rect.xy + corner * data.Rect.zw;
+                float depth = ItemSurfaceDepth(data.Flags.w, projected.y,
+                    data.Rect.y + data.Rect.w * .5, data.Flags.z);
+                output.positionCS = TransformWorldToHClip(float3(projected, depth));
                 output.uv = data.Uv.xy + corner * data.Uv.zw;
                 output.instanceId = instanceId;
                 output.maskUv = corner;
@@ -50,13 +61,12 @@ Shader "Game/World/ItemSprite"
                 WorldItemDrawData data = _WorldItems[input.instanceId];
                 float4 color = SAMPLE_TEXTURE2D(_MainTex, item_point_clamp_sampler, input.uv);
                 clip(color.a - 0.1);
-                if (data.Flags.z > 0.5)
+                if (_ItemLocalOnly > .5)
                 {
-                    // Integer atlas addressing exactly preserves point/clamp
-                    // sampling, including uv=1 at the edge of adjacent slots.
-                    uint2 size = max(uint2(1,1), (uint2)data.MaskPixels.zw);
-                    uint2 pixel = min((uint2)(saturate(input.maskUv) * size), size - 1);
-                    clip(0.5 - _OcclusionMask.Load(int3((uint2)data.MaskPixels.xy + pixel, 0)).r);
+                    float2 projected = data.Rect.xy + input.maskUv * data.Rect.zw;
+                    float2 uv = (projected - _LocalTileCoverageBounds.xy) / max(_LocalTileCoverageBounds.zw, .0001);
+                    clip(all(uv >= 0) && all(uv < 1) ? 1.0 : -1.0);
+                    clip(SAMPLE_TEXTURE2D_LOD(_LocalTileCoverage, item_point_clamp_sampler, uv, 0).r - .5);
                 }
                 if (data.Flags.y > 0.5)
                 {

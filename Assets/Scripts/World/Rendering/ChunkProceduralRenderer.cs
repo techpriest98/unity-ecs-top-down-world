@@ -24,6 +24,73 @@ namespace Game.World.Rendering
         [SerializeField]
         private Material waterMaterial;
 
+        private float terrainDepthOrigin;
+        private Camera terrainDepthCamera;
+        private float savedCameraDepth, savedCameraNear, savedCameraFar;
+
+        internal Bounds SurfaceDepthBounds(Bounds bounds)
+        {
+            // Conservatively invert projected Y for the entire voxel height range.
+            float minimum = Mathf.Min(0f, 2f * (bounds.min.y - ChunkSettings.SizeY - 10f) - terrainDepthOrigin);
+            float maximum = Mathf.Max(0f, 2f * (bounds.max.y - 8f) - terrainDepthOrigin);
+            Vector3 center = bounds.center, size = bounds.size;
+            center.z = (minimum + maximum) * .5f;
+            size.z = maximum - minimum + 2f;
+            return new Bounds(center, size);
+        }
+
+        private void PrepareTerrainDepth()
+        {
+            Camera camera = Camera.main;
+            if (terrainDepthCamera != null && terrainDepthCamera != camera)
+            {
+                Vector3 position = terrainDepthCamera.transform.position;
+                position.z = savedCameraDepth;
+                terrainDepthCamera.transform.position = position;
+                terrainDepthCamera.nearClipPlane = savedCameraNear;
+                terrainDepthCamera.farClipPlane = savedCameraFar;
+                terrainDepthCamera = null;
+            }
+            if (camera != null && camera.orthographic)
+            {
+                if (terrainDepthCamera == null)
+                {
+                    terrainDepthCamera = camera;
+                    savedCameraDepth = camera.transform.position.z;
+                    savedCameraNear = camera.nearClipPlane;
+                    savedCameraFar = camera.farClipPlane;
+                }
+                terrainDepthOrigin = 2f * (camera.transform.position.y - terrainReferenceHeight - 9f);
+                Bounds bounds = opaqueWorldBounds;
+                bounds.Encapsulate(waterWorldBounds);
+                bounds.Encapsulate(clippedWorldBounds);
+                bounds.Encapsulate(clippedWaterWorldBounds);
+                var local = LocalProjectionRenderer.Instance;
+                if (local != null && local.IsReady)
+                    bounds.Encapsulate(new Bounds(new Vector3(camera.transform.position.x, camera.transform.position.y, 0), new Vector3(40, 40, 1)));
+                bounds = SurfaceDepthBounds(bounds);
+                Vector3 position = camera.transform.position;
+                position.z = Mathf.Min(savedCameraDepth, bounds.min.z - 10f);
+                camera.transform.position = position;
+                camera.nearClipPlane = savedCameraNear;
+                camera.farClipPlane = Mathf.Max(savedCameraFar, bounds.max.z - position.z + 10f);
+            }
+            Shader.SetGlobalFloat("_TerrainDepthOrigin", terrainDepthOrigin);
+        }
+
+        private void OnDisable()
+        {
+            if (terrainDepthCamera != null)
+            {
+                Vector3 position = terrainDepthCamera.transform.position;
+                position.z = savedCameraDepth;
+                terrainDepthCamera.transform.position = position;
+                terrainDepthCamera.nearClipPlane = savedCameraNear;
+                terrainDepthCamera.farClipPlane = savedCameraFar;
+                terrainDepthCamera = null;
+            }
+        }
+
         [Header("Terrain Height Readability (GPU)")]
         [SerializeField, Range(0f, 1f)] private float terrainHeightStrength = .3f;
         [SerializeField] private Color terrainHeightTint = new Color(.62f, .73f, .85f, 1f);
@@ -177,6 +244,7 @@ namespace Game.World.Rendering
         // Called after ECS presentation has finished publishing local buffers and coverage.
         internal void SubmitFrame()
         {
+            PrepareTerrainDepth();
             if (Instance != this || !isActiveAndEnabled) return;
             if (!WorldRenderDebug.ProjectionRequired) return;
             var world = Unity.Entities.World.DefaultGameObjectInjectionWorld;
@@ -562,7 +630,7 @@ namespace Game.World.Rendering
                     layerMaterial)
                 {
                     worldBounds =
-                        bounds,
+                        SurfaceDepthBounds(bounds),
 
                     matProps =
                         layerPropertyBlock

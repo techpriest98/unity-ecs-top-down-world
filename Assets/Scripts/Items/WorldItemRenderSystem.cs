@@ -9,8 +9,9 @@ using UnityEngine;
 
 namespace Game.Items
 {
-    [UpdateInGroup(typeof(PresentationSystemGroup))]
+    [UpdateInGroup(typeof(PresentationSystemGroup), OrderLast = true)]
     [UpdateAfter(typeof(LocalProjectionRenderSystem))]
+    [UpdateAfter(typeof(WorldProjectionDrawSystem))]
     public partial class WorldItemRenderSystem : SystemBase
     {
         private Material material;
@@ -35,8 +36,6 @@ namespace Game.Items
         private int activePlaneCount;
         private static readonly Unity.Profiling.ProfilerMarker RenderMarker = new("WorldItems.Render");
         private static readonly Unity.Profiling.ProfilerMarker LightIndexMarker = new("WorldItems.BuildLightIndex");
-        private static readonly Unity.Profiling.ProfilerMarker OcclusionRebuildMarker = new("WorldItems.Occlusion.Rebuild");
-        private readonly WorldItemOcclusionCache occlusion = new WorldItemOcclusionCache();
         protected override void OnCreate()
         {
             library = GetEntityQuery(ComponentType.ReadOnly<ItemDefinitionReference>());
@@ -46,8 +45,7 @@ namespace Game.Items
             chunks = GetEntityQuery(new EntityQueryDesc
             {
                 All = new[] { ComponentType.ReadOnly<ChunkComponent>(), ComponentType.ReadOnly<ChunkGenerated>(),
-                    ComponentType.ReadOnly<ProjectedCellData>(), ComponentType.ReadOnly<ProjectedClipCell>(),
-                    ComponentType.ReadOnly<ChunkShaderClippingEnabled>() },
+                    ComponentType.ReadOnly<ProjectedCellData>() },
                 Options = EntityQueryOptions.IgnoreComponentEnabledState
             });
         }
@@ -59,7 +57,6 @@ namespace Game.Items
         {
             if (aboveFogMaterial != null) Object.Destroy(aboveFogMaterial);
             aboveFogMaterial = null;
-            occlusion.Dispose();
             foreach (var batch in batches) batch.Dispose();
             batches.Clear(); LastVisibleItemCount = LastDrawCallCount = 0;
             lightingChunks.Clear(); seenChunks.Clear(); removedChunks.Clear();
@@ -80,21 +77,12 @@ namespace Game.Items
             bool hasGrounded = false;
             foreach (var item in SystemAPI.Query<RefRO<WorldItem>>())
                 if (item.ValueRO.Grounded) { hasGrounded = true; break; }
-            occlusion.BeginFrame();
-            occlusion.SetProjectionLayers(hasLocal ? localProjection : null, worldVisible);
             seenChunks.Clear();
             if (hasGrounded)
             {
                 var cellsLookup = SystemAPI.GetBufferLookup<ProjectedCellData>(true);
-                var clipsLookup = SystemAPI.GetBufferLookup<ProjectedClipCell>(true);
                 var chunkLookup = SystemAPI.GetComponentLookup<ChunkComponent>(true);
-                var clippingLookup = SystemAPI.GetComponentLookup<ChunkShaderClippingEnabled>(true);
                 using var entities = chunks.ToEntityArray(Allocator.Temp);
-                ulong signature = (ulong)entities.Length;
-                if (hasLocal) signature = unchecked(signature +
-                    (ulong)localProjection.OcclusionRevision * 1099511628211UL +
-                    (ulong)(uint)localProjection.GetHashCode() * 14695981039346656037UL);
-                if (!worldVisible) signature ^= 0x9e3779b97f4a7c15UL;
                 foreach (var entity in entities)
                 {
                     var coordinate = chunkLookup[entity].Coordinate;
@@ -108,21 +96,6 @@ namespace Game.Items
                     // Both lighting and geometry live in this buffer. Keep the
                     // dirty bit until a visible item actually requests the index.
                     index.Dirty |= cellsLookup.DidChange(entity, LastSystemVersion) || chunkLookup.DidChange(entity, LastSystemVersion);
-                    bool enabled = clippingLookup.IsComponentEnabled(entity);
-                    ulong hash = occlusion.HashChunk(entity, cellsLookup[entity], clipsLookup[entity],
-                        chunkLookup[entity].Coordinate, false,
-                        cellsLookup.DidChange(entity, LastSystemVersion) || clipsLookup.DidChange(entity, LastSystemVersion)
-                        || chunkLookup.DidChange(entity, LastSystemVersion));
-                    signature = unchecked(signature + (hash ^ (enabled ? 0x9e3779b97f4a7c15UL : 0UL)));
-                }
-                if (occlusion.NeedsRebuild(signature, direction))
-                {
-                    using var rebuildMarker = OcclusionRebuildMarker.Auto();
-                    foreach (var entity in entities)
-                        occlusion.AddClipped(chunkLookup[entity].Coordinate, clipsLookup[entity]);
-                    foreach (var entity in entities)
-                        occlusion.AddFaces(chunkLookup[entity].Coordinate, cellsLookup[entity], clippingLookup.IsComponentEnabled(entity));
-                    occlusion.AddLocalFaces();
                 }
             }
             removedChunks.Clear();
@@ -153,23 +126,29 @@ namespace Game.Items
                 const float depth = -0.9f;
                 var bounds = new Bounds(new Vector3(left + width * .5f, bottom + height * .5f, depth),
                     new Vector3(width, height, .1f));
-                // Reject before masks, texture uploads and ground-light lookup.
+                if (fogRenderer != null) bounds = fogRenderer.SurfaceDepthBounds(bounds);
+                // Reject before ground-light lookup and batching.
                 // Use the full sprite bounds, not its anchor, at screen edges.
                 if (!IsVisible(bounds)) continue;
-                if (item.ValueRO.Grounded && occlusion.IsGroundTileClipped(surfacePosition)) continue;
+                if (item.ValueRO.Grounded && hasLocal)
+                {
+                    int3 support = new int3((int)math.floor(surfacePosition.x), (int)math.round(surfacePosition.y * 2f), (int)math.floor(surfacePosition.z));
+                    float2 supportProjection = WorldPositionProjectionUtility.Project(new float3(support.x + .5f, support.y * .5f, support.z + .5f), direction) + new float2(0, .25f);
+                    if (localProjection.CoversTile(new int2((int)math.floor(supportProjection.x), (int)math.floor(supportProjection.y * 2f))) &&
+                        !localProjection.TryGetGroundTile(support, out _)) continue;
+                }
                 bool aboveFog = fogRenderer != null && fogRenderer.IsAboveFogPlane(surfacePosition.y);
                 var texture = sprite.texture;
                 var uv = sprite.textureRect;
                 var rect = new Vector4(left, bottom, width, height);
-                uint maskVersion = 0;
-                var mask = item.ValueRO.Grounded
-                    ? occlusion.GetMask(entity, surfacePosition, rect, (int)sprite.rect.width, (int)sprite.rect.height, out maskVersion, false)
-                    : null;
                 var data = new WorldItemDrawData
                 {
                     Rect = rect,
                     Uv = new Vector4(uv.x / texture.width, uv.y / texture.height, uv.width / texture.width, uv.height / texture.height),
-                    Flags = new Vector4(depth, 0, item.ValueRO.Grounded ? 1 : 0, 0)
+                    // W is physical render depth at the sprite centre. Grounded
+                    // sprites slope with Top; airborne sprites stay upright.
+                    Flags = new Vector4(depth, 0, item.ValueRO.Grounded ? 1 : 0,
+                        2f * (projected.y - surfacePosition.y - 9f))
                 };
                 ApplyGroundLighting(ref data, item.ValueRO.Grounded, surfacePosition, direction);
                 if (currentBatch == null || !currentBatch.CanAppend(texture, aboveFog))
@@ -178,7 +157,7 @@ namespace Game.Items
                     currentBatch = batches[usedBatches++];
                     currentBatch.Begin(texture, aboveFog);
                 }
-                currentBatch.Add(data, mask, maskVersion, bounds);
+                currentBatch.Add(data, bounds);
                 LastVisibleItemCount++;
             }
             using (SubmitMarker.Auto())
@@ -197,7 +176,6 @@ namespace Game.Items
             // Do not retain historical peak buffers/textures after items unload.
             for (int i = batches.Count - 1; i >= usedBatches; i--)
             { batches[i].Dispose(); batches.RemoveAt(i); }
-            occlusion.EndFrame();
         }
 
         private void ApplyGroundLighting(ref WorldItemDrawData data, bool grounded, float3 surface, ViewDirection direction)
