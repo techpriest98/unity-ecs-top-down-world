@@ -46,9 +46,8 @@ namespace Game.Items.Skills
             }
             Key key = ResolvedKey(slot);
             if (key == UnityEngine.InputSystem.Key.None) return "";
-            if (Keyboard.current != null)
-                foreach (var control in Keyboard.current.allKeys)
-                    if (control.keyCode == key) return control.displayName;
+            // Key identifies the physical binding; displayName follows the OS
+            // keyboard layout and would turn the HUD's Latin hints into Cyrillic.
             string name = key.ToString();
             return name.StartsWith("Digit") ? name.Substring(5) : name;
         }

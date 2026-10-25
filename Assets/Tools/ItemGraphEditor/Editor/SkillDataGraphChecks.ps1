@@ -86,6 +86,13 @@ function Visit([string]$guid, [string[]]$ancestors, [bool]$actionStarted, [bool]
     if ($kind -eq 'Action') { $null = Resolve-Ref (Field $node.Text 'Action') $node.Path -Required }
     $next = Resolve-Ref (Field $node.Text 'Next') $node.Path
     $edges = @(); if ($next) { $edges += $next }
+    if ($kind -eq 'SelectionKindBranch') {
+        $outputs = [regex]::Match($node.Text, '(?m)^  SelectionOutputs:\r?\n((?:  - \{[^}\r\n]+\}\r?\n?){3})')
+        Check ($outputs.Success -and !$next) "Selection branch must have exactly three outputs and no fallback Next: $($node.Path)"
+        foreach ($reference in [regex]::Matches($outputs.Groups[1].Value, '\{[^}]+\}')) {
+            $edges += Resolve-Ref $reference.Value $node.Path -Required
+        }
+    }
     $rows = @([regex]::Matches($node.Text, '(?m)^  - Item:\s*(\{[^}\r\n]+\})\r?\n    Output:\s*(\{[^}\r\n]+\})'))
     $rowCount = [regex]::Matches($node.Text, '(?m)^  - Item:').Count
     Check ($rows.Count -eq $rowCount) "Malformed ItemMatches row: $($node.Path)"
@@ -135,6 +142,8 @@ public class ItemSkillAction {}
 public class ReplaceWorldItemAction : ItemSkillAction {}
 public class ReplaceEquippedItemAction : ItemSkillAction {}
 public class TogglePlacementShapeAction : ItemSkillAction {}
+public enum WorldObjectCategory {Item,Structure}
+public class DestroyWorldObjectAction : ItemSkillAction {public WorldObjectCategory Category;}
 public class SkillChainNode { public SkillChainNodeKind Kind; public SkillChainNode PositionSource; public ItemSkillAction Action; }
 public static class Checks {
 METHOD_BODY
@@ -142,7 +151,7 @@ static void Expect(SkillChainNode n, string expected) { if(OutputName(n)!=expect
 public static void Run() {
 foreach(SkillChainNodeKind k in Enum.GetValues(typeof(SkillChainNodeKind))) {
  var n=new SkillChainNode{Kind=k};
- Expect(n,k==SkillChainNodeKind.GroundItemTarget||k==SkillChainNodeKind.ReplaceableWorldItemTarget?"World Item":k==SkillChainNodeKind.OtherHandItem?"Item":"Position");
+ Expect(n,k==SkillChainNodeKind.GroundItemTarget||k==SkillChainNodeKind.ReplaceableWorldItemTarget||k==SkillChainNodeKind.WorldItemTarget?"World Item":k==SkillChainNodeKind.StructureTarget?"Structure":k==SkillChainNodeKind.OtherHandItem?"Item":"Position");
 }
 foreach(var a in new ItemSkillAction[]{new ReplaceWorldItemAction(),new ReplaceEquippedItemAction(),new TogglePlacementShapeAction(),new ItemSkillAction()}) {
  var n=new SkillChainNode{Kind=SkillChainNodeKind.Action,Action=a};

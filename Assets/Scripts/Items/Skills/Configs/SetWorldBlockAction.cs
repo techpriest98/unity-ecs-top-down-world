@@ -16,9 +16,12 @@ namespace Game.Items.Skills
         public BlockValueSource BlockSource = BlockValueSource.ItemSelection;
         public BlockId ConstantBlock = BlockId.Air;
         public bool PlacementShapeConnected = true;
+        [HideInInspector] public bool SelectionKindConnected = true;
 
         public string GetConfigurationError(EntityManager manager)
         {
+            if (BlockSource == BlockValueSource.ItemSelection && !SelectionKindConnected)
+                return "Connect Kind to Item.Selection.Kind.";
             if (BlockSource == BlockValueSource.ItemSelection && !PlacementShapeConnected)
                 return "Connect the Shape input to Item.Shape.";
             if (BlockSource != BlockValueSource.Constant && BlockSource != BlockValueSource.ItemSelection)
@@ -42,6 +45,8 @@ namespace Game.Items.Skills
                 (checkDistance && !WithinDistance(manager, player, (float3)position + 0.5f))) return false;
             if (BlockSource == BlockValueSource.Constant) return true;
             var selection = PlayerEquipmentUtility.GetInstance(manager.GetBuffer<PlayerEquipmentSlot>(player, true), slot).PlacementSelection;
+            if (BlockSource == BlockValueSource.ItemSelection && RubedoPlacementUtility.IsSpawnSelection(selection))
+                return RubedoPlacementUtility.CanSpawn(manager, player, selection, position);
             return BlockSource == BlockValueSource.ItemSelection && selection.Kind == PlacementSelectionKind.Block &&
                 selection.Id > 0 && selection.Id <= byte.MaxValue && System.Enum.IsDefined(typeof(BlockId), (BlockId)selection.Id) &&
                 TryPlanPlacement(manager, player, slot, position, out _, out _, out _);
@@ -51,6 +56,8 @@ namespace Game.Items.Skills
         {
             if (GetConfigurationError(manager) != null || !CanSetAt(manager, player, slot, item, position, checkDistance)) return false;
             var instance = PlayerEquipmentUtility.GetInstance(manager.GetBuffer<PlayerEquipmentSlot>(player, true), slot);
+            if (BlockSource == BlockValueSource.ItemSelection && RubedoPlacementUtility.IsSpawnSelection(instance.PlacementSelection))
+                return RubedoPlacementUtility.Spawn(manager, player, instance.PlacementSelection, position);
             BlockId block = BlockSource == BlockValueSource.Constant ? ConstantBlock : (BlockId)instance.PlacementSelection.Id;
             using var query = manager.CreateEntityQuery(ComponentType.ReadOnly<BlockModificationQueue>());
             if (BlockSource == BlockValueSource.ItemSelection)
@@ -124,6 +131,9 @@ namespace Game.Items.Skills
             if (BlockSource == BlockValueSource.Constant) return true;
             if (BlockSource != BlockValueSource.ItemSelection || !manager.HasBuffer<PlayerEquipmentSlot>(player)) return false;
             var selection = PlayerEquipmentUtility.GetInstance(manager.GetBuffer<PlayerEquipmentSlot>(player, true), slot).PlacementSelection;
+            if (RubedoPlacementUtility.IsSpawnSelection(selection))
+                return CursorWorldUtility.TryGetPosition(manager, player, Position, out var before) &&
+                    RubedoPlacementUtility.CanSpawn(manager, player, selection, before);
             return selection.Kind == PlacementSelectionKind.Block && selection.Id > 0 && selection.Id <= byte.MaxValue &&
                 System.Enum.IsDefined(typeof(BlockId), (BlockId)selection.Id);
         }

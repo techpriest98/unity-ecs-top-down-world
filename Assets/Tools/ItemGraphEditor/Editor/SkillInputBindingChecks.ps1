@@ -25,6 +25,11 @@ public static class SkillBindingChecks {
   binding.Button=SkillInputButton.Keyboard;binding.Key=Key.E;
   Keyboard.current=new Keyboard{allKeys=new[]{new KeyControl{keyCode=Key.E,displayName="E",wasPressedThisFrame=true}}};
   Check(binding.WasPressed(4)&&binding.Label(4)=="E","Custom keyboard binding depends on slot");
+  Keyboard.current.allKeys[0].displayName="У";
+  Check(binding.WasPressed(4)&&binding.Label(4)=="E","Layout change translated label or changed physical binding");
+  Keyboard.current=null;
+  Check(binding.Label(4)=="E","Keyboard label requires a connected device");
+  binding.Key=Key.Digit3;Check(binding.Label(0)=="3","Physical digit label retained enum prefix");
   binding.Key=Key.None;Check(!binding.WasPressed(0)&&binding.Label(0)=="","None key triggered");
   Keyboard.current=null;Mouse.current=new Mouse();
   var buttons=new[]{SkillInputButton.LeftMouse,SkillInputButton.MiddleMouse,SkillInputButton.RightMouse};

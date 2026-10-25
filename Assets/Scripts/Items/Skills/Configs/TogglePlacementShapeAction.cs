@@ -9,8 +9,9 @@ namespace Game.Items.Skills
     {
         public bool ShapeStateConnected = true;
         public bool ItemSelectionConnected = true;
+        [HideInInspector] public bool SelectionKindConnected = true;
         public override bool IsAvailable(EntityManager manager, Entity player, EquipmentSlot slot, int item) =>
-            ShapeStateConnected && ItemSelectionConnected && item != 0 && manager.Exists(player) && manager.HasBuffer<PlayerEquipmentSlot>(player) &&
+            ShapeStateConnected && ItemSelectionConnected && SelectionKindConnected && item != 0 && manager.Exists(player) && manager.HasBuffer<PlayerEquipmentSlot>(player) &&
             PlayerEquipmentUtility.GetItem(manager.GetBuffer<PlayerEquipmentSlot>(player, true), slot) == item;
 
         public bool OpenPicker(EntityManager manager, Entity player, EquipmentSlot slot, int item)

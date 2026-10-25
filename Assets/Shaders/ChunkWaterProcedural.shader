@@ -131,6 +131,7 @@ Shader "Game/World/ChunkWaterProcedural"
             // Match the local response strength to the existing ocean-wave normals.
             static const float _LocalNormalStrength = 1;
             #include "DetailedLocalLighting.hlsl"
+            #include "TreeCoarseSunLighting.hlsl"
 
 
             // ============================================================
@@ -424,7 +425,8 @@ Shader "Game/World/ChunkWaterProcedural"
                 localLight = SingleLocalLightDiagnostic(input.ProjectionPosition, input.ShadowReceiverHeight,
                     referenceNormal, worldNormal, referenceNormal, localLight);
                 float skyVisibility = smoothLight.a;
-                float sunVisibility = GetSunVisibility(input.LightData);
+                float sunVisibility = min(GetSunVisibility(input.LightData),
+                    CoarseTreeSunVisibility(input.ProjectionPosition, input.ShadowReceiverHeight));
 
                 float ambientVisibility = lerp(
                     MINIMUM_AMBIENT_VISIBILITY,

@@ -251,6 +251,8 @@ namespace Game.Items
                     if (node.Distance != null) DependsOn(node.Distance);
                     if (node.Action != null) DependsOn(node.Action);
                     if (node.Next != null) pending.Push(node.Next);
+                    foreach (var output in node.SelectionOutputs ?? System.Array.Empty<Game.Items.Skills.SkillChainNode>())
+                        if (output != null) pending.Push(output);
                     foreach (var row in node.ItemMatches ?? System.Array.Empty<Game.Items.Skills.WorldItemMatch>())
                     {
                         if (row == null) continue;

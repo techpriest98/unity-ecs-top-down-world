@@ -8,6 +8,7 @@ using Game.Items.Skills;
 using Game.World.Blocks;
 using Game.World.Rendering;
 using Game.World.Generation;
+using Game.World.Trees;
 
 namespace Game.UI
 {
@@ -74,7 +75,7 @@ namespace Game.UI
         private readonly RectTransform[] selectionFrames = new RectTransform[2];
         private readonly RawImage[] selectionIcons = new RawImage[2];
 
-        public void SetSelectedBlock(int index, ItemPlacementSelection selection, BlockPlacementMode mode)
+        public void SetSelectedBlock(int index, ItemPlacementSelection selection, BlockPlacementMode mode, ItemDefinition item = null)
         {
             if (index < 0 || index >= 2) return;
             var renderer = ChunkProceduralRenderer.Instance;
@@ -83,6 +84,15 @@ namespace Game.UI
             bool visible = selection.Kind == PlacementSelectionKind.Block && selection.Id > 0 && selection.Id <= byte.MaxValue &&
                 renderer != null && renderer.TryGetBlockSideIcon((BlockId)selection.Id, out atlas, out uv,
                     halfBlock: mode == BlockPlacementMode.Half);
+            if (selection.Kind == PlacementSelectionKind.Item && item != null)
+            {
+                var sprite = item.Icon != null ? item.Icon : item.WorldSprite;
+                if (sprite != null) { atlas = sprite.texture; uv = SpriteUv(sprite); visible = true; }
+            }
+            if (selection.Kind == PlacementSelectionKind.Structure && selection.Id == (int)StructureDefinitionId.Pine)
+            {
+                atlas = GetPinePreview(); uv = new Rect(0, 0, 1, 1); visible = atlas != null;
+            }
             if (!visible)
             {
                 if (selectionFrames[index] != null) selectionFrames[index].gameObject.SetActive(false);
@@ -100,7 +110,21 @@ namespace Game.UI
                 frame.sizeDelta = ((RectTransform)original.transform).rect.size;
                 frame.anchoredPosition = new Vector2(hand.anchorMin.x * panel.rect.width + hand.anchoredPosition.x + hand.rect.center.x,
                     panelBorderPadding.y + selectedBlockGap);
-                var border = frame.gameObject.AddComponent<Image>();
+                // Slots inherit their backing from the panel; this preview sits
+                // outside it, so give it the same backing beneath its slot border.
+                var panelBackground = panel.GetComponent<Image>();
+                var background = frame.gameObject.AddComponent<Image>();
+                background.sprite = panelBackground.sprite;
+                background.type = panelBackground.type;
+                background.color = panelBackground.color;
+                background.pixelsPerUnitMultiplier = panelBackground.pixelsPerUnitMultiplier;
+                background.raycastTarget = false;
+                var borderRect = new GameObject("Slot border", typeof(RectTransform)).GetComponent<RectTransform>();
+                borderRect.SetParent(frame, false);
+                borderRect.anchorMin = Vector2.zero;
+                borderRect.anchorMax = Vector2.one;
+                borderRect.offsetMin = borderRect.offsetMax = Vector2.zero;
+                var border = borderRect.gameObject.AddComponent<Image>();
                 border.sprite = original.sprite;
                 border.type = original.type;
                 border.pixelsPerUnitMultiplier = original.pixelsPerUnitMultiplier;
@@ -119,6 +143,13 @@ namespace Game.UI
             }
             selectionIcons[index].texture = atlas;
             selectionIcons[index].uvRect = uv;
+            if (atlas != null && uv.height > 0)
+            {
+                float aspect = atlas.width * uv.width / (atlas.height * uv.height);
+                var frame = selectionFrames[index].rect;
+                float size = Mathf.Max(1f, Mathf.Min(frame.width, frame.height) - 16f);
+                selectionIcons[index].rectTransform.sizeDelta = new Vector2(size * Mathf.Min(1f, aspect), size * Mathf.Min(1f, 1f / aspect));
+            }
             selectionFrames[index].gameObject.SetActive(true);
         }
 
@@ -373,6 +404,19 @@ namespace Game.UI
         private Unity.Entities.Entity pickerPlayer;
         private EquipmentSlot pickerSlot;
         private int pickerItem;
+        private enum RubedoTab { Blocks, Structures, Items }
+        [Header("Rubedo Tabs")]
+        [SerializeField] private Button rubedoPrimaryButton;
+        [SerializeField] private Button rubedoSecondaryButton;
+        private RectTransform pickerContent;
+        private ScrollRect pickerScroll;
+        private TMP_Text pickerHint;
+        private readonly Button[] pickerPrimaryTabs = new Button[3];
+        private readonly Button[] pickerSecondaryTabs = new Button[3];
+        private RubedoTab pickerActiveTab;
+        private Texture2D pinePreview;
+        private int pinePreviewRevision = -1;
+        private TreeResourcePreparationSystem pinePreviewSource;
         private Unity.Entities.SimulationSystemGroup pickerSimulation;
         private bool pickerSimulationWasEnabled;
 
@@ -382,6 +426,11 @@ namespace Game.UI
             if (IsBlockPickerOpen || ChunkProceduralRenderer.Instance?.AvailableBlocks == null) return false;
             var hud = Object.FindAnyObjectByType<EquipmentHud>();
             if (hud == null) return false;
+            if (hud.rubedoPrimaryButton == null || hud.rubedoSecondaryButton == null)
+            {
+                Debug.LogError("Assign the PrimaryButton and SecondaryButton prefabs for Rubedo tabs.", hud);
+                return false;
+            }
             var simulation = manager.World.GetExistingSystemManaged<Unity.Entities.SimulationSystemGroup>();
             if (simulation == null || !simulation.Enabled) return false;
             hud.pickerWorld = manager.World;
@@ -423,10 +472,25 @@ namespace Game.UI
                 !pickerWorld.EntityManager.HasBuffer<PlayerEquipmentSlot>(pickerPlayer) ||
                 PlayerEquipmentUtility.GetItem(pickerWorld.EntityManager.GetBuffer<PlayerEquipmentSlot>(pickerPlayer, true),
                     pickerSlot) != pickerItem || Keyboard.current?.escapeKey.wasPressedThisFrame == true)
+            {
                 CloseBlockPicker();
+                return;
+            }
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.tabKey.wasPressedThisFrame)
+            {
+                ShowRubedoTab(NextRubedoTab(pickerActiveTab, keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed));
+                pickerPrimaryTabs[(int)pickerActiveTab].Select();
+            }
         }
 
+        private static RubedoTab NextRubedoTab(RubedoTab current, bool backwards) =>
+            (RubedoTab)(((int)current + (backwards ? 2 : 1)) % 3);
+
         private void ChooseBlock(BlockId material, BlockPlacementMode mode)
+            => ChoosePlacement(new ItemPlacementSelection { Kind = PlacementSelectionKind.Block, Id = (int)material }, mode);
+
+        private void ChoosePlacement(ItemPlacementSelection selection, BlockPlacementMode mode = BlockPlacementMode.Full)
         {
             if (pickerWorld == null || !pickerWorld.IsCreated || !pickerWorld.EntityManager.Exists(pickerPlayer) ||
                 !pickerWorld.EntityManager.HasBuffer<PlayerEquipmentSlot>(pickerPlayer))
@@ -436,7 +500,7 @@ namespace Game.UI
             {
                 var entry = slots[i];
                 if (entry.Slot != pickerSlot || entry.Instance.DefinitionId != pickerItem) continue;
-                entry.Instance.PlacementSelection = new ItemPlacementSelection { Kind = PlacementSelectionKind.Block, Id = (int)material };
+                entry.Instance.PlacementSelection = selection;
                 entry.Instance.PlacementMode = mode;
                 slots[i] = entry;
                 break;
@@ -467,7 +531,7 @@ namespace Game.UI
         private void CreateBlockPicker()
         {
             if (GetComponent<GraphicRaycaster>() == null) gameObject.AddComponent<GraphicRaycaster>();
-            blockPicker = PickerRect("Rubedo block picker", transform);
+            blockPicker = PickerRect("Rubedo picker", transform);
             blockPicker.anchorMin = Vector2.zero;
             blockPicker.anchorMax = Vector2.one;
             blockPicker.offsetMin = blockPicker.offsetMax = Vector2.zero;
@@ -475,7 +539,7 @@ namespace Game.UI
             shade.color = new Color(0f, 0f, 0f, .65f);
             var panel = PickerRect("Window", blockPicker);
             panel.anchorMin = panel.anchorMax = panel.pivot = new Vector2(.5f, .5f);
-            panel.sizeDelta = new Vector2(700f, 540f);
+            panel.sizeDelta = new Vector2(700f, 600f);
             var background = panel.gameObject.AddComponent<Image>();
             var originalBackground = panelBorder.parent.GetComponent<Image>();
             background.sprite = originalBackground.sprite;
@@ -514,7 +578,8 @@ namespace Game.UI
             var closeText = PickerText("×", close, 24f);
             closeText.rectTransform.anchorMin = Vector2.zero; closeText.rectTransform.anchorMax = Vector2.one;
             closeText.rectTransform.offsetMin = closeText.rectTransform.offsetMax = Vector2.zero;
-            var hint = PickerText("Choose a block and its shape   •   Esc to close", panel, 16f);
+            var hint = PickerText("", panel, 16f);
+            pickerHint = hint;
             hint.rectTransform.anchorMin = hint.rectTransform.anchorMax = new Vector2(.5f, 0f);
             hint.rectTransform.sizeDelta = new Vector2(650f, 30f);
             hint.rectTransform.anchoredPosition = new Vector2(0f, 22f);
@@ -526,9 +591,19 @@ namespace Game.UI
             separatorImage.sprite = blockPickerSeparator;
             separatorImage.raycastTarget = false;
 
-            var scrollRect = PickerRect("Blocks", panel);
+            for (int tabIndex = 0; tabIndex < 3; tabIndex++)
+            {
+                var tab = (RubedoTab)tabIndex;
+                var rect = PickerRect(tab.ToString(), panel);
+                rect.anchorMin = rect.anchorMax = new Vector2(.5f, 1f);
+                rect.anchoredPosition = new Vector2((tabIndex - 1) * 208f, -80f);
+                rect.sizeDelta = new Vector2(196f, 40f);
+                pickerPrimaryTabs[tabIndex] = CreateRubedoTabButton(rubedoPrimaryButton, rect, tab);
+                pickerSecondaryTabs[tabIndex] = CreateRubedoTabButton(rubedoSecondaryButton, rect, tab);
+            }
+            var scrollRect = PickerRect("Choices", panel);
             scrollRect.anchorMin = Vector2.zero; scrollRect.anchorMax = Vector2.one;
-            scrollRect.offsetMin = new Vector2(24f, 72f); scrollRect.offsetMax = new Vector2(-24f, -64f);
+            scrollRect.offsetMin = new Vector2(24f, 72f); scrollRect.offsetMax = new Vector2(-24f, -112f);
             var scroll = scrollRect.gameObject.AddComponent<ScrollRect>();
             scroll.horizontal = false;
             scroll.movementType = ScrollRect.MovementType.Clamped;
@@ -549,14 +624,80 @@ namespace Game.UI
             var fitter = content.gameObject.AddComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             scroll.viewport = viewport; scroll.content = content;
-            var seen = new System.Collections.Generic.HashSet<BlockId>();
-            foreach (var block in ChunkProceduralRenderer.Instance.AvailableBlocks)
-            {
-                if (!IsRubedoMaterial(block.BlockId) || !seen.Add(block.BlockId)) continue;
-                AddBlockChoice(content, block.BlockId, BlockPlacementMode.Full);
-                AddBlockChoice(content, block.BlockId, BlockPlacementMode.Half);
-            }
+            pickerContent = content; pickerScroll = scroll;
+            var selection = PlayerEquipmentUtility.GetInstance(pickerWorld.EntityManager.GetBuffer<PlayerEquipmentSlot>(pickerPlayer, true), pickerSlot).PlacementSelection;
+            ShowRubedoTab(selection.Kind == PlacementSelectionKind.Item ? RubedoTab.Items :
+                selection.Kind == PlacementSelectionKind.Structure ? RubedoTab.Structures : RubedoTab.Blocks);
             blockPicker.SetAsLastSibling();
+        }
+
+        private Button CreateRubedoTabButton(Button prefab, RectTransform parent, RubedoTab tab)
+        {
+            var button = Instantiate(prefab, parent, false);
+            var rect = (RectTransform)button.transform;
+            rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            rect.localScale = Vector3.one;
+            button.onClick = new Button.ButtonClickedEvent();
+            button.onClick.AddListener(() => ShowRubedoTab(tab));
+            button.navigation = new Navigation { mode = Navigation.Mode.None };
+            var label = button.GetComponentInChildren<TMP_Text>(true);
+            if (label != null)
+            {
+                label.text = tab.ToString();
+                label.enableAutoSizing = true; label.fontSize = 22f;
+                label.fontSizeMin = 16f; label.fontSizeMax = 22f;
+            }
+            return button;
+        }
+
+        private void ShowRubedoTab(RubedoTab tab)
+        {
+            pickerActiveTab = tab;
+            for (int i = pickerContent.childCount - 1; i >= 0; i--)
+            {
+                var child = pickerContent.GetChild(i).gameObject;
+                child.SetActive(false); Destroy(child);
+            }
+            for (int i = 0; i < pickerPrimaryTabs.Length; i++)
+            {
+                pickerPrimaryTabs[i].gameObject.SetActive(i == (int)tab);
+                pickerSecondaryTabs[i].gameObject.SetActive(i != (int)tab);
+            }
+            pickerHint.text = tab == RubedoTab.Blocks ? "Choose a block and its shape   •   Tab: switch   •   Esc: close" :
+                "Choose " + (tab == RubedoTab.Items ? "an item" : "a structure") + ", then click a Top   •   Tab: switch   •   Esc: close";
+            if (tab == RubedoTab.Items)
+            {
+                using var library = pickerWorld.EntityManager.CreateEntityQuery(Unity.Entities.ComponentType.ReadOnly<ItemDefinitionReference>());
+                if (library.CalculateEntityCount() == 1)
+                {
+                    var definitions = new System.Collections.Generic.List<ItemDefinition>();
+                    foreach (var reference in pickerWorld.EntityManager.GetBuffer<ItemDefinitionReference>(library.GetSingletonEntity(), true))
+                        if (reference.Definition.Value != null && reference.Definition.Value.WorldSprite != null) definitions.Add(reference.Definition.Value);
+                    definitions.Sort((a, b) => a.Id.CompareTo(b.Id));
+                    foreach (var definition in definitions)
+                    {
+                        var sprite = definition.Icon != null ? definition.Icon : definition.WorldSprite;
+                        AddPlacementChoice(pickerContent, definition.DisplayName, sprite.texture, SpriteUv(sprite),
+                            new ItemPlacementSelection { Kind = PlacementSelectionKind.Item, Id = definition.Id });
+                    }
+                }
+            }
+            else if (tab == RubedoTab.Structures)
+                AddPlacementChoice(pickerContent, "Pine", GetPinePreview(), new Rect(0, 0, 1, 1),
+                    new ItemPlacementSelection { Kind = PlacementSelectionKind.Structure, Id = (int)StructureDefinitionId.Pine });
+            else
+            {
+                var seen = new System.Collections.Generic.HashSet<BlockId>();
+                foreach (var block in ChunkProceduralRenderer.Instance.AvailableBlocks)
+                {
+                    if (!IsRubedoMaterial(block.BlockId) || !seen.Add(block.BlockId)) continue;
+                    AddBlockChoice(pickerContent, block.BlockId, BlockPlacementMode.Full);
+                    AddBlockChoice(pickerContent, block.BlockId, BlockPlacementMode.Half);
+                }
+            }
+            Canvas.ForceUpdateCanvases();
+            pickerScroll.verticalNormalizedPosition = 1f;
         }
 
         private static bool IsRubedoMaterial(BlockId material) =>
@@ -567,7 +708,14 @@ namespace Game.UI
         {
             if (!ChunkProceduralRenderer.Instance.TryGetBlockSideIcon(material, out var atlas, out var uv,
                     halfBlock: mode == BlockPlacementMode.Half)) return;
-            var cell = PickerRect(material + " " + mode, parent);
+            AddPlacementChoice(parent, System.Text.RegularExpressions.Regex.Replace(material.ToString(), "([a-z])([A-Z])", "$1 $2") + "\n" + mode,
+                atlas, uv, new ItemPlacementSelection { Kind = PlacementSelectionKind.Block, Id = (int)material }, mode);
+        }
+
+        private void AddPlacementChoice(Transform parent, string title, Texture2D atlas, Rect uv,
+            ItemPlacementSelection selection, BlockPlacementMode mode = BlockPlacementMode.Full)
+        {
+            var cell = PickerRect(title, parent);
             var frame = PickerRect("Slot", cell);
             frame.anchorMin = frame.anchorMax = new Vector2(.5f, 1f);
             frame.pivot = new Vector2(.5f, 1f); frame.sizeDelta = new Vector2(76f, 76f);
@@ -577,20 +725,49 @@ namespace Game.UI
             image.pixelsPerUnitMultiplier = original.pixelsPerUnitMultiplier;
             var current = PlayerEquipmentUtility.GetInstance(
                 pickerWorld.EntityManager.GetBuffer<PlayerEquipmentSlot>(pickerPlayer, true), pickerSlot);
-            if (current.PlacementSelection.Kind == PlacementSelectionKind.Block &&
-                current.PlacementSelection.Id == (int)material && current.PlacementMode == mode)
+            if (current.PlacementSelection.Kind == selection.Kind && current.PlacementSelection.Id == selection.Id &&
+                (selection.Kind != PlacementSelectionKind.Block || current.PlacementMode == mode))
                 image.color = activeHandBorderColor;
             var button = frame.gameObject.AddComponent<Button>(); button.targetGraphic = image;
-            button.onClick.AddListener(() => ChooseBlock(material, mode));
+            button.onClick.AddListener(() => ChoosePlacement(selection, mode));
             var picture = PickerRect("Icon", frame);
             picture.anchorMin = picture.anchorMax = new Vector2(.5f, .5f);
             picture.sizeDelta = new Vector2(60f, 60f);
+            if (atlas != null && uv.height > 0)
+            {
+                float aspect = atlas.width * uv.width / (atlas.height * uv.height);
+                picture.sizeDelta = new Vector2(60f * Mathf.Min(1f, aspect), 60f * Mathf.Min(1f, 1f / aspect));
+            }
             var icon = picture.gameObject.AddComponent<RawImage>();
             icon.texture = atlas; icon.uvRect = uv; icon.raycastTarget = false;
-            var label = PickerText(System.Text.RegularExpressions.Regex.Replace(material.ToString(), "([a-z])([A-Z])", "$1 $2") +
-                "\n" + mode, cell, 14f);
+            icon.enabled = atlas != null;
+            var label = PickerText(title, cell, 14f);
+            label.enableAutoSizing = true; label.fontSizeMin = 11f; label.fontSizeMax = 14f;
             label.rectTransform.anchorMin = label.rectTransform.anchorMax = new Vector2(.5f, 0f);
             label.rectTransform.pivot = new Vector2(.5f, 0f); label.rectTransform.sizeDelta = new Vector2(100f, 42f);
+        }
+
+        private static Rect SpriteUv(Sprite sprite)
+        {
+            var rect = sprite.textureRect;
+            return new Rect(rect.x / sprite.texture.width, rect.y / sprite.texture.height,
+                rect.width / sprite.texture.width, rect.height / sprite.texture.height);
+        }
+
+        private Texture2D GetPinePreview()
+        {
+            var world = Unity.Entities.World.DefaultGameObjectInjectionWorld;
+            var resources = world != null && world.IsCreated ? world.GetExistingSystemManaged<TreeResourcePreparationSystem>() : null;
+            if (resources == null || !resources.Ready || resources.Diffuse == null) return null;
+            if (pinePreview != null && pinePreviewSource == resources && pinePreviewRevision == resources.Revision) return pinePreview;
+            var images = resources.FindImages(new ChunkTree { Seed = resources.BaseSeed, GeneratorVersion = 1 });
+            if (images == null || images.Data == null) return null;
+            if (pinePreview != null) Destroy(pinePreview);
+            pinePreview = new Texture2D(TreeResourcePreparationSystem.Width, TreeResourcePreparationSystem.Height, TextureFormat.RGBA32, false)
+                { name = "Rubedo pine preview", filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
+            Graphics.CopyTexture(resources.Diffuse, images.FirstSlice, 0, pinePreview, 0, 0);
+            pinePreviewSource = resources; pinePreviewRevision = resources.Revision;
+            return pinePreview;
         }
 
         private const int TerrainMapSize = 256;
@@ -816,6 +993,7 @@ namespace Game.UI
         {
             CloseBlockPicker();
             if (minimapTexture != null) Destroy(minimapTexture);
+            if (pinePreview != null) Destroy(pinePreview);
         }
 
         private void OnEnable() => ApplyBorderPadding();

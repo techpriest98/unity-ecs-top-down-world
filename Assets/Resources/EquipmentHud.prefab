@@ -123,6 +123,8 @@ MonoBehaviour:
   selectedBlockGap: 12
   blockPickerSeparator: {fileID: 21300000, guid: e74123a50e9cf46c7a5d5b94759eda1b, type: 3}
   menuFont: {fileID: 11400000, guid: 69dfe637f91eb4f13acbf1ec3d8835b5, type: 2}
+  rubedoPrimaryButton: {fileID: 5738607939343881649, guid: 9314478a425134eac89d240e5ed22466, type: 3}
+  rubedoSecondaryButton: {fileID: 2735310792609857986, guid: 9dd3e7ca4a4864165b2bfcb3e9bb3a2d, type: 3}
   minimapWorldSpan: 128
   minimapBackground: {fileID: 21300000, guid: c7d30d50c63a14b46b21751e30c60abd, type: 3}
   minimapSize: 240

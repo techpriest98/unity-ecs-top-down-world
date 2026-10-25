@@ -287,6 +287,7 @@ public sealed class ItemGraphWindow : EditorWindow
         else if (node is ItemDataNode itemData && itemData.Value != null) yield return "item-data:" + AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(itemData.Value));
         else if (node is CursorNode) yield return "cursor";
         else if (node is SelectionNode) yield return "item-selection";
+        else if (node is SelectionKindNode) yield return "item-selection-kind";
         else if (node is ShapeNode) yield return "item-shape";
         else if (node is BlockNode block)
         {
@@ -578,9 +579,11 @@ public sealed class ItemGraphWindow : EditorWindow
         evt.menu.AppendAction("Create/Actions/Throw Item", _ => CreateActionNode<ThrowItemAction>("ThrowItem", position), status);
         evt.menu.AppendAction("Create/Actions/Pick Up Item", _ => CreateActionNode<PickUpItemAction>("PickUpItem", position), status);
         evt.menu.AppendAction("Create/Actions/Replace World Item", _ => CreateActionNode<ReplaceWorldItemAction>("ReplaceWorldItem", position), status);
+        evt.menu.AppendAction("Create/Actions/Destroy World Object", _ => CreateActionNode<DestroyWorldObjectAction>("DestroyWorldObject", position), status);
         evt.menu.AppendAction("Create/Data/Item", _ => PlaceNode(GetItemDataNode(null), position), status);
         evt.menu.AppendAction("Create/Data/Cursor", _ => PlaceNode(GetCursorNode(), position), status);
         evt.menu.AppendAction("Create/Data/Item.Selection", _ => PlaceNode(GetSelectionNode(), position), status);
+        evt.menu.AppendAction("Create/Data/Item.Selection.Kind", _ => PlaceNode(GetSelectionKindNode(), position), status);
         evt.menu.AppendAction("Create/Data/Item.Shape", _ => PlaceNode(GetShapeNode(), position), status);
         evt.menu.AppendAction("Create/Data/Block", _ => AddBlockNode(BlockId.Air, position), status);
         evt.menu.AppendAction("Create/Data/Distance", _ => CreateDistanceNode(position), status);
@@ -592,6 +595,9 @@ public sealed class ItemGraphWindow : EditorWindow
         evt.menu.AppendAction("Create/Chain/Valid Terrain Target", _ => CreateChainNode(SkillChainNodeKind.ValidTerrainTarget, position), status);
         evt.menu.AppendAction("Create/Chain/Valid Cursor Target", _ => CreateChainNode(SkillChainNodeKind.ValidCursorTarget, position), status);
         evt.menu.AppendAction("Create/Chain/Ground Item Target", _ => CreateChainNode(SkillChainNodeKind.GroundItemTarget, position), status);
+        evt.menu.AppendAction("Create/Chain/Item.Selection.Kind", _ => CreateChainNode(SkillChainNodeKind.SelectionKindBranch, position), status);
+        evt.menu.AppendAction("Create/Chain/World Item Target", _ => CreateChainNode(SkillChainNodeKind.WorldItemTarget, position), status);
+        evt.menu.AppendAction("Create/Chain/Structure Target", _ => CreateChainNode(SkillChainNodeKind.StructureTarget, position), status);
         evt.menu.AppendAction("Create/Chain/Other Hand Item", _ => CreateChainNode(SkillChainNodeKind.OtherHandItem, position), status);
         evt.menu.AppendAction("Create/Chain/Replaceable World Item Target", _ => CreateChainNode(SkillChainNodeKind.ReplaceableWorldItemTarget, position), status);
         evt.menu.AppendAction("Create/Chain/Ignitable", _ => CreateChainNode(SkillChainNodeKind.Ignitable, position), status);
@@ -691,6 +697,9 @@ public sealed class ItemGraphWindow : EditorWindow
                 if (element is ShapeNode shapeNode)
                     foreach (var shapeEdge in shapeNode.State.connections.Concat(shapeNode.Value.connections).Distinct().ToList())
                         SetShapeConnection(shapeEdge, false);
+                if (element is SelectionKindNode kindNode)
+                    foreach (var kindEdge in kindNode.State.connections.Concat(kindNode.Value.connections).Distinct().ToList())
+                        SetShapeConnection(kindEdge, false);
                 if (element is Edge conditionEdge && conditionEdge.input.userData is ConditionSlot conditionSlot &&
                     !change.elementsToRemove.OfType<SkillNode>().Any(n => n.Skill == conditionSlot.Skill))
                     SetCondition(conditionSlot, null);
@@ -824,6 +833,25 @@ public sealed class ItemGraphWindow : EditorWindow
         return node;
     }
 
+    private SelectionKindNode GetSelectionKindNode()
+    {
+        var node = graph.nodes.OfType<SelectionKindNode>().FirstOrDefault();
+        if (node != null) return node;
+        node = new SelectionKindNode();
+        node.SetPosition(new Rect(-1180, 80, 300, 180));
+        graph.AddElement(node);
+        RestorePosition(node);
+        return node;
+    }
+
+    private void RestoreKindConnections(ItemSkillAction action, Port input, Port output)
+    {
+        if (action is TogglePlacementShapeAction writer && writer.SelectionKindConnected && output != null)
+            graph.AddElement(output.ConnectTo(GetSelectionKindNode().State));
+        if (action is SetWorldBlockAction reader && reader.BlockSource == BlockValueSource.ItemSelection && reader.SelectionKindConnected && input != null)
+            graph.AddElement(GetSelectionKindNode().Value.ConnectTo(input));
+    }
+
     private ShapeNode GetShapeNode()
     {
         var node = graph.nodes.OfType<ShapeNode>().FirstOrDefault();
@@ -851,6 +879,33 @@ public sealed class ItemGraphWindow : EditorWindow
 
     private static bool SetShapeConnection(Edge edge, bool connected)
     {
+        if (edge.output.portType == typeof(SelectionKindStateSignal) && edge.input.node is SelectionKindNode)
+        {
+            var kindWriter = edge.output.node is ChainNode chainWriter ? chainWriter.Asset.Action as TogglePlacementShapeAction :
+                (edge.output.node as ActionNode)?.Action as TogglePlacementShapeAction;
+            if (kindWriter == null) return false;
+            Undo.RecordObject(kindWriter, "Connect selection kind state");
+            kindWriter.SelectionKindConnected = connected;
+            EditorUtility.SetDirty(kindWriter);
+            return true;
+        }
+        if (edge.output.node is SelectionKindNode && edge.input.portType == typeof(SelectionKindSignal))
+        {
+            var kindTarget = edge.input.node as ChainNode;
+            if (kindTarget != null && kindTarget.Asset.Kind == SkillChainNodeKind.SelectionKindBranch)
+            {
+                Undo.RecordObject(kindTarget.Asset, "Connect selection kind");
+                kindTarget.Asset.SelectionKindConnected = connected;
+                EditorUtility.SetDirty(kindTarget.Asset);
+                return true;
+            }
+            var kindReader = (kindTarget != null ? kindTarget.Asset.Action : (edge.input.node as ActionNode)?.Action) as SetWorldBlockAction;
+            if (kindReader == null) return false;
+            Undo.RecordObject(kindReader, "Connect selection kind");
+            kindReader.SelectionKindConnected = connected;
+            EditorUtility.SetDirty(kindReader);
+            return true;
+        }
         ItemSkillAction writer = edge.output.node is ChainNode chain ? chain.Asset.Action :
             edge.output.node is ActionNode action ? action.Action : null;
         if (edge.input.node is SelectionNode && writer is TogglePlacementShapeAction picker &&
@@ -885,6 +940,7 @@ public sealed class ItemGraphWindow : EditorWindow
     private void RestoreDataConnections(ActionNode node)
     {
         RestoreShapeConnections(node.Action, node.ShapeInput, node.ShapeStateOutput);
+        RestoreKindConnections(node.Action, node.KindInput, node.KindStateOutput);
         if (node.DistanceInput != null && node.Action.Distance != null)
             graph.AddElement(GetDistanceNode(node.Action.Distance).Output.ConnectTo(node.DistanceInput));
         if (node.Action is ThrowItemAction thrown && thrown.Position == CursorWorldPosition.Before)
@@ -1015,6 +1071,10 @@ public sealed class ItemGraphWindow : EditorWindow
         graph.AddElement(node); RestorePosition(node);
         if (asset.Next != null && node.DataOutput != null)
             graph.AddElement(node.DataOutput.ConnectTo(GetChainNode(asset.Next).DataInput));
+        if (asset.Kind == SkillChainNodeKind.SelectionKindBranch)
+            for (int i = 0; i < node.SelectionOutputs.Count; i++)
+                if (asset.SelectionOutputs != null && i < asset.SelectionOutputs.Length && asset.SelectionOutputs[i] != null)
+                    graph.AddElement(node.SelectionOutputs[i].ConnectTo(GetChainNode(asset.SelectionOutputs[i]).DataInput));
         for (int i = 0; i < (asset.ItemMatches?.Length ?? 0); i++)
         {
             var row = asset.ItemMatches[i];
@@ -1030,6 +1090,10 @@ public sealed class ItemGraphWindow : EditorWindow
             graph.AddElement(GetDistanceNode(asset.Distance).Output.ConnectTo(node.DistanceInput));
         if (asset.Kind == SkillChainNodeKind.Action)
             RestoreShapeConnections(asset.Action, node.ShapeInput, node.ShapeStateOutput);
+        if (asset.Kind == SkillChainNodeKind.Action)
+            RestoreKindConnections(asset.Action, node.KindInput, node.KindStateOutput);
+        if (asset.Kind == SkillChainNodeKind.SelectionKindBranch && asset.SelectionKindConnected)
+            graph.AddElement(GetSelectionKindNode().Value.ConnectTo(node.KindInput));
         if (asset.Kind == SkillChainNodeKind.Action && asset.Action is SetWorldBlockAction set)
         {
             if (set.BlockSource == BlockValueSource.ItemSelection)
@@ -1076,6 +1140,7 @@ public sealed class ItemGraphWindow : EditorWindow
             if (node == null || !visited.Add(node)) continue;
             if (node == wanted || visited.Count > 256) return true;
             pending.Push(node.Next);
+            foreach (var output in node.SelectionOutputs ?? Array.Empty<SkillChainNode>()) pending.Push(output);
             foreach (var row in node.ItemMatches ?? Array.Empty<WorldItemMatch>())
                 if (row != null) pending.Push(row.Output);
         }
@@ -1136,6 +1201,17 @@ public sealed class ItemGraphWindow : EditorWindow
         if (edge.input == target.DataInput && edge.output.node is ChainNode source)
         {
             Undo.RecordObject(source.Asset, "Connect successful data");
+            int selectionRow = source.SelectionOutputs.IndexOf(edge.output);
+            if (selectionRow >= 0)
+            {
+                if (source.Asset.SelectionOutputs == null || source.Asset.SelectionOutputs.Length != 3)
+                    Array.Resize(ref source.Asset.SelectionOutputs, 3);
+                if (!connected && source.Asset.SelectionOutputs[selectionRow] != target.Asset) return true;
+                source.Asset.SelectionOutputs[selectionRow] = connected ? target.Asset : null;
+                Undo.RecordObject(target.Asset, "Connect branch input");
+                if (connected || target.Asset.PositionSource == source.Asset) target.Asset.PositionSource = connected ? source.Asset : null;
+                EditorUtility.SetDirty(source.Asset); EditorUtility.SetDirty(target.Asset); return true;
+            }
             int outputRow = source.MatchOutputs.IndexOf(edge.output);
             if (outputRow >= 0)
             {
@@ -1252,14 +1328,23 @@ public sealed class ItemGraphWindow : EditorWindow
     {
         public readonly SkillChainNode Asset;
         public readonly Port DataInput, DataOutput, PositionInput, DistanceInput, BlockInput;
-        public readonly Port ShapeInput, ShapeStateOutput, SelectionOutput;
+        public readonly Port ShapeInput, ShapeStateOutput, SelectionOutput, KindInput, KindStateOutput;
         public readonly List<Port> MatchInputs = new(), MatchOutputs = new();
+        public readonly List<Port> SelectionOutputs = new();
         public void RefreshDataLabels()
         {
             DataInput.portName = Asset.PositionSource != null ? SkillChainRunner.OutputName(Asset.PositionSource) :
                 Asset.Kind == SkillChainNodeKind.WithinDistance || Asset.Kind == SkillChainNodeKind.ReplaceableWorldItemTarget || Asset.Kind == SkillChainNodeKind.Ignitable ? "Position" : "Item";
             if (Asset.Kind == SkillChainNodeKind.Action && Asset.Action is ReplaceWorldItemAction) DataInput.portName = "World Item";
             if (DataOutput != null) DataOutput.portName = SkillChainRunner.OutputName(Asset);
+            if (Asset.Kind == SkillChainNodeKind.ValidCursorTarget || Asset.Kind == SkillChainNodeKind.ValidTerrainTarget ||
+                Asset.Kind == SkillChainNodeKind.ValidTopTarget || Asset.Kind == SkillChainNodeKind.GroundItemTarget ||
+                Asset.Kind == SkillChainNodeKind.TopSurfacePosition || Asset.Kind == SkillChainNodeKind.SelectionKindBranch)
+                DataInput.portName = "Item";
+            if (Asset.Kind == SkillChainNodeKind.WorldItemTarget || Asset.Kind == SkillChainNodeKind.StructureTarget)
+                DataInput.portName = "Before Position";
+            if (Asset.Kind == SkillChainNodeKind.Action && Asset.Action is DestroyWorldObjectAction)
+                DataInput.portName = "Resolved Object";
         }
         public ChainNode(SkillChainNode asset, Action<int> changeRows, Action rebuild) : base(asset)
         {
@@ -1273,11 +1358,26 @@ public sealed class ItemGraphWindow : EditorWindow
                 asset.Kind == SkillChainNodeKind.ReplaceableWorldItemTarget || asset.Kind == SkillChainNodeKind.WithinDistance || asset.Kind == SkillChainNodeKind.Ignitable ? "Position" : "Item";
             if (asset.Kind == SkillChainNodeKind.Action && asset.Action is ReplaceWorldItemAction) DataInput.portName = "World Item";
             inputContainer.Add(DataInput);
-            if (asset.Kind != SkillChainNodeKind.ReplaceableWorldItemTarget)
+            if (asset.Kind != SkillChainNodeKind.ReplaceableWorldItemTarget && asset.Kind != SkillChainNodeKind.SelectionKindBranch)
             {
                 DataOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(SkillDataSignal));
                 DataOutput.portName = SkillChainRunner.OutputName(asset); outputContainer.Add(DataOutput);
             }
+            if (asset.Kind == SkillChainNodeKind.SelectionKindBranch)
+            {
+                title = "Branch — Item.Selection.Kind";
+                KindInput = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(SelectionKindSignal));
+                KindInput.portName = "Kind"; inputContainer.Add(KindInput);
+                foreach (string caption in new[] { "Block / None", "Item", "Structure" })
+                {
+                    var output = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(SkillDataSignal));
+                    output.portName = caption; SelectionOutputs.Add(output); outputContainer.Add(output);
+                }
+            }
+            if (asset.Kind == SkillChainNodeKind.WorldItemTarget || asset.Kind == SkillChainNodeKind.StructureTarget)
+                DataInput.portName = "Before Position";
+            if (asset.Kind == SkillChainNodeKind.Action && asset.Action is DestroyWorldObjectAction)
+                DataInput.portName = "Resolved Object";
             bool cursorInput = asset.Kind == SkillChainNodeKind.ValidTopTarget || asset.Kind == SkillChainNodeKind.GroundItemTarget ||
                 asset.Kind == SkillChainNodeKind.ValidTerrainTarget || asset.Kind == SkillChainNodeKind.ValidCursorTarget || asset.Kind == SkillChainNodeKind.TopSurfacePosition;
             if (cursorInput)
@@ -1296,6 +1396,8 @@ public sealed class ItemGraphWindow : EditorWindow
                 ShapeStateOutput.portName = "Shape"; outputContainer.Add(ShapeStateOutput);
                 SelectionOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(SelectionStateSignal));
                 SelectionOutput.portName = "Block"; outputContainer.Add(SelectionOutput);
+                KindStateOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(SelectionKindStateSignal));
+                KindStateOutput.portName = "Kind"; outputContainer.Add(KindStateOutput);
             }
             if (asset.Kind == SkillChainNodeKind.Action && asset.Action is SetWorldBlockAction set)
             {
@@ -1303,6 +1405,8 @@ public sealed class ItemGraphWindow : EditorWindow
                 BlockInput.portName = "Block"; inputContainer.Add(BlockInput);
                 if (set.BlockSource != BlockValueSource.Constant)
                 {
+                    KindInput = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(SelectionKindSignal));
+                    KindInput.portName = "Kind"; inputContainer.Add(KindInput);
                     ShapeInput = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(ShapeSignal));
                     ShapeInput.portName = "Shape"; inputContainer.Add(ShapeInput);
                 }
@@ -1349,7 +1453,7 @@ public sealed class ItemGraphWindow : EditorWindow
                 mainContainer.Add(actionFields);
                 if (asset.Action is SetWorldBlockAction)
                     actionFields.TrackPropertyValue(action.FindProperty("BlockSource"), _ => rebuild());
-                foreach (string name in new[] { "replacementItem", "ReplacementItem", "Count", "FlightTime", "Gravity", "CollisionRadius" })
+                foreach (string name in new[] { "replacementItem", "ReplacementItem", "Count", "FlightTime", "Gravity", "CollisionRadius", "Category" })
                 {
                     var property = action.FindProperty(name);
                     if (property == null) continue;
@@ -1357,6 +1461,7 @@ public sealed class ItemGraphWindow : EditorWindow
                 }
                 actionFields.Bind(action);
             }
+            RefreshDataLabels();
             RefreshExpandedState(); RefreshPorts();
         }
     }
@@ -1530,6 +1635,25 @@ public sealed class ItemGraphWindow : EditorWindow
     }
 
     private sealed class SelectionStateSignal { }
+    private sealed class SelectionKindSignal { }
+    private sealed class SelectionKindStateSignal { }
+
+    private sealed class SelectionKindNode : Node
+    {
+        public readonly Port Value, State;
+        public SelectionKindNode()
+        {
+            title = "Data — Item.Selection.Kind";
+            SetHeaderColor(this, NodeCategory.Data);
+            style.width = 300;
+            Value = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(SelectionKindSignal));
+            Value.portName = "Kind"; outputContainer.Add(Value);
+            State = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(SelectionKindStateSignal));
+            State.portName = "State"; inputContainer.Add(State);
+            extensionContainer.Add(new Label("Selection kind of the invoking item instance.\nWritten by Rubedo; read by placement and Nigredo."));
+            RefreshExpandedState(); RefreshPorts();
+        }
+    }
 
     private sealed class SelectionNode : Node
     {
@@ -1855,7 +1979,7 @@ public sealed class ItemGraphWindow : EditorWindow
         public readonly ItemSkillAction Action;
         public readonly Port Output;
         public readonly Port PositionInput, BlockInput, DistanceInput;
-        public readonly Port ShapeInput, ShapeStateOutput, SelectionOutput;
+        public readonly Port ShapeInput, ShapeStateOutput, SelectionOutput, KindInput, KindStateOutput;
 
         public ActionNode(ItemSkillAction action) : base(action)
         {
@@ -1871,9 +1995,14 @@ public sealed class ItemGraphWindow : EditorWindow
                 ShapeStateOutput.portName = "Shape state";
                 SelectionOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(SelectionStateSignal));
                 SelectionOutput.portName = "Block state"; outputContainer.Add(SelectionOutput);
+                KindStateOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(SelectionKindStateSignal));
+                KindStateOutput.portName = "Kind state"; outputContainer.Add(KindStateOutput);
             }
             if (action is SetWorldBlockAction shapeReader && shapeReader.BlockSource != BlockValueSource.Constant)
+            {
                 ShapeInput = AddDataInput("Shape", typeof(ShapeSignal));
+                KindInput = AddDataInput("Kind", typeof(SelectionKindSignal));
+            }
             if (action is PickUpItemAction || action is ThrowItemAction || action is SetWorldBlockAction || action is ReplaceWorldItemAction)
                 DistanceInput = AddDataInput("Distance", typeof(ActionDistanceDefinition));
             if (action is SetWorldBlockAction)

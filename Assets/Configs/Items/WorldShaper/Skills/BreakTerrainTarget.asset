@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Kind: 5
   Next: {fileID: 11400000, guid: b2fc67415cf54edc903fb8765e612ac1, type: 2}
-  PositionSource: {fileID: 0}
+  PositionSource: {fileID: 11400000, guid: e843be4d3e704d8ea10e000000000001, type: 2}
   Cursor: 1
   Distance: {fileID: 0}
   Action: {fileID: 0}

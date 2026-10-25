@@ -12,7 +12,7 @@ namespace Game.World.Saving
 {
     public static class WorldStateStorage
     {
-        public const int CurrentVersion = 8;
+        public const int CurrentVersion = 9;
 
         public static bool TryRead(
             string id,
@@ -167,9 +167,7 @@ namespace Game.World.Saving
                         !Finite(item.Instance.DurabilityElapsed) || item.Instance.DurabilityElapsed < 0f ||
                         (int)item.Instance.PlacementMode > 1 ||
                         (data.Version < 7 && item.Instance.PlacementMode != BlockPlacementMode.Full) ||
-                        (int)item.Instance.PlacementSelection.Kind > 2 || item.Instance.PlacementSelection.Id < 0 ||
-                        (item.Instance.PlacementSelection.Kind == Game.Items.PlacementSelectionKind.None && item.Instance.PlacementSelection.Id != 0) ||
-                        (item.Instance.PlacementSelection.Kind != Game.Items.PlacementSelectionKind.None && item.Instance.PlacementSelection.Id == 0))
+                        !ValidPlacementSelection((int)item.Instance.PlacementSelection.Kind, item.Instance.PlacementSelection.Id, data.Version))
                         throw new InvalidDataException("Invalid saved world item.");
                 }
 
@@ -290,12 +288,17 @@ namespace Game.World.Saving
                     throw new InvalidDataException("Invalid saved item ID.");
                 if (entry.PlacementMode < 0 || entry.PlacementMode > 1 || (data.Version < 7 && entry.PlacementMode != 0))
                     throw new InvalidDataException("Invalid saved placement mode.");
-                if (entry.PlacementSelectionKind < 0 || entry.PlacementSelectionKind > 2 ||
-                    entry.PlacementSelectionId < 0 ||
-                    (entry.PlacementSelectionKind == 0 && entry.PlacementSelectionId != 0) ||
-                    (entry.PlacementSelectionKind != 0 && entry.PlacementSelectionId == 0))
+                if (!ValidPlacementSelection(entry.PlacementSelectionKind, entry.PlacementSelectionId, data.Version))
                     throw new InvalidDataException("Invalid item placement selection.");
             }
+        }
+
+        private static bool ValidPlacementSelection(int kind, int id, int version)
+        {
+            if (kind < 0 || kind > byte.MaxValue || id < 0 ||
+                !Enum.IsDefined(typeof(PlacementSelectionKind), (PlacementSelectionKind)kind) ||
+                (version < 9 && kind > 2)) return false;
+            return kind == 0 ? id == 0 : id > 0;
         }
 
         private static bool Finite(float value)

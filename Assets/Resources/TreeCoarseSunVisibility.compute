@@ -1,0 +1,28 @@
+#pragma kernel BuildChunk
+// Shared analytic intersection math, not the detailed grid or its cell lists.
+#include "../Shaders/TreeShadowTrace.hlsl"
+StructuredBuffer<PineShadowVolume> _CoarseTreeShapes;
+RWStructuredBuffer<float> _TreeCoarseVisibility;
+int _CoarseTreeShapeCount, _CoarseSlot;
+float4 _CoarseChunkOrigin, _CoarseSunDirection;
+
+[numthreads(4,4,4)]
+void BuildChunk(uint3 id : SV_DispatchThreadID)
+{
+    if (any(id >= uint3(8,128,8))) return;
+    float3 receiver = _CoarseChunkOrigin.xyz + (float3(id) + .5) * _CoarseChunkOrigin.w;
+    float3 target = receiver + _CoarseSunDirection.xyz * _CoarseSunDirection.w;
+    float visibility = 1;
+    [loop] for (int i = 0; i < _CoarseTreeShapeCount; i++)
+    {
+        PineShadowVolume shape = _CoarseTreeShapes[i];
+        float top = shape.B.w > .5 ? max(shape.A.y, shape.B.y) + shape.A.w : shape.A.y + shape.B.y;
+        float bottom = shape.B.w > .5 ? min(shape.A.y, shape.B.y) - shape.A.w : shape.A.y - shape.B.y;
+        if (receiver.y > top || target.y < bottom) continue;
+        if (!TreeVolumeHit(receiver, target, shape)) continue;
+        // Distant foliage transmits some sunlight instead of a solid black cone.
+        visibility = min(visibility, shape.B.w > .5 ? 0 : .35);
+        if (visibility == 0) break;
+    }
+    _TreeCoarseVisibility[_CoarseSlot * 8192 + (id.z * 128 + id.y) * 8 + id.x] = visibility;
+}

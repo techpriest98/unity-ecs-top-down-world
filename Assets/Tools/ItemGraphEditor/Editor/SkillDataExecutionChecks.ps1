@@ -5,7 +5,8 @@ param([string]$MathPath = 'C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/D
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = (Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
-if (!(Test-Path -LiteralPath $MathPath)) { throw "Unity.Mathematics runtime missing: $MathPath" }
+if (!(Test-Path -LiteralPath $MathPath)) {
+ throw "Unity.Mathematics runtime missing: $MathPath" }
 Add-Type -Path $MathPath
 $source = Get-Content -LiteralPath (Join-Path $root 'Scripts/Items/Skills/Configs/SkillChainNode.cs') -Raw
 $enum = [regex]::Match($source, 'enum SkillChainNodeKind\s*\{([^}]+)\}')
@@ -36,14 +37,18 @@ public struct Entity : IEquatable<Entity> {
  public override int GetHashCode()=>Id; public static bool operator ==(Entity a,Entity b)=>a.Equals(b); public static bool operator !=(Entity a,Entity b)=>!a.Equals(b);
 }
 public struct SelectedProjectedCell { public bool IsValid; public ProjectedFaceType FaceType; }
-public struct PlayerEquipmentSlot { public int Item; }
+public enum PlacementSelectionKind {None,Block,Decoration,Item,Structure}
+public struct ItemPlacementSelection {public PlacementSelectionKind Kind;}
+public struct ItemInstance {public ItemPlacementSelection PlacementSelection;}
+public struct PlayerEquipmentSlot { public int Item; public PlacementSelectionKind Kind; }
 public struct ItemLibrary {}
 public struct IgnitableCell { public int3 Position; }
 public class ItemDefinition { public int Id; }
 public class WorldItemMatch { public ItemDefinition Item; public SkillChainNode Output; }
 public class SkillChainNode {
  public string name="adapter node"; public SkillChainNodeKind Kind; public SkillChainNode Next,PositionSource;
- public WorldItemMatch[] ItemMatches=Array.Empty<WorldItemMatch>(); public CursorWorldPosition Cursor;
+ public bool SelectionKindConnected=true;
+ public SkillChainNode[] SelectionOutputs=new SkillChainNode[3]; public WorldItemMatch[] ItemMatches=Array.Empty<WorldItemMatch>(); public CursorWorldPosition Cursor;
  public ActionDistanceDefinition Distance; public ItemSkillAction Action; public OtherHandItemCondition HandCondition;
  public ItemSkillCondition Condition; public string FailureMessage="adapter failure";
 }
@@ -51,6 +56,7 @@ public static class Debug { public static List<string> Errors=new List<string>()
 public class ComponentType { public static ComponentType ReadOnly<T>()=>new ComponentType(); }
 public class Query : IDisposable { public int CalculateEntityCount()=>1; public Entity GetSingletonEntity()=>new Entity(3); public void Dispose(){} }
 public class EntityManager {
+ public PlacementSelectionKind SelectionKind;public bool WorldObjectPresent=true;public int StructureId=1024;public CursorWorldPosition LastCursor;
  public int Mutations,Lookups,CursorReads,RangeCalls; public int Item=7,WorldDefinition=20; public bool Selected=true,CursorValid=true,HasFlame;
  public Entity Target=new Entity(42); public float3 Surface=new float3(-16.5f,64.5f,-32.5f);
  public int3 Cell=new int3(-17,64,-33); public Entity LastTarget; public float3 LastPosition,RangePosition,LookupPosition;
@@ -59,15 +65,15 @@ public class EntityManager {
  public T GetComponentData<T>(Entity e) { if(typeof(T)==typeof(SelectedProjectedCell))return (T)(object)new SelectedProjectedCell{IsValid=true,FaceType=ProjectedFaceType.Top}; throw new Exception("Unexpected component "+typeof(T)); }
  public Query CreateEntityQuery(params ComponentType[] t)=>new Query();
  public List<T> GetBuffer<T>(Entity e,bool readOnly) {
-  if(typeof(T)==typeof(PlayerEquipmentSlot))return (List<T>)(object)new List<PlayerEquipmentSlot>{new PlayerEquipmentSlot{Item=Item}};
+  if(typeof(T)==typeof(PlayerEquipmentSlot))return (List<T>)(object)new List<PlayerEquipmentSlot>{new PlayerEquipmentSlot{Item=Item,Kind=SelectionKind}};
   if(typeof(T)==typeof(IgnitableCell))return (List<T>)(object)(HasFlame?new List<IgnitableCell>{new IgnitableCell{Position=(int3)math.floor(Surface)}}:new List<IgnitableCell>()); throw new Exception("Unexpected buffer "+typeof(T));
  }
  public bool Exists(Entity e)=>e!=Entity.Null; public bool HasBuffer<T>(Entity e)=>true;
  public bool Mutate(Entity target,float3 position){Mutations++;LastTarget=target;LastPosition=position;Trace.Add("mutation");return true;}
 }
-public static class PlayerEquipmentUtility { public static int GetItem(List<PlayerEquipmentSlot> b,EquipmentSlot s)=>b[0].Item; }
+public static class PlayerEquipmentUtility { public static int GetItem(List<PlayerEquipmentSlot> b,EquipmentSlot s)=>b[0].Item; public static ItemInstance GetInstance(List<PlayerEquipmentSlot> b,EquipmentSlot s)=>new ItemInstance{PlacementSelection=new ItemPlacementSelection{Kind=b[0].Kind}}; }
 public static class CursorWorldUtility {
- public static bool TryGetPosition(EntityManager m,Entity p,CursorWorldPosition c,out int3 v){m.CursorReads++;v=m.Cell;return m.CursorValid;}
+ public static bool TryGetPosition(EntityManager m,Entity p,CursorWorldPosition c,out int3 v){m.CursorReads++;m.LastCursor=c;v=m.Cell;return m.CursorValid;}
  public static bool TryGetBlock(EntityManager m,int3 p,out int b){b=p.y<m.Cell.y?1:0;return true;}
 }
 public static class BlockUtility { public static bool IsAir(int b)=>b==0;public static bool IsSolid(int b)=>b!=0; }
@@ -85,6 +91,18 @@ public class ReplaceWorldItemAction : ItemSkillAction {
  public Entity CheckedTarget; public float3 CheckedPosition;
  public bool CanReplaceTarget(EntityManager m,Entity t,float3 p){Checks++;CheckedTarget=t;CheckedPosition=p;return Allowed;}
  public bool ExecuteTarget(EntityManager m,Entity t,float3 p){Calls++;return m.Mutate(t,p);}
+}
+public enum WorldObjectCategory {Item,Structure}
+public class DestroyWorldObjectAction : ItemSkillAction {
+ public WorldObjectCategory Category;
+ public int LastStructureId;
+ public bool CanDestroy(EntityManager m,Entity target,int id,float3 surface){Checks++;return Allowed&&m.WorldObjectPresent&&target==m.Target&&(id==0||id==m.StructureId);}
+ public bool ExecuteTarget(EntityManager m,Entity target,int id,float3 surface){Calls++;LastStructureId=id;return CanDestroy(m,target,id,surface)&&m.Mutate(target,surface);}
+}
+public static class WorldObjectTargetUtility {
+ public static bool TryFind(EntityManager m,Entity player,int3 before,bool structure,out Entity owner,out int id,out float3 surface){
+ m.Lookups++;owner=m.Target;id=structure?m.StructureId:0;surface=m.Surface;return m.WorldObjectPresent;
+ }
 }
 public static class WorldItemMatchUtility {
  public static Entity Find(EntityManager m,float3 p,WorldItemMatch[] rows,out int row){m.Lookups++;m.LookupPosition=p;m.Trace.Add("lookup");for(int i=0;i<rows.Length;i++)if(rows[i].Item.Id==m.WorldDefinition){row=i;return m.Target;}row=-1;return Entity.Null;}
@@ -114,6 +132,32 @@ public static class Tests {
   return top;
  }
  public static void RunAll() {
+  foreach(var kind in new[]{PlacementSelectionKind.None,PlacementSelectionKind.Block,PlacementSelectionKind.Item,PlacementSelectionKind.Structure}) {
+   var routing=Node(SkillChainNodeKind.SelectionKindBranch);
+   var behind=Node(SkillChainNodeKind.ValidCursorTarget);behind.Cursor=CursorWorldPosition.Behind;behind.Next=Node(SkillChainNodeKind.Action,new SetWorldBlockAction());
+   var itemBefore=Node(SkillChainNodeKind.ValidCursorTarget);itemBefore.Cursor=CursorWorldPosition.Before;var itemFind=Node(SkillChainNodeKind.WorldItemTarget);itemBefore.Next=itemFind;
+   var destroyItem=new DestroyWorldObjectAction();itemFind.Next=Node(SkillChainNodeKind.Action,destroyItem);
+   var structureBefore=Node(SkillChainNodeKind.ValidCursorTarget);structureBefore.Cursor=CursorWorldPosition.Before;var structureFind=Node(SkillChainNodeKind.StructureTarget);structureBefore.Next=structureFind;
+   var destroyStructure=new DestroyWorldObjectAction();structureFind.Next=Node(SkillChainNodeKind.Action,destroyStructure);
+   routing.SelectionOutputs=new[]{behind,itemBefore,structureBefore};
+   var branchManager=new EntityManager{SelectionKind=kind};
+   string branchFailure;
+   if(!SkillChainRunner.Execute(routing,branchManager,new Entity(1),default,7,out branchFailure)||branchManager.Mutations!=1)throw new Exception("Selection branch failed: "+kind);
+   bool objectKind=kind==PlacementSelectionKind.Item||kind==PlacementSelectionKind.Structure;
+   if(branchManager.LastCursor!=(objectKind?CursorWorldPosition.Before:CursorWorldPosition.Behind))throw new Exception("Wrong cursor branch: "+kind);
+   if(kind==PlacementSelectionKind.Structure&&destroyStructure.LastStructureId!=branchManager.StructureId)throw new Exception("Structure instance handle lost");
+   if(objectKind) {
+    branchManager=new EntityManager{SelectionKind=kind,WorldObjectPresent=false};
+    if(SkillChainRunner.Execute(routing,branchManager,new Entity(1),default,7,out branchFailure)||branchManager.Mutations!=0)throw new Exception("Missing object destroyed terrain");
+   }
+   routing.SelectionKindConnected=false;
+   branchManager=new EntityManager{SelectionKind=kind};
+   if(SkillChainRunner.Execute(routing,branchManager,new Entity(1),default,7,out branchFailure)||branchManager.Mutations!=0)throw new Exception("Disconnected Kind input mutated state");
+   routing.SelectionKindConnected=true;
+   routing.SelectionOutputs[1]=routing;branchManager=new EntityManager{SelectionKind=PlacementSelectionKind.Item};
+   if(SkillChainRunner.Execute(routing,branchManager,new Entity(1),default,7,out branchFailure)||branchManager.Mutations!=0)throw new Exception("Branch cycle mutated state");
+  }
+
   string failure;ActionDistanceDefinition distance;ReplaceWorldItemAction wrong,right;SkillChainNode match;
   var graph=MatchGraph(out distance,out wrong,out right,out match);var m=new EntityManager();
   Check(Run(graph,m,out failure)&&failure==null,"Matching branch failed");

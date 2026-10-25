@@ -110,25 +110,27 @@ Shader "Game/World/ChunkProcedural"
             float4 _GpuSunFeet, _GpuSunProjection, _GpuSunBasis, _GpuSunOrigin, _GpuSunDirection;
             StructuredBuffer<uint> _GpuSunCache;
             #include "GpuSunTrace.hlsl"
+            #include "TreeCoarseSunLighting.hlsl"
 
             float GpuSunVisibility(float2 projection, float height, float3 geometricNormal, float legacy)
             {
-                if (_GpuSunEnabled < .5) return legacy;
+                if (_GpuSunEnabled < .5) return min(legacy, CoarseTreeSunVisibility(projection, height));
                 float delta = height - _GpuSunFeet.y;
                 float2 p = projection - _GpuSunProjection.xy;
                 float2 ground = float2(p.x,-2*(p.y-delta));
                 float bound = max(length(ground),abs(delta));
                 float radius = max(8, _DetailedLightingRadius);
-                if (bound >= radius) return legacy;
+                if (bound >= radius) return min(legacy, CoarseTreeSunVisibility(projection, height));
                 float3 receiver = _GpuSunFeet.xyz + float3(dot(ground,_GpuSunBasis.xz),delta,dot(ground,_GpuSunBasis.yw)) + geometricNormal*.02;
                 int3 cell = (int3)floor((receiver-_GpuSunOrigin.xyz)*float3(1,2,1));
                 int size = (int)_GpuSunOrigin.w;
-                if (any(cell<0) || any(cell>=int3(size,size*2,size))) return legacy;
+                if (any(cell<0) || any(cell>=int3(size,size*2,size))) return min(legacy, CoarseTreeSunVisibility(projection, height));
                 uint cached = _GpuSunCache[(cell.z*(size*2)+cell.y)*size+cell.x];
                 float visible = (cached&3u)==2u ? -1 : (float)(cached&1u);
                 if ((cached&4u)!=0u) visible = TraceGpuSun(receiver);
-                if (visible<0) return legacy;
-                return lerp(visible,legacy,smoothstep(radius-1,radius,bound));
+                if (visible<0) return min(legacy, CoarseTreeSunVisibility(projection, height));
+                if (bound <= radius-1) return visible;
+                return lerp(visible,min(legacy,CoarseTreeSunVisibility(projection,height)),smoothstep(radius-1,radius,bound));
             }
 
             float GpuSunPlayerOcclusion(float2 projection, float height)

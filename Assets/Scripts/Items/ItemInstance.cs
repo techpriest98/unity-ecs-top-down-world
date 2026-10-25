@@ -17,7 +17,9 @@ namespace Game.Items
     {
         None,
         Block,
-        Decoration
+        Decoration,
+        Item,
+        Structure
     }
 
     [System.Serializable]

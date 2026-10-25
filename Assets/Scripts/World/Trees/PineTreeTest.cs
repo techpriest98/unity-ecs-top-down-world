@@ -8,7 +8,7 @@ namespace Game.World.Trees
         public static PineTreeTest Active { get; private set; }
         public PineSettings Shape = new PineSettings();
         public bool PopulateTurf = true;
-        [Tooltip("Add trunk/branch and foliage proxies to the shared near-player local/GPU-sun shadow cache.")]
+        [Tooltip("Tree shadows: detailed proxies near the player and cached coarse sun shadows on distant terrain/water.")]
         public bool DetailedShadows = true;
         [Range(0, 1)] public float TurfDensity = .65f;
         [Range(0, 3)] public int QuarterTurn;

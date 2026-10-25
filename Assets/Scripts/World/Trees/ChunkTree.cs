@@ -3,11 +3,14 @@ using Unity.Mathematics;
 
 namespace Game.World.Trees
 {
+    public enum StructureDefinitionId { None = 0, Pine = 1 }
     // Separate from BlockData/ProjectedCellData. The owning chunk contains the base.
     [InternalBufferCapacity(0)]
     public struct ChunkTree : IBufferElementData
     {
         public int Id, Seed, GeneratorVersion, QuarterTurn;
+        public StructureDefinitionId DefinitionId;
+        public bool PlacedByPlayer;
         public float3 Position;
         public float Scale, TrunkRadius, TrunkHeight;
     }
@@ -25,7 +28,7 @@ namespace Game.World.Trees
         {
             int2 p = chunk * 16 + LocalCell(cell, hash);
             float scale = math.clamp(baseScale, .5f, 1.5f) * math.lerp(.8f, 1.15f, (hash & 65535u) / 65535f);
-            return new ChunkTree { Id = cell + 1, Seed = unchecked(baseSeed + (int)((hash >> 12) & 3u) * 7919),
+            return new ChunkTree { Id = cell + 1, DefinitionId = StructureDefinitionId.Pine, Seed = unchecked(baseSeed + (int)((hash >> 12) & 3u) * 7919),
                 GeneratorVersion = 1, QuarterTurn = (int)((hash >> 10) & 3u),
                 Position = new float3(p.x + .5f, height, p.y + .5f), Scale = scale,
                 TrunkRadius = math.clamp(radius, .08f, .6f) * scale, TrunkHeight = math.clamp(modelHeight, 4, 24) * scale };

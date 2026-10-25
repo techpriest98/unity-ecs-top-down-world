@@ -151,7 +151,8 @@ namespace Game.World.Trees
         }
 
 
-        protected override void OnStopRunning() => ReleaseVisuals();
+        // SimulationSystemGroup also stops for ESC/Rubedo. Keep the completed
+        // visual bank (and any pending bake) resident for presentation/resume.
         protected override void OnDestroy() => ReleaseVisuals();
         private static bool SameShape(PineSettings a, PineSettings b) => a != null &&
             a.Seed == b.Seed && a.Height == b.Height && a.TrunkRadius == b.TrunkRadius &&
@@ -208,6 +209,24 @@ namespace Game.World.Trees
             if (observedResourceRevision != resources.Revision)
             {
                 RemoveTest(); RemoveForest(); forestMode = false;
+                // Manual instances survive procedural regeneration and rebind
+                // to the newly prepared pine bank rather than keeping stale seeds.
+                foreach (var buffer in SystemAPI.Query<DynamicBuffer<ChunkTree>>())
+                {
+                    var manualTrees = buffer;
+                    for (int i = 0; i < manualTrees.Length; i++)
+                    {
+                        var manual = manualTrees[i];
+                        if (!manual.PlacedByPlayer) continue;
+                        manual.Seed = resources.BaseSeed; manual.GeneratorVersion = 1;
+                        if (config != null)
+                        {
+                            manual.TrunkRadius = math.clamp(config.Shape.TrunkRadius, .08f, .6f) * manual.Scale;
+                            manual.TrunkHeight = math.clamp(config.Shape.Height, 4, 24) * manual.Scale;
+                        }
+                        manualTrees[i] = manual;
+                    }
+                }
                 observedResourceRevision = resources.Revision;
             }
             if (SystemAPI.TryGetSingleton<WorldStartupState>(out var startup) &&
@@ -278,7 +297,7 @@ namespace Game.World.Trees
                 if (EntityManager.HasBuffer<ChunkTree>(owner))
                 {
                     var trees = EntityManager.GetBuffer<ChunkTree>(owner);
-                    for (int i = trees.Length - 1; i >= 0; i--) if (trees[i].Id > 0) trees.RemoveAt(i);
+                    for (int i = trees.Length - 1; i >= 0; i--) if (trees[i].Id > 0 && !trees[i].PlacedByPlayer) trees.RemoveAt(i);
                 }
                 EntityManager.RemoveComponent<ChunkTreesGenerated>(owner);
             }
@@ -304,7 +323,7 @@ namespace Game.World.Trees
                     var top = surface[index]; float y = top.HeightHalf * .5f;
                     if (!BlockUtility.IsSolid(top.Material) || top.Material == BlockId.OceanWater || top.Material == BlockId.RiverWater ||
                         math.abs(y - feet.y) > 2 || y + height * scale >= 256) continue;
-                    test = new ChunkTree { Id = TestId, Seed = resources.BaseSeed, GeneratorVersion = 1,
+                    test = new ChunkTree { Id = TestId, DefinitionId = StructureDefinitionId.Pine, Seed = resources.BaseSeed, GeneratorVersion = 1,
                         Position = new float3(wx + .5f, y, wz + .5f), QuarterTurn = ((config.QuarterTurn % 4) + 4) % 4,
                         Scale = scale, TrunkRadius = math.clamp(config.Shape.TrunkRadius, .08f, .6f) * scale,
                         TrunkHeight = height * scale };
@@ -337,7 +356,8 @@ namespace Game.World.Trees
             placed = false;
         }
 
-        protected override void OnStopRunning() { RemoveTest(); RemoveForest(); forestMode = false; }
+        // Population belongs to chunk/world lifetime, not simulation running state.
+        // ESC/Rubedo must not remove instances or reset generation bookkeeping.
     }
 
     [UpdateInGroup(typeof(PresentationSystemGroup), OrderLast = true)]
