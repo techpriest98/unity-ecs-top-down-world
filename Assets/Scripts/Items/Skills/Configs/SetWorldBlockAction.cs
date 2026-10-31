@@ -2,6 +2,7 @@ using Game.Player;
 using Game.World.Blocks;
 using Game.World.Interaction;
 using Unity.Entities;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -66,6 +67,7 @@ namespace Game.Items.Skills
                 var requests = manager.GetBuffer<BlockModificationRequest>(query.GetSingletonEntity());
                 requests.Add(first);
                 if (spills) requests.Add(second);
+                RemoveCoveredItems(manager, first, second, spills);
             }
             else if (block == BlockId.Air && manager.HasComponent<SelectedProjectedCell>(player) &&
                 CursorWorldUtility.TryGetPosition(manager, player, CursorWorldPosition.Behind, out var behind) && math.all(behind == position))
@@ -79,6 +81,27 @@ namespace Game.Items.Skills
             else manager.GetBuffer<BlockModificationRequest>(query.GetSingletonEntity()).Add(new BlockModificationRequest(position,
                 new BlockData(block, BlockUtility.IsAir(block) ? (byte)0 : byte.MaxValue)));
             return true;
+        }
+
+        private static void RemoveCoveredItems(EntityManager manager, BlockModificationRequest first,
+            BlockModificationRequest second, bool spills)
+        {
+            using var query = manager.CreateEntityQuery(ComponentType.ReadOnly<WorldItem>());
+            using var entities = query.ToEntityArray(Allocator.Temp);
+            foreach (var entity in entities)
+            {
+                var item = manager.GetComponentData<WorldItem>(entity);
+                var contact = item.Position - new float3(0, item.CollisionRadius, 0);
+                if (Covers(first, contact) || (spills && Covers(second, contact))) manager.DestroyEntity(entity);
+            }
+        }
+
+        internal static bool Covers(BlockModificationRequest request, float3 contact)
+        {
+            float3 local = contact - request.WorldPosition;
+            if (local.x < 0 || local.x >= 1 || local.z < 0 || local.z >= 1 || local.y < -.001f || local.y >= 1) return false;
+            var contents = request.HasContents ? request.Contents : CellContents.FromLegacy(request.Value);
+            return !BlockUtility.IsAir(local.y < .5f ? contents.Lower.Id : contents.Upper.Id);
         }
 
         private bool TryPlanPlacement(EntityManager manager, Entity player, EquipmentSlot slot, int3 position,

@@ -329,7 +329,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae88880efad6b48728be233fbbcae7b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.ItemLibraryAuthoring
-  database: {fileID: 11400000, guid: 1937ae25b046f4f1d9ea20abb6268d6a, type: 2}
+  atlas: {fileID: 11400000, guid: 603be5c75667326488e648c50d475088, type: 2}
 --- !u!4 &1349604024
 Transform:
   m_ObjectHideFlags: 0
@@ -390,6 +390,8 @@ MonoBehaviour:
   - {fileID: 434498659, guid: be4dc70f857c49a88c95d7f270d00006, type: 3}
   - {fileID: 1208823566, guid: be4dc70f857c49a88c95d7f270d00007, type: 3}
   - {fileID: 908224971, guid: be4dc70f857c49a88c95d7f270d00008, type: 3}
+  - {fileID: 1789598980, guid: 2eaa3bb9477935041b183fa8cc103658, type: 3}
+  - {fileID: 1789598980, guid: 1c978a520e0f4933a7442b3fb1f659da, type: 3}
 --- !u!4 &1581430485
 Transform:
   m_ObjectHideFlags: 0

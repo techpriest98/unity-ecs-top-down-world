@@ -12,7 +12,7 @@ namespace Game.World.Saving
 {
     public static class WorldStateStorage
     {
-        public const int CurrentVersion = 9;
+        public const int CurrentVersion = 11;
 
         public static bool TryRead(
             string id,
@@ -149,8 +149,26 @@ namespace Game.World.Saving
             }
 
             ValidateEquipment(data);
+            if (data.TreeItemChunks != null)
+            {
+                var seenTreeChunks = new System.Collections.Generic.HashSet<long>();
+                foreach (var chunk in data.TreeItemChunks)
+                    if (data.Version < 10 || chunk == null ||
+                        !seenTreeChunks.Add(((long)chunk.X << 32) | (uint)chunk.Z))
+                        throw new InvalidDataException("Invalid or duplicate tree-item spawn chunk.");
+            }
             if (double.IsNaN(data.SimulationSeconds) || double.IsInfinity(data.SimulationSeconds) || data.SimulationSeconds < 0)
                 throw new InvalidDataException("Invalid accumulated world time.");
+            if (data.TreeResinRecords != null)
+            {
+                var seenTreeResin = new HashSet<(int X, int Z, int Id)>();
+                foreach (var resin in data.TreeResinRecords)
+                    if (data.Version < 11 || resin == null || resin.TreeId == 0 || resin.GeneratorVersion <= 0 ||
+                        !Finite(resin.X) || !Finite(resin.Y) || !Finite(resin.Z) ||
+                        double.IsNaN(resin.ReadyAt) || double.IsInfinity(resin.ReadyAt) || resin.ReadyAt < 0d ||
+                        !seenTreeResin.Add((resin.ChunkX, resin.ChunkZ, resin.TreeId)))
+                        throw new InvalidDataException("Invalid or duplicate saved tree resin record.");
+            }
             if (data.WorldItems != null)
                 foreach (var item in data.WorldItems)
                 {
@@ -162,7 +180,7 @@ namespace Game.World.Saving
                         !Finite(item.Gravity) || item.Gravity <= 0f || item.Gravity > 100f ||
                         !Finite(item.CollisionRadius) || item.CollisionRadius < 0.01f || item.CollisionRadius > 0.2f ||
                         !Finite(item.Instance.Durability) || !Finite(item.Instance.MaxDurability) ||
-                        item.Instance.Durability <= 0f || item.Instance.MaxDurability <= 0f ||
+                        item.Instance.Durability < 0f || item.Instance.MaxDurability <= 0f ||
                         item.Instance.Durability > item.Instance.MaxDurability ||
                         !Finite(item.Instance.DurabilityElapsed) || item.Instance.DurabilityElapsed < 0f ||
                         (int)item.Instance.PlacementMode > 1 ||

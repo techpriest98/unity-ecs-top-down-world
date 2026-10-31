@@ -5,6 +5,29 @@ namespace Game.Player
 {
     public static class PlayerEquipmentUtility
     {
+        public static bool CanSpendDurability(DynamicBuffer<PlayerEquipmentSlot> slots,
+            EquipmentSlot slot, int item, float amount)
+        {
+            if (amount == 0f) return true;
+            if (amount < 0f || float.IsNaN(amount) || float.IsInfinity(amount) || item <= 0) return false;
+            int index = FindSlot(slots, slot);
+            return index >= 0 && slots[index].Instance.DefinitionId == item &&
+                slots[index].Instance.Durability >= amount;
+        }
+
+        public static bool TrySpendDurability(DynamicBuffer<PlayerEquipmentSlot> slots,
+            EquipmentSlot slot, int item, float amount)
+        {
+            if (!CanSpendDurability(slots, slot, item, amount)) return false;
+            if (amount == 0f) return true;
+            int index = FindSlot(slots, slot);
+            var entry = slots[index];
+            entry.Instance.Durability -= amount;
+            if (entry.Instance.Durability <= 0f) entry.Instance = default;
+            slots[index] = entry;
+            return true;
+        }
+
         public static bool TryEquip(
             DynamicBuffer<PlayerEquipmentSlot> slots,
             ref ItemLibraryBlob library,

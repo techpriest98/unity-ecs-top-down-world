@@ -407,6 +407,8 @@ public sealed class ItemGraphWindow : EditorWindow
         node.SetPosition(new Rect(60, 70 + index * 320, 350, 280));
         graph.AddElement(node);
         RestorePosition(node);
+        if (skill.VisibilityNode != null)
+            graph.AddElement(node.VisibilityOutput.ConnectTo(GetChainNode(skill.VisibilityNode).DataInput));
         if (skill.UseChain)
         {
             if (skill.FirstNode != null)
@@ -574,12 +576,15 @@ public sealed class ItemGraphWindow : EditorWindow
             database != null ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
         evt.menu.AppendAction("Create/Skill", _ => CreateSkillNode(position), status);
         evt.menu.AppendAction("Create/Actions/ReplaceItem", _ => CreateActionNode<ReplaceEquippedItemAction>("ReplaceItem", position), status);
+        evt.menu.AppendAction("Create/Actions/Place World Item", _ => CreateActionNode<PlaceWorldItemAction>("Place World Item", position), status);
+        evt.menu.AppendAction("Create/Actions/Refuel World Item", _ => CreateActionNode<RefuelWorldItemAction>("Refuel World Item", position), status);
         evt.menu.AppendAction("Create/Actions/Set World Block", _ => CreateActionNode<SetWorldBlockAction>("SetWorldBlock", position), status);
         evt.menu.AppendAction("Create/Actions/Select Block", _ => CreateActionNode<TogglePlacementShapeAction>("SelectBlock", position), status);
         evt.menu.AppendAction("Create/Actions/Throw Item", _ => CreateActionNode<ThrowItemAction>("ThrowItem", position), status);
         evt.menu.AppendAction("Create/Actions/Pick Up Item", _ => CreateActionNode<PickUpItemAction>("PickUpItem", position), status);
         evt.menu.AppendAction("Create/Actions/Replace World Item", _ => CreateActionNode<ReplaceWorldItemAction>("ReplaceWorldItem", position), status);
         evt.menu.AppendAction("Create/Actions/Destroy World Object", _ => CreateActionNode<DestroyWorldObjectAction>("DestroyWorldObject", position), status);
+        evt.menu.AppendAction("Create/Actions/Tree Resin", _ => CreateActionNode<TreeResinAction>("TreeResin", position), status);
         evt.menu.AppendAction("Create/Data/Item", _ => PlaceNode(GetItemDataNode(null), position), status);
         evt.menu.AppendAction("Create/Data/Cursor", _ => PlaceNode(GetCursorNode(), position), status);
         evt.menu.AppendAction("Create/Data/Item.Selection", _ => PlaceNode(GetSelectionNode(), position), status);
@@ -590,6 +595,7 @@ public sealed class ItemGraphWindow : EditorWindow
         evt.menu.AppendAction("Create/Conditions/Within Distance", _ => CreateConditionNode<WithinDistanceCondition>(position), status);
         evt.menu.AppendAction("Create/Conditions/Action Available", _ => CreateConditionNode<ActionAvailableCondition>(position), status);
         evt.menu.AppendAction("Create/Conditions/Other Hand Item", _ => CreateConditionNode<OtherHandItemCondition>(position), status);
+        evt.menu.AppendAction("Create/Conditions/Tree Resin", _ => CreateConditionNode<TreeResinCondition>(position), status);
         evt.menu.AppendAction("Create/Chain/Top Surface Position", _ => CreateChainNode(SkillChainNodeKind.TopSurfacePosition, position), status);
         evt.menu.AppendAction("Create/Chain/Valid Top Target", _ => CreateChainNode(SkillChainNodeKind.ValidTopTarget, position), status);
         evt.menu.AppendAction("Create/Chain/Valid Terrain Target", _ => CreateChainNode(SkillChainNodeKind.ValidTerrainTarget, position), status);
@@ -603,6 +609,8 @@ public sealed class ItemGraphWindow : EditorWindow
         evt.menu.AppendAction("Create/Chain/Ignitable", _ => CreateChainNode(SkillChainNodeKind.Ignitable, position), status);
         evt.menu.AppendAction("Create/Chain/Within Distance", _ => CreateChainNode(SkillChainNodeKind.WithinDistance, position), status);
         evt.menu.AppendAction("Create/Chain/Action", _ => CreateChainNode(SkillChainNodeKind.Action, position), status);
+        evt.menu.AppendAction("Create/Chain/Visible", _ => CreateChainNode(SkillChainNodeKind.Visible, position), status);
+        evt.menu.AppendAction("Create/Data/Visibility Result", _ => CreateChainNode(SkillChainNodeKind.VisibilityData, position), status);
         foreach (string guid in AssetDatabase.FindAssets("t:SkillChainNode"))
         {
             var asset = AssetDatabase.LoadAssetAtPath<SkillChainNode>(AssetDatabase.GUIDToAssetPath(guid));
@@ -670,6 +678,8 @@ public sealed class ItemGraphWindow : EditorWindow
                 {
                     SetBehaviourConnection(behaviourEdge, false);
                     if (!change.elementsToRemove.Contains(behaviourEdge.input.node) &&
+                        // Removing a producer's skill must not disconnect the shared skill graph.
+                        !(behaviourEdge.output.node is SkillNode && change.elementsToRemove.Contains(behaviourEdge.output.node)) &&
                         !(behaviourEdge.output.node is ActionNode && change.elementsToRemove.Contains(behaviourEdge.output.node)))
                         SetDataConnection(behaviourEdge, false);
                 }
@@ -1071,7 +1081,7 @@ public sealed class ItemGraphWindow : EditorWindow
         graph.AddElement(node); RestorePosition(node);
         if (asset.Next != null && node.DataOutput != null)
             graph.AddElement(node.DataOutput.ConnectTo(GetChainNode(asset.Next).DataInput));
-        if (asset.Kind == SkillChainNodeKind.SelectionKindBranch)
+        if (asset.Kind == SkillChainNodeKind.SelectionKindBranch || asset.Kind == SkillChainNodeKind.DestructionTargetBranch)
             for (int i = 0; i < node.SelectionOutputs.Count; i++)
                 if (asset.SelectionOutputs != null && i < asset.SelectionOutputs.Length && asset.SelectionOutputs[i] != null)
                     graph.AddElement(node.SelectionOutputs[i].ConnectTo(GetChainNode(asset.SelectionOutputs[i]).DataInput));
@@ -1147,7 +1157,7 @@ public sealed class ItemGraphWindow : EditorWindow
         return false;
     }
 
-    private static bool IsValidChainConnection(Edge edge)
+    private bool IsValidChainConnection(Edge edge)
     {
         if (edge.input.node is CollisionNode collision)
         {
@@ -1165,8 +1175,11 @@ public sealed class ItemGraphWindow : EditorWindow
                 ((target.Asset.Kind == SkillChainNodeKind.ValidTerrainTarget || target.Asset.Kind == SkillChainNodeKind.ValidCursorTarget) || edge.output == cursor.Before);
         if (target.MatchInputs.Contains(edge.input)) return edge.output.node is ItemDataNode;
         if (edge.input != target.DataInput) return true;
-        if (edge.output.node is SkillNode) return true;
+        if (edge.output.node is SkillNode skillSource)
+            return edge.output != skillSource.VisibilityOutput || !ContainsAction(target.Asset);
         if (!(edge.output.node is ChainNode source)) return false;
+        if (ContainsAction(target.Asset) && graph.nodes.OfType<SkillNode>().Any(s =>
+            s.Skill.VisibilityNode != null && Reaches(s.Skill.VisibilityNode, source.Asset))) return false;
         if (source.Asset.Kind == SkillChainNodeKind.Action && target.Asset.Kind != SkillChainNodeKind.Action) return false;
         return !Reaches(target.Asset, source.Asset);
     }
@@ -1192,10 +1205,11 @@ public sealed class ItemGraphWindow : EditorWindow
         }
         if (edge.input == target.DataInput && edge.output.node is SkillNode skill)
         {
-            if (!connected && skill.Skill.FirstNode != target.Asset) return true;
+            bool visibility = edge.output == skill.VisibilityOutput;
+            if (!connected && (visibility ? skill.Skill.VisibilityNode : skill.Skill.FirstNode) != target.Asset) return true;
             Undo.RecordObject(skill.Skill, "Connect skill data");
-            skill.Skill.FirstNode = connected ? target.Asset : null;
-            skill.Skill.UseChain = true;
+            if (visibility) skill.Skill.VisibilityNode = connected ? target.Asset : null;
+            else { skill.Skill.FirstNode = connected ? target.Asset : null; skill.Skill.UseChain = true; }
             EditorUtility.SetDirty(skill.Skill); return true;
         }
         if (edge.input == target.DataInput && edge.output.node is ChainNode source)
@@ -1244,6 +1258,25 @@ public sealed class ItemGraphWindow : EditorWindow
     // A successful data packet carries the active Item context and optional Position/World Item.
     // Constants (Cursor, Distance, Item definitions) never trigger execution by themselves.
     private sealed class SkillDataSignal { }
+
+    private static bool ContainsAction(SkillChainNode first)
+    {
+        var seen = new HashSet<SkillChainNode>();
+        var pending = new Stack<SkillChainNode>();
+        if (first != null) pending.Push(first);
+        while (pending.Count > 0)
+        {
+            var node = pending.Pop();
+            if (!seen.Add(node)) continue;
+            if (node.Kind == SkillChainNodeKind.Action || node.Kind == SkillChainNodeKind.VisibilityData) return true;
+            if (node.Next != null) pending.Push(node.Next);
+            foreach (var output in node.SelectionOutputs ?? Array.Empty<SkillChainNode>())
+                if (output != null) pending.Push(output);
+            foreach (var row in node.ItemMatches ?? Array.Empty<WorldItemMatch>())
+                if (row?.Output != null) pending.Push(row.Output);
+        }
+        return false;
+    }
 
     private static ItemDefinition selectedCollisionItem(Node node) => (node as ItemNode)?.AssetObject as ItemDefinition;
 
@@ -1345,11 +1378,15 @@ public sealed class ItemGraphWindow : EditorWindow
                 DataInput.portName = "Before Position";
             if (Asset.Kind == SkillChainNodeKind.Action && Asset.Action is DestroyWorldObjectAction)
                 DataInput.portName = "Resolved Object";
+            if (Asset.Kind == SkillChainNodeKind.Action && Asset.Action is TreeResinAction)
+                DataInput.portName = "Resolved Structure";
+            if (Asset.Kind == SkillChainNodeKind.VisibilityData) DataInput.portName = "Visibility Result";
         }
         public ChainNode(SkillChainNode asset, Action<int> changeRows, Action rebuild) : base(asset)
         {
             Asset = asset;
-            title = asset.Kind == SkillChainNodeKind.ReplaceableWorldItemTarget ? "Condition — World Items At Position" :
+            title = asset.Kind == SkillChainNodeKind.VisibilityData ? "Data — Visibility Result" :
+                asset.Kind == SkillChainNodeKind.ReplaceableWorldItemTarget ? "Condition — World Items At Position" :
                 asset.Kind == SkillChainNodeKind.Action ? "Action — " + (asset.Action != null ? ObjectNames.NicifyVariableName(asset.Action.GetType().Name.Replace("Action","")) : "Unassigned") :
                 "Condition — " + ObjectNames.NicifyVariableName(asset.Kind.ToString());
             style.width = 320;
@@ -1358,17 +1395,21 @@ public sealed class ItemGraphWindow : EditorWindow
                 asset.Kind == SkillChainNodeKind.ReplaceableWorldItemTarget || asset.Kind == SkillChainNodeKind.WithinDistance || asset.Kind == SkillChainNodeKind.Ignitable ? "Position" : "Item";
             if (asset.Kind == SkillChainNodeKind.Action && asset.Action is ReplaceWorldItemAction) DataInput.portName = "World Item";
             inputContainer.Add(DataInput);
-            if (asset.Kind != SkillChainNodeKind.ReplaceableWorldItemTarget && asset.Kind != SkillChainNodeKind.SelectionKindBranch)
+            if (asset.Kind != SkillChainNodeKind.ReplaceableWorldItemTarget && asset.Kind != SkillChainNodeKind.SelectionKindBranch && asset.Kind != SkillChainNodeKind.DestructionTargetBranch && asset.Kind != SkillChainNodeKind.Visible)
             {
                 DataOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(SkillDataSignal));
                 DataOutput.portName = SkillChainRunner.OutputName(asset); outputContainer.Add(DataOutput);
             }
-            if (asset.Kind == SkillChainNodeKind.SelectionKindBranch)
+            if (asset.Kind == SkillChainNodeKind.SelectionKindBranch || asset.Kind == SkillChainNodeKind.DestructionTargetBranch)
             {
-                title = "Branch — Item.Selection.Kind";
-                KindInput = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(SelectionKindSignal));
-                KindInput.portName = "Kind"; inputContainer.Add(KindInput);
-                foreach (string caption in new[] { "Block / None", "Item", "Structure" })
+                bool automatic = asset.Kind == SkillChainNodeKind.DestructionTargetBranch;
+                title = automatic ? "Branch — Nigredo Target (Shift: Block)" : "Branch — Item.Selection.Kind";
+                if (!automatic)
+                {
+                    KindInput = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(SelectionKindSignal));
+                    KindInput.portName = "Kind"; inputContainer.Add(KindInput);
+                }
+                foreach (string caption in automatic ? new[] { "Block / Shift", "Item", "Structure" } : new[] { "Block / None", "Item", "Structure" })
                 {
                     var output = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(SkillDataSignal));
                     output.portName = caption; SelectionOutputs.Add(output); outputContainer.Add(output);
@@ -1378,6 +1419,8 @@ public sealed class ItemGraphWindow : EditorWindow
                 DataInput.portName = "Before Position";
             if (asset.Kind == SkillChainNodeKind.Action && asset.Action is DestroyWorldObjectAction)
                 DataInput.portName = "Resolved Object";
+            if (asset.Kind == SkillChainNodeKind.Action && asset.Action is TreeResinAction)
+                DataInput.portName = "Resolved Structure";
             bool cursorInput = asset.Kind == SkillChainNodeKind.ValidTopTarget || asset.Kind == SkillChainNodeKind.GroundItemTarget ||
                 asset.Kind == SkillChainNodeKind.ValidTerrainTarget || asset.Kind == SkillChainNodeKind.ValidCursorTarget || asset.Kind == SkillChainNodeKind.TopSurfacePosition;
             if (cursorInput)
@@ -1453,7 +1496,7 @@ public sealed class ItemGraphWindow : EditorWindow
                 mainContainer.Add(actionFields);
                 if (asset.Action is SetWorldBlockAction)
                     actionFields.TrackPropertyValue(action.FindProperty("BlockSource"), _ => rebuild());
-                foreach (string name in new[] { "replacementItem", "ReplacementItem", "Count", "FlightTime", "Gravity", "CollisionRadius", "Category" })
+                foreach (string name in new[] { "replacementItem", "TargetHand", "RequiredTargetItem", "ConsumeOtherHandItem", "ReplacementItem", "Count", "FlightTime", "Gravity", "CollisionRadius", "Category", "Operation", "CuttingTool", "ResinItem", "RegrowthSeconds", "FuelItem", "UnlitItem", "LitItem", "Amount" })
                 {
                     var property = action.FindProperty(name);
                     if (property == null) continue;
@@ -1503,7 +1546,7 @@ public sealed class ItemGraphWindow : EditorWindow
             Asset = asset;
             title = "Condition — " + asset.name;
             style.width = 320;
-            if (!(asset is OtherHandItemCondition))
+            if (!(asset is OtherHandItemCondition) && !(asset is TreeResinCondition))
             {
                 ActionInput = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(ItemSkillAction));
                 ActionInput.portName = asset is WithinDistanceCondition ? "Target of action" : "Action";
@@ -1520,6 +1563,8 @@ public sealed class ItemGraphWindow : EditorWindow
             extensionContainer.Add(new PropertyField(serialized.FindProperty("FailureMessage"), "Failure message"));
             if (asset is OtherHandItemCondition)
                 extensionContainer.Add(new PropertyField(serialized.FindProperty("RequiredItem"), "Other hand item"));
+            if (asset is TreeResinCondition)
+                extensionContainer.Add(new PropertyField(serialized.FindProperty("Action"), "Tree resin action"));
             extensionContainer.Bind(serialized);
             RefreshExpandedState(); RefreshPorts();
         }
@@ -1872,7 +1917,7 @@ public sealed class ItemGraphWindow : EditorWindow
         public readonly Port SkillInput;
         public readonly List<Port> ActionPorts = new List<Port>();
         public readonly List<Port> ConditionPorts = new List<Port>();
-        public readonly Port DataOutput;
+        public readonly Port DataOutput, VisibilityOutput;
 
         public SkillNode(ItemSkillDefinition skill, Action<int> changeActions, Action<int, int> moveAction,
             Action<int> changeConditions, Action<int, int> moveCondition) : base(skill)
@@ -1882,12 +1927,16 @@ public sealed class ItemGraphWindow : EditorWindow
             style.width = 350;
             var serialized = new SerializedObject(skill);
             AddIconPreview(this, serialized);
-            foreach (var property in new[] { "DisplayName", "Description", "Icon", "InputBinding" })
+            foreach (var property in new[] { "DisplayName", "Description", "Icon", "InputBinding", "DurabilityCost" })
                 extensionContainer.Add(new PropertyField(serialized.FindProperty(property)));
+            VisibilityOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(SkillDataSignal));
+            VisibilityOutput.portName = "Visibility";
+            VisibilityOutput.tooltip = "Read-only conditions for showing the skill. Unconnected means always visible.";
+            outputContainer.Add(VisibilityOutput);
             if (skill.UseChain)
             {
                 DataOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(SkillDataSignal));
-                DataOutput.portName = "Item"; outputContainer.Add(DataOutput);
+                DataOutput.portName = "Execute"; outputContainer.Add(DataOutput);
             }
             if (!skill.UseChain)
             {

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Game.World.Lighting;
+using Game.World.Trees;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -11,17 +12,30 @@ namespace Game.Items
     public sealed class ItemLibraryAuthoring : MonoBehaviour
     {
         [SerializeField]
-        private ItemDatabase database;
+        private WorldItemAtlas atlas;
 
         private sealed class Baker : Baker<ItemLibraryAuthoring>
         {
             public override void Bake(ItemLibraryAuthoring authoring)
             {
-                ItemDatabase database = authoring.database;
+                WorldItemAtlas atlas = authoring.atlas;
+                if (atlas == null)
+                {
+                    Debug.LogError("Assign the World Item Atlas.", authoring);
+                    return;
+                }
+                DependsOn(atlas);
+                if (atlas.Texture == null)
+                {
+                    Debug.LogError("The World Item Atlas has no texture. Rebuild it from the Item Database.", authoring);
+                    return;
+                }
+                DependsOn(atlas.Texture);
+                ItemDatabase database = atlas.SourceDatabase;
 
                 if (database == null)
                 {
-                    Debug.LogError("Assign the Item Database.", authoring);
+                    Debug.LogError("The World Item Atlas has no Source Database.", authoring);
                     return;
                 }
 
@@ -166,11 +180,14 @@ namespace Game.Items
                             Id = definition.Id,
                             AllowedSlots = definition.AllowedSlots,
                             MaxDurability = math.max(0.001f, definition.MaxDurability),
+                            PreserveWhenDepleted = definition.PreserveWhenDepleted,
+                            DepletedReplacementId = definition.DepletedReplacement != null ? definition.DepletedReplacement.Id : 0,
                             DurabilityLossAmount = definition.DurabilityDecay != null
                                 ? math.max(0f, definition.DurabilityDecay.LossAmount) : 0f,
                             DurabilityLossInterval = definition.DurabilityDecay != null
                                 ? math.max(0.001f, definition.DurabilityDecay.Interval) : 1f,
                             HasLight = light != null,
+                            WorldLightHeight = math.max(0f, definition.WorldLightHeight),
                             IgnitionSource = definition.IgnitionSource,
                             HasAnimation = animation != null
                         };
@@ -206,7 +223,9 @@ namespace Game.Items
                     AddBlobAsset(ref blob, out _);
 
                     Entity entity = GetEntity(TransformUsageFlags.None);
+                    AddComponent(entity, new WorldItemAtlasReference { Atlas = atlas });
                     AddBuffer<IgnitableCell>(entity);
+                    AddBuffer<TreeResinRecord>(entity);
                     AddComponent(entity, new EmptyHandReference { Definition = database.EmptyHand });
 
                     AddComponent(entity, new ItemLibrary
@@ -237,12 +256,19 @@ namespace Game.Items
                 var visited = new HashSet<Game.Items.Skills.SkillChainNode>();
                 var pending = new Stack<Game.Items.Skills.SkillChainNode>();
                 if (skill.FirstNode != null) pending.Push(skill.FirstNode);
+                if (skill.VisibilityNode != null) pending.Push(skill.VisibilityNode);
                 while (pending.Count > 0)
                 {
                     var node = pending.Pop();
                     if (!visited.Add(node)) continue;
                     DependsOn(node);
                     if (node.Condition != null) DependsOn(node.Condition);
+                    if (node.Condition is Game.Items.Skills.TreeResinCondition resinCondition && resinCondition.Action != null)
+                    {
+                        DependsOn(resinCondition.Action);
+                        if (resinCondition.Action.CuttingTool != null) DependsOn(resinCondition.Action.CuttingTool);
+                        if (resinCondition.Action.ResinItem != null) DependsOn(resinCondition.Action.ResinItem);
+                    }
                     if (node.HandCondition != null)
                     {
                         DependsOn(node.HandCondition);

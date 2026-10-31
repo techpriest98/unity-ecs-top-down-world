@@ -84,7 +84,8 @@ namespace Game.UI
             bool visible = selection.Kind == PlacementSelectionKind.Block && selection.Id > 0 && selection.Id <= byte.MaxValue &&
                 renderer != null && renderer.TryGetBlockSideIcon((BlockId)selection.Id, out atlas, out uv,
                     halfBlock: mode == BlockPlacementMode.Half);
-            if (selection.Kind == PlacementSelectionKind.Item && item != null)
+            if ((selection.Kind == PlacementSelectionKind.Item || selection.Kind == PlacementSelectionKind.Structure) && item != null &&
+                (selection.Kind != PlacementSelectionKind.Structure || item.IsStructure))
             {
                 var sprite = item.Icon != null ? item.Icon : item.WorldSprite;
                 if (sprite != null) { atlas = sprite.texture; uv = SpriteUv(sprite); visible = true; }
@@ -666,26 +667,27 @@ namespace Game.UI
             }
             pickerHint.text = tab == RubedoTab.Blocks ? "Choose a block and its shape   •   Tab: switch   •   Esc: close" :
                 "Choose " + (tab == RubedoTab.Items ? "an item" : "a structure") + ", then click a Top   •   Tab: switch   •   Esc: close";
-            if (tab == RubedoTab.Items)
+            if (tab == RubedoTab.Items || tab == RubedoTab.Structures)
             {
+                if (tab == RubedoTab.Structures)
+                    AddPlacementChoice(pickerContent, "Pine", GetPinePreview(), new Rect(0, 0, 1, 1),
+                        new ItemPlacementSelection { Kind = PlacementSelectionKind.Structure, Id = (int)StructureDefinitionId.Pine });
                 using var library = pickerWorld.EntityManager.CreateEntityQuery(Unity.Entities.ComponentType.ReadOnly<ItemDefinitionReference>());
                 if (library.CalculateEntityCount() == 1)
                 {
                     var definitions = new System.Collections.Generic.List<ItemDefinition>();
                     foreach (var reference in pickerWorld.EntityManager.GetBuffer<ItemDefinitionReference>(library.GetSingletonEntity(), true))
-                        if (reference.Definition.Value != null && reference.Definition.Value.WorldSprite != null) definitions.Add(reference.Definition.Value);
+                        if (reference.Definition.Value != null && reference.Definition.Value.WorldSprite != null &&
+                            reference.Definition.Value.IsStructure == (tab == RubedoTab.Structures)) definitions.Add(reference.Definition.Value);
                     definitions.Sort((a, b) => a.Id.CompareTo(b.Id));
                     foreach (var definition in definitions)
                     {
                         var sprite = definition.Icon != null ? definition.Icon : definition.WorldSprite;
                         AddPlacementChoice(pickerContent, definition.DisplayName, sprite.texture, SpriteUv(sprite),
-                            new ItemPlacementSelection { Kind = PlacementSelectionKind.Item, Id = definition.Id });
+                            new ItemPlacementSelection { Kind = definition.IsStructure ? PlacementSelectionKind.Structure : PlacementSelectionKind.Item, Id = definition.Id });
                     }
                 }
             }
-            else if (tab == RubedoTab.Structures)
-                AddPlacementChoice(pickerContent, "Pine", GetPinePreview(), new Rect(0, 0, 1, 1),
-                    new ItemPlacementSelection { Kind = PlacementSelectionKind.Structure, Id = (int)StructureDefinitionId.Pine });
             else
             {
                 var seen = new System.Collections.Generic.HashSet<BlockId>();

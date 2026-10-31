@@ -13,7 +13,8 @@ namespace Game.Items
         public Vector4 Ambient, Sunlight, Flags; // legacy depth, ground light, grounded, physical depth
     }
 
-    // Consecutive texture runs preserve equal-depth ordering across item types.
+    // The shared sprite atlas merges item types. Keep consecutive fog-state runs
+    // to preserve equal-depth ordering/stencil semantics across those states.
     public sealed class WorldItemDrawBatch
     {
         public const int Capacity = 128;

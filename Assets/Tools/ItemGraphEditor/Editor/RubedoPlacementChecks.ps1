@@ -63,7 +63,9 @@ namespace Game.World.Interaction {
 namespace Game.Player {public struct PlayerWorldPosition {public float3 Value;} public struct PlayerCollisionShape {public float2 HalfExtentsXZ;public float Height;}}
 namespace Game.Items {
  public enum BlockPlacementMode {Full,Half}
- public class ItemDefinition {public int Id;public float MaxDurability=100;public object WorldSprite=new object();}
+ public class SpriteStub {public RectStub rect=new RectStub();}
+ public class RectStub {public float height=16;}
+ public class ItemDefinition {public int Id;public float MaxDurability=100;public bool IsStructure,WorldSpriteUpright;public SpriteStub WorldSprite=new SpriteStub();}
  public struct ItemDefinitionReference {public int Id;public ItemDefinition Definition;public static bool TryGet(DynamicBuffer<ItemDefinitionReference> refs,int id,out ItemDefinition result){foreach(var r in refs)if(r.Id==id){result=r.Definition;return result!=null;}result=null;return false;}}
  public struct WorldItem {public ItemInstance Instance;public float3 Position,Velocity;public float Gravity,CollisionRadius;public bool Grounded;}
  public struct WorldItemThrowRequest {public WorldItem Item;}
@@ -83,7 +85,10 @@ namespace Game.Items.Skills {
 '@
 $production=''
 foreach ($path in 'Scripts/Items/ItemInstance.cs','Scripts/World/Trees/ChunkTree.cs','Scripts/Items/Skills/Configs/RubedoPlacementUtility.cs','Scripts/Items/Skills/Configs/DestroyWorldObjectAction.cs') {
- $production+=(Read $path) -replace '(?m)^using [^;]+;\r?\n',''
+ $part = (Read $path) -replace '(?m)^using [^;]+;\r?\n',''
+ # These adapters exercise placement/object lookup, not the input/presentation helper.
+ $part = $part -replace '(?s)    // Shared by execution.*?(?=    public enum WorldObjectCategory)', ''
+ $production += $part
 }
 $save=Read 'Scripts/World/Saving/WorldStateStorage.cs'
 $validation=[regex]::Match($save,'(?s)private static bool ValidPlacementSelection\(.*?\n        \}').Value.Replace('private static','public static')
@@ -123,6 +128,20 @@ public static class RubedoChecks {
    Check(removeTree.ExecuteTarget(m,owner,instanceId,surface)&&m.GetBuffer<ChunkTree>(Chunk).Count==0&&m.Exists(other),"Nigredo failed to remove only resolved structure");
    var cursor=m.GetComponentData<SelectedProjectedCell>(Player);cursor.IsCutSurface=true;m.Set(Player,cursor);
    Check(!WorldObjectTargetUtility.TryFind(m,Player,before,false,out owner,out instanceId,out surface),"Cut cap accepted as Before object target");
+  }
+  foreach(bool half in new[]{false,true}) {
+   var m=Setup(half,-1,-1);var before=new int3(-1,4,-1);
+   var definition=new ItemDefinition{Id=13,IsStructure=true,WorldSpriteUpright=true};definition.WorldSprite.rect.height=64;
+   m.GetBuffer<ItemDefinitionReference>(Library).Add(new ItemDefinitionReference{Id=13,Definition=definition});
+   Check(RubedoPlacementUtility.Spawn(m,Player,new ItemPlacementSelection{Kind=PlacementSelectionKind.Structure,Id=13},before),"Pole torch structure spawn failed");
+   var spawned=m.GetBuffer<WorldItemThrowRequest>(Player).Single().Item;
+   Check(spawned.Instance.DefinitionId==13&&spawned.Grounded,"Structure item became a tree or wrong definition");
+   var torch=new Entity{Id=10};m.Set(torch,spawned);
+   Entity owner;int id;float3 surface;
+   Check(WorldObjectTargetUtility.TryFind(m,Player,before,true,out owner,out id,out surface)&&owner==torch&&id==0,"Structure cursor did not resolve pole entity");
+   Check(!WorldObjectTargetUtility.TryFind(m,Player,before,false,out owner,out id,out surface),"Item-only target resolved a structure");
+   Check(WorldObjectTargetUtility.TryFind(m,Player,before,true,out owner,out id,out surface)&&new DestroyWorldObjectAction{Category=WorldObjectCategory.Structure}.ExecuteTarget(m,owner,id,surface)&&!m.Exists(torch),"Nigredo structure branch did not remove pole entity");
+   Check(!RubedoPlacementUtility.Spawn(m,Player,new ItemPlacementSelection{Kind=PlacementSelectionKind.Structure,Id=4},before),"Nonstructure item accepted as structure");
   }
   foreach(int kind in new[]{1,2,3,4})Check(SaveSelectionCheck.ValidPlacementSelection(kind,1,9),"Current selection rejected by save validation");
   foreach(int version in new[]{1,7,8}) {

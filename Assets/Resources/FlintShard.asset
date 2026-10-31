@@ -25,5 +25,9 @@ MonoBehaviour:
   Animation: {fileID: 0}
   OnCollision: {fileID: 0}
   Skills:
+  - {fileID: 11400000, guid: d011a100000000000000000000000004, type: 2}
+  - {fileID: 11400000, guid: d011a100000000000000000000000008, type: 2}
   - {fileID: 11400000, guid: ab11c01f00004e66b200000000000002, type: 2}
   - {fileID: 11400000, guid: 7dc7a1efda854d5290b14046cb14914a, type: 2}
+  - {fileID: 11400000, guid: 4b1251e3105e4461af378674dd4801f7, type: 2}
+  - {fileID: 11400000, guid: d777036d55bb42868a528092426d32e3, type: 2}

@@ -75,7 +75,7 @@ namespace Game.UI
                 var slot = i == 0 ? EquipmentSlot.LeftHand : EquipmentSlot.RightHand;
                 int id = PlayerEquipmentUtility.GetItem(slots, slot);
                 var instance = PlayerEquipmentUtility.GetInstance(slots, slot);
-                ItemDefinitionReference.TryGet(references, instance.PlacementSelection.Kind == PlacementSelectionKind.Item
+                ItemDefinitionReference.TryGet(references, (instance.PlacementSelection.Kind == PlacementSelectionKind.Item || instance.PlacementSelection.Kind == PlacementSelectionKind.Structure)
                     ? instance.PlacementSelection.Id : 0, out var selectedDefinition);
                 hud.SetSelectedBlock(i, id != 0 ? instance.PlacementSelection : default, instance.PlacementMode, selectedDefinition);
                 for (int j = 0; j < slots.Length; j++)

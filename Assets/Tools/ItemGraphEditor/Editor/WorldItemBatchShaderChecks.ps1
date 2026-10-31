@@ -24,6 +24,7 @@ public static class ItemBatchShaderCompile {
 $core=@'
 #define TEXTURE2D(n) Texture2D<float4> n
 #define SAMPLE_TEXTURE2D(t,s,u) t.Sample(s,u)
+#define SAMPLE_TEXTURE2D_LOD(t,s,u,l) t.SampleLevel(s,u,l)
 float4 TransformWorldToHClip(float3 p) {return float4(p,1);}
 '@
 $shader=Get-Content (Join-Path $root 'Shaders/WorldItemSprite.shader') -Raw

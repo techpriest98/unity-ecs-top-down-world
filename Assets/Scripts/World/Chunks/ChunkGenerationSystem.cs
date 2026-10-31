@@ -17,7 +17,7 @@ namespace Game.World.Chunks
     [UpdateBefore(typeof(ChunkProjectionSystem))]
     public partial struct ChunkGenerationSystem : ISystem
     {
-        private const int MaxChunksGeneratedPerFrame = 2;
+        private const int MaxChunksGeneratedPerFrame = 1;
 
         private WorldHeightMap worldHeightMap;
         private CoastDistanceMap coastDistanceMap;

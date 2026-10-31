@@ -31,12 +31,13 @@ namespace Game.Items
                 if (index >= 0)
                 {
                     ref var data = ref library.Value.Value.Items[index];
+                    position.ValueRW.Value += new float3(0, data.WorldLightHeight, 0);
                     var source = data.Light;
                     if (data.LightRadiusFromDurability)
                         source.Radius = math.lerp(data.LightRadiusAtZeroDurability, data.Light.Radius,
                             math.saturate(item.ValueRO.Instance.Durability / math.max(0.001f, item.ValueRO.Instance.MaxDurability)));
                     light.ValueRW = source;
-                    active = data.HasLight && source.Radius > 0f && source.Intensity > 0f && math.cmax(source.Color) > 0f;
+                    active = item.ValueRO.Instance.Durability > 0f && data.HasLight && source.Radius > 0f && source.Intensity > 0f && math.cmax(source.Color) > 0f;
                 }
                 if (enabled.ValueRO != active)
                 {

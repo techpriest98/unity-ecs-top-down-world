@@ -17,6 +17,7 @@ namespace Game.Items
         private Material material;
         private Material aboveFogMaterial;
         private readonly List<WorldItemDrawBatch> batches = new();
+        private readonly WorldItemSpriteAtlas spriteAtlas = new();
         public int LastVisibleItemCount { get; private set; }
         public int LastDrawCallCount { get; private set; }
         private static readonly Unity.Profiling.ProfilerMarker SubmitMarker = new("WorldItems.SubmitBatches");
@@ -59,6 +60,7 @@ namespace Game.Items
             aboveFogMaterial = null;
             foreach (var batch in batches) batch.Dispose();
             batches.Clear(); LastVisibleItemCount = LastDrawCallCount = 0;
+            spriteAtlas.Dispose();
             lightingChunks.Clear(); seenChunks.Clear(); removedChunks.Clear();
         }
 
@@ -72,6 +74,10 @@ namespace Game.Items
             if (material == null) material = Resources.Load<Material>("WorldItemSprite");
             if (material == null) return;
             var references = EntityManager.GetBuffer<ItemDefinitionReference>(library.GetSingletonEntity(), true);
+            var libraryEntity = library.GetSingletonEntity();
+            var savedAtlas = EntityManager.HasComponent<WorldItemAtlasReference>(libraryEntity)
+                ? EntityManager.GetComponentData<WorldItemAtlasReference>(libraryEntity).Atlas.Value : null;
+            spriteAtlas.Ensure(references, savedAtlas);
             var direction = SystemAPI.GetSingleton<ViewDirectionComponent>().Value;
             UpdateCameraPlanes();
             bool hasGrounded = false;
@@ -108,9 +114,7 @@ namespace Game.Items
             LastVisibleItemCount = LastDrawCallCount = 0;
             foreach (var (item, entity) in SystemAPI.Query<RefRO<WorldItem>>().WithEntityAccess())
             {
-                if (!ItemDefinitionReference.TryGet(references, item.ValueRO.Instance.DefinitionId, out var definition) ||
-                    definition.WorldSprite == null) continue;
-                var sprite = definition.WorldSprite;
+                if (!spriteAtlas.TryGetSprite(item.ValueRO.Instance.DefinitionId, out var sprite)) continue;
                 // Physics stores the centre of the collision sphere, not the floor contact.
                 var surfacePosition = item.ValueRO.Position;
                 surfacePosition.y -= item.ValueRO.CollisionRadius;
@@ -120,9 +124,12 @@ namespace Game.Items
                 projected.y += 0.25f;
                 if (!worldVisible && !localProjection.CoversTile(new int2(
                     (int)math.floor(projected.x), (int)math.floor(projected.y * 2f)))) continue;
-                float width = sprite.rect.width / 32f, height = sprite.rect.height / 32f;
-                float left = projected.x - width * 0.5f;
-                float bottom = projected.y - height * 0.5f;
+                bool upright = spriteAtlas.IsUpright(item.ValueRO.Instance.DefinitionId);
+                var visibleRect = sprite.textureRect;
+                var trimOffset = sprite.textureRectOffset;
+                var rect = GetSpriteRect(projected, new float2(sprite.rect.width, sprite.rect.height),
+                    new float2(visibleRect.width, visibleRect.height), new float2(trimOffset.x, trimOffset.y), upright);
+                float left = rect.x, bottom = rect.y, width = rect.z, height = rect.w;
                 const float depth = -0.9f;
                 var bounds = new Bounds(new Vector3(left + width * .5f, bottom + height * .5f, depth),
                     new Vector3(width, height, .1f));
@@ -138,17 +145,24 @@ namespace Game.Items
                         !localProjection.TryGetGroundTile(support, out _)) continue;
                 }
                 bool aboveFog = fogRenderer != null && fogRenderer.IsAboveFogPlane(surfacePosition.y);
-                var texture = sprite.texture;
-                var uv = sprite.textureRect;
-                var rect = new Vector4(left, bottom, width, height);
+                Texture texture = spriteAtlas.Texture;
+                if (!spriteAtlas.TryGet(sprite, out var atlasUv))
+                {
+                    // Unsupported atlas platforms/imports retain the old renderer.
+                    texture = sprite.texture;
+                    var uv = visibleRect;
+                    atlasUv = new Vector4(uv.x / texture.width, uv.y / texture.height,
+                        uv.width / texture.width, uv.height / texture.height);
+                }
                 var data = new WorldItemDrawData
                 {
                     Rect = rect,
-                    Uv = new Vector4(uv.x / texture.width, uv.y / texture.height, uv.width / texture.width, uv.height / texture.height),
+                    Uv = atlasUv,
                     // W is physical render depth at the sprite centre. Grounded
                     // sprites slope with Top; airborne sprites stay upright.
-                    Flags = new Vector4(depth, 0, item.ValueRO.Grounded ? 1 : 0,
-                        2f * (projected.y - surfacePosition.y - 9f))
+                    Flags = new Vector4(depth, 0, item.ValueRO.Grounded && !upright ? 1 : 0,
+                        2f * (projected.y - surfacePosition.y - 9f) +
+                        TrimDepthOffset(rect, projected.y, item.ValueRO.Grounded && !upright))
                 };
                 ApplyGroundLighting(ref data, item.ValueRO.Grounded, surfacePosition, direction);
                 if (currentBatch == null || !currentBatch.CanAppend(texture, aboveFog))
@@ -177,6 +191,18 @@ namespace Game.Items
             for (int i = batches.Count - 1; i >= usedBatches; i--)
             { batches[i].Dispose(); batches.RemoveAt(i); }
         }
+
+        // Atlas UVs contain textureRect, which may be smaller than sprite.rect.
+        // Draw that crop at its original offset, not stretched across the canvas.
+        internal static Vector4 GetSpriteRect(float2 anchor, float2 canvasPixels, float2 visiblePixels, float2 offsetPixels, bool upright)
+        {
+            float2 size = visiblePixels / 32f;
+            float2 bottomLeft = anchor - new float2(canvasPixels.x / 64f, upright ? 0f : canvasPixels.y / 64f) + offsetPixels / 32f;
+            return new Vector4(bottomLeft.x, bottomLeft.y, size.x, size.y);
+        }
+
+        internal static float TrimDepthOffset(Vector4 rect, float anchorY, bool sloped)
+            => sloped ? 2f * (rect.y + rect.w * .5f - anchorY) : 0f;
 
         private void ApplyGroundLighting(ref WorldItemDrawData data, bool grounded, float3 surface, ViewDirection direction)
         {

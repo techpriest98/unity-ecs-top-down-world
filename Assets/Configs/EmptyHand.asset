@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.EmptyHandDefinition
   Skills:
   - {fileID: 11400000, guid: 49991171ac7b48da86d1a20e42d08ee0, type: 2}
+  - {fileID: 11400000, guid: c4202b1159f747bab8af04e426c87a73, type: 2}

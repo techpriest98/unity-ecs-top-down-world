@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace Game.Items.Skills
 {
-    public enum SkillChainNodeKind { ValidTopTarget, WithinDistance, Action, GroundItemTarget, Ignitable, ValidTerrainTarget, ValidCursorTarget, OtherHandItem, ReplaceableWorldItemTarget, TopSurfacePosition, ItemCondition, SelectionKindBranch, WorldItemTarget, StructureTarget }
+    public enum SkillChainNodeKind { ValidTopTarget, WithinDistance, Action, GroundItemTarget, Ignitable, ValidTerrainTarget, ValidCursorTarget, OtherHandItem, ReplaceableWorldItemTarget, TopSurfacePosition, ItemCondition, SelectionKindBranch, WorldItemTarget, StructureTarget, Visible, VisibilityData, DestructionTargetBranch }
 
     [System.Serializable]
     public sealed class WorldItemMatch
@@ -41,6 +41,14 @@ namespace Game.Items.Skills
 
     public static class SkillChainRunner
     {
+        private struct VisibilityContext
+        {
+            public bool Evaluated, HasPosition;
+            public float3 Position;
+            public Entity Target;
+            public int StructureId;
+        }
+
         public static int SelectionBranchIndex(PlacementSelectionKind kind) => kind switch
         {
             PlacementSelectionKind.None or PlacementSelectionKind.Block => 0,
@@ -51,6 +59,11 @@ namespace Game.Items.Skills
 
         private static SkillChainNode SelectBranch(SkillChainNode node, EntityManager manager, Entity player, EquipmentSlot slot)
         {
+            if (node.Kind == SkillChainNodeKind.DestructionTargetBranch)
+            {
+                int branch = NigredoTargetUtility.Resolve(manager, player, out _, out _, out _);
+                return node.SelectionOutputs != null && branch < node.SelectionOutputs.Length ? node.SelectionOutputs[branch] : null;
+            }
             if (!node.SelectionKindConnected || !manager.Exists(player) || !manager.HasBuffer<PlayerEquipmentSlot>(player)) return null;
             int index = SelectionBranchIndex(PlayerEquipmentUtility.GetInstance(manager.GetBuffer<PlayerEquipmentSlot>(player, true), slot).PlacementSelection.Kind);
             return index >= 0 && node.SelectionOutputs != null && index < node.SelectionOutputs.Length ? node.SelectionOutputs[index] : null;
@@ -61,10 +74,12 @@ namespace Game.Items.Skills
             int count = 0;
             for (var source = node; source != null && ++count <= 64; source = source.PositionSource)
             {
+                if (source.Kind == SkillChainNodeKind.VisibilityData) return "Target";
                 if (source.Kind == SkillChainNodeKind.StructureTarget) return "Structure";
                 if (source.Kind == SkillChainNodeKind.WorldItemTarget) return "World Item";
                 if (source.Kind == SkillChainNodeKind.Action && source.Action is DestroyWorldObjectAction destroy)
                     return destroy.Category == WorldObjectCategory.Structure ? "Structure" : "World Item";
+                if (source.Kind == SkillChainNodeKind.Action && source.Action is TreeResinAction) return "Structure";
                 if (source.Kind == SkillChainNodeKind.GroundItemTarget || source.Kind == SkillChainNodeKind.ReplaceableWorldItemTarget ||
                     (source.Kind == SkillChainNodeKind.Action && source.Action is ReplaceWorldItemAction)) return "World Item";
                 if (source.Kind != SkillChainNodeKind.WithinDistance && source.Kind != SkillChainNodeKind.ItemCondition &&
@@ -75,15 +90,114 @@ namespace Game.Items.Skills
                 ? "Item" : "Position";
         }
         public static bool IsVisible(SkillChainNode first, EntityManager manager, Entity player, EquipmentSlot slot, int item)
+            => EvaluateVisibility(first, manager, player, slot, item, out _);
+
+        // Presentation may reuse this frame's resolved target, never for Execute.
+        public static bool EvaluateVisibilityTarget(SkillChainNode first, EntityManager manager, Entity player,
+            EquipmentSlot slot, int item, out Entity target, out float3 position)
         {
+            bool visible = EvaluateVisibility(first, manager, player, slot, item, out var context);
+            target = visible ? context.Target : Entity.Null;
+            position = visible ? context.Position : default;
+            return visible;
+        }
+
+        private static bool EvaluateVisibility(SkillChainNode first, EntityManager manager, Entity player,
+            EquipmentSlot slot, int item, out VisibilityContext context)
+        {
+            context = new VisibilityContext { Evaluated = true };
+            if (first == null) return true;
             int count = 0;
-            for (var node = first; node != null; node = node.Kind == SkillChainNodeKind.SelectionKindBranch ? SelectBranch(node, manager, player, slot) : node.Next)
+            float3 position = default;
+            bool hasPosition = false;
+            SkillChainNode branch = null;
+            // Evaluate only the dedicated Visibility output without running actions.
+            for (var node = first; node != null; node = branch != null ? branch : node.Next)
             {
+                branch = null;
                 if (++count > 64) return false;
                 if (node.Kind == SkillChainNodeKind.OtherHandItem &&
                     (node.HandCondition == null || !node.HandCondition.Evaluate(manager, player, slot, item))) return false;
-                if (node.Kind == SkillChainNodeKind.ItemCondition && node.Condition != null && node.Condition.ControlsVisibility &&
-                    !node.Condition.Evaluate(manager, player, slot, item)) return false;
+                if (node.Kind == SkillChainNodeKind.ItemCondition &&
+                    (node.Condition == null || !node.Condition.EvaluateTarget(manager, player, slot, item, context.Target, position))) return false;
+                switch (node.Kind)
+                {
+                    case SkillChainNodeKind.Visible: return true;
+                    case SkillChainNodeKind.Action: return false;
+                    case SkillChainNodeKind.ItemCondition:
+                    case SkillChainNodeKind.OtherHandItem: break;
+                    case SkillChainNodeKind.WithinDistance:
+                        if (!hasPosition || node.Distance == null || !node.Distance.Allows(manager, player, position)) return false;
+                        break;
+                    case SkillChainNodeKind.ValidCursorTarget:
+                    case SkillChainNodeKind.ValidTerrainTarget:
+                        if (!CursorWorldUtility.TryGetPosition(manager, player, node.Cursor, out var terrainCell) ||
+                            !CursorWorldUtility.TryGetBlock(manager, terrainCell, out var terrain) ||
+                            (node.Kind == SkillChainNodeKind.ValidTerrainTarget && BlockUtility.IsAir(terrain))) return false;
+                        position = (float3)terrainCell + .5f; hasPosition = true;
+                        context.Target = Entity.Null; context.StructureId = 0;
+                        break;
+                    case SkillChainNodeKind.WorldItemTarget:
+                    case SkillChainNodeKind.StructureTarget:
+                        if (!hasPosition || !WorldObjectTargetUtility.TryFindFromPosition(manager, player, position,
+                            node.Kind == SkillChainNodeKind.StructureTarget, out var owner, out int structureId, out var objectPosition)) return false;
+                        position = objectPosition;
+                        context.Target = owner; context.StructureId = structureId;
+                        break;
+                    case SkillChainNodeKind.DestructionTargetBranch:
+                    case SkillChainNodeKind.SelectionKindBranch:
+                        branch = SelectBranch(node, manager, player, slot);
+                        if (branch == null) return false;
+                        break;
+                    case SkillChainNodeKind.ValidTopTarget:
+                    case SkillChainNodeKind.TopSurfacePosition:
+                    case SkillChainNodeKind.GroundItemTarget:
+                        context.Target = Entity.Null; context.StructureId = 0;
+                        hasPosition = node.Cursor == CursorWorldPosition.Before &&
+                            manager.HasComponent<SelectedProjectedCell>(player) &&
+                            manager.GetComponentData<SelectedProjectedCell>(player) is { IsValid: true, FaceType: ProjectedFaceType.Top };
+                        int3 cursorCell = default;
+                        hasPosition = hasPosition && CursorWorldUtility.TryGetPosition(manager, player, node.Cursor, out cursorCell);
+                        if (hasPosition)
+                            position = node.Kind == SkillChainNodeKind.TopSurfacePosition
+                                ? ProjectedCellInteractionUtility.GetTopSurfacePosition(manager.GetComponentData<SelectedProjectedCell>(player), cursorCell)
+                                : new float3(cursorCell.x + .5f, cursorCell.y, cursorCell.z + .5f);
+                        if (hasPosition && node.Kind == SkillChainNodeKind.ValidTopTarget)
+                            hasPosition = CursorWorldUtility.TryGetBlock(manager, cursorCell, out var air) && BlockUtility.IsAir(air) &&
+                                CursorWorldUtility.TryGetBlock(manager, cursorCell + new int3(0, -1, 0), out var support) && BlockUtility.IsSolid(support);
+                        if (node.Kind == SkillChainNodeKind.GroundItemTarget)
+                        {
+                            if (!hasPosition) return false;
+                            var target = PickUpItemAction.FindAt(manager, player, slot, cursorCell);
+                            if (target == Entity.Null) return false;
+                            position = PickUpItemAction.Surface(manager, target);
+                            context.Target = target;
+                        }
+                        if (!hasPosition) return false;
+                        break;
+                    case SkillChainNodeKind.Ignitable:
+                        if (!hasPosition) return false;
+                        using (var sources = manager.CreateEntityQuery(ComponentType.ReadOnly<ItemLibrary>(), ComponentType.ReadOnly<IgnitableCell>()))
+                        {
+                            if (sources.CalculateEntityCount() != 1) return false;
+                            bool found = false;
+                            foreach (var source in manager.GetBuffer<IgnitableCell>(sources.GetSingletonEntity(), true))
+                                if (math.all(source.Position == (int3)math.floor(position))) { found = true; break; }
+                            if (!found) return false;
+                        }
+                        break;
+                    case SkillChainNodeKind.ReplaceableWorldItemTarget:
+                        if (!hasPosition) return false;
+                        var matched = WorldItemMatchUtility.Find(manager, position, node.ItemMatches, out int row);
+                        if (matched == Entity.Null) return false;
+                        branch = node.ItemMatches[row].Output;
+                        if (branch == null) return false;
+                        position = PickUpItemAction.Surface(manager, matched);
+                        context.Target = matched; context.StructureId = 0;
+                        break;
+                    default: return false;
+                }
+                context.Position = position; context.HasPosition = hasPosition;
             }
             return true;
         }
@@ -96,6 +210,30 @@ namespace Game.Items.Skills
 
         public static bool Execute(SkillChainNode first, EntityManager manager, Entity player,
             EquipmentSlot slot, int item, out string failure)
+            => ExecuteCore(first, manager, player, slot, item, default, out failure);
+
+        public static bool ExecuteSkill(ItemSkillDefinition skill, EntityManager manager, Entity player,
+            EquipmentSlot slot, int item, out string failure)
+        {
+            failure = null;
+            if (skill == null) return false;
+            // Evaluate now, never reuse the HUD result from a previous frame.
+            if (!EvaluateVisibility(skill.VisibilityNode, manager, player, slot, item, out var context)) return false;
+            if (skill.DurabilityCost != 0f && (!manager.Exists(player) || !manager.HasBuffer<PlayerEquipmentSlot>(player) ||
+                !PlayerEquipmentUtility.CanSpendDurability(manager.GetBuffer<PlayerEquipmentSlot>(player, true), slot, item, skill.DurabilityCost)))
+            {
+                failure = "My tool is too worn out.";
+                return false;
+            }
+            if (!ExecuteCore(skill.FirstNode, manager, player, slot, item, context, out failure)) return false;
+            // Reacquire after actions: world-item creation may invalidate ECS buffers.
+            if (skill.DurabilityCost != 0f)
+                return PlayerEquipmentUtility.TrySpendDurability(manager.GetBuffer<PlayerEquipmentSlot>(player), slot, item, skill.DurabilityCost);
+            return true;
+        }
+
+        private static bool ExecuteCore(SkillChainNode first, EntityManager manager, Entity player,
+            EquipmentSlot slot, int item, VisibilityContext visibility, out string failure)
         {
             failure = "I can't do that.";
             if (first == null) return ConfigurationFailure(first, "First Node is not connected.", out failure);
@@ -123,6 +261,14 @@ namespace Game.Items.Skills
                 if (input != null && structureIds.TryGetValue(input, out int inheritedStructure)) structureIds[node] = inheritedStructure;
                 switch (node.Kind)
                 {
+                    case SkillChainNodeKind.VisibilityData:
+                        if (!visibility.Evaluated || !visibility.HasPosition)
+                            return ConfigurationFailure(node, "Visibility must provide the resolved target before Execute.", out failure);
+                        positions[node] = visibility.Position;
+                        if (visibility.Target != Entity.Null) targets[node] = visibility.Target;
+                        structureIds[node] = visibility.StructureId;
+                        break;
+                    case SkillChainNodeKind.DestructionTargetBranch:
                     case SkillChainNodeKind.SelectionKindBranch:
                         branch = SelectBranch(node, manager, player, slot);
                         if (branch == null) return ConfigurationFailure(node, "Selected Item.Selection.Kind output is not connected.", out failure);
@@ -131,14 +277,16 @@ namespace Game.Items.Skills
                     case SkillChainNodeKind.StructureTarget:
                         if (input == null || !positions.TryGetValue(input, out position))
                             return ConfigurationFailure(node, "Before Cursor position must come from an earlier data output.", out failure);
-                        if (!WorldObjectTargetUtility.TryFind(manager, player, (int3)math.floor(position),
+                        if (!WorldObjectTargetUtility.TryFindFromPosition(manager, player, position,
                                 node.Kind == SkillChainNodeKind.StructureTarget, out Entity resolvedOwner, out int resolvedId, out float3 resolvedPosition))
                         { failure = node.FailureMessage; return false; }
                         positions[node] = resolvedPosition; targets[node] = resolvedOwner; structureIds[node] = resolvedId;
                         break;
                     case SkillChainNodeKind.ItemCondition:
                         if (node.Condition == null) return ConfigurationFailure(node, "Condition asset is not assigned.", out failure);
-                        if (!node.Condition.Evaluate(manager, player, slot, item)) { failure = node.FailureMessage; return false; }
+                        Entity conditionEntity = input != null && targets.TryGetValue(input, out var conditionInputTarget) ? conditionInputTarget : Entity.Null;
+                        float3 conditionSurface = input != null && positions.TryGetValue(input, out var conditionInputPosition) ? conditionInputPosition : default;
+                        if (!node.Condition.EvaluateTarget(manager, player, slot, item, conditionEntity, conditionSurface)) { failure = node.FailureMessage; return false; }
                         if (input != null && positions.TryGetValue(input, out var conditionPosition)) positions[node] = conditionPosition;
                         if (input != null && targets.TryGetValue(input, out var conditionTarget)) targets[node] = conditionTarget;
                         break;
@@ -266,6 +414,16 @@ namespace Game.Items.Skills
                             positions[node] = position; targets[node] = destroyTarget; structureIds[node] = destroyId;
                             break;
                         }
+                        if (node.Action is TreeResinAction resin)
+                        {
+                            if (!targets.TryGetValue(input, out Entity resinTarget) ||
+                                !structureIds.TryGetValue(input, out int resinTreeId) ||
+                                !resin.CanApply(manager, player, slot, item, resinTarget, resinTreeId, position))
+                            { failure = node.FailureMessage; return false; }
+                            actions.Add((resin, position, resinTarget, resinTreeId, node.FailureMessage));
+                            positions[node] = position; targets[node] = resinTarget; structureIds[node] = resinTreeId;
+                            break;
+                        }
                         if (node.Action is ReplaceWorldItemAction replaceWorld)
                         {
                             if (!targets.TryGetValue(input, out var resolvedTarget))
@@ -275,6 +433,19 @@ namespace Game.Items.Skills
                             actions.Add((replaceWorld, position, resolvedTarget, 0, node.FailureMessage));
                             positions[node] = position;
                             targets[node] = resolvedTarget;
+                            break;
+                        }
+                        if (node.Action is PlaceWorldItemAction place)
+                        {
+                            if (!place.CanPlace(manager, player, slot, item, position)) { failure = node.FailureMessage; return false; }
+                            actions.Add((place, position, Entity.Null, 0, node.FailureMessage));
+                            break;
+                        }
+                        if (node.Action is RefuelWorldItemAction refuel)
+                        {
+                            if (!targets.TryGetValue(input, out var fuelTarget) || !refuel.CanRefuel(manager, player, slot, item, fuelTarget, position))
+                            { failure = node.FailureMessage; return false; }
+                            actions.Add((refuel, position, fuelTarget, 0, node.FailureMessage));
                             break;
                         }
                         if (node.Action is SetWorldBlockAction setBlock)
@@ -321,10 +492,16 @@ namespace Game.Items.Skills
                 }
                 bool executed = step.action is DestroyWorldObjectAction destroy
                     ? destroy.ExecuteTarget(manager, step.target, step.structureId, step.position)
+                    : step.action is TreeResinAction resin
+                    ? resin.ExecuteTarget(manager, player, slot, currentItem, step.target, step.structureId, step.position)
                     : step.action is ThrowItemAction thrown
                     ? currentItem != 0 && thrown.ExecuteAtPosition(manager, player, slot, currentItem, (int3)math.floor(step.position))
                     : step.action is ReplaceWorldItemAction replaceWorld
                         ? replaceWorld.ExecuteTarget(manager, step.target, step.position)
+                    : step.action is PlaceWorldItemAction place
+                        ? place.ExecuteAt(manager, player, slot, currentItem, step.position)
+                    : step.action is RefuelWorldItemAction refuel
+                        ? refuel.ExecuteTarget(manager, player, slot, currentItem, step.target, step.position)
                     : step.action is PickUpItemAction picked
                         ? currentItem == 0 && picked.ExecuteTarget(manager, player, slot, step.target, step.position, checkDistance: false)
                         : step.action is TogglePlacementShapeAction toggle

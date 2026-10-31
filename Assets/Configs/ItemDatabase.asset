@@ -13,12 +13,19 @@ MonoBehaviour:
   m_Name: ItemDatabase
   m_EditorClassIdentifier: Assembly-CSharp::Game.Items.ItemDatabase
   Items:
+  - {fileID: 11400000, guid: d011a100000000000000000000000001, type: 2}
+  - {fileID: 11400000, guid: d011a100000000000000000000000002, type: 2}
+  - {fileID: 11400000, guid: d011a100000000000000000000000003, type: 2}
+  - {fileID: 11400000, guid: 46d49d19198d4285b8f1dbe5cc628f5a, type: 2}
+  - {fileID: 11400000, guid: ebf08012bbfc4980a81beb9819505ba3, type: 2}
   - {fileID: 11400000, guid: c019f11a00004e66b200000000000002, type: 2}
   - {fileID: 11400000, guid: c019f11a00004e66b200000000000003, type: 2}
   - {fileID: 11400000, guid: ab11c01f00004e66b200000000000001, type: 2}
   - {fileID: 11400000, guid: 21863c02d6dcf45e395849a4c0b02231, type: 2}
   - {fileID: 11400000, guid: 22b3719fb2c9947c28e5c2258dc66c34, type: 2}
   - {fileID: 11400000, guid: 128e9d667dff51a44bb431a867628517, type: 2}
+  - {fileID: 11400000, guid: 6aa38210be4349d5b3f25f713a80595f, type: 2}
+  - {fileID: 11400000, guid: 3cd13e23cbaa4b0e83c11ca854e7e75f, type: 2}
   EmptyHand: {fileID: 11400000, guid: cc91d2a1afe34a3da2d588a88e917311, type: 2}
   DebugLeftItem: {fileID: 11400000, guid: 128e9d667dff51a44bb431a867628517, type: 2}
   DebugRightItem: {fileID: 11400000, guid: 22b3719fb2c9947c28e5c2258dc66c34, type: 2}

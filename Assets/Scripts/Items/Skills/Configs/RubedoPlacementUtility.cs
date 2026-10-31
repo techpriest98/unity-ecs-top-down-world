@@ -23,7 +23,7 @@ namespace Game.Items.Skills
         {
             if (!TryPlan(manager, player, selection, before, out float3 surface, out Entity owner,
                     out ItemDefinition definition, out ChunkTree tree)) return false;
-            if (selection.Kind == PlacementSelectionKind.Item)
+            if (definition != null)
             {
                 const float radius = .08f;
                 manager.GetBuffer<WorldItemThrowRequest>(player).Add(new WorldItemThrowRequest
@@ -68,14 +68,16 @@ namespace Game.Items.Skills
             foreach (Entity chunk in chunks)
                 if (math.all(manager.GetComponentData<ChunkComponent>(chunk).Coordinate == coordinate)) { owner = chunk; break; }
             if (owner == Entity.Null) return false;
-            if (selection.Kind == PlacementSelectionKind.Item)
+            if (selection.Kind == PlacementSelectionKind.Item || selection.Id != (int)StructureDefinitionId.Pine)
             {
                 if (!manager.HasBuffer<WorldItemThrowRequest>(player)) return false;
                 using var library = manager.CreateEntityQuery(ComponentType.ReadOnly<ItemDefinitionReference>());
                 if (library.CalculateEntityCount() != 1 ||
                     !ItemDefinitionReference.TryGet(manager.GetBuffer<ItemDefinitionReference>(library.GetSingletonEntity(), true),
-                        selection.Id, out definition) || definition.WorldSprite == null) return false;
-                return HasClearColumn(manager, owner, coordinate, surface, .16f);
+                        selection.Id, out definition) || definition.WorldSprite == null ||
+                    (selection.Kind == PlacementSelectionKind.Structure && !definition.IsStructure)) return false;
+                return HasClearColumn(manager, owner, coordinate, surface,
+                    definition.WorldSpriteUpright ? math.max(.16f, definition.WorldSprite.rect.height / 32f) : .16f);
             }
             if (selection.Id != (int)StructureDefinitionId.Pine) return false;
             var config = PineTreeTest.Active;

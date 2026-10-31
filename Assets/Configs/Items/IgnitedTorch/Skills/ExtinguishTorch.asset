@@ -18,5 +18,6 @@ MonoBehaviour:
   Icon: {fileID: 3305191282884748519, guid: 212c4fb81804b5e468a82cbfc4e61351, type: 3}
   UseChain: 1
   FirstNode: {fileID: 11400000, guid: 64ac67415cf54edc903fb8765e612ac1, type: 2}
+  VisibilityNode: {fileID: 0}
   Conditions: []
   Actions: []

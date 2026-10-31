@@ -8,7 +8,6 @@ namespace Game.Items.Skills
     public sealed class OtherHandItemCondition : ItemSkillCondition
     {
         public ItemDefinition RequiredItem;
-        public override bool ControlsVisibility => true;
         public override bool Evaluate(EntityManager manager, Entity player, EquipmentSlot slot, int item)
         {
             if (RequiredItem == null || !manager.Exists(player) || !manager.HasBuffer<PlayerEquipmentSlot>(player) ||

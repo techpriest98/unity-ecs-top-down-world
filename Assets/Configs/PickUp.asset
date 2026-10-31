@@ -21,5 +21,6 @@ MonoBehaviour:
     Key: 20
   UseChain: 1
   FirstNode: {fileID: 11400000, guid: 51ac67415cf54edc903fb8765e612ac1, type: 2}
+  VisibilityNode: {fileID: 11400000, guid: c82ea324682f110843c222da765d7e67, type: 2}
   Conditions: []
   Actions: []

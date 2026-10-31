@@ -701,6 +701,7 @@ GameObject:
   - component: {fileID: 1238157591}
   - component: {fileID: 1238157592}
   - component: {fileID: 1238157593}
+  - component: {fileID: 1238157594}
   m_Layer: 0
   m_Name: ChunkRenderer
   m_TagString: Untagged
@@ -735,11 +736,8 @@ MonoBehaviour:
   fogPlayerClearRadius: 1.5
   fogPlayerClearSoftness: 1.5
   fogPlayerClearOffsetUp: 1
-  LocalProjectionOverlay: 0
   material: {fileID: 2100000, guid: aaf6d3886463549bd88f181df4b19b92, type: 2}
-  clippedMaterial: {fileID: 0}
   waterMaterial: {fileID: 2100000, guid: 3689cef086b864c6797be1af3b981ab4, type: 2}
-  clippedWaterMaterial: {fileID: 0}
   terrainHeightStrength: 0.3
   terrainHeightTint: {r: 0.62, g: 0.73, b: 0.85, a: 1}
   terrainHeightRange: {x: 0.5, y: 6}
@@ -823,6 +821,19 @@ MonoBehaviour:
   TurfDensity: 0.65
   QuarterTurn: 0
   Scale: 1
+--- !u!114 &1238157594
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1238157588}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d39ab105c12648048579c7d41d701cf3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.World.Rendering.LocalProjectionRenderer
+  LocalProjectionOverlay: 1
 --- !u!1 &1378615480
 GameObject:
   m_ObjectHideFlags: 0

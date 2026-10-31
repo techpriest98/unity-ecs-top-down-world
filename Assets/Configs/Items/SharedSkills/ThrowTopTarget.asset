@@ -15,6 +15,11 @@ MonoBehaviour:
   Kind: 6
   Next: {fileID: 11400000, guid: 2206c7415cf54edc903fb8765e612ac1, type: 2}
   ItemMatches: []
+  SelectionOutputs:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  SelectionKindConnected: 1
   PositionSource: {fileID: 0}
   Cursor: 0
   Distance: {fileID: 0}

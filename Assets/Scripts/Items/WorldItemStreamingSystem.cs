@@ -139,7 +139,7 @@ namespace Game.Items
                         var item = WorldItemStreamingUtility.Restore(saved);
                         int index = ItemRuntimeUtility.Find(ref library.Value.Value, item.Instance.DefinitionId);
                         WorldItemStreamingUtility.CatchUp(ref item, library.Value.Value.Items[index], saved.LastSimulationSeconds, now);
-                        if (item.Instance.Durability > 0) WorldItemEntityUtility.Create(EntityManager, item);
+                        if (ItemRuntimeUtility.ResolveDepletion(ref item.Instance, ref library.Value.Value)) WorldItemEntityUtility.Create(EntityManager, item);
                     }
                     inactive.Remove(key);
                 }

@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   Kind: 2
   Next: {fileID: 0}
-  PositionSource: {fileID: 11400000, guid: ab11c01f00004e66b200000000000007, type: 2}
+  PositionSource: {fileID: 11400000, guid: ab11c01f00004e66b200000000000008, type: 2}
   Action: {fileID: 11400000, guid: ab11c01f00004e66b200000000000004, type: 2}
   FailureMessage: I cannot ignite this item.

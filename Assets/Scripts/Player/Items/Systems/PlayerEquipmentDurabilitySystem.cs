@@ -37,7 +37,7 @@ namespace Game.Player
                         ItemRuntimeUtility.TickDurability(ref entry.Instance, items[j], delta);
                         break;
                     }
-                    if (entry.Instance.Durability <= 0f)
+                    if (!ItemRuntimeUtility.ResolveDepletion(ref entry.Instance, ref library.Value.Value))
                     {
                         entry.Instance = default;
                     }

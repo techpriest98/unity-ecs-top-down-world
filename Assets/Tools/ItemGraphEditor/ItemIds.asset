@@ -12,9 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 715a6ac247b746519f8c5f607d45711a, type: 3}
   m_Name: ItemIds
   m_EditorClassIdentifier: 
-  NextItemId: 8
-  NextSkillId: 15
+  NextItemId: 15
+  NextSkillId: 23
   Items:
+  - Guid: d011a100000000000000000000000001
+    Id: 12
+  - Guid: d011a100000000000000000000000002
+    Id: 13
+  - Guid: d011a100000000000000000000000003
+    Id: 14
   - Guid: c019f11a00004e66b200000000000002
     Id: 6
   - Guid: c019f11a00004e66b200000000000003
@@ -27,7 +33,27 @@ MonoBehaviour:
     Id: 2
   - Guid: 128e9d667dff51a44bb431a867628517
     Id: 3
+  - Guid: 46d49d19198d4285b8f1dbe5cc628f5a
+    Id: 8
+  - Guid: ebf08012bbfc4980a81beb9819505ba3
+    Id: 9
+  - Guid: 6aa38210be4349d5b3f25f713a80595f
+    Id: 10
+  - Guid: 3cd13e23cbaa4b0e83c11ca854e7e75f
+    Id: 11
   Skills:
+  - Guid: d011a100000000000000000000000004
+    Id: 18
+  - Guid: d011a100000000000000000000000005
+    Id: 19
+  - Guid: d011a100000000000000000000000006
+    Id: 20
+  - Guid: d011a100000000000000000000000007
+    Id: 21
+  - Guid: d011a100000000000000000000000008
+    Id: 22
+  - Guid: 07d0b22b73a64cb590eb658f343d4211
+    Id: 17
   - Guid: ab11c01f00004e66b200000000000002
     Id: 13
   - Guid: 6915bc3950696455c8f38b7f7667f5da
@@ -44,3 +70,9 @@ MonoBehaviour:
     Id: 11
   - Guid: 540d2273b389460c8cfe3ef675d6e311
     Id: 12
+  - Guid: 4b1251e3105e4461af378674dd4801f7
+    Id: 14
+  - Guid: c4202b1159f747bab8af04e426c87a73
+    Id: 15
+  - Guid: d777036d55bb42868a528092426d32e3
+    Id: 16

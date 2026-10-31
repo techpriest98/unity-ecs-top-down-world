@@ -52,7 +52,7 @@ foreach ($file in Get-ChildItem -LiteralPath (Join-Path $root 'Configs') -Recurs
     elseif ($script -eq $skillScript) { $skills += $asset }
     else { $replacements += $asset }
 }
-Check ($skills.Count -eq 8) "Expected ALL 8 skills, found $($skills.Count)"
+Check ($skills.Count -eq 17) "Expected ALL 17 skills, found $($skills.Count)"
 $enumSource = Read-Asset 'Scripts/Items/Skills/Configs/SkillChainNode.cs'
 $enumMatch = [regex]::Match($enumSource, 'enum SkillChainNodeKind\s*\{([^}]+)\}')
 Check $enumMatch.Success 'Cannot read current node-kind enum'
@@ -65,12 +65,13 @@ function Kind($node) {
 $seen = [System.Collections.Generic.HashSet[string]]::new()
 $ids = [System.Collections.Generic.HashSet[string]]::new()
 $pickDistance = Resolve-Ref (Field (Read-Asset 'Configs/PickUpWithinDistance.asset') 'Distance') 'Pick distance' -Required
-function Visit([string]$guid, [string[]]$ancestors, [bool]$actionStarted, [bool]$hasRange) {
+function Visit([string]$guid, [string[]]$ancestors, [bool]$actionStarted, [bool]$hasRange, [bool]$visibility = $false) {
     Check ($nodes.ContainsKey($guid)) "Expected chain node: $guid"
     $node = $nodes[$guid]; $kind = Kind $node
     Check ($guid -notin $ancestors) "Cycle: $($node.Path)"
     Check ($ancestors.Count -lt 64) "Graph exceeds runtime 64-node limit: $($node.Path)"
     $null = $seen.Add($guid)
+    Check (!$visibility -or $kind -notin @('Action','VisibilityData')) "Execution step connected to Visibility: $($node.Path)"
     $source = Resolve-Ref (Field $node.Text 'PositionSource') $node.Path
     Check (!$source -or $source -in $ancestors) "PositionSource is not an earlier node on this path: $($node.Path)"
     Check (!$actionStarted -or $kind -eq 'Action') "Condition after action: $($node.Path)"
@@ -83,10 +84,11 @@ function Visit([string]$guid, [string[]]$ancestors, [bool]$actionStarted, [bool]
         $hasRange = $true
     }
     if ($kind -eq 'OtherHandItem') { $null = Resolve-Ref (Field $node.Text 'HandCondition') $node.Path -Required }
+    if ($kind -eq 'ItemCondition') { $null = Resolve-Ref (Field $node.Text 'Condition') $node.Path -Required }
     if ($kind -eq 'Action') { $null = Resolve-Ref (Field $node.Text 'Action') $node.Path -Required }
     $next = Resolve-Ref (Field $node.Text 'Next') $node.Path
     $edges = @(); if ($next) { $edges += $next }
-    if ($kind -eq 'SelectionKindBranch') {
+    if ($kind -in @('SelectionKindBranch', 'DestructionTargetBranch')) {
         $outputs = [regex]::Match($node.Text, '(?m)^  SelectionOutputs:\r?\n((?:  - \{[^}\r\n]+\}\r?\n?){3})')
         Check ($outputs.Success -and !$next) "Selection branch must have exactly three outputs and no fallback Next: $($node.Path)"
         foreach ($reference in [regex]::Matches($outputs.Groups[1].Value, '\{[^}]+\}')) {
@@ -98,7 +100,7 @@ function Visit([string]$guid, [string[]]$ancestors, [bool]$actionStarted, [bool]
     Check ($rows.Count -eq $rowCount) "Malformed ItemMatches row: $($node.Path)"
     if ($kind -eq 'ReplaceableWorldItemTarget') {
         Check ($rows.Count -gt 0 -and !$next) "Match needs row outputs and no fallback Next: $($node.Path)"
-        Check ($hasRange) "Range must precede world-item match: $($node.Path)"
+        Check ($visibility -or $hasRange) "Execution range must precede world-item match: $($node.Path)"
     } else { Check ($rows.Count -eq 0) "ItemMatches on non-match node: $($node.Path)" }
     $items = [System.Collections.Generic.HashSet[string]]::new()
     foreach ($row in $rows) {
@@ -107,14 +109,19 @@ function Visit([string]$guid, [string[]]$ancestors, [bool]$actionStarted, [bool]
         $edges += Resolve-Ref $row.Groups[2].Value $node.Path -Required
     }
     $started = $actionStarted -or $kind -eq 'Action'
-    if (!$edges.Count) { Check $started "Success path has no action: $($node.Path)" }
-    foreach ($edge in $edges) { Visit $edge (@($ancestors) + $guid) $started $hasRange }
+    if (!$edges.Count) { Check ($visibility -or $started) "Success path has no action: $($node.Path)" }
+    foreach ($edge in $edges) { Visit $edge (@($ancestors) + $guid) $started $hasRange $visibility }
 }
 foreach ($skill in $skills) {
     Check ($ids.Add((Field $skill.Text 'Id'))) "Duplicate skill Id: $($skill.Path)"
     Check ((Field $skill.Text 'UseChain') -eq '1' -and (Field $skill.Text 'Conditions') -eq '[]' -and (Field $skill.Text 'Actions') -eq '[]') "Legacy skill configuration: $($skill.Path)"
     $first = Resolve-Ref (Field $skill.Text 'FirstNode') $skill.Path -Required
     Visit $first @() $false $false
+    Check ([bool](Field $skill.Text 'VisibilityNode')) "Missing explicit Visibility configuration: $($skill.Path)"
+    $visibility = Resolve-Ref (Field $skill.Text 'VisibilityNode') $skill.Path
+    if ((Kind $nodes[$first]) -eq 'VisibilityData') { Check ([bool]$visibility) "Visibility Result has no Visibility source: $($skill.Path)" }
+    Check (!$visibility -or $visibility -ne $first) "Visibility aliases execution: $($skill.Path)"
+    if ($visibility) { Visit $visibility @() $false $false $true }
     Write-Output "PASS graph: $([IO.Path]::GetRelativePath($root, $skill.Path))"
 }
 Check ($seen.Count -eq $nodes.Count) "Orphan chain nodes: $(($nodes.Keys | Where-Object { !$seen.Contains($_) } | ForEach-Object { $nodes[$_].Path }) -join ', ')"
@@ -142,6 +149,7 @@ public class ItemSkillAction {}
 public class ReplaceWorldItemAction : ItemSkillAction {}
 public class ReplaceEquippedItemAction : ItemSkillAction {}
 public class TogglePlacementShapeAction : ItemSkillAction {}
+public class TreeResinAction : ItemSkillAction {}
 public enum WorldObjectCategory {Item,Structure}
 public class DestroyWorldObjectAction : ItemSkillAction {public WorldObjectCategory Category;}
 public class SkillChainNode { public SkillChainNodeKind Kind; public SkillChainNode PositionSource; public ItemSkillAction Action; }
@@ -151,7 +159,7 @@ static void Expect(SkillChainNode n, string expected) { if(OutputName(n)!=expect
 public static void Run() {
 foreach(SkillChainNodeKind k in Enum.GetValues(typeof(SkillChainNodeKind))) {
  var n=new SkillChainNode{Kind=k};
- Expect(n,k==SkillChainNodeKind.GroundItemTarget||k==SkillChainNodeKind.ReplaceableWorldItemTarget||k==SkillChainNodeKind.WorldItemTarget?"World Item":k==SkillChainNodeKind.StructureTarget?"Structure":k==SkillChainNodeKind.OtherHandItem?"Item":"Position");
+ Expect(n,k==SkillChainNodeKind.VisibilityData?"Target":k==SkillChainNodeKind.GroundItemTarget||k==SkillChainNodeKind.ReplaceableWorldItemTarget||k==SkillChainNodeKind.WorldItemTarget?"World Item":k==SkillChainNodeKind.StructureTarget?"Structure":k==SkillChainNodeKind.OtherHandItem?"Item":"Position");
 }
 foreach(var a in new ItemSkillAction[]{new ReplaceWorldItemAction(),new ReplaceEquippedItemAction(),new TogglePlacementShapeAction(),new ItemSkillAction()}) {
  var n=new SkillChainNode{Kind=SkillChainNodeKind.Action,Action=a};

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b99e4abb27354441ca65f2405f2ef8e4, type: 3}
+  m_Name: GatherResin
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Items.Skills.ItemSkillDefinition
+  Id: 15
+  DisplayName: Gather
+  Description: Gather pine resin into the empty active hand.
+  Icon: {fileID: -1996122451363449188, guid: e3cb67e68e44384418ea9ac42a120ba8, type: 3}
+  InputBinding:
+    Button: 0
+    Key: 0
+  UseChain: 1
+  FirstNode: {fileID: 11400000, guid: cec5b30f67724c61b61e83ba8da1c3ea, type: 2}
+  VisibilityNode: {fileID: 11400000, guid: 7ba34d57da85800d38211e148298fe07, type: 2}
+  Conditions: []
+  Actions: []

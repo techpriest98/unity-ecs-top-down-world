@@ -9,6 +9,7 @@ using Game.World.Generation.Spawning;
 using Game.World.Generation;
 using Game.World.Lighting;
 using Game.World.Rendering;
+using Game.World.Time;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -374,7 +375,10 @@ namespace Game.World.Trees
         private Material fogMaskMaterial;
         private readonly MaterialPropertyBlock properties = new MaterialPropertyBlock();
         private readonly List<TreeDrawBatch> batches = new List<TreeDrawBatch>();
-        private readonly List<ChunkTree> trees = new List<ChunkTree>();
+        private readonly List<(ChunkTree tree, int2 chunk)> trees = new List<(ChunkTree, int2)>();
+        private readonly Dictionary<(int2 chunk, int treeId), TreeResinRecord> resinRecords =
+            new Dictionary<(int2, int), TreeResinRecord>();
+        private Texture2D barkCutOverlay, barkResinOverlay;
         public int LastVisibleTreeCount { get; private set; }
         public int LastDrawCallCount { get; private set; }
         private static readonly ProfilerMarker MasksMarker = new ProfilerMarker("Trees.BuildVisibleBatches");
@@ -406,19 +410,25 @@ namespace Game.World.Trees
                 material = new Material(template) { name = "Runtime tree prototype", hideFlags = HideFlags.HideAndDontSave };
             }
             trees.Clear();
-            foreach (var (buffer, entity) in SystemAPI.Query<DynamicBuffer<ChunkTree>>().WithAll<ChunkGenerated>().WithEntityAccess())
-                foreach (var tree in buffer) trees.Add(tree);
+            resinRecords.Clear();
+            double simulationSeconds = SystemAPI.TryGetSingleton<WorldTime>(out var worldTime) ? worldTime.SimulationSeconds : 0d;
+            using (var resinQuery = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<ItemLibrary>(), ComponentType.ReadOnly<TreeResinRecord>()))
+                if (resinQuery.CalculateEntityCount() == 1)
+                    foreach (var record in EntityManager.GetBuffer<TreeResinRecord>(resinQuery.GetSingletonEntity(), true))
+                        resinRecords[(record.Chunk, record.TreeId)] = record;
+            foreach (var (buffer, chunkData) in SystemAPI.Query<DynamicBuffer<ChunkTree>, RefRO<ChunkComponent>>().WithAll<ChunkGenerated>())
+                foreach (var tree in buffer) trees.Add((tree, chunkData.ValueRO.Coordinate));
             Camera camera = Camera.main;
             cullToCamera = camera != null;
             if (cullToCamera) GeometryUtility.CalculateFrustumPlanes(camera, cameraPlanes);
             foreach (var batch in batches) batch.Begin();
             using (MasksMarker.Auto())
-                for (int i = 0; i < trees.Count; i++) DrawTree(trees[i], config, view, feet);
+                for (int i = 0; i < trees.Count; i++) DrawTree(trees[i].tree, trees[i].chunk, simulationSeconds, config, view, feet);
             using (SubmitMarker.Auto()) SubmitBatches(view, feet);
 
         }
 
-        private void DrawTree(ChunkTree tree, PineTreeTest config, ViewDirection direction, float3 feet)
+        private void DrawTree(ChunkTree tree, int2 chunk, double simulationSeconds, PineTreeTest config, ViewDirection direction, float3 feet)
         {
             float2 anchor = WorldPositionProjectionUtility.Project(tree.Position, direction) + new float2(0, .25f);
             float extent = (math.clamp(config.Shape.CrownRadius, .5f, 5) + 2) * tree.Scale;
@@ -431,13 +441,17 @@ namespace Game.World.Trees
             float scale = tree.Scale / images.Data.Scale;
             float2 projected = WorldPositionProjectionUtility.Project(tree.Position, direction) + new float2(0, .25f);
             var rect = new Vector4(projected.x - Width * .5f * scale, projected.y - images.Data.Pivot * scale, Width * scale, Height * scale);
+            float resinStage = 0f;
+            if (resinRecords.TryGetValue((chunk, tree.Id), out var resin) && resin.Seed == tree.Seed &&
+                resin.GeneratorVersion == tree.GeneratorVersion && math.distancesq(resin.BasePosition, tree.Position) < .0001f)
+                resinStage = resin.ReadyAt <= simulationSeconds ? 2f : 1f;
             int batchIndex = LastVisibleTreeCount / TreeDrawBatch.Capacity;
             if (batchIndex == batches.Count) { var batch = new TreeDrawBatch(Width, Height); batch.Begin(); batches.Add(batch); }
             batches[batchIndex].Add(new TreeDrawData
             {
                 Rect = rect, Base = new Vector4(tree.Position.x, tree.Position.y, tree.Position.z, tree.Scale),
                 Pixels = new Vector4(images.Data.Scale, images.Data.Pivot, Width, Height),
-                Layers = new Vector4(images.FirstSlice + view, 0, 2f * (projected.y - tree.Position.y - 9f), 0)
+                Layers = new Vector4(images.FirstSlice + view, 0, 2f * (projected.y - tree.Position.y - 9f), resinStage)
             });
             LastVisibleTreeCount++;
         }
@@ -452,6 +466,15 @@ namespace Game.World.Trees
             properties.SetFloat("_TreeLocalOnly", WorldRenderDebug.Enabled ? 0f : 1f);
             properties.SetTexture("_TreeDiffuse", resources.Diffuse); properties.SetTexture("_TreeNormals", resources.Normals);
             properties.SetTexture("_TreeSurfaces", resources.Surfaces);
+            if (barkCutOverlay == null) barkCutOverlay = Resources.Load<Texture2D>("TreeBarkCutOverlay");
+            if (barkResinOverlay == null) barkResinOverlay = Resources.Load<Texture2D>("TreeBarkResinOverlay");
+            bool resinOverlayReady = barkCutOverlay != null && barkResinOverlay != null;
+            properties.SetFloat("_TreeResinOverlayEnabled", resinOverlayReady ? 1f : 0f);
+            if (resinOverlayReady)
+            {
+                properties.SetTexture("_TreeBarkCutOverlay", barkCutOverlay);
+                properties.SetTexture("_TreeBarkResinOverlay", barkResinOverlay);
+            }
             properties.SetVector("_TreeRight", new Vector4(right.x, 0, right.y, 0));
             properties.SetVector("_TreeToward", new Vector4(toward.x, 0, toward.y, 0));
             properties.SetVector("_TreePlayer", new Vector4(feet.x, feet.y, feet.z, 0));
@@ -495,6 +518,8 @@ namespace Game.World.Trees
         {
             if (material != null) Object.Destroy(material); material = null;
             if (fogMaskMaterial != null) Object.Destroy(fogMaskMaterial); fogMaskMaterial = null;
+            barkCutOverlay = null; barkResinOverlay = null;
+            resinRecords.Clear(); trees.Clear();
             foreach (var batch in batches) batch.Dispose(); batches.Clear();
         }
     }

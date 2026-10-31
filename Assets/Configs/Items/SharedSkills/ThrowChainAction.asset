@@ -14,6 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Kind: 2
   Next: {fileID: 0}
+  ItemMatches: []
+  SelectionOutputs:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  SelectionKindConnected: 1
   PositionSource: {fileID: 11400000, guid: 2206c7415cf54edc903fb8765e612ac1, type: 2}
+  Cursor: 0
+  Distance: {fileID: 0}
   Action: {fileID: 11400000, guid: 210ad8a429254697b109e68082b04f12, type: 2}
+  HandCondition: {fileID: 0}
+  Condition: {fileID: 0}
   FailureMessage: I can't throw it from here.

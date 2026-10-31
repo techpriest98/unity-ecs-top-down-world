@@ -22,8 +22,8 @@ function Check($face,$half,$cut,$full,$bottom,$top) {
 }
 Check 1 $false $false $false 40 40
 Check 1 $true $false $false 39.5 39.5
-Check 1 $false $true $false 41 41
-Check 1 $true $true $false 40.5 40.5
+Check 1 $false $true $false 40 40
+Check 1 $true $true $false 39.5 39.5
 foreach ($cut in $false,$true) {
     Check 2 $false $cut $false 40.5 41
     Check 3 $false $cut $false 40 40.5

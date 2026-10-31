@@ -21,10 +21,13 @@ namespace Game.Items
         public int Id;
         public EquipmentSlot AllowedSlots;
         public float MaxDurability;
+        public bool PreserveWhenDepleted;
+        public int DepletedReplacementId;
         public float DurabilityLossAmount;
         public float DurabilityLossInterval;
 
         public bool HasLight;
+        public float WorldLightHeight;
         public bool IgnitionSource;
         public DynamicLightSource Light;
         public bool LightRadiusFromDurability;

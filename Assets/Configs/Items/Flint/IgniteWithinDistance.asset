@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: IgniteWithinDistance
   m_EditorClassIdentifier:
   Kind: 1
-  Next: {fileID: 11400000, guid: ab11c01f00004e66b200000000000007, type: 2}
-  PositionSource: {fileID: 11400000, guid: ab11c01f00004e66b20000000000000a, type: 2}
+  Next: {fileID: 11400000, guid: ab11c01f00004e66b200000000000009, type: 2}
+  PositionSource: {fileID: 11400000, guid: ab11c01f00004e66b200000000000006, type: 2}
   Distance: {fileID: 11400000, guid: 6c46bfa4e2fd4c6da648b787b9d6724e, type: 2}
   FailureMessage: Too far away.

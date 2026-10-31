@@ -45,10 +45,10 @@ MonoBehaviour:
     Position: {x: 544.8, y: 49.600002}
   - ItemGuid: 22b3719fb2c9947c28e5c2258dc66c34
     NodeKey: asset:74d5ebc1847d4d4b9ddca7ee2c4a209b
-    Position: {x: 169.6, y: 424.80002}
+    Position: {x: 169.59999, y: 424.80002}
   - ItemGuid: 22b3719fb2c9947c28e5c2258dc66c34
     NodeKey: asset:77adb5827fab8460a86489397cb98f59
-    Position: {x: 1024.8, y: 548.8}
+    Position: {x: 1024.7999, y: 548.8}
   - ItemGuid: 22b3719fb2c9947c28e5c2258dc66c34
     NodeKey: asset:8402cdd43bb1b4a2292bccb46ec042db
     Position: {x: 983.2, y: -178.40001}
@@ -63,7 +63,7 @@ MonoBehaviour:
     Position: {x: 860.8, y: 177.59999}
   - ItemGuid: 21863c02d6dcf45e395849a4c0b02231
     NodeKey: asset:6915bc3950696455c8f38b7f7667f5da
-    Position: {x: 977.6, y: 88.8}
+    Position: {x: 977.60004, y: 88.8}
   - ItemGuid: 22b3719fb2c9947c28e5c2258dc66c34
     NodeKey: asset:210ad8a429254697b109e68082b04f12
     Position: {x: -281.59998, y: 187.2}
@@ -75,25 +75,25 @@ MonoBehaviour:
     Position: {x: 987.2, y: 109.59999}
   - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
     NodeKey: asset:cc91d2a1afe34a3da2d588a88e917311
-    Position: {x: -397.6, y: 148.8}
+    Position: {x: -676, y: 142.4}
   - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
     NodeKey: asset:49991171ac7b48da86d1a20e42d08ee0
-    Position: {x: 53.6, y: 146.4}
+    Position: {x: -270.4, y: 60.000004}
   - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
     NodeKey: asset:06f6efc2a14d4e108bf6816496d594b0
     Position: {x: -710.39996, y: 118.399994}
   - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
     NodeKey: asset:6c46bfa4e2fd4c6da648b787b9d6724e
-    Position: {x: 562.4, y: 337.6}
+    Position: {x: 225.59999, y: 223.99998}
   - ItemGuid: 21863c02d6dcf45e395849a4c0b02231
     NodeKey: asset:7dc7a1efda854d5290b14046cb14914a
-    Position: {x: 971.2, y: 463.2}
+    Position: {x: 968.8, y: 704.8}
   - ItemGuid: 21863c02d6dcf45e395849a4c0b02231
     NodeKey: asset:210ad8a429254697b109e68082b04f12
     Position: {x: -714.4, y: 504.8}
   - ItemGuid: 21863c02d6dcf45e395849a4c0b02231
     NodeKey: cursor
-    Position: {x: 1054.4, y: 852.8}
+    Position: {x: 1057.6, y: 443.2}
   - ItemGuid: 21863c02d6dcf45e395849a4c0b02231
     NodeKey: asset:a396a045900a4dc30000000000000004
     Position: {x: 864.8, y: -4}
@@ -114,19 +114,19 @@ MonoBehaviour:
     Position: {x: -348.8, y: 374.40002}
   - ItemGuid: 21863c02d6dcf45e395849a4c0b02231
     NodeKey: asset:1106c7415cf54edc903fb8765e612ac1
-    Position: {x: 1396, y: 468}
+    Position: {x: 1393.6, y: 709.60004}
   - ItemGuid: 21863c02d6dcf45e395849a4c0b02231
     NodeKey: asset:2206c7415cf54edc903fb8765e612ac1
-    Position: {x: 1761.6, y: 467.2}
+    Position: {x: 1759.2, y: 708.8}
   - ItemGuid: 21863c02d6dcf45e395849a4c0b02231
     NodeKey: asset:3306c7415cf54edc903fb8765e612ac1
-    Position: {x: 2180.8, y: 469.60004}
+    Position: {x: 2178.4, y: 711.2}
   - ItemGuid: 21863c02d6dcf45e395849a4c0b02231
     NodeKey: asset:4406c7415cf54edc903fb8765e612ac1
-    Position: {x: 1479.2, y: 743.2}
+    Position: {x: 1476.7999, y: 984.8}
   - ItemGuid: 22b3719fb2c9947c28e5c2258dc66c34
     NodeKey: asset:1106c7415cf54edc903fb8765e612ac1
-    Position: {x: 1358.4, y: 106.399994}
+    Position: {x: 1358.3999, y: 106.399994}
   - ItemGuid: 22b3719fb2c9947c28e5c2258dc66c34
     NodeKey: asset:2206c7415cf54edc903fb8765e612ac1
     Position: {x: 1724, y: 106.399994}
@@ -138,16 +138,16 @@ MonoBehaviour:
     Position: {x: 1443.2, y: 327.2}
   - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
     NodeKey: asset:52ac67415cf54edc903fb8765e612ac1
-    Position: {x: 851.2, y: 151.2}
+    Position: {x: 508, y: 84}
   - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
     NodeKey: asset:53ac67415cf54edc903fb8765e612ac1
-    Position: {x: 1214.4, y: 152.8}
+    Position: {x: 862.4, y: 86.399994}
   - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
     NodeKey: cursor
-    Position: {x: 147.2, y: 407.2}
+    Position: {x: 175.2, y: 355.2}
   - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
     NodeKey: asset:51ac67415cf54edc903fb8765e612ac1
-    Position: {x: 475.2, y: 148}
+    Position: {x: 132, y: 80.8}
   - ItemGuid: 128e9d667dff51a44bb431a867628517
     NodeKey: asset:a396a045900a4dc30000000000000005
     Position: {x: 581.60004, y: 624}
@@ -156,13 +156,13 @@ MonoBehaviour:
     Position: {x: -360, y: -429.59998}
   - ItemGuid: 22b3719fb2c9947c28e5c2258dc66c34
     NodeKey: asset:64ac67415cf54edc903fb8765e612ac1
-    Position: {x: 1360.8, y: -179.2}
+    Position: {x: 1360.7999, y: -179.2}
   - ItemGuid: 21863c02d6dcf45e395849a4c0b02231
     NodeKey: asset:75ac67415cf54edc903fb8765e612ac1
     Position: {x: 2431.2, y: 96.8}
   - ItemGuid: 21863c02d6dcf45e395849a4c0b02231
     NodeKey: asset:91ac67415cf54edc903fb8765e612ac1
-    Position: {x: 1388.8, y: 89.59999}
+    Position: {x: 1388.7999, y: 89.59999}
   - ItemGuid: 21863c02d6dcf45e395849a4c0b02231
     NodeKey: asset:92ac67415cf54edc903fb8765e612ac1
     Position: {x: 2078.4, y: 94.399994}
@@ -171,7 +171,7 @@ MonoBehaviour:
     Position: {x: 1729.6, y: 89.59999}
   - ItemGuid: 21863c02d6dcf45e395849a4c0b02231
     NodeKey: asset:6c46bfa4e2fd4c6da648b787b9d6724e
-    Position: {x: 1796.8, y: 275.2}
+    Position: {x: 1796.7999, y: 275.2}
   - ItemGuid: 22b3719fb2c9947c28e5c2258dc66c34
     NodeKey: asset:75ac67415cf54edc903fb8765e612ac1
     Position: {x: 2412.8, y: -180}
@@ -315,64 +315,64 @@ MonoBehaviour:
     Position: {x: 948.8, y: 56.000004}
   - ItemGuid: c019f11a00004e66b200000000000003
     NodeKey: asset:1106c7415cf54edc903fb8765e612ac1
-    Position: {x: 1364.8, y: 53.600002}
+    Position: {x: 1364.7999, y: 53.600002}
   - ItemGuid: c019f11a00004e66b200000000000003
     NodeKey: asset:2206c7415cf54edc903fb8765e612ac1
-    Position: {x: 1724.8, y: 53.600002}
+    Position: {x: 1724.7999, y: 53.600002}
   - ItemGuid: c019f11a00004e66b200000000000003
     NodeKey: asset:3306c7415cf54edc903fb8765e612ac1
     Position: {x: 2084.8, y: 53.600002}
   - ItemGuid: c019f11a00004e66b200000000000003
     NodeKey: asset:4406c7415cf54edc903fb8765e612ac1
-    Position: {x: 1434.4, y: 259.2}
+    Position: {x: 1434.3999, y: 259.2}
   - ItemGuid: c019f11a00004e66b200000000000003
     NodeKey: cursor
-    Position: {x: 1039.2, y: 294.40002}
+    Position: {x: 1020, y: 351.2}
   - ItemGuid: c019f11a00004e66b200000000000002
     NodeKey: asset:c019f11a00004e66b200000000000002
     Position: {x: 624.8, y: 73.600006}
   - ItemGuid: c019f11a00004e66b200000000000002
     NodeKey: asset:ab11c01f00004e66b200000000000002
-    Position: {x: 1071.2, y: 76.8}
+    Position: {x: 1068, y: -21.599998}
   - ItemGuid: c019f11a00004e66b200000000000002
     NodeKey: asset:ab11c01f00004e66b200000000000006
-    Position: {x: 1525.6, y: -2.3999977}
+    Position: {x: 1509.6, y: -269.6}
   - ItemGuid: c019f11a00004e66b200000000000002
     NodeKey: asset:ab11c01f00004e66b20000000000000a
-    Position: {x: 1885.6, y: -2.3999977}
+    Position: {x: 1872, y: -515.2}
   - ItemGuid: c019f11a00004e66b200000000000002
     NodeKey: asset:ab11c01f00004e66b200000000000008
-    Position: {x: 2245.6, y: -2.3999977}
+    Position: {x: 1909.6, y: -264}
   - ItemGuid: c019f11a00004e66b200000000000002
     NodeKey: asset:ab11c01f00004e66b200000000000007
-    Position: {x: 2605.6, y: -2.3999977}
+    Position: {x: 2246.4, y: -518.4}
   - ItemGuid: c019f11a00004e66b200000000000002
     NodeKey: item-data:21863c02d6dcf45e395849a4c0b02231
-    Position: {x: 2305.6, y: 189.59999}
+    Position: {x: 1939.2, y: -689.6}
   - ItemGuid: c019f11a00004e66b200000000000002
     NodeKey: asset:ab11c01f00004e66b200000000000009
-    Position: {x: 2965.6, y: -2.3999977}
+    Position: {x: 2254.4, y: -262.4}
   - ItemGuid: c019f11a00004e66b200000000000002
     NodeKey: asset:6c46bfa4e2fd4c6da648b787b9d6724e
-    Position: {x: 1974.4, y: 190.4}
+    Position: {x: 1500.7999, y: 612.8}
   - ItemGuid: c019f11a00004e66b200000000000002
     NodeKey: cursor
-    Position: {x: 1556, y: 212.8}
+    Position: {x: 1460.7999, y: 488.8}
   - ItemGuid: c019f11a00004e66b200000000000002
     NodeKey: asset:1106c7415cf54edc903fb8765e612ac1
-    Position: {x: 1880.8, y: 354.40002}
+    Position: {x: 1877.6, y: 310.40002}
   - ItemGuid: c019f11a00004e66b200000000000002
     NodeKey: asset:2206c7415cf54edc903fb8765e612ac1
-    Position: {x: 2263.2, y: 352.80002}
+    Position: {x: 2229.5999, y: 310.40002}
   - ItemGuid: c019f11a00004e66b200000000000002
     NodeKey: asset:3306c7415cf54edc903fb8765e612ac1
-    Position: {x: 2623.2, y: 352.80002}
+    Position: {x: 2572, y: 316.80002}
   - ItemGuid: c019f11a00004e66b200000000000002
     NodeKey: asset:4406c7415cf54edc903fb8765e612ac1
-    Position: {x: 1975.2, y: 544}
+    Position: {x: 1945.6, y: 502.40002}
   - ItemGuid: c019f11a00004e66b200000000000002
     NodeKey: asset:7dc7a1efda854d5290b14046cb14914a
-    Position: {x: 1068.8, y: 353.6}
+    Position: {x: 1068.7999, y: 353.6}
   - ItemGuid: ab11c01f00004e66b200000000000001
     NodeKey: asset:c011151000004e66b200000000000002
     Position: {x: -0.8, y: 164.8}
@@ -403,3 +403,240 @@ MonoBehaviour:
   - ItemGuid: 128e9d667dff51a44bb431a867628517
     NodeKey: item-selection-kind
     Position: {x: 1228, y: -536.8}
+  - ItemGuid: 6aa38210be4349d5b3f25f713a80595f
+    NodeKey: asset:6aa38210be4349d5b3f25f713a80595f
+    Position: {x: -407.19998, y: 45.600002}
+  - ItemGuid: 6aa38210be4349d5b3f25f713a80595f
+    NodeKey: asset:7dc7a1efda854d5290b14046cb14914a
+    Position: {x: 60, y: 70.399994}
+  - ItemGuid: 6aa38210be4349d5b3f25f713a80595f
+    NodeKey: asset:1106c7415cf54edc903fb8765e612ac1
+    Position: {x: 463.2, y: -154.4}
+  - ItemGuid: 6aa38210be4349d5b3f25f713a80595f
+    NodeKey: asset:2206c7415cf54edc903fb8765e612ac1
+    Position: {x: 823.2, y: -154.4}
+  - ItemGuid: 6aa38210be4349d5b3f25f713a80595f
+    NodeKey: asset:3306c7415cf54edc903fb8765e612ac1
+    Position: {x: 1183.2, y: -154.4}
+  - ItemGuid: 6aa38210be4349d5b3f25f713a80595f
+    NodeKey: cursor
+    Position: {x: 122.399994, y: -133.6}
+  - ItemGuid: 6aa38210be4349d5b3f25f713a80595f
+    NodeKey: asset:4406c7415cf54edc903fb8765e612ac1
+    Position: {x: 536.8, y: 14.400002}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:4b1251e3105e4461af378674dd4801f7
+    Position: {x: 1068, y: 732}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:5a25fa834284421dbea47e68391f14a1
+    Position: {x: 1453.6, y: 912}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:d8a55a49bfea4fb387ff31f54894cf80
+    Position: {x: 1828, y: 741.60004}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:f629722de6bb4c299f7fee187461b0b1
+    Position: {x: 2179.2, y: 913.60004}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:f86b5934957c4ab6ab79436e82e8153f
+    Position: {x: 2539.2, y: 913.60004}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:bb9055b0f008428197e1769fac6e5ff9
+    Position: {x: 2899.2, y: 913.60004}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:d7bc9e05a98942589682b8b2e02b6673
+    Position: {x: 2246.4, y: 1077.6}
+  - ItemGuid: ebf08012bbfc4980a81beb9819505ba3
+    NodeKey: asset:ebf08012bbfc4980a81beb9819505ba3
+    Position: {x: -400.8, y: 64}
+  - ItemGuid: ebf08012bbfc4980a81beb9819505ba3
+    NodeKey: asset:7dc7a1efda854d5290b14046cb14914a
+    Position: {x: 60, y: 70.399994}
+  - ItemGuid: ebf08012bbfc4980a81beb9819505ba3
+    NodeKey: asset:1106c7415cf54edc903fb8765e612ac1
+    Position: {x: 530.4, y: 69.600006}
+  - ItemGuid: ebf08012bbfc4980a81beb9819505ba3
+    NodeKey: asset:2206c7415cf54edc903fb8765e612ac1
+    Position: {x: 890.4, y: 69.600006}
+  - ItemGuid: ebf08012bbfc4980a81beb9819505ba3
+    NodeKey: asset:3306c7415cf54edc903fb8765e612ac1
+    Position: {x: 1250.3999, y: 69.600006}
+  - ItemGuid: ebf08012bbfc4980a81beb9819505ba3
+    NodeKey: cursor
+    Position: {x: 191.2, y: 420.80002}
+  - ItemGuid: ebf08012bbfc4980a81beb9819505ba3
+    NodeKey: asset:4406c7415cf54edc903fb8765e612ac1
+    Position: {x: 604, y: 251.99998}
+  - ItemGuid: 46d49d19198d4285b8f1dbe5cc628f5a
+    NodeKey: asset:46d49d19198d4285b8f1dbe5cc628f5a
+    Position: {x: -320.8, y: 64}
+  - ItemGuid: 46d49d19198d4285b8f1dbe5cc628f5a
+    NodeKey: asset:7dc7a1efda854d5290b14046cb14914a
+    Position: {x: 100, y: 87.2}
+  - ItemGuid: 46d49d19198d4285b8f1dbe5cc628f5a
+    NodeKey: asset:1106c7415cf54edc903fb8765e612ac1
+    Position: {x: 568.8, y: 85.59999}
+  - ItemGuid: 46d49d19198d4285b8f1dbe5cc628f5a
+    NodeKey: asset:2206c7415cf54edc903fb8765e612ac1
+    Position: {x: 928.8, y: 85.59999}
+  - ItemGuid: 46d49d19198d4285b8f1dbe5cc628f5a
+    NodeKey: asset:3306c7415cf54edc903fb8765e612ac1
+    Position: {x: 1288.7999, y: 85.59999}
+  - ItemGuid: 46d49d19198d4285b8f1dbe5cc628f5a
+    NodeKey: cursor
+    Position: {x: 245.59999, y: 439.2}
+  - ItemGuid: 46d49d19198d4285b8f1dbe5cc628f5a
+    NodeKey: asset:4406c7415cf54edc903fb8765e612ac1
+    Position: {x: 644.8, y: 258.40002}
+  - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
+    NodeKey: asset:c4202b1159f747bab8af04e426c87a73
+    Position: {x: -286.4, y: 525.60004}
+  - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
+    NodeKey: asset:d7bc9e05a98942589682b8b2e02b6673
+    Position: {x: 222.4, y: 885.60004}
+  - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
+    NodeKey: asset:cec5b30f67724c61b61e83ba8da1c3ea
+    Position: {x: 128, y: 722.4}
+  - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
+    NodeKey: asset:4a46ac084a5f46e4ac01076e546b42e5
+    Position: {x: 494.40002, y: 528}
+  - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
+    NodeKey: asset:e255362e1f3d4f09b3ab36b7d615659f
+    Position: {x: 848, y: 526.4}
+  - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
+    NodeKey: asset:ee06b3ccd3e64bf1b1ca0cda1f741ff1
+    Position: {x: 496.80002, y: 723.2}
+  - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
+    NodeKey: asset:57b5111685794bd8bb9b01e971fc8951
+    Position: {x: 848.8, y: 724}
+  - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
+    NodeKey: asset:c82ea324682f110843c222da765d7e67
+    Position: {x: 494.40002, y: -121.600006}
+  - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
+    NodeKey: asset:7ba34d57da85800d38211e148298fe07
+    Position: {x: 131.2, y: 526.4}
+  - ItemGuid: cc91d2a1afe34a3da2d588a88e917311
+    NodeKey: asset:ffc21afc9f9da0e0fde3bcf985711dfc
+    Position: {x: 491.2, y: 526.4}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:083609b0cb8a812f10810acea598b23e
+    Position: {x: 1516, y: -504.8}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:7482f85e4c50bcd71492794d47e0bb13
+    Position: {x: 2614.4, y: -515.2}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:34c6772035bd1417e12239d69a3b8cfc
+    Position: {x: 1455.2, y: 735.2}
+  - ItemGuid: 21863c02d6dcf45e395849a4c0b02231
+    NodeKey: asset:f4ad999574b1826217ebbd38c0b7c8bc
+    Position: {x: 1388, y: -118.399994}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:e0b7049991c14356a58a1eaa992405a0
+    Position: {x: 1433.6, y: 1101.6}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:4e0517a20ad24ea78c8fd9eae2a553c6
+    Position: {x: 1428.7999, y: 1319.2}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:d777036d55bb42868a528092426d32e3
+    Position: {x: 1033.6, y: 1110.3999}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:d011a100000000000000000000000004
+    Position: {x: 1064.7999, y: -1033.6}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:d011a100000000000000000000000011
+    Position: {x: 1466.3999, y: -1199.2001}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:d011a100000000000000000000000010
+    Position: {x: 1466.3999, y: -980.8}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:d011a100000000000000000000000008
+    Position: {x: 1048.7999, y: 1682.3999}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:d011a100000000000000000000000025
+    Position: {x: 1448.7999, y: 1688.7999}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:d011a100000000000000000000000026
+    Position: {x: 1815.2, y: 1689.6}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:d011a100000000000000000000000027
+    Position: {x: 2178.4, y: 1688.7999}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: item-data:d011a100000000000000000000000002
+    Position: {x: 1872.7999, y: 1871.2}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:d011a100000000000000000000000028
+    Position: {x: 2535.2, y: 1690.3999}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:d011a100000000000000000000000029
+    Position: {x: 1452.7999, y: 1960.7999}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:d011a10000000000000000000000002a
+    Position: {x: 1820.7999, y: 1990.3999}
+  - ItemGuid: c019f11a00004e66b200000000000002
+    NodeKey: asset:d011a10000000000000000000000002b
+    Position: {x: 2180.8, y: 1994.3999}
+  - ItemGuid: d011a100000000000000000000000003
+    NodeKey: asset:d011a100000000000000000000000003
+    Position: {x: -470.4, y: 64.8}
+  - ItemGuid: d011a100000000000000000000000003
+    NodeKey: asset:74d5ebc1847d4d4b9ddca7ee2c4a209b
+    Position: {x: -852.8, y: 460.80002}
+  - ItemGuid: d011a100000000000000000000000003
+    NodeKey: asset:77adb5827fab8460a86489397cb98f59
+    Position: {x: -46.399998, y: 462.40002}
+  - ItemGuid: d011a100000000000000000000000003
+    NodeKey: asset:d011a100000000000000000000000006
+    Position: {x: 60, y: 70.399994}
+  - ItemGuid: d011a100000000000000000000000003
+    NodeKey: asset:d011a100000000000000000000000019
+    Position: {x: 512, y: -42.399998}
+  - ItemGuid: d011a100000000000000000000000003
+    NodeKey: asset:d011a10000000000000000000000001a
+    Position: {x: 896.8, y: -49.6}
+  - ItemGuid: d011a100000000000000000000000003
+    NodeKey: cursor
+    Position: {x: 102.399994, y: -64}
+  - ItemGuid: d011a100000000000000000000000003
+    NodeKey: asset:d011a10000000000000000000000001b
+    Position: {x: 506.40002, y: 152.8}
+  - ItemGuid: d011a100000000000000000000000003
+    NodeKey: asset:d011a10000000000000000000000001c
+    Position: {x: 898.4, y: 156}
+  - ItemGuid: d011a100000000000000000000000003
+    NodeKey: asset:7dc7a1efda854d5290b14046cb14914a
+    Position: {x: 76, y: 416}
+  - ItemGuid: d011a100000000000000000000000003
+    NodeKey: asset:1106c7415cf54edc903fb8765e612ac1
+    Position: {x: 520.8, y: 383.2}
+  - ItemGuid: d011a100000000000000000000000003
+    NodeKey: asset:2206c7415cf54edc903fb8765e612ac1
+    Position: {x: 880.8, y: 383.2}
+  - ItemGuid: d011a100000000000000000000000003
+    NodeKey: asset:3306c7415cf54edc903fb8765e612ac1
+    Position: {x: 1240.7999, y: 383.2}
+  - ItemGuid: d011a100000000000000000000000003
+    NodeKey: asset:4406c7415cf54edc903fb8765e612ac1
+    Position: {x: 605.60004, y: 583.2}
+  - ItemGuid: d011a100000000000000000000000002
+    NodeKey: asset:d011a100000000000000000000000002
+    Position: {x: -436.8, y: 43.2}
+  - ItemGuid: d011a100000000000000000000000002
+    NodeKey: asset:d011a100000000000000000000000006
+    Position: {x: 58.4, y: 4.799999}
+  - ItemGuid: d011a100000000000000000000000002
+    NodeKey: asset:d011a100000000000000000000000019
+    Position: {x: 448.80002, y: -76}
+  - ItemGuid: d011a100000000000000000000000002
+    NodeKey: asset:d011a10000000000000000000000001a
+    Position: {x: 824, y: -76.8}
+  - ItemGuid: d011a100000000000000000000000002
+    NodeKey: cursor
+    Position: {x: 124.799995, y: -190.40001}
+  - ItemGuid: d011a100000000000000000000000002
+    NodeKey: asset:d011a10000000000000000000000001b
+    Position: {x: 444, y: 112.8}
+  - ItemGuid: d011a100000000000000000000000002
+    NodeKey: asset:d011a10000000000000000000000001c
+    Position: {x: 820.8, y: 111.2}
+  - ItemGuid: d011a100000000000000000000000002
+    NodeKey: asset:7dc7a1efda854d5290b14046cb14914a
+    Position: {x: 60, y: 390.40002}

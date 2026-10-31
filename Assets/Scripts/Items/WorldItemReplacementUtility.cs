@@ -4,8 +4,8 @@ namespace Game.Items
 {
     public static class WorldItemReplacementUtility
     {
-        public static bool MatchesSurface(bool grounded, float durability, float3 surface, int3 cell, float height) =>
-            grounded && durability > 0 && math.all(math.isfinite(surface)) &&
+        public static bool MatchesSurface(bool grounded, float durability, float3 surface, int3 cell, float height, bool allowDepleted = false) =>
+            grounded && (durability > 0 || (allowDepleted && durability == 0)) && math.all(math.isfinite(surface)) &&
             (int)math.floor(surface.x) == cell.x && (int)math.floor(surface.z) == cell.z &&
             math.abs(surface.y - height) <= .01f;
 

@@ -4,6 +4,8 @@ using UnityEngine;
 
 namespace Game.Items.Skills
 {
+    public enum EquippedItemHand { SourceHand, OtherHand }
+
     [CreateAssetMenu(
         fileName = "ReplaceEquippedItem",
         menuName = "Game/Items/Skills/Actions/Replace Equipped Item")]
@@ -11,12 +13,30 @@ namespace Game.Items.Skills
     {
         [SerializeField]
         private ItemDefinition replacementItem;
+        public EquippedItemHand TargetHand;
+        public ItemDefinition RequiredTargetItem;
+        [Tooltip("Optional crafting ingredient consumed from the other hand after a successful source-hand replacement.")]
+        public ItemDefinition ConsumeOtherHandItem;
+
+        private bool TryGetTargetSlot(EquipmentSlot source, out EquipmentSlot target)
+        {
+            target = source;
+            if (TargetHand == EquippedItemHand.SourceHand) return true;
+            if (TargetHand != EquippedItemHand.OtherHand ||
+                (source != EquipmentSlot.LeftHand && source != EquipmentSlot.RightHand)) return false;
+            target = source == EquipmentSlot.LeftHand ? EquipmentSlot.RightHand : EquipmentSlot.LeftHand;
+            return true;
+        }
 
         public string GetConfigurationError(EntityManager manager, EquipmentSlot slot)
         {
+            if (!TryGetTargetSlot(slot, out var targetSlot)) return "Invalid target hand for the source slot.";
+            if (ConsumeOtherHandItem != null && (TargetHand != EquippedItemHand.SourceHand ||
+                (slot != EquipmentSlot.LeftHand && slot != EquipmentSlot.RightHand)))
+                return "An offhand ingredient requires a source-hand replacement.";
             if (replacementItem == null) return "Replacement Item is not assigned.";
-            if (replacementItem.Id <= 0 || (replacementItem.AllowedSlots & slot) == 0)
-                return "Replacement Item has an invalid ID or does not support the source slot.";
+            if (replacementItem.Id <= 0 || (replacementItem.AllowedSlots & targetSlot) == 0)
+                return "Replacement Item has an invalid ID or does not support the target slot.";
             using var query = manager.CreateEntityQuery(ComponentType.ReadOnly<ItemLibrary>());
             if (query.CalculateEntityCount() != 1 || !query.GetSingleton<ItemLibrary>().Value.IsCreated)
                 return "Expected one initialized item library.";
@@ -24,14 +44,23 @@ namespace Game.Items.Skills
             if (definitions.CalculateEntityCount() != 1 || !ItemDefinitionReference.TryGet(
                 manager.GetBuffer<ItemDefinitionReference>(definitions.GetSingletonEntity(), true), replacementItem.Id, out var registered) ||
                 registered != replacementItem) return "Replacement Item is missing from the item library.";
+            if (RequiredTargetItem != null && (!ItemDefinitionReference.TryGet(
+                manager.GetBuffer<ItemDefinitionReference>(definitions.GetSingletonEntity(), true), RequiredTargetItem.Id, out var required) ||
+                required != RequiredTargetItem))
+                return "Required Target Item is missing from the item library.";
             return null;
         }
 
         public override bool IsAvailable(EntityManager manager, Entity player, EquipmentSlot slot, int item)
         {
-            if (replacementItem == null || (replacementItem.AllowedSlots & slot) == 0 ||
+            if (!TryGetTargetSlot(slot, out var targetSlot) || replacementItem == null || (replacementItem.AllowedSlots & targetSlot) == 0 ||
                 !manager.Exists(player) || !manager.HasBuffer<PlayerEquipmentSlot>(player)) return false;
-            return PlayerEquipmentUtility.GetItem(manager.GetBuffer<PlayerEquipmentSlot>(player, true), slot) == item;
+            var slots = manager.GetBuffer<PlayerEquipmentSlot>(player, true);
+            return PlayerEquipmentUtility.GetItem(slots, slot) == item &&
+                (ConsumeOtherHandItem == null || (TargetHand == EquippedItemHand.SourceHand &&
+                    (slot == EquipmentSlot.LeftHand || slot == EquipmentSlot.RightHand) &&
+                    PlayerEquipmentUtility.GetItem(slots, slot == EquipmentSlot.LeftHand ? EquipmentSlot.RightHand : EquipmentSlot.LeftHand) == ConsumeOtherHandItem.Id)) &&
+                (RequiredTargetItem == null || PlayerEquipmentUtility.GetItem(slots, targetSlot) == RequiredTargetItem.Id);
         }
 
         public override void Execute(
@@ -53,7 +82,7 @@ namespace Game.Items.Skills
             }
 
             var slots = entityManager.GetBuffer<PlayerEquipmentSlot>(player);
-            if (PlayerEquipmentUtility.GetItem(slots, sourceSlot) != sourceItem)
+            if (!TryGetTargetSlot(sourceSlot, out var targetSlot) || PlayerEquipmentUtility.GetItem(slots, sourceSlot) != sourceItem)
                 return false;
             using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<ItemLibrary>());
             if (query.CalculateEntityCount() != 1)
@@ -62,8 +91,22 @@ namespace Game.Items.Skills
             if (!library.Value.IsCreated)
                 return false;
             // Apply before the next action executes; retain the item's resource.
-            return PlayerEquipmentUtility.TryEquip(slots, ref library.Value.Value,
-                sourceSlot, replacementItem.Id, preserveDurability: true);
+            var original = PlayerEquipmentUtility.GetInstance(slots, targetSlot);
+            if (!PlayerEquipmentUtility.TryEquip(slots, ref library.Value.Value,
+                targetSlot, replacementItem.Id, preserveDurability: true)) return false;
+            if (ConsumeOtherHandItem == null) return true;
+            var otherSlot = sourceSlot == EquipmentSlot.LeftHand ? EquipmentSlot.RightHand : EquipmentSlot.LeftHand;
+            if (PlayerEquipmentUtility.TryEquip(slots, ref library.Value.Value, otherSlot, 0)) return true;
+            // A failed ingredient removal must not leave a free crafted item.
+            for (int i = 0; i < slots.Length; i++)
+                if (slots[i].Slot == targetSlot)
+                {
+                    var entry = slots[i];
+                    entry.Instance = original;
+                    slots[i] = entry;
+                    break;
+                }
+            return false;
         }
     }
 }

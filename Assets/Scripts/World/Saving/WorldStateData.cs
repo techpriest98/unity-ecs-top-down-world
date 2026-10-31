@@ -20,10 +20,23 @@ namespace Game.World.Saving
         public EquipmentSlotData[] Equipment;
         public WorldItemData[] WorldItems;
         public CoastalItemChunkData[] CoastalItemChunks;
+        public TreeItemChunkData[] TreeItemChunks;
+        public TreeResinData[] TreeResinRecords;
     }
 
     [Serializable]
     public sealed class CoastalItemChunkData { public int X, Z; }
+
+    [Serializable]
+    public sealed class TreeItemChunkData { public int X, Z; }
+
+    [Serializable]
+    public sealed class TreeResinData
+    {
+        public int ChunkX, ChunkZ, TreeId, Seed, GeneratorVersion;
+        public float X, Y, Z;
+        public double ReadyAt;
+    }
 
     [Serializable]
     public sealed class WorldItemData

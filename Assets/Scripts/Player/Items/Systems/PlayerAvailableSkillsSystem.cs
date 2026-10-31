@@ -1,11 +1,13 @@
 using Game.Items;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace Game.Player
 {
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(PlayerEquipmentChangeSystem))]
     [UpdateAfter(typeof(PlayerActiveHandInputSystem))]
+    [UpdateAfter(typeof(IgnitableCellSystem))]
     [UpdateAfter(typeof(Game.World.Interaction.ProjectedCellSelectionSystem))]
     public partial class PlayerAvailableSkillsSystem : SystemBase
     {
@@ -47,14 +49,10 @@ namespace Game.Player
                 for (int i = 0; i < skills.Length && next < PlayerAvailableSkill.SkillsPerHand; i++)
                 {
                     if (skills[i] == null || !skills[i].HasActions) continue;
-                    bool visible = true;
-                    if (skills[i].UseChain)
-                        visible = Game.Items.Skills.SkillChainRunner.IsVisible(skills[i].FirstNode, manager, player, sourceSlot, itemId);
-                    foreach (var condition in skills[i].Conditions ?? System.Array.Empty<Game.Items.Skills.ItemSkillCondition>())
-                        if (condition != null && condition.ControlsVisibility &&
-                            !condition.Evaluate(manager, player, sourceSlot, itemId)) { visible = false; break; }
+                    bool visible = Game.Items.Skills.SkillChainRunner.EvaluateVisibilityTarget(skills[i].VisibilityNode, manager, player, sourceSlot, itemId,
+                        out var target, out var position);
                     if (!visible) continue;
-                    SetEntry(destination, offset + next++, sourceSlot, itemId, i);
+                    SetEntry(destination, offset + next++, sourceSlot, itemId, i, target, position);
                 }
             // Empty slots stay at their own key; they never borrow the other hand's skills.
             while (next < PlayerAvailableSkill.SkillsPerHand)
@@ -62,13 +60,14 @@ namespace Game.Player
         }
 
         private static void SetEntry(DynamicBuffer<PlayerAvailableSkill> destination, int index,
-            EquipmentSlot slot, int item, int skillIndex)
+            EquipmentSlot slot, int item, int skillIndex, Entity target = default, float3 position = default)
         {
             var current = destination[index];
-            if (current.SourceSlot == slot && current.SourceItem == item && current.SkillIndex == skillIndex) return;
+            if (current.SourceSlot == slot && current.SourceItem == item && current.SkillIndex == skillIndex &&
+                current.Target == target && math.all(current.TargetPosition == position)) return;
             destination[index] = new PlayerAvailableSkill
             {
-                SourceSlot = slot, SourceItem = item, SkillIndex = skillIndex
+                SourceSlot = slot, SourceItem = item, SkillIndex = skillIndex, Target = target, TargetPosition = position
             };
         }
     }

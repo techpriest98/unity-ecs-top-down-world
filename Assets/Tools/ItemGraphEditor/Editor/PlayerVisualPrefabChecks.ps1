@@ -5,9 +5,9 @@ $authoring = Get-Content (Join-Path $root 'Scripts/Player/PlayerAuthoring.cs') -
 $spawn = Get-Content (Join-Path $root 'Scripts/Player/Visual/Systems/PlayerVisualSpawnSystem.cs') -Raw
 $parts = [regex]::Match($scene, '(?s)  visualParts:\r?\n(.*?)(?=---)').Groups[1].Value
 $references = [regex]::Matches($parts, 'fileID: (\d+), guid: ([a-f0-9]{32}), type: 3')
-if ($references.Count -ne 9) { throw 'Expected nine external visual-prefab references.' }
+if ($references.Count -lt 11) { throw 'Expected core visual parts plus both branch hands.' }
 $prefabs = @(Get-ChildItem (Join-Path $root 'Prefabs/PlayerVisuals') -Filter '*.prefab')
-if ($prefabs.Count -ne 9) { throw 'Expected nine visual prefab assets.' }
+if ($references.Count -ne $prefabs.Count) { throw 'Every visual prefab must have a scene reference.' }
 $seen = @{}
 foreach ($reference in $references) {
     $asset = @($prefabs | Where-Object { (Get-Content ($_.FullName + '.meta') -Raw).Contains($reference.Groups[2].Value) })
@@ -35,4 +35,5 @@ if ($authoring -notmatch 'GetEntity\(part.gameObject, TransformUsageFlags.Dynami
     $spawn -notmatch 'RemoveComponent<PlayerVisualPrefab>\(owner\)') {
     throw 'Prefab registration, per-owner instantiation, parenting, ownership or one-shot consumption missing.'
 }
-'PASS nine unique prefab references, original transforms/material, no scene duplicates, initialization/parent/linked ownership and one-shot spawn contracts. Unity baking/Play Mode still required.'
+if (!$seen.ContainsKey('9') -or !$seen.ContainsKey('10')) { throw 'Missing left/right branch visual prefab.' }
+'PASS unique prefab references including both branch hands, original transforms/material, no scene duplicates, initialization/parent/linked ownership and one-shot spawn contracts. Unity baking/Play Mode still required.'

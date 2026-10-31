@@ -403,7 +403,9 @@ nointerpolation uint IsCutSurface : TEXCOORD8;
                 float faceHeight = faceType == 1u ? sourceHeight - (lowerHalf ? .5 : 0.0) :
                     sourceHeight + (faceType == 3u || lowerHalf ? .25 : .75);
                 output.ShadowReceiverHeight = faceHeight + (faceType == 1u ? 0 : (corner.y - .5) * .5);
-                float depthHeight = output.ShadowReceiverHeight + (isCutTop ? 1.0 : 0.0);
+                // Cut Tops already encode the cut-plane height in SourceAirIndex
+                // (and the lower-half flag). Do not advance them by another block.
+                float depthHeight = output.ShadowReceiverHeight;
                 worldPosition.z = TerrainSurfaceDepth(cell, worldPosition.y, depthHeight);
                 output.PositionCS = TransformWorldToHClip(worldPosition);
                 output.LocalVisibility0 = output.LocalVisibility1 = 0;

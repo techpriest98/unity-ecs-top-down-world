@@ -64,8 +64,12 @@ namespace Game.Items.Skills
         public Sprite Icon;
         [Tooltip("SlotNumber preserves the old 1–5 controls. Keyboard uses Key; mouse buttons ignore Key. Duplicate buttons use the first available HUD skill.")]
         public SkillInputBinding InputBinding;
+        [Min(0f), Tooltip("Durability spent from the source item after a successful skill chain.")]
+        public float DurabilityCost;
         [HideInInspector] public bool UseChain = true;
         public SkillChainNode FirstNode;
+        [Tooltip("Read-only conditions controlling the HUD. An unconnected Visibility output means always visible.")]
+        public SkillChainNode VisibilityNode;
         [HideInInspector] public ItemSkillCondition[] Conditions = System.Array.Empty<ItemSkillCondition>();
         [HideInInspector] public ItemSkillAction[] Actions = System.Array.Empty<ItemSkillAction>();
 

@@ -19,11 +19,29 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
-  m_LockedProperties:
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
-    m_TexEnvs: []
+    m_TexEnvs:
+    - _TreeBarkCutOverlay:
+        m_Texture: {fileID: 2800000, guid: 23aac38b94f14e4ba9ce613bd91b7e81, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TreeBarkResinOverlay:
+        m_Texture: {fileID: 2800000, guid: 7c9331d171974f859e946440e135a75e, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TreeDiffuse:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
-    m_Floats: []
+    m_Floats:
+    - _TreeColorMask: 15
+    - _TreeFogMaskPass: 0
+    - _TreeStencilRef: 0
+    - _TreeZTest: 4
+    - _TreeZWrite: 1
     m_Colors: []
   m_BuildTextureStacks: []
+  m_AllowLocking: 1

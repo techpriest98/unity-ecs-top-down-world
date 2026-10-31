@@ -14,6 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Kind: 1
   Next: {fileID: 11400000, guid: 3306c7415cf54edc903fb8765e612ac1, type: 2}
+  ItemMatches: []
+  SelectionOutputs:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  SelectionKindConnected: 1
   PositionSource: {fileID: 11400000, guid: 1106c7415cf54edc903fb8765e612ac1, type: 2}
+  Cursor: 0
   Distance: {fileID: 11400000, guid: 4406c7415cf54edc903fb8765e612ac1, type: 2}
+  Action: {fileID: 0}
+  HandCondition: {fileID: 0}
+  Condition: {fileID: 0}
   FailureMessage: Too far away.

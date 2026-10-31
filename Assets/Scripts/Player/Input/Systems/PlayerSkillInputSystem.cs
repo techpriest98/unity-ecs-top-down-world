@@ -85,11 +85,13 @@ namespace Game.Player
             {
                 if (selectedDefinition.UseChain)
                 {
-                    if (!SkillChainRunner.Execute(selectedDefinition.FirstNode, EntityManager, player,
+                    if (!SkillChainRunner.ExecuteSkill(selectedDefinition, EntityManager, player,
                         selectedSkill.SourceSlot, selectedSkill.SourceItem, out var failure))
                         ShowFailure(player, failure);
                     return;
                 }
+                if (!SkillChainRunner.IsVisible(selectedDefinition.VisibilityNode, EntityManager, player,
+                    selectedSkill.SourceSlot, selectedSkill.SourceItem)) return;
                 foreach (var condition in selectedDefinition.Conditions ?? System.Array.Empty<ItemSkillCondition>())
                 {
                     if (condition == null)

@@ -7,7 +7,8 @@ $end=$source.IndexOf('    [UpdateInGroup', $start)
 $utility=$source.Substring($start,$end-$start)
 $tick=[regex]::Match((Read 'Scripts/Items/ItemRuntimeUtility.cs'),'(?s)public static void TickDurability\(.*?\n        \}').Value
 $item=[regex]::Match((Read 'Scripts/Items/WorldItem.cs'),'(?s)public struct WorldItem : IComponentData\s*\{.*?\n    \}').Value.Replace(': IComponentData','')
-$mathPath='C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/Managed/UnityEngine/UnityEngine.MathematicsModule.dll'
+$version=((Read '../ProjectSettings/ProjectVersion.txt') -split "`n" | Where-Object {$_ -match '^m_EditorVersion: '}) -replace '^m_EditorVersion: ',''
+$mathPath="C:/Program Files/Unity/Hub/Editor/$($version.Trim())/Editor/Data/Managed/UnityEngine/UnityEngine.MathematicsModule.dll"
 Add-Type -Path $mathPath
 $refs=@((Get-ChildItem (Join-Path $PSHOME 'ref') -Filter '*.dll').FullName)+$mathPath
 $code='using System; using Unity.Mathematics; using Game.World.Chunks; using Game.World.Saving; using Game.Items;'

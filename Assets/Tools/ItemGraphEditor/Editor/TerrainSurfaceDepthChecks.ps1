@@ -3,6 +3,11 @@ $root = (Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
 $packing = Get-Content (Join-Path $root 'Shaders/ProjectedCellPacking.hlsl') -Raw
 $body = [regex]::Match($packing, '(?s)float TerrainSurfaceDepth\([^)]*\)\s*\{(.*?)\}').Groups[1].Value
 if (!$body) { throw 'TerrainSurfaceDepth not found' }
+$terrain = Get-Content (Join-Path $root 'Shaders/ChunkProcedural.shader') -Raw
+if ($terrain -notmatch 'float depthHeight = output.ShadowReceiverHeight;' -or
+    $terrain -match 'ShadowReceiverHeight\s*\+\s*\(isCutTop') {
+    throw 'Cut Top has an extra height/depth offset instead of sharing the encoded Top plane.'
+}
 $body = $body.Replace('cell.ChunkPosition.y', 'chunkY').Replace('cell.ChunkPosition.z', 'chunkZ')
 $body = $body.Replace('float localDepth', 'double localDepth')
 $body = $body.Replace('float physicalDepth', 'double physicalDepth').Replace('lerp(', 'Lerp(')

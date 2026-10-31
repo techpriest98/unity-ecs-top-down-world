@@ -6,6 +6,7 @@ using Game.World.Chunks;
 using Game.World.Generation;
 using Game.World.Generation.Spawning;
 using Game.World.Rendering;
+using Game.World.Trees;
 using Game.World.Time;
 using Unity.Collections;
 using Unity.Entities;
@@ -113,12 +114,30 @@ namespace Game.World.Saving
             Entity player = playerQuery.GetSingletonEntity();
 
             Entity itemOwner = itemLibraryQuery.GetSingletonEntity();
+            if (!EntityManager.HasBuffer<TreeResinRecord>(itemOwner)) EntityManager.AddBuffer<TreeResinRecord>(itemOwner);
+            var resinRecords = EntityManager.GetBuffer<TreeResinRecord>(itemOwner);
+            resinRecords.Clear();
+            if (data.TreeResinRecords != null)
+                foreach (var resin in data.TreeResinRecords)
+                    if (resin != null) resinRecords.Add(new TreeResinRecord
+                    {
+                        Chunk = new int2(resin.ChunkX, resin.ChunkZ), TreeId = resin.TreeId,
+                        Seed = resin.Seed, GeneratorVersion = resin.GeneratorVersion,
+                        BasePosition = new float3(resin.X, resin.Y, resin.Z), ReadyAt = resin.ReadyAt
+                    });
             if (!EntityManager.HasBuffer<CoastalItemSpawnedChunk>(itemOwner)) EntityManager.AddBuffer<CoastalItemSpawnedChunk>(itemOwner);
             var coastalChunks = EntityManager.GetBuffer<CoastalItemSpawnedChunk>(itemOwner);
             coastalChunks.Clear();
             if (data.CoastalItemChunks != null)
                 foreach (var chunk in data.CoastalItemChunks)
                     if (chunk != null) coastalChunks.Add(new CoastalItemSpawnedChunk { Coordinate = new int2(chunk.X, chunk.Z) });
+
+            if (!EntityManager.HasBuffer<TreeItemSpawnedChunk>(itemOwner)) EntityManager.AddBuffer<TreeItemSpawnedChunk>(itemOwner);
+            var treeChunks = EntityManager.GetBuffer<TreeItemSpawnedChunk>(itemOwner);
+            treeChunks.Clear();
+            if (data.TreeItemChunks != null)
+                foreach (var chunk in data.TreeItemChunks)
+                    if (chunk != null) treeChunks.Add(new TreeItemSpawnedChunk { Coordinate = new int2(chunk.X, chunk.Z) });
 
             if (!TryRestoreEquipment(
                     player,
@@ -287,7 +306,7 @@ namespace Game.World.Saving
                             restored.Instance.MaxDurability = saved.MaxDurability;
                             restored.Instance.Durability = saved.Durability;
                             restored.Instance.DurabilityElapsed = saved.DurabilityElapsed;
-                            if (restored.Instance.Durability <= 0)
+                            if (!ItemRuntimeUtility.ResolveDepletion(ref restored.Instance, ref library))
                                 restored.Instance = default;
                             slots[i] = restored;
                         }
@@ -379,6 +398,36 @@ namespace Game.World.Saving
             var chunks = EntityManager.GetBuffer<CoastalItemSpawnedChunk>(owner, true);
             var result = new CoastalItemChunkData[chunks.Length];
             for (int i = 0; i < result.Length; i++) result[i] = new CoastalItemChunkData { X = chunks[i].Coordinate.x, Z = chunks[i].Coordinate.y };
+            return result;
+        }
+
+        private TreeItemChunkData[] CaptureTreeItemChunks()
+        {
+            Entity owner = itemLibraryQuery.GetSingletonEntity();
+            if (!EntityManager.HasBuffer<TreeItemSpawnedChunk>(owner)) return System.Array.Empty<TreeItemChunkData>();
+            var chunks = EntityManager.GetBuffer<TreeItemSpawnedChunk>(owner, true);
+            var result = new TreeItemChunkData[chunks.Length];
+            for (int i = 0; i < result.Length; i++) result[i] = new TreeItemChunkData { X = chunks[i].Coordinate.x, Z = chunks[i].Coordinate.y };
+            return result;
+        }
+
+        private TreeResinData[] CaptureTreeResinRecords()
+        {
+            Entity owner = itemLibraryQuery.GetSingletonEntity();
+            if (!EntityManager.HasBuffer<TreeResinRecord>(owner)) return System.Array.Empty<TreeResinData>();
+            var records = EntityManager.GetBuffer<TreeResinRecord>(owner, true);
+            var result = new TreeResinData[records.Length];
+            for (int i = 0; i < result.Length; i++)
+            {
+                var record = records[i];
+                result[i] = new TreeResinData
+                {
+                    ChunkX = record.Chunk.x, ChunkZ = record.Chunk.y, TreeId = record.TreeId,
+                    Seed = record.Seed, GeneratorVersion = record.GeneratorVersion,
+                    X = record.BasePosition.x, Y = record.BasePosition.y, Z = record.BasePosition.z,
+                    ReadyAt = record.ReadyAt
+                };
+            }
             return result;
         }
 
@@ -523,7 +572,9 @@ namespace Game.World.Saving
                     Chunks = CaptureChanges(),
                     Equipment = CaptureEquipment(player),
                     WorldItems = CaptureWorldItems(),
-                    CoastalItemChunks = CaptureCoastalItemChunks()
+                    CoastalItemChunks = CaptureCoastalItemChunks(),
+                    TreeItemChunks = CaptureTreeItemChunks(),
+                    TreeResinRecords = CaptureTreeResinRecords()
                 },
                 out error);
         }

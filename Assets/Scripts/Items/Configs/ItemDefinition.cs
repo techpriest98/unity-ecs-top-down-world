@@ -14,11 +14,16 @@ namespace Game.Items
         public string Description;
         public Sprite Icon;
         public Sprite WorldSprite;
+        public bool WorldSpriteUpright;
+        public bool IsStructure;
+        public bool PreserveWhenDepleted;
+        public ItemDefinition DepletedReplacement;
         [Min(0.001f)] public float MaxDurability = 100f;
         public ItemDurabilityDecayDefinition DurabilityDecay;
         public EquipmentSlot AllowedSlots;
 
         public ItemLightDefinition Light;
+        [Min(0f)] public float WorldLightHeight;
         public bool IgnitionSource;
         public ItemAnimationDefinition Animation;
 

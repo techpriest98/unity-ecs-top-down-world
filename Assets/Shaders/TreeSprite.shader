@@ -2,6 +2,8 @@ Shader "Game/World/TreeSprite"
 {
     Properties {
         _TreeDiffuse("Diffuse bank", 2DArray)="" {}
+        _TreeBarkCutOverlay("Bark cut overlay", 2D)="" {}
+        _TreeBarkResinOverlay("Bark resin overlay", 2D)="" {}
         [HideInInspector] _TreeZTest("Depth Test", Float)=4
         [HideInInspector] _TreeZWrite("Depth Write", Float)=1
         [HideInInspector] _TreeColorMask("Color Mask", Float)=15
@@ -24,7 +26,9 @@ Shader "Game/World/TreeSprite"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             TEXTURE2D_ARRAY(_TreeDiffuse); TEXTURE2D_ARRAY(_TreeNormals);
             TEXTURE2D_ARRAY(_TreeSurfaces);
+            TEXTURE2D(_TreeBarkCutOverlay); TEXTURE2D(_TreeBarkResinOverlay);
             SamplerState tree_point_clamp_sampler;
+            SamplerState tree_overlay_point_clamp_sampler;
             // C# TreeDrawData: four float4 values, 64-byte structured-buffer stride.
             struct TreeDrawData { float4 Rect, Base, Pixels, Layers; };
             StructuredBuffer<TreeDrawData> _TreeInstances;
@@ -32,6 +36,7 @@ Shader "Game/World/TreeSprite"
             float4 _TreeAmbient, _TreeSun, _TreeSunDirection;
             float _TerrainDepthOrigin, _TreeLocalOnly;
             float _TreeFogMaskPass, _TreeFogEnabled, _TreeFogHeight;
+            float _TreeResinOverlayEnabled;
             float4 _TreeFogEdge, _TreeFogSeaOrigin, _TreeFogRight, _TreeFogAway, _TreeFogDrift;
             TEXTURE2D(_TreeFogNoise);
             SamplerState tree_fog_linear_repeat_sampler;
@@ -89,6 +94,20 @@ Shader "Game/World/TreeSprite"
                         clip(clearance - noise * _TreeFogEdge.x);
                     }
                     return 0;
+                }
+                if (data.Layers.w > .5 && _TreeResinOverlayEnabled > .5)
+                {
+                    float2 pixel = i.uv * data.Pixels.zw;
+                    // Pivot is the trunk base. Keep the decal in the lower trunk
+                    // and sample it only where the existing tree card has alpha.
+                    float2 overlayUv = (pixel - float2(data.Pixels.z * .5, data.Pixels.y + 28.0)) / float2(16.0, 24.0) + .5;
+                    if (all(overlayUv >= 0.0) && all(overlayUv <= 1.0))
+                    {
+                        float4 overlay = data.Layers.w > 1.5
+                            ? SAMPLE_TEXTURE2D(_TreeBarkResinOverlay, tree_overlay_point_clamp_sampler, overlayUv)
+                            : SAMPLE_TEXTURE2D(_TreeBarkCutOverlay, tree_overlay_point_clamp_sampler, overlayUv);
+                        color.rgb = lerp(color.rgb, overlay.rgb, overlay.a);
+                    }
                 }
                 float3 encoded=SAMPLE_TEXTURE2D_ARRAY(_TreeNormals,tree_point_clamp_sampler,i.uv,layer).xyz*2-1;
                 float3 normal=normalize(_TreeRight.xyz*encoded.x+float3(0,encoded.y,0)+_TreeToward.xyz*encoded.z);

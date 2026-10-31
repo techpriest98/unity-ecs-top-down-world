@@ -19,7 +19,9 @@ MonoBehaviour:
   InputBinding:
     Button: 1
     Key: 31
+  DurabilityCost: 0
   UseChain: 1
   FirstNode: {fileID: 11400000, guid: 1106c7415cf54edc903fb8765e612ac1, type: 2}
+  VisibilityNode: {fileID: 0}
   Conditions: []
   Actions: []

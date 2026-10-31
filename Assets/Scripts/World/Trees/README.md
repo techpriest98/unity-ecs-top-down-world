@@ -68,11 +68,14 @@ Manual trees have `PlacedByPlayer = true`. Procedural forest regeneration keeps
 them and rebinds their seed to the rebuilt visual bank. This is runtime state:
 manual-tree persistence across world unload/restart is not implemented here.
 
-Nigredo uses an explicit `Item.Selection.Kind` branch in the skill graph.
-Block/None routes through Behind Cursor to terrain removal. Item and Structure
-route through Before Cursor to a category-specific lookup, then destruction of
-the resolved entity or `(chunk entity, tree instance ID)`. The selected item ID
-does not filter destruction; missing/stale objects never fall back to terrain.
+Nigredo uses an automatic destruction-target branch, independent of Rubedo's
+selection. A grounded item at Before Cursor wins, then a structure; otherwise
+Behind Cursor selects terrain. Holding either Shift always chooses terrain.
+The cursor shows an object frame (the trunk for trees), or the terrain face.
+Execution resolves the target afresh and deletes only that entity/tree instance.
+Block placement removes all world items whose contact point is inside the filled
+cell halves, including placed torches. Adjacent items and items on the new top
+surface are retained.
 
 To support other species, the next architectural step is a structure-definition
 catalog (stable ID, generator/configuration, icon and collision rules), rather

@@ -1,4 +1,5 @@
 using Game.World.Rendering;
+using Game.Items;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -23,6 +24,7 @@ namespace Game.Player
         {
             state.RequireForUpdate<ViewDirectionComponent>();
             state.RequireForUpdate<PlayerAnimationLibrary>();
+            state.RequireForUpdate<ItemLibrary>();
 
             missingPostTransformQuery = SystemAPI.QueryBuilder()
                 .WithAll<PlayerVisualBaseTransform, LocalTransform>()
@@ -68,14 +70,18 @@ namespace Game.Player
 
             var baseTransformLookup =
                 SystemAPI.GetComponentLookup<PlayerVisualBaseTransform>(true);
+            var equipmentLookup = SystemAPI.GetBufferLookup<PlayerEquipmentSlot>(true);
+            var itemLibrary = SystemAPI.GetSingleton<ItemLibrary>();
+            if (!itemLibrary.Value.IsCreated) return;
+            ref ItemLibraryBlob items = ref itemLibrary.Value.Value;
 
-            foreach (var (facing, animation, library, parts) in
+            foreach (var (facing, animation, library, parts, player) in
                      SystemAPI.Query<
                              RefRO<PlayerFacing>,
                              RefRW<PlayerAnimationData>,
                              RefRO<PlayerAnimationLibrary>,
                              DynamicBuffer<PlayerVisualPart>>()
-                         .WithAll<PlayerTag>())
+                         .WithAll<PlayerTag>().WithEntityAccess())
             {
                 if (!library.ValueRO.Value.IsCreated)
                     continue;
@@ -111,6 +117,14 @@ namespace Game.Player
                     PlayerSpriteDirectionUtility.WorldToScreen(
                         facing.ValueRO.Value,
                         viewDirection);
+
+                ItemHandAnimationData leftHand = default, rightHand = default;
+                if (equipmentLookup.HasBuffer(player))
+                {
+                    var equipment = equipmentLookup[player];
+                    leftHand = FindHand(ref items, PlayerEquipmentUtility.GetItem(equipment, EquipmentSlot.LeftHand), true);
+                    rightHand = FindHand(ref items, PlayerEquipmentUtility.GetItem(equipment, EquipmentSlot.RightHand), false);
+                }
 
                 for (int i = 0; i < parts.Length; i++)
                 {
@@ -194,7 +208,7 @@ namespace Game.Player
                     // Reserve five depth slots so ZIndex always takes priority.
                     position.z -=
                         ((float)frameData.ZIndex * LayerOrderCount +
-                         GetLayerOrder(part.Part)) * LayerDepthStep;
+                         GetLayerOrder(part.Part, leftHand, rightHand)) * LayerDepthStep;
 
                     transformLookup[visualEntity] = new LocalTransform
                     {
@@ -219,21 +233,29 @@ namespace Game.Player
             }
         }
 
-        private static int GetLayerOrder(CharacterPart part)
+        private static ItemHandAnimationData FindHand(ref ItemLibraryBlob items, int id, bool left)
+        {
+            for (int i = 0; i < items.Items.Length; i++)
+            {
+                ref ItemData item = ref items.Items[i];
+                if (item.Id == id && item.HasAnimation) return left ? item.LeftHand : item.RightHand;
+            }
+            return default;
+        }
+
+        private static int GetLayerOrder(CharacterPart part, ItemHandAnimationData left, ItemHandAnimationData right)
         {
             switch (part)
             {
                 case CharacterPart.Body: return 0;
                 case CharacterPart.LeftArm: return 1;
                 case CharacterPart.RightArm: return 2;
-                case CharacterPart.LeftHandTorch:
-                case CharacterPart.LeftHandIgnitedTorch:
-                case CharacterPart.LeftHandWorldShaper: return 3;
-                case CharacterPart.RightHandTorch:
-                case CharacterPart.RightHandIgnitedTorch:
-                case CharacterPart.RightHandWorldShaper: return 4;
-                default: return 0;
             }
+            // Same five layers as ResolveHand in the preview. New item parts
+            // inherit their order from equipment configuration, not enum names.
+            if (left.HasVisual && left.VisualPart == part) return 3;
+            if (right.HasVisual && right.VisualPart == part) return 4;
+            return 0;
         }
 
         private static void AdvancePlayback(

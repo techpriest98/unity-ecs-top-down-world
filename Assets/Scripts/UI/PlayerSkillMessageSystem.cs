@@ -28,13 +28,16 @@ namespace Game.UI
             {
                 if (message.ValueRO.ExpiresAt <= SystemAPI.Time.ElapsedTime || message.ValueRO.Text.IsEmpty) continue;
                 if (canvasObject == null) CreateLabel();
+                WorldLabelStyle.EnsureApplied(label);
                 var projected = WorldPositionProjectionUtility.Project(position.ValueRO.Value, direction);
                 var screen = Camera.main.WorldToScreenPoint(new Vector3(projected.x, projected.y + shape.ValueRO.Height + 0.3f, -1f));
                 if (screen.z <= 0) continue;
                 label.text = message.ValueRO.Text.ToString();
+                float marginX = label.rectTransform.rect.width * .5f + 10f;
+                float marginY = label.rectTransform.rect.height * .5f + 4f;
                 label.rectTransform.position = new Vector3(
-                    Mathf.Clamp(screen.x, 190f, Mathf.Max(190f, Screen.width - 190f)),
-                    Mathf.Clamp(screen.y, 36f, Mathf.Max(36f, Screen.height - 36f)), 0);
+                    Mathf.Clamp(screen.x, marginX, Mathf.Max(marginX, Screen.width - marginX)),
+                    Mathf.Clamp(screen.y, marginY, Mathf.Max(marginY, Screen.height - marginY)), 0);
                 visible = true;
                 break;
             }
@@ -52,11 +55,9 @@ namespace Game.UI
                 ? Object.Instantiate(messagePrefab).GetComponent<TextMeshProUGUI>()
                 : new GameObject("Speech", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
             label.transform.SetParent(canvasObject.transform, false);
-            label.rectTransform.sizeDelta = new Vector2(360, 64);
-            label.fontSize = 18;
+            label.rectTransform.sizeDelta = new Vector2(480, 88);
             label.alignment = TextAlignmentOptions.Center;
-            label.color = new Color(0.764151f, 0.71008366f, 0.71008366f, 1f);
-            label.raycastTarget = false;
+            WorldLabelStyle.Apply(label);
         }
 
         private void Hide() { if (canvasObject != null) canvasObject.SetActive(false); }

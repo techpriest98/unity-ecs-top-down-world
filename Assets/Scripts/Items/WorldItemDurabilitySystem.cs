@@ -27,8 +27,9 @@ namespace Game.Items
                 if (index < 0) continue;
                 var value = item.ValueRO;
                 ItemRuntimeUtility.TickDurability(ref value.Instance, library.Value.Value.Items[index], delta);
+                bool keep = ItemRuntimeUtility.ResolveDepletion(ref value.Instance, ref library.Value.Value);
                 item.ValueRW = value;
-                if (value.Instance.Durability <= 0f) commands.DestroyEntity(entity);
+                if (!keep) commands.DestroyEntity(entity);
             }
             commands.Playback(state.EntityManager);
         }

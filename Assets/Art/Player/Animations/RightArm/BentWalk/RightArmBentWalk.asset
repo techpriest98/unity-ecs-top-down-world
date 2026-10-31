@@ -28,7 +28,7 @@ MonoBehaviour:
       x: 12
       y: 62
       width: 11
-      height: 32
+      height: 31
   - ZIndex: 0
     OverrideLightPosition: 0
     LightPosition: {x: 0, y: 0, z: 0}
@@ -36,7 +36,7 @@ MonoBehaviour:
       x: 10
       y: 63
       width: 11
-      height: 32
+      height: 31
   - ZIndex: 1
     OverrideLightPosition: 0
     LightPosition: {x: 0, y: 0, z: 0}
@@ -44,7 +44,7 @@ MonoBehaviour:
       x: 13
       y: 62
       width: 11
-      height: 32
+      height: 31
   - ZIndex: 0
     OverrideLightPosition: 0
     LightPosition: {x: 0, y: 0, z: 0}
@@ -52,7 +52,7 @@ MonoBehaviour:
       x: 10
       y: 63
       width: 11
-      height: 32
+      height: 31
   Up:
   - ZIndex: -1
     OverrideLightPosition: 0
@@ -127,7 +127,7 @@ MonoBehaviour:
       x: 18
       y: 61
       width: 27
-      height: 33
+      height: 32
   - ZIndex: 1
     OverrideLightPosition: 0
     LightPosition: {x: 0, y: 0, z: 0}
@@ -135,7 +135,7 @@ MonoBehaviour:
       x: 18
       y: 63
       width: 28
-      height: 33
+      height: 32
   - ZIndex: 1
     OverrideLightPosition: 0
     LightPosition: {x: 0, y: 0, z: 0}
@@ -143,7 +143,7 @@ MonoBehaviour:
       x: 18
       y: 62
       width: 28
-      height: 33
+      height: 32
   - ZIndex: 1
     OverrideLightPosition: 0
     LightPosition: {x: 0, y: 0, z: 0}
@@ -151,4 +151,4 @@ MonoBehaviour:
       x: 18
       y: 63
       width: 28
-      height: 33
+      height: 32

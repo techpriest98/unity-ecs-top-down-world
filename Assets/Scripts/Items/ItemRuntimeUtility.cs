@@ -4,6 +4,22 @@ namespace Game.Items
 {
     public static class ItemRuntimeUtility
     {
+        public static bool ResolveDepletion(ref ItemInstance instance, ref ItemLibraryBlob library)
+        {
+            if (instance.Durability > 0f) return true;
+            int index = Find(ref library, instance.DefinitionId);
+            if (index < 0) return false;
+            var definition = library.Items[index];
+            if (definition.DepletedReplacementId != 0)
+            {
+                int replacement = Find(ref library, definition.DepletedReplacementId);
+                if (replacement < 0) return false;
+                instance = WorldItemReplacementUtility.Replace(instance, definition.DepletedReplacementId, library.Items[replacement].MaxDurability);
+                return true;
+            }
+            return definition.PreserveWhenDepleted;
+        }
+
         public static int Find(ref ItemLibraryBlob library, int id)
         {
             for (int i = 0; i < library.Items.Length; i++)

@@ -1,5 +1,6 @@
 using Game.Items;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace Game.Player
 {
@@ -12,5 +13,7 @@ namespace Game.Player
         public EquipmentSlot SourceSlot;
         public int SourceItem;
         public int SkillIndex;
+        public Entity Target;
+        public float3 TargetPosition;
     }
 }

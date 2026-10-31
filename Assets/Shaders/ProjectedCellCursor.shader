@@ -3,6 +3,8 @@ Shader "Game/World/ProjectedCellCursor"
     Properties
     {
         _CursorColor("Cursor Color", Color) = (1, 0.902, 0.608, 0.45)
+        _CursorBorderWidth("Border width (world units)", Float) = 0.03125
+        _CursorEdgeFade("Inner edge fade (world units)", Float) = 0.09375
     }
     SubShader
     {
@@ -22,6 +24,8 @@ Shader "Game/World/ProjectedCellCursor"
             float4 _CursorRect;
             float4 _CursorSurface;
             float4 _CursorColor;
+            float _CursorBorderWidth, _CursorEdgeFade;
+            float _CursorObjectMode, _CursorObjectDepth, _CursorObjectSlope, _CursorObjectAnchorY;
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
@@ -40,15 +44,23 @@ Shader "Game/World/ProjectedCellCursor"
                 cell.ChunkPosition = float3(0, _CursorSurface.x, _CursorSurface.y);
                 float height = lerp(_CursorSurface.z, _CursorSurface.w, output.uv.y);
                 float surfaceDepth = TerrainSurfaceDepth(cell, projected.y, height) - .001;
+                if (_CursorObjectMode > .5) surfaceDepth = _CursorObjectDepth +
+                    2.0 * (projected.y - _CursorObjectAnchorY) * _CursorObjectSlope;
                 output.positionCS = TransformWorldToHClip(float3(projected, surfaceDepth));
                 return output;
             }
             float4 Frag(Varyings input) : SV_Target
             {
-                float edge = min(min(input.uv.x, 1-input.uv.x),
-                    min(input.uv.y, 1-input.uv.y));
-                float border = 1-step(0.06, edge);
-                float fill = 1-smoothstep(0, 0.25, edge);
+                // Nine-slice equivalent: measure from each edge in projected
+                // world units, not a percentage of this object's width/height.
+                float2 size = max(abs(_CursorRect.zw), float2(.0001, .0001));
+                float2 distanceToEdge = min(input.uv, 1-input.uv) * size;
+                float edge = min(distanceToEdge.x, distanceToEdge.y);
+                float halfShortSide = min(size.x, size.y) * .5;
+                float thickness = min(max(_CursorBorderWidth, 0), halfShortSide * .5);
+                float fade = min(max(_CursorEdgeFade, .0001), max(halfShortSide - thickness, .0001));
+                float border = 1-step(thickness, edge);
+                float fill = 1-smoothstep(thickness, thickness + fade, edge);
                 return float4(_CursorColor.rgb,
                     max(border * _CursorColor.a, fill * _CursorColor.a * 0.45));
             }

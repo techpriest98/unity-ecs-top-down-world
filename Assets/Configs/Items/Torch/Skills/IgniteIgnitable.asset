@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: IgniteIgnitable
   m_EditorClassIdentifier: 
   Kind: 4
-  Next: {fileID: 11400000, guid: 92ac67415cf54edc903fb8765e612ac1, type: 2}
-  PositionSource: {fileID: 11400000, guid: 91ac67415cf54edc903fb8765e612ac1, type: 2}
+  Next: {fileID: 0}
+  PositionSource: {fileID: 11400000, guid: f4ad999574b1826217ebbd38c0b7c8bc, type: 2}
   Cursor: 0
   Distance: {fileID: 0}
   Action: {fileID: 0}

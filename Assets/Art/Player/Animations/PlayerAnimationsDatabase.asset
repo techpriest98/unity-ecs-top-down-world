@@ -11,7 +11,6 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 273b5f23e52fd402ea5dc6ed48521921, type: 3}
   m_Name: PlayerAnimationsDatabase
-  TargetMaterial: {fileID: 2100000, guid: 9f123a8ce88b74caa8bdbe5519935cc7, type: 2}
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.AnimationDatabase
   Animations:
   - {fileID: 11400000, guid: fdc3d9b77fb3948089e0528f60fa1de6, type: 2}
@@ -36,3 +35,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 04f8fffa5e1d9a74dbb3d0792f5bc666, type: 2}
   - {fileID: 11400000, guid: 59fdbc1741f7a5a41bb1af999f0ba4c1, type: 2}
   - {fileID: 11400000, guid: dae1b88858c913447a48720ae319d930, type: 2}
+  - {fileID: 11400000, guid: cdcd2758df36fa743b02b3ffcd477e4c, type: 2}
+  - {fileID: 11400000, guid: 058e4ed8563ad2a489819335ef1ab92b, type: 2}
+  - {fileID: 11400000, guid: 97dd68eabec34553aa29d916659e29ab, type: 2}
+  - {fileID: 11400000, guid: d9ee68b9ffba443ea08f357d3c8d0c10, type: 2}
+  TargetMaterial: {fileID: 2100000, guid: 9f123a8ce88b74caa8bdbe5519935cc7, type: 2}

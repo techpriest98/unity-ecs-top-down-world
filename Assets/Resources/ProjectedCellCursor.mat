@@ -21,7 +21,9 @@ Material:
     serializedVersion: 3
     m_TexEnvs: []
     m_Ints: []
-    m_Floats: []
+    m_Floats:
+    - _CursorBorderWidth: 0.03125
+    - _CursorEdgeFade: 0.09375
     m_Colors:
     - _CursorColor: {r: 1, g: 0.9021226, b: 0.6084906, a: 0.45}
   m_BuildTextureStacks: []

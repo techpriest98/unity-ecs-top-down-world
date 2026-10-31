@@ -10,9 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 26eeb9622c9340c782d9f9c235990908, type: 3}
-  m_Name: PickUpGroundTarget
+  m_Name: PickUpVisibilityData
   m_EditorClassIdentifier: 
-  Kind: 3
+  Kind: 15
   Next: {fileID: 11400000, guid: 52ac67415cf54edc903fb8765e612ac1, type: 2}
   Cursor: 0
   FailureMessage: Nothing to pick up.
+  PositionSource: {fileID: 0}

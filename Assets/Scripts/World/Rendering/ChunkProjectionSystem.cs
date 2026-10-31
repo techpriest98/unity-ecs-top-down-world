@@ -23,8 +23,11 @@ namespace Game.World.Rendering
             public ViewDirection Direction;
             public bool Clipping;
             public uint Geometry;
+            public int2 Rows;
         }
         private NativeParallelHashMap<Entity, ProjectionSnapshot> projectionSnapshots;
+        private uint lastViewportRevision;
+        private bool hadViewport;
         private const int
             MaxChunksProjectedPerFrame = 1;
 
@@ -80,13 +83,10 @@ namespace Game.World.Rendering
         {
             // Немає роботи —
             if (!WorldRenderDebug.ProjectionRequired) return;
-            // не створюємо навіть тимчасові
-            // Native containers.
-            if (chunksNeedingProjectionQuery
-                    .CalculateEntityCount() == 0)
-            {
-                return;
-            }
+            bool hasViewport = SystemAPI.TryGetSingleton<ChunkProjectionViewport>(out var viewport);
+            bool viewportChanged = hasViewport != hadViewport || (hasViewport && viewport.Revision != lastViewportRevision);
+            hadViewport = hasViewport;
+            lastViewportRevision = hasViewport ? viewport.Revision : 0;
 
 
             // ============================================================
@@ -127,6 +127,24 @@ namespace Game.World.Rendering
                     projectionDirection = transition.TargetDirection;
                 }
             }
+
+            // During a view transition the render system waits for all target-
+            // direction projections. Do not cull against the OLD camera there.
+            bool useWindow = hasViewport && viewport.Enabled && !transitionActive;
+            if (viewportChanged && !transitionActive)
+            {
+                var needsProjection = SystemAPI.GetComponentLookup<ChunkNeedsProjection>(false);
+                foreach (var (chunk, owner) in SystemAPI.Query<RefRO<ChunkComponent>>()
+                             .WithAll<ChunkGenerated>().WithEntityAccess())
+                {
+                    int2 required = new int2(-10000, 10000);
+                    if (useWindow && !ChunkProjectionWindow.TryRows(chunk.ValueRO.Coordinate, projectionDirection, viewport.Bounds, out required)) continue;
+                    if (!projectionSnapshots.TryGetValue(owner, out var cached) || cached.Direction != projectionDirection ||
+                        cached.Rows.x > required.x || cached.Rows.y < required.y)
+                        needsProjection.SetComponentEnabled(owner, true);
+                }
+            }
+            if (chunksNeedingProjectionQuery.CalculateEntityCount() == 0) return;
 
 
             // ============================================================
@@ -229,11 +247,16 @@ namespace Game.World.Rendering
                         ChunkNeedsProjection>()
                     .WithEntityAccess())
             {
-                if (projectedCount >=
-                    MaxChunksProjectedPerFrame)
+                int2 rows = new int2(-10000, 10000);
+                if (useWindow && !ChunkProjectionWindow.TryRows(chunk.ValueRO.Coordinate, projectionDirection, viewport.Bounds, out rows))
                 {
-                    break;
+                    // Keep existing output/GPU ranges intact. A future viewport
+                    // revision will enqueue this owner when it can become visible.
+                    projectionSnapshots.Remove(entity);
+                    ecb.SetComponentEnabled<ChunkNeedsProjection>(entity, false);
+                    continue;
                 }
+                if (projectedCount >= MaxChunksProjectedPerFrame) continue;
 
 
                 DynamicBuffer<ProjectedClipCell> clippedCells =
@@ -243,6 +266,7 @@ namespace Game.World.Rendering
                 bool hasPrevious = projectionSnapshots.TryGetValue(entity, out var previous);
                 bool incremental = !WorldRenderDebug.OverlayRequested && hasPrevious &&
                     previous.Geometry == geometrySignature && previous.Direction == projectionDirection &&
+                    math.all(previous.Rows == rows) &&
                     ChunkProjectionBuilder.CanReuseProjectionColumns(previous.Player, previous.Clipping, playerPosition, projectionClippingEnabled);
                 int2 columns = incremental ? ChunkProjectionBuilder.MovingClipColumns(chunk.ValueRO.Coordinate,
                     projectionDirection, previous.Player, previous.Clipping, playerPosition, projectionClippingEnabled) : new int2(0, 16);
@@ -297,10 +321,10 @@ namespace Game.World.Rendering
                     waterWriter,
                     projectionDirection,
                     projectionClippingEnabled,
-                    playerPosition, columns.x, columns.y);
+                    playerPosition, columns.x, columns.y, rows.x, rows.y);
                 WorldRenderDebug.CountBaseProjectionBuild();
                 projectionSnapshots[entity] = new ProjectionSnapshot { Player = playerPosition,
-                    Direction = projectionDirection, Clipping = projectionClippingEnabled, Geometry = geometrySignature };
+                    Direction = projectionDirection, Clipping = projectionClippingEnabled, Geometry = geometrySignature, Rows = rows };
 
                 ecb.SetComponentEnabled<ChunkNeedsProjection>(entity, false);
                 ecb.SetComponentEnabled<ChunkNeedsLighting>(entity, true);

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26eeb9622c9340c782d9f9c235990908, type: 3}
   m_Name: NigredoSelectionKind
   m_EditorClassIdentifier: 
-  Kind: 11
+  Kind: 16
   Next: {fileID: 0}
   PositionSource: {fileID: 0}
   Cursor: 0
