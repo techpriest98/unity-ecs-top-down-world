@@ -25,6 +25,20 @@ Saved project files:
 
 Rebuild the manually assigned Item Database world atlas and assign the new asset to Item Library Authoring to batch these sprites with existing items. Until rebuilt, missing sprite entries use original textures without dropping the items.
 
+## Unified Flint Shard Ignite
+
+Flint Shard now exposes one Ignite skill. Its Visibility graph checks the other
+hand's pyrite, resolves the Top surface and selects one ItemMatches row:
+Torch -> Ignited Torch, or Large Torch -> Ignited Large Torch. Each row stores
+ReplacementItem once. Only the Large Torch output checks fuel; the small Torch
+output goes directly to Visible. Execute receives the resolved entity,
+surface and replacement through Visibility Result, checks distance and uses
+ReplaceWorldItem with UseVisibilityReplacement enabled. Missing replacement
+fails without mutation. Activation reevaluates Visibility instead of trusting
+HUD data. The existing replacement utility preserves fuel; the tool pays 20
+durability only after success. IgniteLargeTorch remains as an unassigned legacy
+asset, not a second equipped skill.
+
 Final generation prompts:
 
 ### Large Stick

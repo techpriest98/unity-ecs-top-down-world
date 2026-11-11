@@ -58,7 +58,7 @@ public struct PlayerEquipmentSlot { public int Item; public PlacementSelectionKi
 public struct ItemLibrary {}
 public struct IgnitableCell { public int3 Position; }
 public class ItemDefinition { public int Id; }
-public class WorldItemMatch { public ItemDefinition Item; public SkillChainNode Output; }
+public class WorldItemMatch { public ItemDefinition Item, ReplacementItem; public SkillChainNode Output; }
 public class SkillChainNode {
  public string name="adapter node"; public SkillChainNodeKind Kind; public SkillChainNode Next,PositionSource;
  public bool SelectionKindConnected=true;
@@ -128,8 +128,9 @@ public class TogglePlacementShapeAction : ItemSkillAction { public bool ItemSele
 public class ReplaceEquippedItemAction : ItemSkillAction { public string GetConfigurationError(EntityManager m,EquipmentSlot s)=>null;public bool ExecuteReplacement(EntityManager m,Entity p,EquipmentSlot s,int i){Calls++;return m.Mutate(default,default);} }
 public class ReplaceWorldItemAction : ItemSkillAction {
  public Entity CheckedTarget; public float3 CheckedPosition;
- public bool CanReplaceTarget(EntityManager m,Entity t,float3 p){Checks++;CheckedTarget=t;CheckedPosition=p;return Allowed;}
- public bool ExecuteTarget(EntityManager m,Entity t,float3 p){Calls++;return m.Mutate(t,p);}
+ public bool UseVisibilityReplacement; public ItemDefinition LastReplacement;
+ public bool CanReplaceTarget(EntityManager m,Entity t,float3 p,ItemDefinition replacement=null){Checks++;CheckedTarget=t;CheckedPosition=p;LastReplacement=replacement;return Allowed&&(!UseVisibilityReplacement||replacement!=null);}
+ public bool ExecuteTarget(EntityManager m,Entity t,float3 p,ItemDefinition replacement=null){Calls++;LastReplacement=replacement;return m.Mutate(t,p);}
 }
 public enum WorldObjectCategory {Item,Structure}
 public class DestroyWorldObjectAction : ItemSkillAction {
@@ -178,6 +179,27 @@ public static class Tests {
   return top;
  }
  public static void RunAll() {
+  // One Visibility pair table supplies both replacement types to one Execute.
+  foreach(int sourceId in new[]{1,13}) {
+   var pair_top=Node(SkillChainNodeKind.TopSurfacePosition);
+   var pair_pairs=Node(SkillChainNodeKind.ReplaceableWorldItemTarget);pair_top.Next=pair_pairs;
+   var pair_visible=Node(SkillChainNodeKind.Visible);
+   var pair_small=new ItemDefinition{Id=2};var pair_large=new ItemDefinition{Id=14};
+   pair_pairs.ItemMatches=new[]{new WorldItemMatch{Item=new ItemDefinition{Id=1},ReplacementItem=pair_small,Output=pair_visible},
+    new WorldItemMatch{Item=new ItemDefinition{Id=13},ReplacementItem=pair_large,Output=pair_visible}};
+   var pair_data=Node(SkillChainNodeKind.VisibilityData);
+   var pair_range=Node(SkillChainNodeKind.WithinDistance);pair_range.Distance=new ActionDistanceDefinition();pair_data.Next=pair_range;
+   var pair_action=new ReplaceWorldItemAction{UseVisibilityReplacement=true};pair_range.Next=Node(SkillChainNodeKind.Action,pair_action);
+   var pair_skill=new ItemSkillDefinition{FirstNode=pair_data,VisibilityNode=pair_top};
+   var pair_m=new EntityManager{WorldDefinition=sourceId};string pair_reason;
+   Check(SkillChainRunner.ExecuteSkill(pair_skill,pair_m,Player,EquipmentSlot.Hand,7,out pair_reason),"Pair payload failed: "+pair_reason);
+   Check(pair_action.LastReplacement==(sourceId==1?pair_small:pair_large),"Wrong replacement reached Execute");
+   pair_m=new EntityManager{WorldDefinition=sourceId};pair_range.Distance.Allowed=false;
+   Check(!SkillChainRunner.ExecuteSkill(pair_skill,pair_m,Player,EquipmentSlot.Hand,7,out pair_reason)&&pair_m.Mutations==0,"Range failure mutated pair target");
+   pair_range.Distance.Allowed=true;
+   pair_pairs.ItemMatches[sourceId==1?0:1].ReplacementItem=null;pair_m=new EntityManager{WorldDefinition=sourceId};
+   Check(!SkillChainRunner.ExecuteSkill(pair_skill,pair_m,Player,EquipmentSlot.Hand,7,out pair_reason)&&pair_m.Mutations==0,"Missing replacement mutated target");
+  }
   foreach(var kind in new[]{PlacementSelectionKind.None,PlacementSelectionKind.Block,PlacementSelectionKind.Item,PlacementSelectionKind.Structure}) {
    var routing=Node(SkillChainNodeKind.SelectionKindBranch);
    var behind=Node(SkillChainNodeKind.ValidCursorTarget);behind.Cursor=CursorWorldPosition.Behind;behind.Next=Node(SkillChainNodeKind.Action,new SetWorldBlockAction());

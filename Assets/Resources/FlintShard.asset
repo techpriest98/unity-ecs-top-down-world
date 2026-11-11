@@ -17,17 +17,21 @@ MonoBehaviour:
   Description: A sharp flint shard.
   Icon: {fileID: 5938694868728221081, guid: 7c3c617ec8a13e64490f525822cda8bf, type: 3}
   WorldSprite: {fileID: -7150281163574583935, guid: 2f3b3b6df79f580498cfa85ebca20af6, type: 3}
+  WorldSpriteUpright: 0
+  IsStructure: 0
+  PreserveWhenDepleted: 0
+  DepletedReplacement: {fileID: 0}
   MaxDurability: 100
   DurabilityDecay: {fileID: 0}
   AllowedSlots: 3
   Light: {fileID: 0}
+  WorldLightHeight: 0
   IgnitionSource: 0
   Animation: {fileID: 0}
   OnCollision: {fileID: 0}
   Skills:
   - {fileID: 11400000, guid: d011a100000000000000000000000004, type: 2}
-  - {fileID: 11400000, guid: d011a100000000000000000000000008, type: 2}
-  - {fileID: 11400000, guid: ab11c01f00004e66b200000000000002, type: 2}
   - {fileID: 11400000, guid: 7dc7a1efda854d5290b14046cb14914a, type: 2}
   - {fileID: 11400000, guid: 4b1251e3105e4461af378674dd4801f7, type: 2}
   - {fileID: 11400000, guid: d777036d55bb42868a528092426d32e3, type: 2}
+  - {fileID: 11400000, guid: ab11c01f00004e66b200000000000002, type: 2}

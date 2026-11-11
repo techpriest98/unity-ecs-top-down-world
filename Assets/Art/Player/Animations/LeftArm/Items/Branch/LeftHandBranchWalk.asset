@@ -21,7 +21,7 @@ MonoBehaviour:
   FrameDuration: 0.18
   Loop: 1
   Down:
-  - ZIndex: 0
+  - ZIndex: 1
     OverrideLightPosition: 0
     LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
@@ -37,7 +37,7 @@ MonoBehaviour:
       y: 50
       width: 7
       height: 8
-  - ZIndex: 0
+  - ZIndex: -1
     OverrideLightPosition: 0
     LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
@@ -62,7 +62,7 @@ MonoBehaviour:
       y: 49
       width: 6
       height: 6
-  - ZIndex: 1
+  - ZIndex: 0
     OverrideLightPosition: 0
     LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
@@ -70,7 +70,7 @@ MonoBehaviour:
       y: 51
       width: 6
       height: 6
-  - ZIndex: 1
+  - ZIndex: -1
     OverrideLightPosition: 0
     LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:
@@ -78,7 +78,7 @@ MonoBehaviour:
       y: 53
       width: 6
       height: 6
-  - ZIndex: 1
+  - ZIndex: 0
     OverrideLightPosition: 0
     LightPosition: {x: 0, y: 0, z: 0}
     PackedRect:

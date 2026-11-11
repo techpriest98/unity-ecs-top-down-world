@@ -12,6 +12,7 @@ namespace Game.Player
         LeftHandWorldShaper = 7,
         RightHandWorldShaper = 8,
         LeftHandBranch = 9,
-        RightHandBranch = 10
+        RightHandBranch = 10,
+        LeftHandLargeBranch = 11
     }
 }

@@ -283,6 +283,7 @@ namespace Game.Items
                     {
                         if (row == null) continue;
                         if (row.Item != null) DependsOn(row.Item);
+                        if (row.ReplacementItem != null) DependsOn(row.ReplacementItem);
                         if (row.Output != null) pending.Push(row.Output);
                     }
                     if (node.PositionSource != null) pending.Push(node.PositionSource);

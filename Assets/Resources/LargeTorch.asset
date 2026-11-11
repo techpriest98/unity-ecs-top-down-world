@@ -31,4 +31,4 @@ MonoBehaviour:
   OnCollision: {fileID: 0}
   Skills:
   - {fileID: 11400000, guid: d011a100000000000000000000000006, type: 2}
-  - {fileID: 11400000, guid: 7dc7a1efda854d5290b14046cb14914a, type: 2}
+  - {fileID: 0}

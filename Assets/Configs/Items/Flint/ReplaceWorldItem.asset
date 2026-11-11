@@ -11,6 +11,8 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b0622d0daf53ddf4ba513c03a6ea9699, type: 3}
   m_Name: ReplaceWorldItem
-  m_EditorClassIdentifier:
-  ReplacementItem: {fileID: 11400000, guid: 22b3719fb2c9947c28e5c2258dc66c34, type: 2}
+  m_EditorClassIdentifier: 
+  Distance: {fileID: 0}
+  ReplacementItem: {fileID: 0}
+  UseVisibilityReplacement: 1
   Count: 1

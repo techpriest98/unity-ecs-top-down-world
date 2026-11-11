@@ -15,6 +15,7 @@ namespace Game.Items.Skills
     public sealed class WorldItemMatch
     {
         public ItemDefinition Item;
+        public ItemDefinition ReplacementItem;
         public SkillChainNode Output;
     }
 
@@ -47,6 +48,7 @@ namespace Game.Items.Skills
             public float3 Position;
             public Entity Target;
             public int StructureId;
+            public ItemDefinition ReplacementItem;
         }
 
         public static int SelectionBranchIndex(PlacementSelectionKind kind) => kind switch
@@ -194,6 +196,7 @@ namespace Game.Items.Skills
                         if (branch == null) return false;
                         position = PickUpItemAction.Surface(manager, matched);
                         context.Target = matched; context.StructureId = 0;
+                        context.ReplacementItem = node.ItemMatches[row].ReplacementItem;
                         break;
                     default: return false;
                 }
@@ -241,7 +244,8 @@ namespace Game.Items.Skills
             var positions = new Dictionary<SkillChainNode, float3>();
             var targets = new Dictionary<SkillChainNode, Entity>();
             var structureIds = new Dictionary<SkillChainNode, int>();
-            var actions = new List<(ItemSkillAction action, float3 position, Entity target, int structureId, string failure)>();
+            var replacements = new Dictionary<SkillChainNode, ItemDefinition>();
+            var actions = new List<(ItemSkillAction action, float3 position, Entity target, int structureId, string failure, ItemDefinition replacement)>();
             bool actionStarted = false;
             SkillChainNode previous = null;
             SkillChainNode branch = null;
@@ -259,6 +263,7 @@ namespace Game.Items.Skills
                 // Flow connection or cursor reread is required to carry its value.
                 var input = previous != null ? previous : node.PositionSource;
                 if (input != null && structureIds.TryGetValue(input, out int inheritedStructure)) structureIds[node] = inheritedStructure;
+                if (input != null && replacements.TryGetValue(input, out var inheritedReplacement)) replacements[node] = inheritedReplacement;
                 switch (node.Kind)
                 {
                     case SkillChainNodeKind.VisibilityData:
@@ -267,6 +272,7 @@ namespace Game.Items.Skills
                         positions[node] = visibility.Position;
                         if (visibility.Target != Entity.Null) targets[node] = visibility.Target;
                         structureIds[node] = visibility.StructureId;
+                        replacements[node] = visibility.ReplacementItem;
                         break;
                     case SkillChainNodeKind.DestructionTargetBranch:
                     case SkillChainNodeKind.SelectionKindBranch:
@@ -313,6 +319,7 @@ namespace Game.Items.Skills
                         if (branch == null) return ConfigurationFailure(node, "Matched World Item output is not connected.", out failure);
                         positions[node] = PickUpItemAction.Surface(manager, replacementTarget);
                         targets[node] = replacementTarget;
+                        replacements[node] = node.ItemMatches[matchedRow].ReplacementItem;
                         break;
                     case SkillChainNodeKind.ValidCursorTarget:
                     case SkillChainNodeKind.ValidTerrainTarget:
@@ -391,7 +398,7 @@ namespace Game.Items.Skills
                                 return ConfigurationFailure(node, "Connect the State output to Item.Shape.", out failure);
                             if (!toggle.IsAvailable(manager, player, slot, item))
                             { failure = node.FailureMessage; return false; }
-                            actions.Add((toggle, default, Entity.Null, 0, node.FailureMessage));
+                            actions.Add((toggle, default, Entity.Null, 0, node.FailureMessage, null));
                             break;
                         }
                         if (node.Action is ReplaceEquippedItemAction replacement)
@@ -400,7 +407,7 @@ namespace Game.Items.Skills
                             if (error != null) return ConfigurationFailure(node, error, out failure);
                             if (!replacement.IsAvailable(manager, player, slot, item))
                             { failure = node.FailureMessage; return false; }
-                            actions.Add((replacement, default, Entity.Null, 0, node.FailureMessage));
+                            actions.Add((replacement, default, Entity.Null, 0, node.FailureMessage, null));
                             break;
                         }
                         if (input == null || !positions.TryGetValue(input, out position))
@@ -410,7 +417,7 @@ namespace Game.Items.Skills
                             if (!targets.TryGetValue(input, out Entity destroyTarget) || !structureIds.TryGetValue(input, out int destroyId) ||
                                 !destroy.CanDestroy(manager, destroyTarget, destroyId, position))
                             { failure = node.FailureMessage; return false; }
-                            actions.Add((destroy, position, destroyTarget, destroyId, node.FailureMessage));
+                            actions.Add((destroy, position, destroyTarget, destroyId, node.FailureMessage, null));
                             positions[node] = position; targets[node] = destroyTarget; structureIds[node] = destroyId;
                             break;
                         }
@@ -420,7 +427,7 @@ namespace Game.Items.Skills
                                 !structureIds.TryGetValue(input, out int resinTreeId) ||
                                 !resin.CanApply(manager, player, slot, item, resinTarget, resinTreeId, position))
                             { failure = node.FailureMessage; return false; }
-                            actions.Add((resin, position, resinTarget, resinTreeId, node.FailureMessage));
+                            actions.Add((resin, position, resinTarget, resinTreeId, node.FailureMessage, null));
                             positions[node] = position; targets[node] = resinTarget; structureIds[node] = resinTreeId;
                             break;
                         }
@@ -428,9 +435,10 @@ namespace Game.Items.Skills
                         {
                             if (!targets.TryGetValue(input, out var resolvedTarget))
                                 return ConfigurationFailure(node, "Position must carry a Replaceable World Item Target.", out failure);
-                            if (!replaceWorld.CanReplaceTarget(manager, resolvedTarget, position))
+                            replacements.TryGetValue(node, out var replacementItem);
+                            if (!replaceWorld.CanReplaceTarget(manager, resolvedTarget, position, replacementItem))
                             { failure = node.FailureMessage; return false; }
-                            actions.Add((replaceWorld, position, resolvedTarget, 0, node.FailureMessage));
+                            actions.Add((replaceWorld, position, resolvedTarget, 0, node.FailureMessage, replacementItem));
                             positions[node] = position;
                             targets[node] = resolvedTarget;
                             break;
@@ -438,14 +446,14 @@ namespace Game.Items.Skills
                         if (node.Action is PlaceWorldItemAction place)
                         {
                             if (!place.CanPlace(manager, player, slot, item, position)) { failure = node.FailureMessage; return false; }
-                            actions.Add((place, position, Entity.Null, 0, node.FailureMessage));
+                            actions.Add((place, position, Entity.Null, 0, node.FailureMessage, null));
                             break;
                         }
                         if (node.Action is RefuelWorldItemAction refuel)
                         {
                             if (!targets.TryGetValue(input, out var fuelTarget) || !refuel.CanRefuel(manager, player, slot, item, fuelTarget, position))
                             { failure = node.FailureMessage; return false; }
-                            actions.Add((refuel, position, fuelTarget, 0, node.FailureMessage));
+                            actions.Add((refuel, position, fuelTarget, 0, node.FailureMessage, null));
                             break;
                         }
                         if (node.Action is SetWorldBlockAction setBlock)
@@ -454,7 +462,7 @@ namespace Game.Items.Skills
                             if (error != null) return ConfigurationFailure(node, error, out failure);
                             if (!setBlock.CanSetAt(manager, player, slot, item, (int3)math.floor(position), checkDistance: false))
                             { failure = node.FailureMessage; return false; }
-                            actions.Add((setBlock, position, Entity.Null, 0, node.FailureMessage));
+                            actions.Add((setBlock, position, Entity.Null, 0, node.FailureMessage, null));
                             positions[node] = position;
                             break;
                         }
@@ -472,7 +480,7 @@ namespace Game.Items.Skills
                             ? thrown.CanThrowAt(manager, player, slot, item, (int3)math.floor(position))
                             : node.Action is PickUpItemAction picked && item == 0 && picked.CanPickUp(manager, player, slot, actionTarget, position, checkDistance: false);
                         if (!valid) { failure = node.FailureMessage; return false; }
-                        actions.Add((node.Action, position, actionTarget, 0, node.FailureMessage));
+                        actions.Add((node.Action, position, actionTarget, 0, node.FailureMessage, null));
                         positions[node] = position;
                         targets[node] = actionTarget;
                         break;
@@ -497,7 +505,7 @@ namespace Game.Items.Skills
                     : step.action is ThrowItemAction thrown
                     ? currentItem != 0 && thrown.ExecuteAtPosition(manager, player, slot, currentItem, (int3)math.floor(step.position))
                     : step.action is ReplaceWorldItemAction replaceWorld
-                        ? replaceWorld.ExecuteTarget(manager, step.target, step.position)
+                        ? replaceWorld.ExecuteTarget(manager, step.target, step.position, step.replacement)
                     : step.action is PlaceWorldItemAction place
                         ? place.ExecuteAt(manager, player, slot, currentItem, step.position)
                     : step.action is RefuelWorldItemAction refuel

@@ -16,7 +16,16 @@ MonoBehaviour:
   Next: {fileID: 0}
   ItemMatches:
   - Item: {fileID: 11400000, guid: 21863c02d6dcf45e395849a4c0b02231, type: 2}
+    ReplacementItem: {fileID: 11400000, guid: 22b3719fb2c9947c28e5c2258dc66c34, type: 2}
     Output: {fileID: 11400000, guid: 7482f85e4c50bcd71492794d47e0bb13, type: 2}
+  - Item: {fileID: 11400000, guid: d011a100000000000000000000000002, type: 2}
+    ReplacementItem: {fileID: 11400000, guid: d011a100000000000000000000000003, type: 2}
+    Output: {fileID: 11400000, guid: d011a100000000000000000000000028, type: 2}
+  SelectionOutputs:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  SelectionKindConnected: 1
   PositionSource: {fileID: 11400000, guid: ab11c01f00004e66b20000000000000a, type: 2}
   Cursor: 0
   Distance: {fileID: 0}

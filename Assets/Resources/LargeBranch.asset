@@ -22,7 +22,7 @@ MonoBehaviour:
   AllowedSlots: 3
   Light: {fileID: 0}
   IgnitionSource: 0
-  Animation: {fileID: 0}
+  Animation: {fileID: 11400000, guid: fad83768602f402a898e5fc45ac11d64, type: 2}
   OnCollision: {fileID: 0}
   Skills:
   - {fileID: 11400000, guid: 7dc7a1efda854d5290b14046cb14914a, type: 2}

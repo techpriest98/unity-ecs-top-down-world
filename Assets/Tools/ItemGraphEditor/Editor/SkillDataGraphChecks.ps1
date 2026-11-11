@@ -95,7 +95,7 @@ function Visit([string]$guid, [string[]]$ancestors, [bool]$actionStarted, [bool]
             $edges += Resolve-Ref $reference.Value $node.Path -Required
         }
     }
-    $rows = @([regex]::Matches($node.Text, '(?m)^  - Item:\s*(\{[^}\r\n]+\})\r?\n    Output:\s*(\{[^}\r\n]+\})'))
+    $rows = @([regex]::Matches($node.Text, '(?m)^  - Item:\s*(\{[^}\r\n]+\})\r?\n(?:    ReplacementItem:\s*\{[^}\r\n]+\}\r?\n)?    Output:\s*(\{[^}\r\n]+\})'))
     $rowCount = [regex]::Matches($node.Text, '(?m)^  - Item:').Count
     Check ($rows.Count -eq $rowCount) "Malformed ItemMatches row: $($node.Path)"
     if ($kind -eq 'ReplaceableWorldItemTarget') {
@@ -128,13 +128,17 @@ Check ($seen.Count -eq $nodes.Count) "Orphan chain nodes: $(($nodes.Keys | Where
 Check ($replacements.Count -gt 0) 'No generic ReplaceWorldItem assets found'
 foreach ($asset in $replacements) {
     $fields = @([regex]::Matches($asset.Text, '(?m)^  ([A-Za-z_]\w*):') | ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -notlike 'm_*' })
-    Check ($fields.Count -eq 2 -and $fields -contains 'ReplacementItem' -and $fields -contains 'Count') "ReplaceWorldItem must contain ReplacementItem and Count: $($asset.Path)"
+    $ownFields = @($fields | Where-Object { $_ -ne 'Distance' })
+    Check ($ownFields.Count -in @(2,3) -and $ownFields -contains 'ReplacementItem' -and $ownFields -contains 'Count') "ReplaceWorldItem must contain ReplacementItem and Count: $($asset.Path)"
+    if ($fields -contains 'Distance') { Check ((Field $asset.Text 'Distance') -match 'fileID: 0') 'Replacement must not use inherited legacy distance' }
     Check ([int](Field $asset.Text 'Count') -gt 0) 'Replacement count must be positive'
-    $null = Resolve-Ref (Field $asset.Text 'ReplacementItem') $asset.Path -Required
+    if ((Field $asset.Text 'UseVisibilityReplacement') -ne '1') {
+        $null = Resolve-Ref (Field $asset.Text 'ReplacementItem') $asset.Path -Required
+    }
 }
 $replaceSource = Read-Asset 'Scripts/Items/Skills/Configs/ReplaceWorldItemAction.cs'
 $publicFields = @([regex]::Matches($replaceSource, '\bpublic\s+[\w<>]+\s+(\w+)\s*(?:=(?!>)[^;]*)?;') | ForEach-Object { $_.Groups[1].Value })
-Check ($publicFields.Count -eq 2 -and $publicFields -contains 'ReplacementItem' -and $publicFields -contains 'Count') 'Generic replacement exposes unexpected configuration fields'
+Check ($publicFields.Count -eq 3 -and $publicFields -contains 'ReplacementItem' -and $publicFields -contains 'Count' -and $publicFields -contains 'UseVisibilityReplacement') 'Generic replacement exposes unexpected configuration fields'
 Check ($replaceSource -notmatch '\b(CursorWorldUtility|CursorWorldPosition|ActionDistanceDefinition|FindAt|WorldItemMatchUtility)\b|\bDistance\s*\.|\bFind\s*\(') 'Generic replacement contains cursor/range/search logic'
 
 if (!$SkipOutputName) {

@@ -11,9 +11,19 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 26eeb9622c9340c782d9f9c235990908, type: 3}
   m_Name: IgniteSurfacePosition
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   Kind: 9
   Next: {fileID: 11400000, guid: ab11c01f00004e66b200000000000007, type: 2}
+  ItemMatches: []
+  SelectionOutputs:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  SelectionKindConnected: 1
   PositionSource: {fileID: 11400000, guid: 083609b0cb8a812f10810acea598b23e, type: 2}
   Cursor: 0
+  Distance: {fileID: 0}
+  Action: {fileID: 0}
+  HandCondition: {fileID: 0}
+  Condition: {fileID: 0}
   FailureMessage: Wrong target.

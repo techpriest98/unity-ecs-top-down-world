@@ -399,11 +399,26 @@ public sealed class ItemGraphWindow : EditorWindow
         rootVisualElement.schedule.Execute(ReloadGraph);
     }
 
+    private void RemoveProducerSkill(ItemSkillDefinition skill)
+    {
+        if (Producer == null || skill == null) return;
+        var skills = ProducerSkills ?? Array.Empty<ItemSkillDefinition>();
+        if (!skills.Contains(skill)) return;
+        Undo.RecordObject(Producer, "Remove skill from producer");
+        ProducerSkills = skills.Where(entry => entry != skill).ToArray();
+        EditorUtility.SetDirty(Producer);
+        AssetDatabase.SaveAssetIfDirty(Producer);
+        // Rebuild the view instead of deleting graph elements: disconnect events
+        // would mutate shared chain assets used by other items.
+        rootVisualElement.schedule.Execute(ReloadGraph);
+    }
+
     private SkillNode AddSkillNode(ItemSkillDefinition skill, int index)
     {
         var node = new SkillNode(skill, removeIndex => ChangeActionSlots(skill, removeIndex),
             (actionIndex, offset) => MoveAction(skill, actionIndex, offset),
-            removeIndex => ChangeConditionSlots(skill, removeIndex), (indexToMove, offset) => MoveCondition(skill, indexToMove, offset));
+            removeIndex => ChangeConditionSlots(skill, removeIndex), (indexToMove, offset) => MoveCondition(skill, indexToMove, offset),
+            () => RemoveProducerSkill(skill));
         node.SetPosition(new Rect(60, 70 + index * 320, 350, 280));
         graph.AddElement(node);
         RestorePosition(node);
@@ -1475,6 +1490,8 @@ public sealed class ItemGraphWindow : EditorWindow
                     var itemInput = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(ItemDefinition));
                     itemInput.portName = "Item " + (i + 1); itemInput.Add(new Button(() => changeRows(index)) { text = "−" });
                     MatchInputs.Add(itemInput); inputContainer.Add(itemInput);
+                    var replacementField = new PropertyField(serialized.FindProperty("ItemMatches").GetArrayElementAtIndex(i).FindPropertyRelative("ReplacementItem"), "Replacement " + (i + 1));
+                    extensionContainer.Add(replacementField);
                     var worldOutput = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(SkillDataSignal));
                     worldOutput.portName = "World Item " + (i + 1); MatchOutputs.Add(worldOutput); outputContainer.Add(worldOutput);
                 }
@@ -1496,7 +1513,7 @@ public sealed class ItemGraphWindow : EditorWindow
                 mainContainer.Add(actionFields);
                 if (asset.Action is SetWorldBlockAction)
                     actionFields.TrackPropertyValue(action.FindProperty("BlockSource"), _ => rebuild());
-                foreach (string name in new[] { "replacementItem", "TargetHand", "RequiredTargetItem", "ConsumeOtherHandItem", "ReplacementItem", "Count", "FlightTime", "Gravity", "CollisionRadius", "Category", "Operation", "CuttingTool", "ResinItem", "RegrowthSeconds", "FuelItem", "UnlitItem", "LitItem", "Amount" })
+                foreach (string name in new[] { "replacementItem", "TargetHand", "RequiredTargetItem", "ConsumeOtherHandItem", "UseVisibilityReplacement", "ReplacementItem", "Count", "FlightTime", "Gravity", "CollisionRadius", "Category", "Operation", "CuttingTool", "ResinItem", "RegrowthSeconds", "FuelItem", "UnlitItem", "LitItem", "Amount" })
                 {
                     var property = action.FindProperty(name);
                     if (property == null) continue;
@@ -1920,11 +1937,16 @@ public sealed class ItemGraphWindow : EditorWindow
         public readonly Port DataOutput, VisibilityOutput;
 
         public SkillNode(ItemSkillDefinition skill, Action<int> changeActions, Action<int, int> moveAction,
-            Action<int> changeConditions, Action<int, int> moveCondition) : base(skill)
+            Action<int> changeConditions, Action<int, int> moveCondition, Action removeFromProducer) : base(skill)
         {
             Skill = skill;
             title = "Skill — " + skill.name + " (ID " + skill.Id + ")";
             style.width = 350;
+            extensionContainer.Add(new Button(removeFromProducer)
+            {
+                text = "Remove from this item",
+                tooltip = "Remove this item's skill reference only. The shared skill asset and its graph remain unchanged. Undo is supported."
+            });
             var serialized = new SerializedObject(skill);
             AddIconPreview(this, serialized);
             foreach (var property in new[] { "DisplayName", "Description", "Icon", "InputBinding", "DurabilityCost" })

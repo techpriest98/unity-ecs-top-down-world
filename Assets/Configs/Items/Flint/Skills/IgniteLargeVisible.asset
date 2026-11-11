@@ -11,9 +11,19 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 26eeb9622c9340c782d9f9c235990908, type: 3}
   m_Name: IgniteLargeVisible
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   Kind: 10
-  Condition: {fileID: 11400000, guid: c011a10000aa44aba100000000000007, type: 2}
-  Next: {fileID: 0}
+  Next: {fileID: 11400000, guid: 7482f85e4c50bcd71492794d47e0bb13, type: 2}
+  ItemMatches: []
+  SelectionOutputs:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  SelectionKindConnected: 1
   PositionSource: {fileID: 0}
+  Cursor: 0
+  Distance: {fileID: 0}
+  Action: {fileID: 0}
+  HandCondition: {fileID: 0}
+  Condition: {fileID: 11400000, guid: c011a10000aa44aba100000000000007, type: 2}
   FailureMessage: I can't do that here.

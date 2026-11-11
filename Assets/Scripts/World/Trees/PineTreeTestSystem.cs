@@ -466,8 +466,10 @@ namespace Game.World.Trees
             properties.SetFloat("_TreeLocalOnly", WorldRenderDebug.Enabled ? 0f : 1f);
             properties.SetTexture("_TreeDiffuse", resources.Diffuse); properties.SetTexture("_TreeNormals", resources.Normals);
             properties.SetTexture("_TreeSurfaces", resources.Surfaces);
-            if (barkCutOverlay == null) barkCutOverlay = Resources.Load<Texture2D>("TreeBarkCutOverlay");
-            if (barkResinOverlay == null) barkResinOverlay = Resources.Load<Texture2D>("TreeBarkResinOverlay");
+            // Serialized material references survive PNG renames/moves. Do not
+            // disable assigned overlays because a Resources filename changed.
+            barkCutOverlay = material.GetTexture("_TreeBarkCutOverlay") as Texture2D;
+            barkResinOverlay = material.GetTexture("_TreeBarkResinOverlay") as Texture2D;
             bool resinOverlayReady = barkCutOverlay != null && barkResinOverlay != null;
             properties.SetFloat("_TreeResinOverlayEnabled", resinOverlayReady ? 1f : 0f);
             if (resinOverlayReady)
